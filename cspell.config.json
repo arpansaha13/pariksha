@@ -21,7 +21,19 @@
       ]
     }
   ],
-  "words": [],
+  "words": [
+    "arpansaha",
+    "dbname",
+    "godotenv",
+    "gorm",
+    "jackc",
+    "jinzhu",
+    "joho",
+    "pariksha",
+    "pgpassfile",
+    "pgservicefile",
+    "sslmode"
+  ],
   "patterns": [
     {
       "name": "Markdown links",

@@ -1,0 +1,73 @@
+Table users {
+  id integer [primary key]
+  username varchar
+  email varchar
+  password varchar
+  firstname varchar
+  lastname varchar
+  role varchar [note: 'Values can be "CANDIDATE" or "HOST"']
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table exams {
+  id integer [primary key]
+  title varchar
+  starts_at timestamp
+  ends_at timestamp
+  created_by integer
+  type varchar [note: 'Values can be "OPEN" or "INVITE"']
+  max_candidates_count integer [note: 'Maximum number of candidates that can take the exam']
+  paper_id integer [note: 'Indicates which paper will be used in this exam']
+}
+
+Table papers {
+  id integer [primary key]
+  title varchar
+  max_score integer [note: 'Maximum score that can be awarded in this paper - Sum of individual scores of each question']
+}
+
+Table paper_ownerships {
+  id integer [primary key]
+  user_id integer [note: 'Which user owns this paper, or is shared this paper with']
+  paper_id integer [note: 'Which paper is owned or shared']
+  path varchar [note: 'Used to show folder structure. At which folder this user has stored the paper.']
+  type string [note: 'Can be OWNER or SHARED']
+}
+
+Table questions {
+  id integer [primary key]
+  question text
+  category varchar [note: 'Used to group multiple questions']
+  type string [note: 'MCQ, Short-answer, Long-answer, etc.']
+  tags string[] [default: '{}', note: 'Tags may or may not be shown on screen based on conditions']
+  paper_id integer [note: 'Which paper the question belongs to']
+  max_score integer [note: 'Maximum score that can be awarded on this question']
+  correct_answer text [note: 'A sample of the correct answer. In case of MCQs, it can be used to auto-evaluate.']
+}
+
+Table exam_participants {
+  id integer [primary key]
+  exam_id integer
+  user_id integer [note: 'Which users can take this exam']
+  score_awarded integer [note: 'Total score obtained in this exam by this candidate - Sum of individual scores of each answer']
+}
+
+Table answers {
+  id integer [primary key]
+  exam_participant_id integer [note: 'Which exam and user this answer-set belongs to']
+  question_id integer [note: 'This answer is for which question']
+  answer text
+  score_awarded integer [note: 'Score awarded on this answer']
+  comments text [note: 'Any comments the evaluator might want to add, for e.g. why is the answer wrong']
+}
+
+Ref: exams.created_by > users.id // One user can create many exams
+Ref: paper_ownerships.user_id > users.id // Which user owns or shares this paper
+Ref: paper_ownerships.paper_id > papers.id // Which paper is owned or shared
+Ref: questions.paper_id > papers.id // One exam can have many questions
+Ref: exams.paper_id > papers.id // Many exams can be created using a single paper
+Ref: exam_participants.exam_id > exams.id // One exam can have many participants
+Ref: exam_participants.user_id > users.id // Which users can take this exam
+Ref: answers.exam_participant_id > exam_participants.id // One participant can have many answers
+Ref: answers.question_id > questions.id // One question can have many answers

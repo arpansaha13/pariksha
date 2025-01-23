@@ -9,6 +9,8 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"github.com/arpansaha13/pariksha/internal/models"
 )
 
 var DB *sql.DB
@@ -30,4 +32,24 @@ func Init() {
 		log.Fatal(err)
 		os.Exit(1)
 	}
+
+	// Only run auto-migrations in development environment
+	if os.Getenv("GO_ENV") == "development" {
+		if err := autoMigrate(db); err != nil {
+			log.Fatal("Failed to auto-migrate database:", err)
+			os.Exit(1)
+		}
+	}
+}
+
+func autoMigrate(db *gorm.DB) error {
+	return db.AutoMigrate(
+		&models.User{},
+		&models.Exam{},
+		&models.Answer{},
+		&models.ExamParticipant{},
+		&models.Paper{},
+		&models.PaperOwnership{},
+		&models.Question{},
+	)
 }
