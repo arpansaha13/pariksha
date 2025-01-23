@@ -35,15 +35,12 @@ func Init() {
 
 	// Only run auto-migrations in development environment
 	if os.Getenv("GO_ENV") == "development" {
-		if err := autoMigrate(db); err != nil {
-			log.Fatal("Failed to auto-migrate database:", err)
-			os.Exit(1)
-		}
+		autoMigrate(db)
 	}
 }
 
-func autoMigrate(db *gorm.DB) error {
-	return db.AutoMigrate(
+func autoMigrate(db *gorm.DB) {
+	err := db.AutoMigrate(
 		&models.User{},
 		&models.Exam{},
 		&models.Answer{},
@@ -51,5 +48,12 @@ func autoMigrate(db *gorm.DB) error {
 		&models.Paper{},
 		&models.PaperOwnership{},
 		&models.Question{},
+		&models.Session{},
+		&models.UnverifiedUser{},
 	)
+
+	if err != nil {
+		log.Fatal("Failed to auto-migrate database:", err)
+		os.Exit(1)
+	}
 }
