@@ -9,6 +9,8 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/arpansaha13/pariksha/internal/db"
+	"github.com/arpansaha13/pariksha/internal/router"
+	"github.com/arpansaha13/pariksha/internal/utils"
 )
 
 func main() {
@@ -20,20 +22,15 @@ func main() {
 	// Ensure the database connection is closed on application exit
 	defer db.DB.Close()
 
-	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		if req.Method != http.MethodGet {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-		fmt.Fprintf(w, "Hello, World!")
-	})
+	r := router.SetupRouter()
 
 	// Remove hostname in production
 	// https://stackoverflow.com/questions/55201561/golang-run-on-windows-without-deal-with-the-firewall/65393403#65393403
-	addr := "localhost:4000"
+	port := utils.GetEnvWithDefault("API_PORT", "4000")
+	addr := "localhost:" + port
 	fmt.Printf("Server starting on %s\n", addr)
 
-	if err := http.ListenAndServe(addr, nil); err != nil {
+	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatal(err)
 	}
 }
