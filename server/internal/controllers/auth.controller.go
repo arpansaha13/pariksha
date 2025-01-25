@@ -12,9 +12,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/arpansaha13/pariksha/internal/constants"
-	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/models"
+	"github.com/arpansaha13/pariksha/internal/repositories"
 	"github.com/arpansaha13/pariksha/internal/utils"
 )
 
@@ -31,6 +31,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func SignUp(w http.ResponseWriter, r *http.Request) {
+	userRepository := repositories.GetUserRepository()
+	unverifiedUserRepository := repositories.GetUnverifiedUserRepository()
+
+	var err error
 	var signUpDto dtos.SignUpDto
 
 	if err := json.NewDecoder(r.Body).Decode(&signUpDto); err != nil {
@@ -38,8 +42,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var existingUser models.User
-	if result := db.DB.Where("email = ?", signUpDto.Email).Take(&existingUser); result.Error == nil {
+	if _, err = userRepository.FindOneByEmail(signUpDto.Email); err == nil {
 		http.Error(w, "This email is already registered", http.StatusConflict)
 		return
 	}
@@ -69,8 +72,8 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		Password:     string(hashedPassword),
 	}
 
-	if result := db.DB.Create(&unverifiedUser); result.Error != nil {
-		fmt.Println(result.Error)
+	if err := unverifiedUserRepository.Create(&unverifiedUser); err != nil {
+		fmt.Println(err)
 		http.Error(w, "Failed to create user. Please try again later.", http.StatusInternalServerError)
 		return
 	}
@@ -86,8 +89,13 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 }
 
 func Verification(w http.ResponseWriter, r *http.Request) {
+	unverifiedUserRepository := repositories.GetUnverifiedUserRepository()
+	userRepository := repositories.GetUserRepository()
+
 	params := mux.Vars(r)
 	hash := params["hash"]
+
+	var err error
 
 	var verificationDto dtos.VerificationDto
 	if err := json.NewDecoder(r.Body).Decode(&verificationDto); err != nil {
@@ -95,14 +103,14 @@ func Verification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var unverifiedUser models.UnverifiedUser
-	if result := db.DB.Where("hash = ?", hash).Take(&unverifiedUser); result.Error != nil {
+	var unverifiedUser *models.UnverifiedUser
+	if unverifiedUser, err = unverifiedUserRepository.FindOne(hash); err != nil {
 		http.Error(w, "Invalid or expired link", constants.StatusInvalidToken)
 		return
 	}
 
 	if verificationDto.OTP != unverifiedUser.OTP || time.Now().After(unverifiedUser.OTPExpiresAt) {
-		http.Error(w, "Invalid or Expired OTP", http.StatusUnauthorized)
+		http.Error(w, "Invalid or expired OTP", http.StatusUnauthorized)
 		return
 	}
 
@@ -112,12 +120,12 @@ func Verification(w http.ResponseWriter, r *http.Request) {
 		Username: strings.Split(unverifiedUser.Email, "@")[0],
 	}
 
-	if err := db.DB.Create(&newUser).Error; err != nil {
+	if err = userRepository.Create(&newUser); err != nil {
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
 		return
 	}
 
-	if err := db.DB.Delete(&unverifiedUser).Error; err != nil {
+	if err = unverifiedUserRepository.DeleteByPointer(unverifiedUser); err != nil {
 		http.Error(w, "Failed to delete unverified user", http.StatusInternalServerError)
 		return
 	}
