@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/arpansaha13/pariksha/internal/constants"
@@ -37,13 +39,13 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var existingUser models.User
-	if result := db.DB.Where("email = ?", signUpDto.Email).First(&existingUser); result.Error == nil {
+	if result := db.DB.Where("email = ?", signUpDto.Email).Take(&existingUser); result.Error == nil {
 		http.Error(w, "This email is already registered", http.StatusConflict)
 		return
 	}
 
 	otp, _ := utils.GenerateOTP(constants.VERIFICATION_OTP_LENGTH)
-	linkHash, _ := utils.GenerateBase64(constants.VERIFICATION_HASH_LENGTH)
+	linkHash, _ := utils.GenerateAlphaNum(constants.VERIFICATION_HASH_LENGTH)
 
 	otpExpiresInMinutes, _ := strconv.Atoi(
 		utils.GetEnvWithDefault(
@@ -68,6 +70,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if result := db.DB.Create(&unverifiedUser); result.Error != nil {
+		fmt.Println(result.Error)
 		http.Error(w, "Failed to create user. Please try again later.", http.StatusInternalServerError)
 		return
 	}
@@ -77,6 +80,46 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	if err := utils.SendEmail(signUpDto.Email, msg); err != nil {
 		// Log the error but don't return it to the user since the account was created
 		fmt.Printf("Failed to send verification email: %v\n", err)
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func Verification(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	hash := params["hash"]
+
+	var verificationDto dtos.VerificationDto
+	if err := json.NewDecoder(r.Body).Decode(&verificationDto); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	var unverifiedUser models.UnverifiedUser
+	if result := db.DB.Where("hash = ?", hash).Take(&unverifiedUser); result.Error != nil {
+		http.Error(w, "Invalid or expired link", constants.StatusInvalidToken)
+		return
+	}
+
+	if verificationDto.OTP != unverifiedUser.OTP || time.Now().After(unverifiedUser.OTPExpiresAt) {
+		http.Error(w, "Invalid or Expired OTP", http.StatusUnauthorized)
+		return
+	}
+
+	newUser := models.User{
+		Email:    unverifiedUser.Email,
+		Password: unverifiedUser.Password,
+		Username: strings.Split(unverifiedUser.Email, "@")[0],
+	}
+
+	if err := db.DB.Create(&newUser).Error; err != nil {
+		http.Error(w, "Failed to create user", http.StatusInternalServerError)
+		return
+	}
+
+	if err := db.DB.Delete(&unverifiedUser).Error; err != nil {
+		http.Error(w, "Failed to delete unverified user", http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)

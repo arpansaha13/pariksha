@@ -1,17 +1,18 @@
 package models
 
 import (
+	"database/sql"
 	"time"
 )
 
 type User struct {
-	ID        int `gorm:"primaryKey"`
-	Username  string
-	Email     string
-	Password  string
-	FirstName string `gorm:"column:first_name"`
-	LastName  string `gorm:"column:last_name"`
-	Role      string `gorm:"type:varchar(10)"`
+	ID        int            `gorm:"primaryKey"`
+	Username  string         `gorm:"type:varchar(255);not null;unique"`
+	Email     string         `gorm:"type:varchar(255);not null;unique"`
+	Password  string         `gorm:"type:varchar(255);not null"`
+	FirstName sql.NullString `gorm:"column:first_name;type:varchar(255)"`
+	LastName  sql.NullString `gorm:"column:last_name;type:varchar(255)"`
+	Role      sql.NullString `gorm:"type:varchar(10)"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Exams     []Exam `gorm:"foreignKey:CreatedBy"`
