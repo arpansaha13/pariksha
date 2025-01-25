@@ -23,11 +23,11 @@ type unverifiedUserRepository struct {
 
 var (
 	unverifiedUserRepoInstance *unverifiedUserRepository
-	once                       sync.Once
+	unverifiedUserOnce         sync.Once
 )
 
 func GetUnverifiedUserRepository() UnverifiedUserRepository {
-	once.Do(func() {
+	unverifiedUserOnce.Do(func() {
 		unverifiedUserRepoInstance = &unverifiedUserRepository{db: db.DB}
 	})
 	return unverifiedUserRepoInstance

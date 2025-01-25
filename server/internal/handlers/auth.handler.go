@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -28,13 +31,68 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("Login attempt with email: %s\n", loginDto.Email)
-	fmt.Fprintf(w, "Login endpoint reached!")
+	userRepo := repositories.GetUserRepository()
+	user, err := userRepo.FindOneByEmail(loginDto.Email)
+	if err != nil {
+		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginDto.Password)); err != nil {
+		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
+		return
+	}
+
+	sessionKey := uuid.New()
+	sessionExpiresInHours, _ := strconv.Atoi(
+		utils.GetEnvWithDefault("SESSION_EXPIRES_IN_HOURS", constants.DEFAULT_SESSION_EXPIRES_IN_HOURS),
+	)
+	sessionExpiresAt := time.Now().Add(time.Duration(sessionExpiresInHours) * time.Hour)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": user.ID,
+		"exp":     sessionExpiresAt.Unix(),
+	})
+	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
+	if err != nil {
+		http.Error(w, "Failed to create token", http.StatusInternalServerError)
+		return
+	}
+
+	session := models.Session{
+		Key:       sessionKey,
+		Token:     tokenString,
+		ExpiresAt: sessionExpiresAt,
+	}
+
+	sessionRepo := repositories.GetSessionRepository()
+	if err := sessionRepo.Create(&session); err != nil {
+		http.Error(w, "Failed to create session", http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     utils.GetEnvWithDefault("SESSION_COOKIE_NAME", constants.DEFAULT_SESSION_COOKIE_NAME),
+		Value:    sessionKey.String(),
+		Expires:  session.ExpiresAt,
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"id":        user.ID,
+		"username":  user.Username,
+		"email":     user.Email,
+		"firstName": user.FirstName.String,
+		"lastName":  user.LastName.String,
+	})
 }
 
 func SignUp(w http.ResponseWriter, r *http.Request) {
-	userRepository := repositories.GetUserRepository()
-	unverifiedUserRepository := repositories.GetUnverifiedUserRepository()
+	userRepo := repositories.GetUserRepository()
+	unverifiedUserRepo := repositories.GetUnverifiedUserRepository()
 
 	var err error
 	var signUpDto dtos.SignUpDto
@@ -44,7 +102,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err = userRepository.FindOneByEmail(signUpDto.Email); err == nil {
+	if _, err = userRepo.FindOneByEmail(signUpDto.Email); err == nil {
 		http.Error(w, "This email is already registered", http.StatusConflict)
 		return
 	}
@@ -53,10 +111,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	linkHash, _ := utils.GenerateAlphaNum(constants.VERIFICATION_HASH_LENGTH)
 
 	otpExpiresInMinutes, _ := strconv.Atoi(
-		utils.GetEnvWithDefault(
-			"OTP_EXPIRES_IN_MINUTES",
-			constants.DEFAULT_OTP_EXPIRES_IN_MINUTES,
-		),
+		utils.GetEnvWithDefault("OTP_EXPIRES_IN_MINUTES", constants.DEFAULT_OTP_EXPIRES_IN_MINUTES),
 	)
 	otpExpiresAt := time.Now().Add(time.Duration(otpExpiresInMinutes) * time.Minute)
 
@@ -66,7 +121,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	unverifiedUser, err := unverifiedUserRepository.FindOneByEmail(signUpDto.Email)
+	unverifiedUser, err := unverifiedUserRepo.FindOneByEmail(signUpDto.Email)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		fmt.Println(err)
 		http.Error(w, "Failed to process request. Please try again later.", http.StatusInternalServerError)
@@ -79,7 +134,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	if unverifiedUser != nil {
 		unverifiedUser.OTP = otp
 		unverifiedUser.OTPExpiresAt = otpExpiresAt
-		if err := unverifiedUserRepository.Update(unverifiedUser); err != nil {
+		if err := unverifiedUserRepo.Update(unverifiedUser); err != nil {
 			fmt.Println(err)
 			http.Error(w, "Failed to update OTP. Please try again later.", http.StatusInternalServerError)
 			return
@@ -92,7 +147,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 			Email:        signUpDto.Email,
 			Password:     string(hashedPassword),
 		}
-		if err := unverifiedUserRepository.Create(&newUnverifiedUser); err != nil {
+		if err := unverifiedUserRepo.Create(&newUnverifiedUser); err != nil {
 			fmt.Println(err)
 			http.Error(w, "Failed to create user. Please try again later.", http.StatusInternalServerError)
 			return
@@ -110,8 +165,8 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 }
 
 func Verification(w http.ResponseWriter, r *http.Request) {
-	unverifiedUserRepository := repositories.GetUnverifiedUserRepository()
-	userRepository := repositories.GetUserRepository()
+	unverifiedUserRepo := repositories.GetUnverifiedUserRepository()
+	userRepo := repositories.GetUserRepository()
 
 	params := mux.Vars(r)
 	hash := params["hash"]
@@ -125,7 +180,7 @@ func Verification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var unverifiedUser *models.UnverifiedUser
-	if unverifiedUser, err = unverifiedUserRepository.FindOne(hash); err != nil {
+	if unverifiedUser, err = unverifiedUserRepo.FindOne(hash); err != nil {
 		http.Error(w, "Invalid or expired link", constants.StatusInvalidToken)
 		return
 	}
@@ -141,12 +196,12 @@ func Verification(w http.ResponseWriter, r *http.Request) {
 		Username: strings.Split(unverifiedUser.Email, "@")[0],
 	}
 
-	if err = userRepository.Create(&newUser); err != nil {
+	if err = userRepo.Create(&newUser); err != nil {
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
 		return
 	}
 
-	if err = unverifiedUserRepository.DeleteByPointer(unverifiedUser); err != nil {
+	if err = unverifiedUserRepo.DeleteByPointer(unverifiedUser); err != nil {
 		http.Error(w, "Failed to delete unverified user", http.StatusInternalServerError)
 		return
 	}

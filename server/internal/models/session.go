@@ -7,7 +7,7 @@ import (
 )
 
 type Session struct {
-	Key       uuid.UUID `gorm:"primaryKey"`
+	Key       uuid.UUID `gorm:"type:uuid;primaryKey"`
 	Token     string
 	ExpiresAt time.Time
 }

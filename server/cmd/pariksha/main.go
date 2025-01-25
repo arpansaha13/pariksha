@@ -52,6 +52,7 @@ func validateEnv() {
 		"DB_USER",
 		"DB_PASS",
 		"DB_NAME",
+		"JWT_SECRET_KEY",
 		"SMTP_NAME",
 		"SMTP_USER",
 		"SMTP_FROM",
