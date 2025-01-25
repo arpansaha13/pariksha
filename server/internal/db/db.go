@@ -5,15 +5,13 @@ import (
 	"log"
 	"os"
 
-	"database/sql"
-
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
 	"github.com/arpansaha13/pariksha/internal/models"
 )
 
-var DB *sql.DB
+var DB *gorm.DB
 
 /* Make sure env variables are loaded before initializing db */
 func Init() {
@@ -25,8 +23,8 @@ func Init() {
 		os.Getenv("DB_PORT"),
 		os.Getenv("DB_SSLMODE"))
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	DB, _ = db.DB()
+	var err error
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
 		log.Fatal(err)
@@ -35,12 +33,12 @@ func Init() {
 
 	// Only run auto-migrations in development environment
 	if os.Getenv("GO_ENV") == "development" {
-		autoMigrate(db)
+		autoMigrate()
 	}
 }
 
-func autoMigrate(db *gorm.DB) {
-	err := db.AutoMigrate(
+func autoMigrate() {
+	err := DB.AutoMigrate(
 		&models.User{},
 		&models.Exam{},
 		&models.Answer{},

@@ -8,6 +8,7 @@ import (
 
 	"github.com/joho/godotenv"
 
+	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/router"
 	"github.com/arpansaha13/pariksha/internal/utils"
@@ -20,13 +21,14 @@ func main() {
 	db.Init()
 
 	// Ensure the database connection is closed on application exit
-	defer db.DB.Close()
+	sqlDb, _ := db.DB.DB()
+	defer sqlDb.Close()
 
 	r := router.SetupRouter()
 
 	// Remove hostname in production
 	// https://stackoverflow.com/questions/55201561/golang-run-on-windows-without-deal-with-the-firewall/65393403#65393403
-	port := utils.GetEnvWithDefault("API_PORT", "4000")
+	port := utils.GetEnvWithDefault("API_PORT", constants.DEFAULT_API_PORT)
 	addr := "localhost:" + port
 	fmt.Printf("Server starting on %s\n", addr)
 
@@ -50,6 +52,12 @@ func validateEnv() {
 		"DB_USER",
 		"DB_PASS",
 		"DB_NAME",
+		"SMTP_NAME",
+		"SMTP_USER",
+		"SMTP_FROM",
+		"SMTP_PASSWORD",
+		"SMTP_HOST",
+		"SMTP_PORT",
 	}
 
 	for _, envVar := range requiredEnvVars {

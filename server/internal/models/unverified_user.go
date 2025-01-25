@@ -2,12 +2,10 @@ package models
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type UnverifiedUser struct {
-	Hash         uuid.UUID `gorm:"primaryKey;type:uuid"`
+	Hash         string `gorm:"primaryKey;type:varchar(10)"`
 	OTP          string
 	OTPExpiresAt time.Time
 	Email        string
