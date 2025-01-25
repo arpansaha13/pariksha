@@ -11,6 +11,7 @@ import (
 
 type UnverifiedUserRepository interface {
 	Create(user *models.UnverifiedUser) error
+	Update(user *models.UnverifiedUser) error
 	FindOne(hash string) (*models.UnverifiedUser, error)
 	FindOneByEmail(email string) (*models.UnverifiedUser, error)
 	DeleteByPointer(*models.UnverifiedUser) error
@@ -34,6 +35,10 @@ func GetUnverifiedUserRepository() UnverifiedUserRepository {
 
 func (r *unverifiedUserRepository) Create(user *models.UnverifiedUser) error {
 	return r.db.Create(user).Error
+}
+
+func (r *unverifiedUserRepository) Update(user *models.UnverifiedUser) error {
+	return r.db.Save(user).Error
 }
 
 func (r *unverifiedUserRepository) FindOne(hash string) (*models.UnverifiedUser, error) {

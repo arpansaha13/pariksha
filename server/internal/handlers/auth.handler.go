@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 
 	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/dtos"
@@ -64,18 +66,37 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	unverifiedUser := models.UnverifiedUser{
-		Hash:         linkHash,
-		OTP:          otp,
-		OTPExpiresAt: otpExpiresAt,
-		Email:        signUpDto.Email,
-		Password:     string(hashedPassword),
+	unverifiedUser, err := unverifiedUserRepository.FindOneByEmail(signUpDto.Email)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		fmt.Println(err)
+		http.Error(w, "Failed to process request. Please try again later.", http.StatusInternalServerError)
+		return
 	}
 
-	if err := unverifiedUserRepository.Create(&unverifiedUser); err != nil {
-		fmt.Println(err)
-		http.Error(w, "Failed to create user. Please try again later.", http.StatusInternalServerError)
-		return
+	// check if the email already exists in UnverifiedUsers
+	// if yes, then just update the otp in that row
+	// else create a new entry.
+	if unverifiedUser != nil {
+		unverifiedUser.OTP = otp
+		unverifiedUser.OTPExpiresAt = otpExpiresAt
+		if err := unverifiedUserRepository.Update(unverifiedUser); err != nil {
+			fmt.Println(err)
+			http.Error(w, "Failed to update OTP. Please try again later.", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		newUnverifiedUser := models.UnverifiedUser{
+			Hash:         linkHash,
+			OTP:          otp,
+			OTPExpiresAt: otpExpiresAt,
+			Email:        signUpDto.Email,
+			Password:     string(hashedPassword),
+		}
+		if err := unverifiedUserRepository.Create(&newUnverifiedUser); err != nil {
+			fmt.Println(err)
+			http.Error(w, "Failed to create user. Please try again later.", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	msg := utils.CreateVerificationMail(signUpDto.Email, otp, linkHash, otpExpiresInMinutes)
