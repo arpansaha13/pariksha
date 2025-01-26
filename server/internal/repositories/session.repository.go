@@ -11,6 +11,7 @@ import (
 
 type SessionRepository interface {
 	Create(session *models.Session) error
+	FindByKey(key string) (*models.Session, error)
 }
 
 type sessionRepository struct {
@@ -32,4 +33,12 @@ func GetSessionRepository() SessionRepository {
 
 func (r *sessionRepository) Create(session *models.Session) error {
 	return r.db.Create(session).Error
+}
+
+func (r *sessionRepository) FindByKey(key string) (*models.Session, error) {
+	var session models.Session
+	if err := r.db.Where("key = ?", key).First(&session).Error; err != nil {
+		return nil, err
+	}
+	return &session, nil
 }
