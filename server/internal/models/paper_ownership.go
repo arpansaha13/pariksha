@@ -5,7 +5,7 @@ type PaperOwnership struct {
 	UserID  int
 	PaperID int
 	Path    string
-	Type    string `gorm:"type:varchar(10)"`
+	Type    string `gorm:"type:varchar(10);not null;check:type IN ('OWNER', 'SHARED')"`
 	User    User   `gorm:"foreignKey:UserID"`
 	Paper   Paper  `gorm:"foreignKey:PaperID"`
 }
