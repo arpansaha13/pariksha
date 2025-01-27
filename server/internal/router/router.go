@@ -21,6 +21,7 @@ func SetupRouter() *mux.Router {
 	authRouter.HandleFunc("/verification/{hash}", handlers.Verification).Methods("POST")
 
 	// Paper Routes
+	protectedRouter.HandleFunc("/papers", handlers.GetUserPapers).Methods("GET")
 	protectedRouter.HandleFunc("/papers", handlers.CreatePaper).Methods("POST")
 	protectedRouter.HandleFunc("/papers/{id}", handlers.UpdatePaper).Methods("PATCH")
 

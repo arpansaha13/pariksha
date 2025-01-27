@@ -14,6 +14,34 @@ import (
 	"github.com/arpansaha13/pariksha/internal/models"
 )
 
+func GetUserPapers(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(middlewares.UserIDKey).(int)
+
+	var papers []models.Paper
+	if err := db.DB.Model(&models.Paper{}).Preload("PaperOwnership").Find(&papers).
+		Where("paper_ownerships.user_id = ?", userID).Error; err != nil {
+		http.Error(w, "Failed to retrieve papers", http.StatusInternalServerError)
+		return
+	}
+
+	var response []dtos.GetUserPapersResponse
+	for _, paper := range papers {
+		response = append(response, dtos.GetUserPapersResponse{
+			ID:       paper.ID,
+			Title:    paper.Title,
+			MaxScore: paper.MaxScore,
+			PaperOwnership: dtos.GetUserPapersPaperOwnership{
+				ID:   paper.PaperOwnership.ID,
+				Path: paper.PaperOwnership.Path,
+				Type: paper.PaperOwnership.Type,
+			},
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 func CreatePaper(w http.ResponseWriter, r *http.Request) {
 	var paperDto dtos.CreatePaperDto
 	if err := json.NewDecoder(r.Body).Decode(&paperDto); err != nil {

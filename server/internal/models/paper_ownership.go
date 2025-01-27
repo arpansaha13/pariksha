@@ -7,7 +7,6 @@ type PaperOwnership struct {
 	Path    string
 	Type    string `gorm:"type:varchar(10);not null;check:type IN ('OWNER', 'SHARED')"`
 	User    User   `gorm:"foreignKey:UserID"`
-	Paper   Paper  `gorm:"foreignKey:PaperID"`
 }
 
 func (PaperOwnership) TableName() string {
