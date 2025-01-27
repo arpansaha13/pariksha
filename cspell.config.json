@@ -34,7 +34,8 @@
     "pariksha",
     "pgpassfile",
     "pgservicefile",
-    "sslmode"
+    "sslmode",
+    "varchar"
   ],
   "patterns": [
     {

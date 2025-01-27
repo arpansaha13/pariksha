@@ -3,8 +3,8 @@ Table users {
   username varchar
   email varchar
   password varchar
-  firstname varchar
-  lastname varchar
+  first_name varchar
+  last_name varchar
   role varchar [note: 'Values can be "CANDIDATE" or "HOST"']
   created_at timestamp
   updated_at timestamp
@@ -31,15 +31,15 @@ Table paper_ownerships {
   id integer [primary key]
   user_id integer [note: 'Which user owns this paper, or is shared this paper with']
   paper_id integer [note: 'Which paper is owned or shared']
-  path varchar [note: 'Used to show folder structure. At which folder this user has stored the paper.']
-  type string [note: 'Can be OWNER or SHARED']
+  path text [note: 'Used to show folder structure. At which folder this user has stored the paper.']
+  type varchar [note: 'Can be OWNER or SHARED']
 }
 
 Table questions {
   id integer [primary key]
-  question text
+  question json
   category varchar [note: 'Used to group multiple questions']
-  type string [note: 'MCQ, Short-answer, Long-answer, etc.']
+  type varchar [note: 'MCQ, Short-answer, Long-answer, etc.']
   tags string[] [default: '{}', note: 'Tags may or may not be shown on screen based on conditions']
   paper_id integer [note: 'Which paper the question belongs to']
   max_score integer [note: 'Maximum score that can be awarded on this question']
@@ -60,6 +60,20 @@ Table answers {
   answer text
   score_awarded integer [note: 'Score awarded on this answer']
   comments text [note: 'Any comments the evaluator might want to add, for e.g. why is the answer wrong']
+}
+
+Table sessions {
+  key uuid [primary key]
+  token text
+  expires_at timestamp
+}
+
+Table unverified_users {
+  hash varchar [primary key]
+  otp varchar(6)
+  otp_expires_at timestamp
+  email varchar
+  password varchar
 }
 
 Ref: exams.created_by > users.id // One user can create many exams

@@ -2,9 +2,9 @@ package models
 
 type Question struct {
 	ID            int    `gorm:"primaryKey"`
-	Question      string `gorm:"type:text"`
+	Question      string `gorm:"type:json;not null"`
 	Category      string
-	Type          string   `gorm:"type:varchar(20)"`
+	Type          string   `gorm:"type:varchar(20);not null"`
 	Tags          []string `gorm:"type:text[];default:'{}'"`
 	PaperID       int
 	MaxScore      int
