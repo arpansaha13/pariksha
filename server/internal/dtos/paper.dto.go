@@ -1,5 +1,9 @@
 package dtos
 
-type PaperDto struct {
+type CreatePaperDto struct {
+	Title string `json:"title"`
+}
+
+type UpdatePaperDto struct {
 	Title string `json:"title"`
 }

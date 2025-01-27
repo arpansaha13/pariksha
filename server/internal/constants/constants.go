@@ -15,6 +15,6 @@ const (
 )
 
 const (
-	PAPER_TYPE_OWNER  string = "OWNER"
-	PAPER_TYPE_SHARED string = "SHARED"
+	PAPER_OWNERSHIP_TYPE_OWNER  string = "OWNER"
+	PAPER_OWNERSHIP_TYPE_SHARED string = "SHARED"
 )

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 
 	"github.com/arpansaha13/pariksha/internal/constants"
@@ -14,7 +15,7 @@ import (
 )
 
 func CreatePaper(w http.ResponseWriter, r *http.Request) {
-	var paperDto dtos.PaperDto
+	var paperDto dtos.CreatePaperDto
 	if err := json.NewDecoder(r.Body).Decode(&paperDto); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -36,7 +37,7 @@ func CreatePaper(w http.ResponseWriter, r *http.Request) {
 		paperOwnership := models.PaperOwnership{
 			UserID:  userID,
 			PaperID: paper.ID,
-			Type:    constants.PAPER_TYPE_OWNER,
+			Type:    constants.PAPER_OWNERSHIP_TYPE_OWNER,
 		}
 
 		if err := tx.Create(&paperOwnership).Error; err != nil {
@@ -52,5 +53,35 @@ func CreatePaper(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(paper)
+}
+
+func UpdatePaper(w http.ResponseWriter, r *http.Request) {
+	var paperDto dtos.UpdatePaperDto
+	if err := json.NewDecoder(r.Body).Decode(&paperDto); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	vars := mux.Vars(r)
+	paperID := vars["id"]
+
+	var paper models.Paper
+	if err := db.DB.Take(&paper, paperID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			http.Error(w, "Paper not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Failed to find paper", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	paper.Title = paperDto.Title
+	if err := db.DB.Save(&paper).Error; err != nil {
+		http.Error(w, "Failed to update paper title", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(paper)
 }
