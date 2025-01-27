@@ -24,13 +24,13 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var response []dtos.GetUserPapersResponse
+	var response []dtos.PaperResponse
 	for _, paper := range papers {
-		response = append(response, dtos.GetUserPapersResponse{
+		response = append(response, dtos.PaperResponse{
 			ID:       paper.ID,
 			Title:    paper.Title,
 			MaxScore: paper.MaxScore,
-			PaperOwnership: dtos.GetUserPapersPaperOwnership{
+			PaperOwnership: dtos.PaperOwnershipResponse{
 				ID:   paper.PaperOwnership.ID,
 				Path: paper.PaperOwnership.Path,
 				Type: paper.PaperOwnership.Type,
@@ -52,6 +52,7 @@ func CreatePaper(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int)
 
 	var paper models.Paper
+	var paperOwnership models.PaperOwnership
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		paper = models.Paper{
@@ -62,7 +63,7 @@ func CreatePaper(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		paperOwnership := models.PaperOwnership{
+		paperOwnership = models.PaperOwnership{
 			UserID:  userID,
 			PaperID: paper.ID,
 			Type:    constants.PAPER_OWNERSHIP_TYPE_OWNER,
@@ -81,7 +82,16 @@ func CreatePaper(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(paper)
+	json.NewEncoder(w).Encode(dtos.PaperResponse{
+		ID:       paper.ID,
+		Title:    paper.Title,
+		MaxScore: paper.MaxScore,
+		PaperOwnership: dtos.PaperOwnershipResponse{
+			ID:   paperOwnership.ID,
+			Path: paperOwnership.Path,
+			Type: paperOwnership.Type,
+		},
+	})
 }
 
 func UpdatePaper(w http.ResponseWriter, r *http.Request) {
@@ -111,5 +121,9 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(paper)
+	json.NewEncoder(w).Encode(dtos.UpdatePaperResponse{
+		ID:       paper.ID,
+		Title:    paper.Title,
+		MaxScore: paper.MaxScore,
+	})
 }
