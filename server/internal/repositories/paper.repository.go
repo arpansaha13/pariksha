@@ -11,6 +11,7 @@ import (
 
 type PaperRepository interface {
 	Create(paper *models.Paper) error
+	FindByUserID(userID int) ([]models.Paper, error)
 }
 
 type paperRepository struct {
@@ -32,4 +33,10 @@ func GetPaperRepository() PaperRepository {
 
 func (r *paperRepository) Create(paper *models.Paper) error {
 	return r.db.Create(paper).Error
+}
+
+func (r *paperRepository) FindByUserID(userID int) ([]models.Paper, error) {
+	var papers []models.Paper
+	err := r.db.Model(&models.Paper{}).Preload("PaperOwnership").Find(&papers).Where("paper_ownerships.user_id = ?", userID).Error
+	return papers, err
 }

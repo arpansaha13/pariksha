@@ -12,14 +12,15 @@ import (
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/middlewares"
 	"github.com/arpansaha13/pariksha/internal/models"
+	"github.com/arpansaha13/pariksha/internal/repositories"
 )
 
 func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int)
 
-	var papers []models.Paper
-	if err := db.DB.Model(&models.Paper{}).Preload("PaperOwnership").Find(&papers).
-		Where("paper_ownerships.user_id = ?", userID).Error; err != nil {
+	paperRepo := repositories.GetPaperRepository()
+	papers, err := paperRepo.FindByUserID(userID)
+	if err != nil {
 		http.Error(w, "Failed to retrieve papers", http.StatusInternalServerError)
 		return
 	}
