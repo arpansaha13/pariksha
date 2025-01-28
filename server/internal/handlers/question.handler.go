@@ -73,7 +73,6 @@ func CreateQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode("Questions created successfully")
 }
 
 func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
@@ -137,5 +136,20 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("Question updated successfully")
+}
+
+func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	questionID := vars["id"]
+
+	if err := db.DB.Delete(&models.Question{}, questionID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			http.Error(w, "Question not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Failed to delete question", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
