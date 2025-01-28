@@ -5,7 +5,7 @@ Table users {
   password varchar
   first_name varchar
   last_name varchar
-  role varchar [note: 'Values can be "CANDIDATE" or "HOST"']
+  is_guest boolean [note: 'Used for guest user']
   created_at timestamp
   updated_at timestamp
 }
@@ -40,7 +40,7 @@ Table questions {
   question json
   category varchar [note: 'Used to group multiple questions']
   type varchar [note: 'MCQ, Short-answer, Long-answer, etc.']
-  tags string[] [default: '{}', note: 'Tags may or may not be shown on screen based on conditions']
+  tags json [default: '[]', note: 'Tags may or may not be shown on screen based on conditions']
   paper_id integer [note: 'Which paper the question belongs to']
   max_score integer [note: 'Maximum score that can be awarded on this question']
   correct_answer text [note: 'A sample of the correct answer. In case of MCQs, it can be used to auto-evaluate.']
@@ -48,6 +48,8 @@ Table questions {
 
 Table exam_participants {
   id integer [primary key]
+  started_at timestamp
+  ended_at timestamp
   exam_id integer
   user_id integer [note: 'Which users can take this exam']
   score_awarded integer [note: 'Total score obtained in this exam by this candidate - Sum of individual scores of each answer']
