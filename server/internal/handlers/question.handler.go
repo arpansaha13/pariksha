@@ -13,6 +13,46 @@ import (
 	"gorm.io/gorm"
 )
 
+func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	paperID := vars["id"]
+
+	// Validate the paperId
+	var paper models.Paper
+	if err := db.DB.Take(&paper, paperID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			http.Error(w, "Paper not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Failed to find paper", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Fetch questions for the paper
+	var questions []models.Question
+	if err := db.DB.Where("paper_id = ?", paperID).Find(&questions).Error; err != nil {
+		http.Error(w, "Failed to retrieve questions", http.StatusInternalServerError)
+		return
+	}
+
+	var response []dtos.QuestionResponse
+	for _, question := range questions {
+		response = append(response, dtos.QuestionResponse{
+			ID:            question.ID,
+			Question:      question.Question,
+			Category:      question.Category,
+			Type:          question.Type,
+			Tags:          question.Tags,
+			PaperID:       question.PaperID,
+			MaxScore:      question.MaxScore,
+			CorrectAnswer: question.CorrectAnswer,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 func CreateQuestions(w http.ResponseWriter, r *http.Request) {
 	var questionDtos []dtos.CreateQuestionDto
 	if err := json.NewDecoder(r.Body).Decode(&questionDtos); err != nil {
