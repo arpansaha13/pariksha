@@ -27,6 +27,7 @@ func SetupRouter() *mux.Router {
 
 	// Question Routes
 	protectedRouter.HandleFunc("/questions", handlers.CreateQuestions).Methods("POST")
+	protectedRouter.HandleFunc("/questions/{id}", handlers.UpdateQuestion).Methods("PATCH")
 
 	return r
 }
