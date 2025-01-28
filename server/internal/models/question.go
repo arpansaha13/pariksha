@@ -21,7 +21,7 @@ type Question struct {
 	Question      json.RawMessage `gorm:"type:json;not null"`
 	Category      string          `gorm:"type:varchar(255)"`
 	Type          string          `gorm:"type:varchar(20);not null;check:type IN ('MCQ', 'SHORT', 'LONG')"`
-	Tags          []string        `gorm:"type:varchar[];default:'{}'"`
+	Tags          json.RawMessage `gorm:"type:json;default:'[]'"`
 	PaperID       int
 	MaxScore      int
 	CorrectAnswer string   `gorm:"type:text"`
