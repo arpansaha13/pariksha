@@ -31,5 +31,8 @@ func SetupRouter() *mux.Router {
 	protectedRouter.HandleFunc("/questions/{id}", handlers.UpdateQuestion).Methods("PATCH")
 	protectedRouter.HandleFunc("/questions/{id}", handlers.DeleteQuestion).Methods("DELETE")
 
+	// Exam Routes
+	protectedRouter.HandleFunc("/exams", handlers.CreateExam).Methods("POST")
+
 	return r
 }

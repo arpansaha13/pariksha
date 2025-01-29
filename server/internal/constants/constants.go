@@ -24,3 +24,8 @@ const (
 	QUESTION_TYPE_SHORT string = "SHORT"
 	QUESTION_TYPE_LONG  string = "LONG"
 )
+
+const (
+	EXAM_TYPE_OPEN   string = "OPEN"
+	EXAM_TYPE_INVITE string = "INVITE"
+)
