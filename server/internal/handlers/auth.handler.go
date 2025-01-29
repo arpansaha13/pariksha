@@ -17,6 +17,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/arpansaha13/pariksha/internal/constants"
+	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/models"
 	"github.com/arpansaha13/pariksha/internal/repositories"
@@ -33,7 +34,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	userRepo := repositories.GetUserRepository()
 	user, err := userRepo.FindOneByEmail(loginDto.Email)
-	if err != nil {
+	if err != nil || user.IsGuest {
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 		return
 	}
@@ -94,7 +95,6 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	userRepo := repositories.GetUserRepository()
 	unverifiedUserRepo := repositories.GetUnverifiedUserRepository()
 
-	var err error
 	var signUpDto dtos.SignUpDto
 
 	if err := json.NewDecoder(r.Body).Decode(&signUpDto); err != nil {
@@ -102,7 +102,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err = userRepo.FindOneByEmail(signUpDto.Email); err == nil {
+	if user, err := userRepo.FindOneByEmail(signUpDto.Email); err == nil && !user.IsGuest {
 		http.Error(w, "This email is already registered", http.StatusConflict)
 		return
 	}
@@ -165,13 +165,8 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 }
 
 func Verification(w http.ResponseWriter, r *http.Request) {
-	unverifiedUserRepo := repositories.GetUnverifiedUserRepository()
-	userRepo := repositories.GetUserRepository()
-
 	params := mux.Vars(r)
 	hash := params["hash"]
-
-	var err error
 
 	var verificationDto dtos.VerificationDto
 	if err := json.NewDecoder(r.Body).Decode(&verificationDto); err != nil {
@@ -179,30 +174,55 @@ func Verification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var unverifiedUser *models.UnverifiedUser
-	if unverifiedUser, err = unverifiedUserRepo.FindOne(hash); err != nil {
-		http.Error(w, "Invalid or expired link", constants.StatusInvalidToken)
-		return
-	}
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var unverifiedUser *models.UnverifiedUser
+		if err := tx.Where("hash = ?", hash).Take(&unverifiedUser).Error; err != nil {
+			http.Error(w, "Invalid or expired link", constants.StatusInvalidToken)
+			return err
+		}
 
-	if verificationDto.OTP != unverifiedUser.OTP || time.Now().After(unverifiedUser.OTPExpiresAt) {
-		http.Error(w, "Invalid or expired OTP", http.StatusUnauthorized)
-		return
-	}
+		if verificationDto.OTP != unverifiedUser.OTP || time.Now().After(unverifiedUser.OTPExpiresAt) {
+			http.Error(w, "Invalid or expired OTP", http.StatusUnauthorized)
+			return errors.New("invalid or expired otp")
+		}
 
-	newUser := models.User{
-		Email:    unverifiedUser.Email,
-		Password: unverifiedUser.Password,
-		Username: strings.Split(unverifiedUser.Email, "@")[0],
-	}
+		var newUser *models.User
 
-	if err = userRepo.Create(&newUser); err != nil {
-		http.Error(w, "Failed to create user", http.StatusInternalServerError)
-		return
-	}
+		if err := tx.Model(models.User{}).Where("email = ?", unverifiedUser.Email).Take(&newUser).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				http.Error(w, "Failed to find user", http.StatusInternalServerError)
+				return err
+			}
 
-	if err = unverifiedUserRepo.DeleteByPointer(unverifiedUser); err != nil {
-		http.Error(w, "Failed to delete unverified user", http.StatusInternalServerError)
+			newUser = &models.User{
+				Email:    unverifiedUser.Email,
+				Password: unverifiedUser.Password,
+				Username: strings.Split(unverifiedUser.Email, "@")[0],
+			}
+
+			if err := tx.Create(newUser).Error; err != nil {
+				http.Error(w, "Failed to create user", http.StatusInternalServerError)
+				return err
+			}
+		} else {
+			newUser.IsGuest = false
+			newUser.Password = unverifiedUser.Password
+
+			if err := tx.Save(&newUser).Error; err != nil {
+				http.Error(w, "Failed to save user", http.StatusInternalServerError)
+				return err
+			}
+		}
+
+		if err := tx.Delete(unverifiedUser).Error; err != nil {
+			http.Error(w, "Failed to delete unverified user", http.StatusInternalServerError)
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
 		return
 	}
 
