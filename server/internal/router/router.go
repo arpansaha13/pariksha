@@ -33,6 +33,7 @@ func SetupRouter() *mux.Router {
 
 	// Exam Routes
 	protectedRouter.HandleFunc("/exams", handlers.CreateExam).Methods("POST")
+	protectedRouter.HandleFunc("/exams/participants", handlers.AddExamParticipants).Methods("POST")
 
 	return r
 }

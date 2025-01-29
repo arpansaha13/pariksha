@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
@@ -54,4 +55,52 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
+}
+
+func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
+	var participantsDto []dtos.AddExamParticipantDto
+	if err := json.NewDecoder(r.Body).Decode(&participantsDto); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	for _, participantDto := range participantsDto {
+		var userID int
+
+		if participantDto.UserID != 0 {
+			userID = participantDto.UserID
+		} else if participantDto.Email != "" {
+			// Create a guest user
+			username := strings.Split(participantDto.Email, "@")[0]
+			user := models.User{
+				Email:     participantDto.Email,
+				FirstName: participantDto.FirstName,
+				LastName:  participantDto.LastName,
+				IsGuest:   true,
+				Username:  username,
+			}
+
+			if err := db.DB.Create(&user).Error; err != nil {
+				http.Error(w, "Failed to create guest user", http.StatusInternalServerError)
+				return
+			}
+			userID = user.ID
+		} else {
+			// Either user_id or email must be provided
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		// Add the participant to the exam
+		participant := models.ExamParticipant{
+			ExamID: participantDto.ExamID,
+			UserID: userID,
+		}
+		if err := db.DB.Create(&participant).Error; err != nil {
+			http.Error(w, "Failed to add participant", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }

@@ -21,3 +21,11 @@ type ExamResponse struct {
 	MaxCandidatesCount int       `json:"max_candidates_count"`
 	PaperID            int       `json:"paper_id"`
 }
+
+type AddExamParticipantDto struct {
+	ExamID    int    `json:"exam_id"`
+	UserID    int    `json:"user_id,omitempty"`
+	Email     string `json:"email,omitempty"`
+	FirstName string `json:"first_name,omitempty"`
+	LastName  string `json:"last_name,omitempty"`
+}

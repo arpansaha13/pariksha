@@ -85,8 +85,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		"id":        user.ID,
 		"username":  user.Username,
 		"email":     user.Email,
-		"firstName": user.FirstName.String,
-		"lastName":  user.LastName.String,
+		"firstName": user.FirstName,
+		"lastName":  user.LastName,
 	})
 }
 
