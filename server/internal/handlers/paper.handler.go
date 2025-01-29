@@ -28,9 +28,10 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 	var response []dtos.PaperResponse
 	for _, paper := range papers {
 		response = append(response, dtos.PaperResponse{
-			ID:       paper.ID,
-			Title:    paper.Title,
-			MaxScore: paper.MaxScore,
+			ID:             paper.ID,
+			Title:          paper.Title,
+			MaxScore:       paper.MaxScore,
+			QuestionCounts: paper.QuestionCounts,
 			PaperOwnership: dtos.PaperOwnershipResponse{
 				ID:   paper.PaperOwnership.ID,
 				Path: paper.PaperOwnership.Path,
@@ -84,9 +85,10 @@ func CreatePaper(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(dtos.PaperResponse{
-		ID:       paper.ID,
-		Title:    paper.Title,
-		MaxScore: paper.MaxScore,
+		ID:             paper.ID,
+		Title:          paper.Title,
+		MaxScore:       paper.MaxScore,
+		QuestionCounts: paper.QuestionCounts,
 		PaperOwnership: dtos.PaperOwnershipResponse{
 			ID:   paperOwnership.ID,
 			Path: paperOwnership.Path,
@@ -123,8 +125,9 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(dtos.UpdatePaperResponse{
-		ID:       paper.ID,
-		Title:    paper.Title,
-		MaxScore: paper.MaxScore,
+		ID:             paper.ID,
+		Title:          paper.Title,
+		MaxScore:       paper.MaxScore,
+		QuestionCounts: paper.QuestionCounts,
 	})
 }

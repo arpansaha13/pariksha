@@ -9,6 +9,7 @@ import (
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/models"
+	"github.com/arpansaha13/pariksha/internal/repositories"
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 )
@@ -53,46 +54,52 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func CreateQuestions(w http.ResponseWriter, r *http.Request) {
+func CreatePaperQuestions(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	paperID := vars["id"]
+
 	var questionDtos []dtos.CreateQuestionDto
 	if err := json.NewDecoder(r.Body).Decode(&questionDtos); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
+	// Validate the paperId
+	var paper models.Paper
+	if err := db.DB.Take(&paper, paperID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			http.Error(w, "Paper not found", http.StatusNotFound)
+			return
+		} else {
+			http.Error(w, "Failed to find paper", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	questionCounts, err := paper.GetQuestionCounts()
+	if err != nil {
+		http.Error(w, "Failed to parse question counts", http.StatusInternalServerError)
+		return
+	}
+
+	questionRepo := repositories.GetQuestionRepository()
+
 	for _, questionDto := range questionDtos {
-		// Validate the paperId
-		var paper models.Paper
-		if err := db.DB.Take(&paper, questionDto.PaperID).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				http.Error(w, "Paper not found", http.StatusNotFound)
-				return
-			} else {
-				http.Error(w, "Failed to find paper", http.StatusInternalServerError)
-				return
-			}
+		// Unmarshal and validate the question JSON
+		questionData, err := questionRepo.UnmarshalQuestion(questionDto)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 
-		// Validate the question type and unmarshal the question JSON
-		var questionData json.RawMessage
+		// Increment the question count based on the question type
 		switch questionDto.Type {
 		case constants.QUESTION_TYPE_MCQ:
-			var mcq models.MCQQuestion
-			if err := json.Unmarshal(questionDto.Question, &mcq); err != nil {
-				http.Error(w, "Invalid MCQ question format", http.StatusBadRequest)
-				return
-			}
-			questionData = questionDto.Question
-		case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
-			var general models.GeneralQuestion
-			if err := json.Unmarshal(questionDto.Question, &general); err != nil {
-				http.Error(w, "Invalid general question format", http.StatusBadRequest)
-				return
-			}
-			questionData = questionDto.Question
-		default:
-			http.Error(w, "Invalid question type", http.StatusBadRequest)
-			return
+			questionCounts.MCQ++
+		case constants.QUESTION_TYPE_SHORT:
+			questionCounts.Short++
+		case constants.QUESTION_TYPE_LONG:
+			questionCounts.Long++
 		}
 
 		// Create the question
@@ -108,6 +115,17 @@ func CreateQuestions(w http.ResponseWriter, r *http.Request) {
 
 		if err := db.DB.Create(&question).Error; err != nil {
 			http.Error(w, "Failed to create question", http.StatusInternalServerError)
+			return
+		}
+
+		// Update the paper with the new question counts
+		paper.QuestionCounts, err = json.Marshal(questionCounts)
+		if err != nil {
+			http.Error(w, "Failed to marshal question counts", http.StatusInternalServerError)
+			return
+		}
+		if err := db.DB.Save(&paper).Error; err != nil {
+			http.Error(w, "Failed to update paper question counts", http.StatusInternalServerError)
 			return
 		}
 	}
@@ -182,12 +200,61 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	questionID := vars["id"]
 
-	if err := db.DB.Delete(&models.Question{}, questionID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			http.Error(w, "Question not found", http.StatusNotFound)
-		} else {
-			http.Error(w, "Failed to delete question", http.StatusInternalServerError)
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var question models.Question
+		if err := tx.Take(&question, questionID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				http.Error(w, "Question not found", http.StatusNotFound)
+			} else {
+				http.Error(w, "Failed to find question", http.StatusInternalServerError)
+			}
+			return err
 		}
+
+		// Validate the paperId
+		var paper models.Paper
+		if err := tx.Take(&paper, question.PaperID).Error; err != nil {
+			http.Error(w, "Failed to find paper", http.StatusInternalServerError)
+			return err
+		}
+
+		questionCounts, err := paper.GetQuestionCounts()
+		if err != nil {
+			http.Error(w, "Failed to parse question counts", http.StatusInternalServerError)
+			return err
+		}
+
+		// Decrement the question count based on the question type
+		switch question.Type {
+		case constants.QUESTION_TYPE_MCQ:
+			questionCounts.MCQ--
+		case constants.QUESTION_TYPE_SHORT:
+			questionCounts.Short--
+		case constants.QUESTION_TYPE_LONG:
+			questionCounts.Long--
+		}
+
+		// Delete the question
+		if err := tx.Delete(&question).Error; err != nil {
+			http.Error(w, "Failed to delete question", http.StatusInternalServerError)
+			return err
+		}
+
+		// Update the paper with the new question counts
+		paper.QuestionCounts, err = json.Marshal(questionCounts)
+		if err != nil {
+			http.Error(w, "Failed to marshal question counts", http.StatusInternalServerError)
+			return err
+		}
+		if err := tx.Save(&paper).Error; err != nil {
+			http.Error(w, "Failed to update paper question counts", http.StatusInternalServerError)
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
 		return
 	}
 

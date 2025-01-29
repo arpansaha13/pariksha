@@ -1,11 +1,31 @@
 package models
 
+import (
+	"encoding/json"
+	"errors"
+)
+
+type QuestionCount struct {
+	MCQ   int `json:"mcq"`
+	Short int `json:"short"`
+	Long  int `json:"long"`
+}
+
 type Paper struct {
-	ID             int            `gorm:"primaryKey"`
-	Title          string         `gorm:"type:varchar(255);not null"`
-	MaxScore       int            `gorm:"default:0"`
-	Questions      []Question     `gorm:"foreignKey:PaperID"`
-	PaperOwnership PaperOwnership `gorm:"foreignKey:PaperID"`
+	ID             int             `gorm:"primaryKey"`
+	Title          string          `gorm:"type:varchar(255);not null"`
+	MaxScore       int             `gorm:"default:0"`
+	Questions      []Question      `gorm:"foreignKey:PaperID"`
+	PaperOwnership PaperOwnership  `gorm:"foreignKey:PaperID"`
+	QuestionCounts json.RawMessage `gorm:"type:json;default:'{\"mcq\":0,\"short\":0,\"long\":0}'"`
+}
+
+func (p *Paper) GetQuestionCounts() (QuestionCount, error) {
+	var counts QuestionCount
+	if err := json.Unmarshal(p.QuestionCounts, &counts); err != nil {
+		return counts, errors.New("failed to parse question counts")
+	}
+	return counts, nil
 }
 
 func (Paper) TableName() string {

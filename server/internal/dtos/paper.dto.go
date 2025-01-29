@@ -1,5 +1,7 @@
 package dtos
 
+import "encoding/json"
+
 type CreatePaperDto struct {
 	Title string `json:"title"`
 }
@@ -12,6 +14,7 @@ type PaperResponse struct {
 	ID             int                    `json:"id"`
 	Title          string                 `json:"title"`
 	MaxScore       int                    `json:"max_score"`
+	QuestionCounts json.RawMessage        `json:"question_counts"`
 	PaperOwnership PaperOwnershipResponse `json:"ownership"`
 }
 
@@ -22,7 +25,8 @@ type PaperOwnershipResponse struct {
 }
 
 type UpdatePaperResponse struct {
-	ID       int    `json:"id"`
-	Title    string `json:"title"`
-	MaxScore int    `json:"max_score"`
+	ID             int             `json:"id"`
+	Title          string          `json:"title"`
+	MaxScore       int             `json:"max_score"`
+	QuestionCounts json.RawMessage `json:"question_counts"`
 }
