@@ -4,12 +4,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/middlewares"
 	"github.com/arpansaha13/pariksha/internal/models"
+	"github.com/gorilla/mux"
 )
 
 func CreateExam(w http.ResponseWriter, r *http.Request) {
@@ -59,11 +61,20 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 }
 
 func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	examID, err := strconv.Atoi(params["examId"])
+	if err != nil {
+		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		return
+	}
+
 	var participantsDto []dtos.AddExamParticipantDto
 	if err := json.NewDecoder(r.Body).Decode(&participantsDto); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+
+	var examParticipants []models.ExamParticipant
 
 	for _, participantDto := range participantsDto {
 		var userID int
@@ -100,13 +111,16 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 
 		// Add the participant to the exam
 		participant := models.ExamParticipant{
-			ExamID: participantDto.ExamID,
+			ExamID: examID,
 			UserID: userID,
 		}
-		if err := db.DB.Create(&participant).Error; err != nil {
-			http.Error(w, "Failed to add participant", http.StatusInternalServerError)
-			return
-		}
+
+		examParticipants = append(examParticipants, participant)
+	}
+
+	if err := db.DB.Create(&examParticipants).Error; err != nil {
+		http.Error(w, "Failed to add participants", http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
