@@ -11,7 +11,7 @@ type Exam struct {
 	EndsAt             time.Time
 	CreatedBy          int
 	Type               string `gorm:"type:varchar(10)"`
-	MaxCandidatesCount int
+	MaxCandidatesCount int    `gorm:"not null"`
 	PaperID            int
 	User               User              `gorm:"foreignKey:CreatedBy"`
 	Paper              Paper             `gorm:"foreignKey:PaperID"`

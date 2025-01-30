@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -73,11 +74,17 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 			// Create a guest user
 			username := strings.Split(participantDto.Email, "@")[0]
 			user := models.User{
-				Email:     participantDto.Email,
-				FirstName: participantDto.FirstName,
-				LastName:  participantDto.LastName,
-				IsGuest:   true,
-				Username:  username,
+				Email:    participantDto.Email,
+				IsGuest:  true,
+				Username: username,
+			}
+
+			if participantDto.FirstName != "" {
+				user.FirstName = sql.NullString{String: participantDto.FirstName, Valid: true}
+			}
+
+			if participantDto.LastName != "" {
+				user.FirstName = sql.NullString{String: participantDto.LastName, Valid: true}
 			}
 
 			if err := db.DB.Create(&user).Error; err != nil {

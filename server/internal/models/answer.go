@@ -1,12 +1,14 @@
 package models
 
+import "database/sql"
+
 type Answer struct {
 	ID                int `gorm:"primaryKey"`
 	ExamParticipantID int
 	QuestionID        int
-	Answer            string `gorm:"type:text"`
-	ScoreAwarded      int
-	Comments          string          `gorm:"type:text"`
+	Answer            sql.NullString  `gorm:"type:text"`
+	ScoreAwarded      int             `gorm:"default:0;not null"`
+	Comments          sql.NullString  `gorm:"type:text"`
 	ExamParticipant   ExamParticipant `gorm:"foreignKey:ExamParticipantID"`
 	Question          Question        `gorm:"foreignKey:QuestionID"`
 }

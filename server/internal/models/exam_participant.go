@@ -1,14 +1,14 @@
 package models
 
-import "time"
+import "database/sql"
 
 type ExamParticipant struct {
 	ID           int `gorm:"primaryKey"`
 	ExamID       int
 	UserID       int
 	ScoreAwarded int
-	StartedAt    time.Time
-	EndedAt      time.Time
+	StartedAt    sql.NullTime
+	EndedAt      sql.NullTime
 	Exam         Exam     `gorm:"foreignKey:ExamID"`
 	User         User     `gorm:"foreignKey:UserID"`
 	Answers      []Answer `gorm:"foreignKey:ExamParticipantID"`

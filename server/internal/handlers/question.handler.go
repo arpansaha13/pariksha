@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -40,12 +41,12 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 		response = append(response, dtos.QuestionResponse{
 			ID:            question.ID,
 			Question:      question.Question,
-			Category:      question.Category,
+			Category:      question.Category.String,
 			Type:          question.Type,
 			Tags:          question.Tags,
 			PaperID:       question.PaperID,
 			MaxScore:      question.MaxScore,
-			CorrectAnswer: question.CorrectAnswer,
+			CorrectAnswer: question.CorrectAnswer.String,
 		})
 	}
 
@@ -105,11 +106,11 @@ func CreatePaperQuestions(w http.ResponseWriter, r *http.Request) {
 		question := models.Question{
 			PaperID:       questionDto.PaperID,
 			Question:      questionData,
-			Category:      questionDto.Category,
+			Category:      sql.NullString{String: questionDto.Category, Valid: true},
 			Type:          questionDto.Type,
 			Tags:          questionDto.Tags,
 			MaxScore:      questionDto.MaxScore,
-			CorrectAnswer: questionDto.CorrectAnswer,
+			CorrectAnswer: sql.NullString{String: questionDto.CorrectAnswer, Valid: true},
 		}
 
 		questions = append(questions, question)
@@ -194,11 +195,11 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if updateDto.CorrectAnswer != "" {
-		question.CorrectAnswer = updateDto.CorrectAnswer
+		question.CorrectAnswer = sql.NullString{String: updateDto.CorrectAnswer, Valid: true}
 	}
 
 	if updateDto.Category != "" {
-		question.Category = updateDto.Category
+		question.Category = sql.NullString{String: updateDto.Category, Valid: true}
 	}
 
 	if updateDto.MaxScore != 0 && updateDto.MaxScore != question.MaxScore {

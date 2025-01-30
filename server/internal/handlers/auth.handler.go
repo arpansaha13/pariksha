@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -39,7 +40,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginDto.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password.String), []byte(loginDto.Password)); err != nil {
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 		return
 	}
@@ -86,8 +87,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		"id":        user.ID,
 		"username":  user.Username,
 		"email":     user.Email,
-		"firstName": user.FirstName,
-		"lastName":  user.LastName,
+		"firstName": user.FirstName.String,
+		"lastName":  user.LastName.String,
 	})
 }
 
@@ -196,7 +197,7 @@ func Verification(w http.ResponseWriter, r *http.Request) {
 
 			newUser = &models.User{
 				Email:    unverifiedUser.Email,
-				Password: unverifiedUser.Password,
+				Password: sql.NullString{String: unverifiedUser.Password, Valid: true},
 				Username: strings.Split(unverifiedUser.Email, "@")[0],
 			}
 
@@ -206,7 +207,7 @@ func Verification(w http.ResponseWriter, r *http.Request) {
 			}
 		} else {
 			newUser.IsGuest = false
-			newUser.Password = unverifiedUser.Password
+			newUser.Password = sql.NullString{String: unverifiedUser.Password, Valid: true}
 
 			if err := tx.Save(&newUser).Error; err != nil {
 				http.Error(w, "Failed to save user", http.StatusInternalServerError)
