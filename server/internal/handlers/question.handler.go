@@ -118,16 +118,20 @@ func CreatePaperQuestions(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Update the paper with the new question counts
-		paper.QuestionCounts, err = json.Marshal(questionCounts)
-		if err != nil {
-			http.Error(w, "Failed to marshal question counts", http.StatusInternalServerError)
-			return
-		}
-		if err := db.DB.Save(&paper).Error; err != nil {
-			http.Error(w, "Failed to update paper question counts", http.StatusInternalServerError)
-			return
-		}
+		// Update the paper's max score
+		paper.MaxScore += question.MaxScore
+	}
+
+	// Update the paper with the new question counts
+	paper.QuestionCounts, err = json.Marshal(questionCounts)
+	if err != nil {
+		http.Error(w, "Failed to marshal question counts", http.StatusInternalServerError)
+		return
+	}
+
+	if err := db.DB.Save(&paper).Error; err != nil {
+		http.Error(w, "Failed to update paper", http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -150,6 +154,13 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, "Failed to find question", http.StatusInternalServerError)
 		}
+		return
+	}
+
+	// Validate the paperId
+	var paper models.Paper
+	if err := db.DB.Take(&paper, question.PaperID).Error; err != nil {
+		http.Error(w, "Failed to find paper", http.StatusInternalServerError)
 		return
 	}
 
@@ -186,6 +197,16 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 
 	if updateDto.Category != "" {
 		question.Category = updateDto.Category
+	}
+
+	if updateDto.MaxScore != 0 && updateDto.MaxScore != question.MaxScore {
+		paper.MaxScore = paper.MaxScore - question.MaxScore + updateDto.MaxScore
+		question.MaxScore = updateDto.MaxScore
+
+		if err := db.DB.Save(&paper).Error; err != nil {
+			http.Error(w, "Failed to update paper", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	if err := db.DB.Save(&question).Error; err != nil {
@@ -233,6 +254,9 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 		case constants.QUESTION_TYPE_LONG:
 			questionCounts.Long--
 		}
+
+		// Update the paper's max score
+		paper.MaxScore -= question.MaxScore
 
 		// Delete the question
 		if err := tx.Delete(&question).Error; err != nil {
