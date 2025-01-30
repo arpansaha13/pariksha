@@ -11,11 +11,12 @@ type UpdatePaperDto struct {
 }
 
 type PaperResponse struct {
-	ID             int                    `json:"id"`
-	Title          string                 `json:"title"`
-	MaxScore       int                    `json:"max_score"`
-	QuestionCounts json.RawMessage        `json:"question_counts"`
-	PaperOwnership PaperOwnershipResponse `json:"ownership"`
+	ID              int                    `json:"id"`
+	Title           string                 `json:"title"`
+	MaxScore        int                    `json:"max_score"`
+	DurationMinutes int                    `json:"duration_minutes"`
+	QuestionCounts  json.RawMessage        `json:"question_counts"`
+	PaperOwnership  PaperOwnershipResponse `json:"ownership"`
 }
 
 type PaperOwnershipResponse struct {
@@ -25,8 +26,9 @@ type PaperOwnershipResponse struct {
 }
 
 type UpdatePaperResponse struct {
-	ID             int             `json:"id"`
-	Title          string          `json:"title"`
-	MaxScore       int             `json:"max_score"`
-	QuestionCounts json.RawMessage `json:"question_counts"`
+	ID              int             `json:"id"`
+	Title           string          `json:"title"`
+	MaxScore        int             `json:"max_score"`
+	DurationMinutes int             `json:"duration_minutes"`
+	QuestionCounts  json.RawMessage `json:"question_counts"`
 }
