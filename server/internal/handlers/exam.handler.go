@@ -125,3 +125,15 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 }
+
+func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	participantID := vars["participantId"]
+
+	if err := db.DB.Delete(&models.ExamParticipant{}, participantID).Error; err != nil {
+		http.Error(w, "Failed to remove participant", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
