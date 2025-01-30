@@ -9,7 +9,6 @@ import (
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/models"
-	"github.com/arpansaha13/pariksha/internal/repositories"
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 )
@@ -82,11 +81,11 @@ func CreatePaperQuestions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	questionRepo := repositories.GetQuestionRepository()
+	var questions []models.Question
 
 	for _, questionDto := range questionDtos {
 		// Unmarshal and validate the question JSON
-		questionData, err := questionRepo.UnmarshalQuestion(questionDto)
+		questionData, err := unmarshalQuestion(questionDto)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -113,13 +112,16 @@ func CreatePaperQuestions(w http.ResponseWriter, r *http.Request) {
 			CorrectAnswer: questionDto.CorrectAnswer,
 		}
 
-		if err := db.DB.Create(&question).Error; err != nil {
-			http.Error(w, "Failed to create question", http.StatusInternalServerError)
-			return
-		}
+		questions = append(questions, question)
 
 		// Update the paper's max score
 		paper.MaxScore += question.MaxScore
+	}
+
+	// Bulk insert the questions
+	if err := db.DB.Create(&questions).Error; err != nil {
+		http.Error(w, "Failed to create questions", http.StatusInternalServerError)
+		return
 	}
 
 	// Update the paper with the new question counts
@@ -283,4 +285,27 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func unmarshalQuestion(questionDto dtos.CreateQuestionDto) (json.RawMessage, error) {
+	var questionData json.RawMessage
+
+	switch questionDto.Type {
+	case constants.QUESTION_TYPE_MCQ:
+		var mcq models.MCQQuestion
+		if err := json.Unmarshal(questionDto.Question, &mcq); err != nil {
+			return nil, errors.New("invalid MCQ question format")
+		}
+		questionData = questionDto.Question
+	case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
+		var general models.GeneralQuestion
+		if err := json.Unmarshal(questionDto.Question, &general); err != nil {
+			return nil, errors.New("invalid general question format")
+		}
+		questionData = questionDto.Question
+	default:
+		return nil, errors.New("invalid question type")
+	}
+
+	return questionData, nil
 }
