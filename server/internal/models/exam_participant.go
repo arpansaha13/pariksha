@@ -7,6 +7,7 @@ type ExamParticipant struct {
 	ExamID       int
 	UserID       int
 	ScoreAwarded int
+	Status       int `gorm:"default:1;not null"` // 1 = INVITED
 	StartedAt    sql.NullTime
 	EndedAt      sql.NullTime
 	Exam         Exam     `gorm:"foreignKey:ExamID"`

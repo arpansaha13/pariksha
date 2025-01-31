@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/middlewares"
@@ -132,6 +134,58 @@ func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
 
 	if err := db.DB.Delete(&models.ExamParticipant{}, participantID).Error; err != nil {
 		http.Error(w, "Failed to remove participant", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func StartExam(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	examID, err := strconv.Atoi(vars["examId"])
+	if err != nil {
+		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		return
+	}
+
+	participantID, err := strconv.Atoi(vars["participantId"])
+	if err != nil {
+		http.Error(w, "Invalid participant ID", http.StatusBadRequest)
+		return
+	}
+
+	var exam models.Exam
+	if err := db.DB.Preload("Paper").Take(&exam, examID).Error; err != nil {
+		http.Error(w, "Exam not found", http.StatusNotFound)
+		return
+	}
+
+	var participant models.ExamParticipant
+	if err := db.DB.Take(&participant, participantID).Error; err != nil {
+		http.Error(w, "Participant not found", http.StatusNotFound)
+		return
+	}
+
+	if participant.Status != constants.PARTICIPANT_STATUS_INVITED {
+		http.Error(w, "Participant has already started the exam", http.StatusBadRequest)
+		return
+	}
+
+	if participant.ExamID != examID {
+		http.Error(w, "Participant does not belong to this exam", http.StatusBadRequest)
+		return
+	}
+
+	now := time.Now()
+	endTime := now.Add(time.Duration(exam.Paper.DurationMinutes) * time.Minute)
+
+	// Update participant status and times
+	participant.Status = constants.PARTICIPANT_STATUS_STARTED
+	participant.StartedAt = sql.NullTime{Time: now, Valid: true}
+	participant.EndedAt = sql.NullTime{Time: endTime, Valid: true}
+
+	if err := db.DB.Save(&participant).Error; err != nil {
+		http.Error(w, "Failed to start exam", http.StatusInternalServerError)
 		return
 	}
 
