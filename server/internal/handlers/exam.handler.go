@@ -8,12 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/mux"
+
 	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/middlewares"
 	"github.com/arpansaha13/pariksha/internal/models"
-	"github.com/gorilla/mux"
 )
 
 func CreateExam(w http.ResponseWriter, r *http.Request) {
@@ -59,6 +60,43 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
+}
+
+func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	examID, err := strconv.Atoi(vars["examId"])
+	if err != nil {
+		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		return
+	}
+
+	var participants []models.ExamParticipant
+	if err := db.DB.Preload("User").Where("exam_id = ?", examID).Find(&participants).Error; err != nil {
+		http.Error(w, "Failed to fetch participants", http.StatusInternalServerError)
+		return
+	}
+
+	response := make([]dtos.ExamParticipantResponse, len(participants))
+	for i, p := range participants {
+		response[i] = dtos.ExamParticipantResponse{
+			ID:           p.ID,
+			UserID:       p.UserID,
+			FirstName:    p.User.FirstName.String,
+			LastName:     p.User.LastName.String,
+			Email:        p.User.Email,
+			Status:       p.Status,
+			ScoreAwarded: p.ScoreAwarded,
+		}
+		if p.StartedAt.Valid {
+			response[i].StartedAt = p.StartedAt.Time
+		}
+		if p.EndedAt.Valid {
+			response[i].EndedAt = p.EndedAt.Time
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
 
