@@ -25,13 +25,14 @@ Table papers {
   id integer [primary key]
   title varchar
   max_score integer [note: 'Maximum score that can be awarded in this paper - Sum of individual scores of each question']
+  duration_minutes integer
+  questions_count json [note: 'Count of each question type']
 }
 
 Table paper_ownerships {
   id integer [primary key]
   user_id integer [note: 'Which user owns this paper, or is shared this paper with']
   paper_id integer [note: 'Which paper is owned or shared']
-  questions_count json [note: 'Count of each question type']
   path text [note: 'Used to show folder structure. At which folder this user has stored the paper.']
   type varchar [note: 'Can be OWNER or SHARED']
 }
@@ -51,6 +52,7 @@ Table exam_participants {
   id integer [primary key]
   started_at timestamp
   ended_at timestamp
+  scheduled_end_time timestamp [note: 'We cannot rely on calculating (starts_at + paper.duration) everytime because the paper duration could update during the exam']
   exam_id integer
   user_id integer [note: 'Which users can take this exam']
   score_awarded integer [note: 'Total score obtained in this exam by this candidate - Sum of individual scores of each answer']

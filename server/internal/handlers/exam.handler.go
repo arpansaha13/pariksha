@@ -227,12 +227,12 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 	}
 
 	now := time.Now()
-	endTime := now.Add(time.Duration(exam.Paper.DurationMinutes) * time.Minute)
+	scheduledEndTime := now.Add(time.Duration(exam.Paper.DurationMinutes) * time.Minute)
 
 	// Update participant status and times
 	participant.Status = constants.PARTICIPANT_STATUS_STARTED
 	participant.StartedAt = sql.NullTime{Time: now, Valid: true}
-	participant.EndedAt = sql.NullTime{Time: endTime, Valid: true}
+	participant.ScheduledEndTime = sql.NullTime{Time: scheduledEndTime, Valid: true}
 
 	if err := db.DB.Save(&participant).Error; err != nil {
 		http.Error(w, "Failed to start exam", http.StatusInternalServerError)
