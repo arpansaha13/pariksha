@@ -130,7 +130,19 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 
 func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	examID := vars["examId"]
 	participantID := vars["participantId"]
+
+	var exam models.Exam
+	if err := db.DB.Take(&exam, examID).Error; err != nil {
+		http.Error(w, "Failed to find exam", http.StatusNotFound)
+		return
+	}
+
+	if exam.StartsAt.Before(time.Now()) {
+		http.Error(w, "Cannot remove participant after exam has started", http.StatusBadRequest)
+		return
+	}
 
 	if err := db.DB.Delete(&models.ExamParticipant{}, participantID).Error; err != nil {
 		http.Error(w, "Failed to remove participant", http.StatusInternalServerError)
