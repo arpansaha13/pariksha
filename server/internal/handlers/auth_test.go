@@ -2,101 +2,32 @@ package handlers
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 
 	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/models"
+	testUtils "github.com/arpansaha13/pariksha/internal/utils/test"
 )
 
-func setupTestDB(t *testing.T) {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		"localhost",
-		"postgres",
-		"postgres",
-		"pariksha_test",
-		"5433",
-	)
-
-	silentLogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags),
-		logger.Config{
-			SlowThreshold:             time.Second,
-			LogLevel:                  logger.Silent,
-			IgnoreRecordNotFoundError: true,
-		},
-	)
-
-	var err error
-	db.DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: silentLogger,
-	})
-
-	if err != nil {
-		t.Fatalf("Failed to connect to test database: %v", err)
-	}
-
-	err = db.DB.AutoMigrate(
-		&models.User{},
-		&models.UnverifiedUser{},
-		&models.Session{},
-	)
-	if err != nil {
-		t.Fatalf("Failed to migrate test database: %v", err)
-	}
-}
-
-func teardownTestDB(t *testing.T) {
-	sqlDB, err := db.DB.DB()
-	if err != nil {
-		t.Errorf("Failed to get underlying DB: %v", err)
-		return
-	}
-
-	// Drop all tables
-	db.DB.Exec("DROP SCHEMA public CASCADE;")
-	db.DB.Exec("CREATE SCHEMA public;")
-
-	sqlDB.Close()
-}
-
 func TestLogin(t *testing.T) {
-	setupTestDB(t)
+	testUtils.SetupTestDB(t)
 
 	t.Cleanup(func() {
-		teardownTestDB(t)
+		testUtils.TeardownTestDB(t)
 	})
 
-	// Create users
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("testPass123"), bcrypt.DefaultCost)
-	testUser := models.User{
-		Email:    "test@example.com",
-		Password: sql.NullString{String: string(hashedPassword), Valid: true},
-		Username: "testUser",
-	}
-	guestUser := models.User{
-		Email:   "guest@example.com",
-		IsGuest: true,
-	}
-
-	db.DB.Create(&testUser)
-	db.DB.Create(&guestUser)
+	testUser := testUtils.CreateTestUser(t)
+	guestUser := testUtils.CreateGuestUser(t)
 
 	tests := []struct {
 		name           string
@@ -146,6 +77,7 @@ func TestLogin(t *testing.T) {
 			Login(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
+
 			if tt.expectedStatus == http.StatusOK {
 				assert.Contains(t, w.Header().Get("Set-Cookie"), "token=")
 			}
@@ -154,24 +86,14 @@ func TestLogin(t *testing.T) {
 }
 
 func TestSignUp(t *testing.T) {
-	setupTestDB(t)
+	testUtils.SetupTestDB(t)
 
 	t.Cleanup(func() {
-		teardownTestDB(t)
+		testUtils.TeardownTestDB(t)
 	})
 
-	// Create users
-	existingUser := models.User{
-		Email:    "existing@example.com",
-		Password: sql.NullString{String: "expired123", Valid: true},
-	}
-	guestUser := models.User{
-		Email:   "guest@example.com",
-		IsGuest: true,
-	}
-
-	db.DB.Create(&existingUser)
-	db.DB.Create(&guestUser)
+	existingUser := testUtils.CreateTestUser(t)
+	guestUser := testUtils.CreateGuestUser(t)
 
 	tests := []struct {
 		name           string
@@ -226,10 +148,10 @@ func TestSignUp(t *testing.T) {
 }
 
 func TestVerification(t *testing.T) {
-	setupTestDB(t)
+	testUtils.SetupTestDB(t)
 
 	t.Cleanup(func() {
-		teardownTestDB(t)
+		testUtils.TeardownTestDB(t)
 	})
 
 	// Create unverified users
