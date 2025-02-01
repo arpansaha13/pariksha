@@ -120,11 +120,20 @@ func CreateTestPaper(t *testing.T) models.Paper {
 	return paper
 }
 
-func CreateTestExam(t *testing.T, userID int, paperID int) models.Exam {
+func CreateTestExam(t *testing.T, data *models.Exam) models.Exam {
 	exam := models.Exam{
-		Title:     "Test Exam",
-		CreatedBy: userID,
-		PaperID:   paperID,
+		Title:              data.Title,
+		StartsAt:           data.StartsAt,
+		EndsAt:             data.EndsAt,
+		CreatedBy:          data.CreatedBy,
+		PaperID:            data.PaperID,
+		Type:               data.Type,
+		ParticipantCounts:  data.ParticipantCounts,
+		MaxCandidatesCount: 10,
+	}
+
+	if exam.Title == "" {
+		exam.Title = "Test Exam"
 	}
 
 	if err := db.DB.Create(&exam).Error; err != nil {
@@ -134,11 +143,11 @@ func CreateTestExam(t *testing.T, userID int, paperID int) models.Exam {
 	return exam
 }
 
-func CreateTestExamParticipant(t *testing.T, userID int, examID int, status int) models.ExamParticipant {
+func CreateTestExamParticipant(t *testing.T, data *models.ExamParticipant) models.ExamParticipant {
 	participant := models.ExamParticipant{
-		ExamID: examID,
-		UserID: userID,
-		Status: status,
+		ExamID: data.ExamID,
+		UserID: data.UserID,
+		Status: data.Status,
 	}
 
 	if err := db.DB.Create(&participant).Error; err != nil {
