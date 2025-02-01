@@ -3,12 +3,14 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 
 	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
@@ -114,6 +116,12 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var exam models.Exam
+	if err := db.DB.Take(&exam, examID).Error; err != nil {
+		http.Error(w, "Failed to find exam", http.StatusNotFound)
+		return
+	}
+
 	var examParticipants []models.ExamParticipant
 
 	for _, participantDto := range participantsDto {
@@ -163,6 +171,28 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get current counts
+	counts, err := exam.GetParticipantCounts()
+	if err != nil {
+		http.Error(w, "Failed to get participant counts", http.StatusInternalServerError)
+		return
+	}
+
+	// Update counts
+	counts.Invited += len(examParticipants)
+
+	exam.ParticipantCounts, err = json.Marshal(counts)
+	if err != nil {
+		http.Error(w, "Failed to marshal counts", http.StatusInternalServerError)
+		return
+	}
+
+	// Save exam with updated counts
+	if err := db.DB.Save(&exam).Error; err != nil {
+		http.Error(w, "Failed to update exam", http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -171,18 +201,57 @@ func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
 	examID := vars["examId"]
 	participantID := vars["participantId"]
 
-	var exam models.Exam
-	if err := db.DB.Take(&exam, examID).Error; err != nil {
-		http.Error(w, "Failed to find exam", http.StatusNotFound)
-		return
-	}
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var exam models.Exam
+		if err := db.DB.Take(&exam, examID).Error; err != nil {
+			http.Error(w, "Failed to find exam", http.StatusNotFound)
+			return err
+		}
 
-	if exam.StartsAt.Before(time.Now()) {
-		http.Error(w, "Cannot remove participant after exam has started", http.StatusBadRequest)
-		return
-	}
+		if exam.StartsAt.Before(time.Now()) {
+			http.Error(w, "Cannot remove participant after exam has started", http.StatusBadRequest)
+			return errors.New("cannot remove participant after exam has started")
+		}
 
-	if err := db.DB.Delete(&models.ExamParticipant{}, participantID).Error; err != nil {
+		counts, err := exam.GetParticipantCounts()
+		if err != nil {
+			http.Error(w, "Failed to get participant counts", http.StatusInternalServerError)
+			return err
+		}
+
+		var participant models.ExamParticipant
+		if err := db.DB.Take(&participant, participantID).Error; err != nil {
+			http.Error(w, "Participant not found", http.StatusNotFound)
+			return err
+		}
+
+		// Decrement count based on participant's status
+		switch participant.Status {
+		case constants.PARTICIPANT_STATUS_INVITED:
+			counts.Invited--
+		case constants.PARTICIPANT_STATUS_STARTED:
+			counts.Started--
+		case constants.PARTICIPANT_STATUS_ENDED:
+			counts.Ended--
+		case constants.PARTICIPANT_STATUS_UNATTENDED:
+			counts.Unattended--
+		}
+
+		if exam.ParticipantCounts, err = json.Marshal(counts); err != nil {
+			http.Error(w, "Failed to marshal counts", http.StatusInternalServerError)
+			return err
+		}
+
+		if err := tx.Save(&exam).Error; err != nil {
+			return err
+		}
+		if err := tx.Delete(&participant).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
 		http.Error(w, "Failed to remove participant", http.StatusInternalServerError)
 		return
 	}
@@ -204,38 +273,64 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var exam models.Exam
-	if err := db.DB.Preload("Paper").Take(&exam, examID).Error; err != nil {
-		http.Error(w, "Exam not found", http.StatusNotFound)
-		return
-	}
+	err = db.DB.Transaction(func(tx *gorm.DB) error {
+		var participant models.ExamParticipant
+		if err := tx.Take(&participant, participantID).Error; err != nil {
+			http.Error(w, "Participant not found", http.StatusNotFound)
+			return err
+		}
 
-	var participant models.ExamParticipant
-	if err := db.DB.Take(&participant, participantID).Error; err != nil {
-		http.Error(w, "Participant not found", http.StatusNotFound)
-		return
-	}
+		if participant.Status != constants.PARTICIPANT_STATUS_INVITED {
+			http.Error(w, "Participant has already started the exam", http.StatusBadRequest)
+			return err
+		}
 
-	if participant.Status != constants.PARTICIPANT_STATUS_INVITED {
-		http.Error(w, "Participant has already started the exam", http.StatusBadRequest)
-		return
-	}
+		if participant.ExamID != examID {
+			http.Error(w, "Participant does not belong to this exam", http.StatusBadRequest)
+			return err
+		}
 
-	if participant.ExamID != examID {
-		http.Error(w, "Participant does not belong to this exam", http.StatusBadRequest)
-		return
-	}
+		var exam models.Exam
+		if err := tx.Preload("Paper").Take(&exam, examID).Error; err != nil {
+			http.Error(w, "Exam not found", http.StatusNotFound)
+			return err
+		}
 
-	now := time.Now()
-	scheduledEndTime := now.Add(time.Duration(exam.Paper.DurationMinutes) * time.Minute)
+		counts, err := exam.GetParticipantCounts()
+		if err != nil {
+			http.Error(w, "Failed to get participant counts", http.StatusInternalServerError)
+			return err
+		}
 
-	// Update participant status and times
-	participant.Status = constants.PARTICIPANT_STATUS_STARTED
-	participant.StartedAt = sql.NullTime{Time: now, Valid: true}
-	participant.ScheduledEndTime = sql.NullTime{Time: scheduledEndTime, Valid: true}
+		now := time.Now()
+		scheduledEndTime := now.Add(time.Duration(exam.Paper.DurationMinutes) * time.Minute)
 
-	if err := db.DB.Save(&participant).Error; err != nil {
-		http.Error(w, "Failed to start exam", http.StatusInternalServerError)
+		// Update participant status and times
+		participant.Status = constants.PARTICIPANT_STATUS_STARTED
+		participant.StartedAt = sql.NullTime{Time: now, Valid: true}
+		participant.ScheduledEndTime = sql.NullTime{Time: scheduledEndTime, Valid: true}
+
+		// Update counts based on status change
+		counts.Invited--
+		counts.Started++
+
+		exam.ParticipantCounts, err = json.Marshal(counts)
+		if err != nil {
+			http.Error(w, "Failed to marshal counts", http.StatusInternalServerError)
+			return err
+		}
+
+		if err := tx.Save(&exam).Error; err != nil {
+			return err
+		}
+		if err := tx.Save(&participant).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
+		http.Error(w, "Failed to update exam and participants", http.StatusInternalServerError)
 		return
 	}
 
