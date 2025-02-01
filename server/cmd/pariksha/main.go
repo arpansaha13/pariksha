@@ -8,6 +8,7 @@ import (
 
 	"github.com/joho/godotenv"
 
+	"github.com/arpansaha13/pariksha/internal/config/validate"
 	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/router"
@@ -25,6 +26,8 @@ func main() {
 	defer sqlDb.Close()
 
 	r := router.SetupRouter()
+
+	validate.Init()
 
 	// Remove hostname in production
 	// https://stackoverflow.com/questions/55201561/golang-run-on-windows-without-deal-with-the-firewall/65393403#65393403
