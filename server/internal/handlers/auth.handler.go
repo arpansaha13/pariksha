@@ -21,7 +21,6 @@ import (
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/models"
-	"github.com/arpansaha13/pariksha/internal/repositories"
 	"github.com/arpansaha13/pariksha/internal/utils"
 )
 
@@ -33,9 +32,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userRepo := repositories.GetUserRepository()
-	user, err := userRepo.FindOneByEmail(loginDto.Email)
-	if err != nil || user.IsGuest {
+	var user models.User
+	if err := db.DB.Where("email = ?", loginDto.Email).Take(&user).Error; err != nil || user.IsGuest {
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 		return
 	}
@@ -66,8 +64,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		ExpiresAt: sessionExpiresAt,
 	}
 
-	sessionRepo := repositories.GetSessionRepository()
-	if err := sessionRepo.Create(&session); err != nil {
+	if err := db.DB.Create(&session).Error; err != nil {
 		http.Error(w, "Failed to create session", http.StatusInternalServerError)
 		return
 	}
@@ -93,9 +90,6 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func SignUp(w http.ResponseWriter, r *http.Request) {
-	userRepo := repositories.GetUserRepository()
-	unverifiedUserRepo := repositories.GetUnverifiedUserRepository()
-
 	var signUpDto dtos.SignUpDto
 
 	if err := json.NewDecoder(r.Body).Decode(&signUpDto); err != nil {
@@ -103,7 +97,8 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user, err := userRepo.FindOneByEmail(signUpDto.Email); err == nil && !user.IsGuest {
+	var user models.User
+	if err := db.DB.Where("email = ?", signUpDto.Email).Take(&user).Error; err == nil && !user.IsGuest {
 		http.Error(w, "This email is already registered", http.StatusConflict)
 		return
 	}
@@ -122,25 +117,23 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	unverifiedUser, err := unverifiedUserRepo.FindOneByEmail(signUpDto.Email)
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		fmt.Println(err)
-		http.Error(w, "Failed to process request. Please try again later.", http.StatusInternalServerError)
-		return
-	}
-
 	// check if the email already exists in UnverifiedUsers
-	// if yes, then just update the otp in that row
-	// else create a new entry.
-	if unverifiedUser != nil {
+	var unverifiedUser models.UnverifiedUser
+	err = db.DB.Where("email = ?", signUpDto.Email).Take(&unverifiedUser).Error
+
+	if err == nil {
+		// if yes, then just update the otp in that row
+
 		unverifiedUser.OTP = otp
 		unverifiedUser.OTPExpiresAt = otpExpiresAt
-		if err := unverifiedUserRepo.Update(unverifiedUser); err != nil {
+		if err := db.DB.Save(&unverifiedUser).Error; err != nil {
 			fmt.Println(err)
 			http.Error(w, "Failed to update OTP. Please try again later.", http.StatusInternalServerError)
 			return
 		}
-	} else {
+	} else if errors.Is(err, gorm.ErrRecordNotFound) {
+		// else create a new entry.
+
 		newUnverifiedUser := models.UnverifiedUser{
 			Hash:         linkHash,
 			OTP:          otp,
@@ -148,11 +141,15 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 			Email:        signUpDto.Email,
 			Password:     string(hashedPassword),
 		}
-		if err := unverifiedUserRepo.Create(&newUnverifiedUser); err != nil {
+		if err := db.DB.Create(&newUnverifiedUser).Error; err != nil {
 			fmt.Println(err)
 			http.Error(w, "Failed to create user. Please try again later.", http.StatusInternalServerError)
 			return
 		}
+	} else {
+		fmt.Println(err)
+		http.Error(w, "Failed to process request. Please try again later.", http.StatusInternalServerError)
+		return
 	}
 
 	msg := utils.CreateVerificationMail(signUpDto.Email, otp, linkHash, otpExpiresInMinutes)
@@ -191,7 +188,7 @@ func Verification(w http.ResponseWriter, r *http.Request) {
 
 		if err := tx.Model(models.User{}).Where("email = ?", unverifiedUser.Email).Take(&newUser).Error; err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				http.Error(w, "Failed to find user", http.StatusInternalServerError)
+				http.Error(w, "Something went wrong!", http.StatusInternalServerError)
 				return err
 			}
 

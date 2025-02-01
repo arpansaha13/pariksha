@@ -2,14 +2,17 @@ package middlewares
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"gorm.io/gorm"
 
 	"github.com/arpansaha13/pariksha/internal/constants"
-	"github.com/arpansaha13/pariksha/internal/repositories"
+	"github.com/arpansaha13/pariksha/internal/db"
+	"github.com/arpansaha13/pariksha/internal/models"
 	"github.com/arpansaha13/pariksha/internal/utils"
 )
 
@@ -28,10 +31,19 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		sessionKey := cookie.Value
-		sessionRepo := repositories.GetSessionRepository()
-		session, err := sessionRepo.FindByKey(sessionKey)
+		var session models.Session
+		err = db.DB.Where("key = ?", sessionKey).First(&session).Error
 
-		if err != nil || session == nil || session.ExpiresAt.Before(time.Now()) {
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+			http.Error(w, "Something went wrongQ", http.StatusInternalServerError)
+			return
+		}
+
+		if session.ExpiresAt.Before(time.Now()) {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
