@@ -42,3 +42,9 @@ type AddExamParticipantDto struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 }
+
+type AddExamParticipantResponse struct {
+	AddedCount     int    `json:"added_count"`
+	OmittedCount   int    `json:"omitted_count"`
+	MaxLimitReason string `json:"max_limit_reason,omitempty"`
+}

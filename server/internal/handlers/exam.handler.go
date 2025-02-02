@@ -128,9 +128,26 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get current counts
+	counts, err := exam.GetParticipantCounts()
+	if err != nil {
+		http.Error(w, "Failed to get participant counts", http.StatusInternalServerError)
+		return
+	}
+
 	var examParticipants []models.ExamParticipant
+	addedCount := 0
+	omittedCount := 0
+	maxLimitReached := false
 
 	for _, participantDto := range participantsDto {
+		currTotalParticipants := counts.Invited + counts.Started + counts.Ended
+		if currTotalParticipants == exam.MaxCandidatesCount {
+			maxLimitReached = true
+			omittedCount++
+			continue
+		}
+
 		var userID int
 
 		if participantDto.UserID != 0 {
@@ -170,36 +187,41 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 		}
 
 		examParticipants = append(examParticipants, participant)
+		counts.Invited++
+		addedCount++
 	}
 
-	if err := db.DB.Create(&examParticipants).Error; err != nil {
-		http.Error(w, "Failed to add participants", http.StatusInternalServerError)
-		return
+	if len(examParticipants) > 0 {
+		if err := db.DB.Create(&examParticipants).Error; err != nil {
+			http.Error(w, "Failed to add participants", http.StatusInternalServerError)
+			return
+		}
+
+		exam.ParticipantCounts, err = json.Marshal(counts)
+		if err != nil {
+			http.Error(w, "Failed to marshal counts", http.StatusInternalServerError)
+			return
+		}
+
+		// Save exam with updated counts
+		if err := db.DB.Save(&exam).Error; err != nil {
+			http.Error(w, "Failed to update exam", http.StatusInternalServerError)
+			return
+		}
 	}
 
-	// Get current counts
-	counts, err := exam.GetParticipantCounts()
-	if err != nil {
-		http.Error(w, "Failed to get participant counts", http.StatusInternalServerError)
-		return
+	response := dtos.AddExamParticipantResponse{
+		AddedCount:   addedCount,
+		OmittedCount: omittedCount,
 	}
 
-	// Update counts
-	counts.Invited += len(examParticipants)
-
-	exam.ParticipantCounts, err = json.Marshal(counts)
-	if err != nil {
-		http.Error(w, "Failed to marshal counts", http.StatusInternalServerError)
-		return
+	if maxLimitReached {
+		response.MaxLimitReason = "Maximum participant limit reached for the exam"
 	}
 
-	// Save exam with updated counts
-	if err := db.DB.Save(&exam).Error; err != nil {
-		http.Error(w, "Failed to update exam", http.StatusInternalServerError)
-		return
-	}
-
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
 }
 
 func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {

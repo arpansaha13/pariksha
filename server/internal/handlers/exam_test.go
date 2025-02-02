@@ -245,6 +245,15 @@ func TestAddExamParticipants(t *testing.T) {
 		PaperID:   paper.ID,
 		Type:      constants.EXAM_TYPE_INVITE,
 	})
+	maxLimitExam := testUtils.CreateTestExam(t, &models.Exam{
+		Title:              "Max Limit Exam",
+		StartsAt:           time.Now().Add(time.Hour),
+		EndsAt:             time.Now().Add(2 * time.Hour),
+		CreatedBy:          user.ID,
+		PaperID:            paper.ID,
+		Type:               constants.EXAM_TYPE_INVITE,
+		MaxCandidatesCount: 2,
+	})
 
 	tests := []struct {
 		name           string
@@ -298,6 +307,40 @@ func TestAddExamParticipants(t *testing.T) {
 				err = db.DB.Where("exam_id = ? AND user_id = ?", examID, user.ID).First(&participant).Error
 				assert.NoError(t, err)
 				assert.Equal(t, constants.PARTICIPANT_STATUS_INVITED, participant.Status)
+			},
+		},
+		{
+			name:   "Max Candidates Limit Reached",
+			examID: strconv.Itoa(maxLimitExam.ID),
+			participants: []dtos.AddExamParticipantDto{
+				{
+					UserID: user.ID,
+				},
+				{
+					Email:     "test1@example.com",
+					FirstName: "Test1",
+					LastName:  "User1",
+				},
+				{
+					Email:     "test2@example.com",
+					FirstName: "Test2",
+					LastName:  "User2",
+				},
+			},
+			expectedStatus: http.StatusCreated,
+			validateFunc: func(t *testing.T, examID int) {
+				// Verify participants were added
+				var count int64
+				err := db.DB.Model(models.ExamParticipant{}).Where("exam_id = ?", examID).Count(&count).Error
+				assert.NoError(t, err)
+				assert.Equal(t, int64(2), count) // 1 candidate omitted
+
+				// Verify count was updated
+				var updatedExam models.Exam
+				db.DB.Take(&updatedExam, examID)
+				counts, err := updatedExam.GetParticipantCounts()
+				assert.NoError(t, err)
+				assert.Equal(t, 2, counts.Invited)
 			},
 		},
 		{

@@ -155,11 +155,15 @@ func CreateTestExam(t *testing.T, data *models.Exam) models.Exam {
 		PaperID:            data.PaperID,
 		Type:               data.Type,
 		ParticipantCounts:  data.ParticipantCounts,
-		MaxCandidatesCount: 10,
+		MaxCandidatesCount: data.MaxCandidatesCount,
 	}
 
 	if exam.Title == "" {
 		exam.Title = "Test Exam"
+	}
+
+	if exam.MaxCandidatesCount == 0 {
+		exam.MaxCandidatesCount = 10
 	}
 
 	if err := db.DB.Create(&exam).Error; err != nil {
