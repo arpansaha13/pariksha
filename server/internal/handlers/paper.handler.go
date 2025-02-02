@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 
+	"github.com/arpansaha13/pariksha/internal/config/validate"
 	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
@@ -50,6 +51,12 @@ func CreatePaper(w http.ResponseWriter, r *http.Request) {
 	var paperDto dtos.CreatePaperDto
 	if err := json.NewDecoder(r.Body).Decode(&paperDto); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	errs := validate.Do.Struct(paperDto)
+	if errs != nil {
+		http.Error(w, "Invald request body", http.StatusBadRequest)
 		return
 	}
 
@@ -106,6 +113,12 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	errs := validate.Do.Struct(paperDto)
+	if errs != nil {
+		http.Error(w, "Invald request body", http.StatusBadRequest)
+		return
+	}
+
 	vars := mux.Vars(r)
 	paperID := vars["id"]
 
@@ -119,17 +132,19 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	paper.Title = paperDto.Title
-	if err := db.DB.Save(&paper).Error; err != nil {
-		http.Error(w, "Failed to update paper title", http.StatusInternalServerError)
-		return
+	isUpdated := false
+
+	if paperDto.Title != "" {
+		paper.Title = paperDto.Title
+		isUpdated = true
+	}
+
+	if isUpdated {
+		if err := db.DB.Save(&paper).Error; err != nil {
+			http.Error(w, "Failed to update paper title", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(dtos.UpdatePaperResponse{
-		ID:             paper.ID,
-		Title:          paper.Title,
-		MaxScore:       paper.MaxScore,
-		QuestionCounts: paper.QuestionCounts,
-	})
 }

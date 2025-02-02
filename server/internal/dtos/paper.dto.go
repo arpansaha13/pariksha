@@ -1,9 +1,11 @@
 package dtos
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type CreatePaperDto struct {
-	Title string `json:"title"`
+	Title string `json:"title" validate:"required"`
 }
 
 type UpdatePaperDto struct {
