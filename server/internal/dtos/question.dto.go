@@ -14,12 +14,12 @@ type QuestionResponse struct {
 }
 
 type CreateQuestionDto struct {
-	PaperID       int             `json:"paper_id"`
-	Question      json.RawMessage `json:"question"`
+	PaperID       int             `json:"paper_id" validate:"required"`
+	Question      json.RawMessage `json:"question" validate:"required"`
 	Category      string          `json:"category,omitempty"`
-	Type          string          `json:"type"`
-	Tags          json.RawMessage `json:"tags,omitempty"`
-	MaxScore      int             `json:"max_score"`
+	Type          string          `json:"type" validate:"required"`
+	Tags          json.RawMessage `json:"tags,omitempty" validate:"required"`
+	MaxScore      int             `json:"max_score" validate:"required"`
 	CorrectAnswer string          `json:"correct_answer,omitempty"`
 }
 

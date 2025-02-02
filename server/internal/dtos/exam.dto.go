@@ -1,14 +1,16 @@
 package dtos
 
-import "time"
+import (
+	"time"
+)
 
 type CreateExamDto struct {
-	Title              string    `json:"title"`
-	StartsAt           time.Time `json:"starts_at"`
-	EndsAt             time.Time `json:"ends_at"`
-	MaxCandidatesCount int       `json:"max_candidates_count"`
-	Type               string    `json:"type"`
-	PaperID            int       `json:"paper_id"`
+	Title              string    `json:"title" validate:"required"`
+	StartsAt           time.Time `json:"starts_at" validate:"required"`
+	EndsAt             time.Time `json:"ends_at" validate:"required"`
+	MaxCandidatesCount int       `json:"max_candidates_count" validate:"required"`
+	Type               string    `json:"type" validate:"required"`
+	PaperID            int       `json:"paper_id" validate:"required"`
 }
 
 type ExamResponse struct {
@@ -35,9 +37,8 @@ type ExamParticipantResponse struct {
 }
 
 type AddExamParticipantDto struct {
-	ExamID    int    `json:"exam_id"`
-	UserID    int    `json:"user_id,omitempty"`
-	Email     string `json:"email,omitempty"`
-	FirstName string `json:"first_name,omitempty"`
-	LastName  string `json:"last_name,omitempty"`
+	UserID    int    `json:"user_id"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
 }

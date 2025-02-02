@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 
+	"github.com/arpansaha13/pariksha/internal/config/validate"
 	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
@@ -26,7 +27,12 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate the paperId
+	errs := validate.Do.Struct(examDto)
+	if errs != nil {
+		http.Error(w, "Invald request body", http.StatusBadRequest)
+		return
+	}
+
 	var paper models.Paper
 	if err := db.DB.Take(&paper, examDto.PaperID).Error; err != nil {
 		http.Error(w, "Paper not found", http.StatusNotFound)
@@ -115,6 +121,14 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+
+	// for _, participantDto := range participantsDto {
+	// 	errs := validate.Do.Struct(participantDto)
+	// 	if errs != nil {
+	// 		http.Error(w, "Invald request body", http.StatusBadRequest)
+	// 		return
+	// 	}
+	// }
 
 	var exam models.Exam
 	if err := db.DB.Take(&exam, examID).Error; err != nil {

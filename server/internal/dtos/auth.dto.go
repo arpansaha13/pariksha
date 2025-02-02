@@ -1,15 +1,15 @@
 package dtos
 
 type LoginDto struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" validate:"required"`
+	Password string `json:"password" validate:"required"`
 }
 
 type SignUpDto struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" validate:"required"`
+	Password string `json:"password" validate:"required"`
 }
 
 type VerificationDto struct {
-	OTP string `json:"otp"`
+	OTP string `json:"otp" validate:"required"`
 }

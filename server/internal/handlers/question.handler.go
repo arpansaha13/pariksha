@@ -6,12 +6,14 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/gorilla/mux"
+	"gorm.io/gorm"
+
+	"github.com/arpansaha13/pariksha/internal/config/validate"
 	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/models"
-	"github.com/gorilla/mux"
-	"gorm.io/gorm"
 )
 
 func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
@@ -62,6 +64,14 @@ func CreatePaperQuestions(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&questionDtos); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
+	}
+
+	for _, questionDto := range questionDtos {
+		errs := validate.Do.Struct(questionDto)
+		if errs != nil {
+			http.Error(w, "Invald request body", http.StatusBadRequest)
+			return
+		}
 	}
 
 	// Validate the paperId
@@ -167,6 +177,8 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isUpdated := false
+
 	// Update the fields based on the provided data
 	if updateDto.Question != nil {
 		switch question.Type {
@@ -188,18 +200,22 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Invalid question type", http.StatusBadRequest)
 			return
 		}
+		isUpdated = true
 	}
 
 	if updateDto.Tags != nil {
 		question.Tags = updateDto.Tags
+		isUpdated = true
 	}
 
 	if updateDto.CorrectAnswer != "" {
 		question.CorrectAnswer = sql.NullString{String: updateDto.CorrectAnswer, Valid: true}
+		isUpdated = true
 	}
 
 	if updateDto.Category != "" {
 		question.Category = sql.NullString{String: updateDto.Category, Valid: true}
+		isUpdated = true
 	}
 
 	if updateDto.MaxScore != 0 && updateDto.MaxScore != question.MaxScore {
@@ -210,11 +226,14 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to update paper", http.StatusInternalServerError)
 			return
 		}
+		isUpdated = true
 	}
 
-	if err := db.DB.Save(&question).Error; err != nil {
-		http.Error(w, "Failed to update question", http.StatusInternalServerError)
-		return
+	if isUpdated {
+		if err := db.DB.Save(&question).Error; err != nil {
+			http.Error(w, "Failed to update question", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)

@@ -17,6 +17,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
+	"github.com/arpansaha13/pariksha/internal/config/validate"
 	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
@@ -29,6 +30,12 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&loginDto); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	errs := validate.Do.Struct(loginDto)
+	if errs != nil {
+		http.Error(w, "Invald request body", http.StatusBadRequest)
 		return
 	}
 
@@ -94,6 +101,12 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&signUpDto); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	errs := validate.Do.Struct(signUpDto)
+	if errs != nil {
+		http.Error(w, "Invald request body", http.StatusBadRequest)
 		return
 	}
 
@@ -169,6 +182,12 @@ func Verification(w http.ResponseWriter, r *http.Request) {
 	var verificationDto dtos.VerificationDto
 	if err := json.NewDecoder(r.Body).Decode(&verificationDto); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	errs := validate.Do.Struct(verificationDto)
+	if errs != nil {
+		http.Error(w, "Invald request body", http.StatusBadRequest)
 		return
 	}
 
