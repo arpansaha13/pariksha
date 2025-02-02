@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm/logger"
 
 	"github.com/arpansaha13/pariksha/internal/config/validate"
+	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/middlewares"
 	"github.com/arpansaha13/pariksha/internal/models"
@@ -112,15 +113,34 @@ func CreateGuestUser(t *testing.T) models.User {
 	return guestUser
 }
 
-func CreateTestPaper(t *testing.T) models.Paper {
+func CreateTestPaper(t *testing.T, data *models.Paper) models.Paper {
 	paper := models.Paper{
-		Title:           "Test Paper",
+		Title:           data.Title,
 		DurationMinutes: 60,
+	}
+
+	if paper.Title == "" {
+		paper.Title = "Test Paper"
 	}
 	if err := db.DB.Create(&paper).Error; err != nil {
 		t.Fatalf("Failed to create test paper: %v", err)
 	}
 	return paper
+}
+
+func CreateTestPaperOwnership(t *testing.T, data *models.PaperOwnership) models.PaperOwnership {
+	ownership := models.PaperOwnership{
+		UserID:  data.UserID,
+		PaperID: data.PaperID,
+		Type:    data.Type,
+	}
+	if ownership.Type == "" {
+		ownership.Type = constants.PAPER_OWNERSHIP_TYPE_OWNER
+	}
+	if err := db.DB.Create(&ownership).Error; err != nil {
+		t.Fatalf("Failed to create test paper: %v", err)
+	}
+	return ownership
 }
 
 func CreateTestExam(t *testing.T, data *models.Exam) models.Exam {

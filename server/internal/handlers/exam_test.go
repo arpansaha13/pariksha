@@ -27,7 +27,7 @@ func TestCreateExam(t *testing.T) {
 	})
 
 	user := testUtils.CreateTestUser(t)
-	paper := testUtils.CreateTestPaper(t)
+	paper := testUtils.CreateTestPaper(t, &models.Paper{})
 
 	tests := []struct {
 		name           string
@@ -94,7 +94,7 @@ func TestGetExamParticipants(t *testing.T) {
 	})
 
 	user := testUtils.CreateTestUser(t)
-	paper := testUtils.CreateTestPaper(t)
+	paper := testUtils.CreateTestPaper(t, &models.Paper{})
 	exam := testUtils.CreateTestExam(t, &models.Exam{
 		CreatedBy: user.ID,
 		PaperID:   paper.ID,
@@ -157,7 +157,7 @@ func TestStartExam(t *testing.T) {
 	})
 
 	user := testUtils.CreateTestUser(t)
-	paper := testUtils.CreateTestPaper(t)
+	paper := testUtils.CreateTestPaper(t, &models.Paper{})
 	exam := testUtils.CreateTestExam(t, &models.Exam{
 		CreatedBy: user.ID,
 		PaperID:   paper.ID,
@@ -231,10 +231,13 @@ func TestStartExam(t *testing.T) {
 
 func TestAddExamParticipants(t *testing.T) {
 	testUtils.SetupTestDB(t)
-	defer testUtils.TeardownTestDB(t)
+
+	t.Cleanup(func() {
+		testUtils.TeardownTestDB(t)
+	})
 
 	user := testUtils.CreateTestUser(t)
-	paper := testUtils.CreateTestPaper(t)
+	paper := testUtils.CreateTestPaper(t, &models.Paper{})
 	exam := testUtils.CreateTestExam(t, &models.Exam{
 		StartsAt:  time.Now().Add(24 * time.Hour),
 		EndsAt:    time.Now().Add(48 * time.Hour),
@@ -336,10 +339,13 @@ func TestAddExamParticipants(t *testing.T) {
 
 func TestRemoveExamParticipant(t *testing.T) {
 	testUtils.SetupTestDB(t)
-	defer testUtils.TeardownTestDB(t)
+
+	t.Cleanup(func() {
+		testUtils.TeardownTestDB(t)
+	})
 
 	user := testUtils.CreateTestUser(t)
-	paper := testUtils.CreateTestPaper(t)
+	paper := testUtils.CreateTestPaper(t, &models.Paper{})
 
 	participantCounts, _ := json.Marshal(models.ParticipantCount{
 		Unattended: 0,
