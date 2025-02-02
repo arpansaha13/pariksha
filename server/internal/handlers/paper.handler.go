@@ -18,7 +18,10 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int)
 
 	var papers []models.Paper
-	err := db.DB.Preload("PaperOwnership").Find(&papers).Where("paper_ownerships.user_id = ?", userID).Error
+	err := db.DB.Joins(
+		"INNER JOIN paper_ownerships ON paper_ownerships.paper_id = papers.id AND paper_ownerships.user_id = ?",
+		userID,
+	).Find(&papers).Error
 	if err != nil {
 		http.Error(w, "Failed to retrieve papers", http.StatusInternalServerError)
 		return
