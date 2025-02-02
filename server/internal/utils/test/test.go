@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -116,6 +117,8 @@ func CreateGuestUser(t *testing.T) models.User {
 func CreateTestPaper(t *testing.T, data *models.Paper) models.Paper {
 	paper := models.Paper{
 		Title:           data.Title,
+		MaxScore:        data.MaxScore,
+		QuestionCounts:  data.QuestionCounts,
 		DurationMinutes: 60,
 	}
 
@@ -178,4 +181,32 @@ func CreateTestExamParticipant(t *testing.T, data *models.ExamParticipant) model
 	}
 
 	return participant
+}
+
+func CreateTestQuestion(t *testing.T, data *models.Question) models.Question {
+	var questionData json.RawMessage
+	if data.Type == constants.QUESTION_TYPE_MCQ {
+		questionData = json.RawMessage(`{
+			"statement": "Test MCQ",
+			"options": ["A", "B", "C", "D"]
+		}`)
+	} else {
+		questionData = json.RawMessage(`{
+			"statement": "Test Question"
+		}`)
+	}
+
+	question := models.Question{
+		PaperID:  data.PaperID,
+		Question: questionData,
+		Type:     data.Type,
+		MaxScore: data.MaxScore,
+		Tags:     json.RawMessage(`["test"]`),
+	}
+
+	if err := db.DB.Create(&question).Error; err != nil {
+		t.Fatalf("Failed to create test question: %v", err)
+	}
+
+	return question
 }

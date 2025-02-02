@@ -122,14 +122,6 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// for _, participantDto := range participantsDto {
-	// 	errs := validate.Do.Struct(participantDto)
-	// 	if errs != nil {
-	// 		http.Error(w, "Invald request body", http.StatusBadRequest)
-	// 		return
-	// 	}
-	// }
-
 	var exam models.Exam
 	if err := db.DB.Take(&exam, examID).Error; err != nil {
 		http.Error(w, "Failed to find exam", http.StatusNotFound)
