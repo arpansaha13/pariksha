@@ -71,6 +71,109 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func UpdateExam(w http.ResponseWriter, r *http.Request) {
+	var examDto dtos.UpdateExamDto
+	if err := json.NewDecoder(r.Body).Decode(&examDto); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	errs := validate.Do.Struct(examDto)
+	if errs != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	vars := mux.Vars(r)
+	examID := vars["examId"]
+
+	var exam models.Exam
+	if err := db.DB.Take(&exam, examID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			http.Error(w, "Exam not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Failed to find exam", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	isUpdated := false
+	now := time.Now()
+	notUpdatedFields := make(map[string]string)
+
+	if examDto.Title != "" && examDto.Title != exam.Title {
+		exam.Title = examDto.Title
+		isUpdated = true
+	}
+
+	if now.After(exam.EndsAt) {
+		notUpdatedFields["StartsAt"] = "Cannot update StartsAt after the exam has ended"
+		notUpdatedFields["EndsAt"] = "Cannot update EndsAt after the exam has ended"
+		notUpdatedFields["Type"] = "Cannot update Type after the exam has ended"
+		notUpdatedFields["MaxCandidatesCount"] = "Cannot update MaxCandidatesCount after the exam has ended"
+	} else {
+		if examDto.StartsAt != (time.Time{}) && examDto.StartsAt != exam.StartsAt {
+			if now.After(exam.StartsAt) {
+				notUpdatedFields["StartsAt"] = "Cannot update StartsAt after the exam has started"
+			} else if examDto.StartsAt.Before(now) {
+				http.Error(w, "StartsAt cannot be a time in the past", http.StatusBadRequest)
+				return
+			} else {
+				exam.StartsAt = examDto.StartsAt
+				isUpdated = true
+			}
+		}
+
+		if examDto.EndsAt != (time.Time{}) && examDto.EndsAt != exam.EndsAt {
+			if examDto.EndsAt.Before(exam.StartsAt) || examDto.EndsAt.Equal(exam.StartsAt) {
+				http.Error(w, "EndsAt cannot be less than or equal to StartsAt", http.StatusBadRequest)
+				return
+			} else {
+				exam.EndsAt = examDto.EndsAt
+				isUpdated = true
+			}
+		}
+
+		if examDto.Type != "" && examDto.Type != exam.Type {
+			if now.After(exam.StartsAt) {
+				notUpdatedFields["Type"] = "Cannot update Type after the exam has started"
+			} else {
+				exam.Type = examDto.Type
+				isUpdated = true
+			}
+		}
+
+		if examDto.MaxCandidatesCount != 0 && examDto.MaxCandidatesCount != exam.MaxCandidatesCount {
+			exam.MaxCandidatesCount = examDto.MaxCandidatesCount
+			isUpdated = true
+		}
+	}
+
+	if isUpdated {
+		if err := db.DB.Save(&exam).Error; err != nil {
+			http.Error(w, "Failed to update exam", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	response := dtos.ExamResponse{
+		ID:                 exam.ID,
+		Title:              exam.Title,
+		StartsAt:           exam.StartsAt,
+		EndsAt:             exam.EndsAt,
+		CreatedBy:          exam.CreatedBy,
+		Type:               exam.Type,
+		MaxCandidatesCount: exam.MaxCandidatesCount,
+		PaperID:            exam.PaperID,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"exam":               response,
+		"not_updated_fields": notUpdatedFields,
+	})
+}
+
 func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	examID, err := strconv.Atoi(vars["examId"])

@@ -86,6 +86,165 @@ func TestCreateExam(t *testing.T) {
 	}
 }
 
+func TestUpdateExam(t *testing.T) {
+	testUtils.SetupTestDB(t)
+
+	t.Cleanup(func() {
+		testUtils.TeardownTestDB(t)
+	})
+
+	user := testUtils.CreateTestUser(t)
+	paper := testUtils.CreateTestPaper(t, &models.Paper{})
+	exam := testUtils.CreateTestExam(t, &models.Exam{
+		Title:     "Original Title",
+		StartsAt:  time.Now().Add(24 * time.Hour),
+		EndsAt:    time.Now().Add(48 * time.Hour),
+		CreatedBy: user.ID,
+		PaperID:   paper.ID,
+	})
+	startedExam := testUtils.CreateTestExam(t, &models.Exam{
+		StartsAt:  time.Now().Add(-1 * time.Hour),
+		EndsAt:    time.Now().Add(time.Hour),
+		CreatedBy: user.ID,
+		PaperID:   paper.ID,
+	})
+	endedExam := testUtils.CreateTestExam(t, &models.Exam{
+		StartsAt:  time.Now().Add(-2 * time.Hour),
+		EndsAt:    time.Now().Add(-1 * time.Hour),
+		CreatedBy: user.ID,
+		PaperID:   paper.ID,
+	})
+
+	tests := []struct {
+		name           string
+		examID         string
+		examDto        dtos.UpdateExamDto
+		expectedStatus int
+		validateFunc   func(t *testing.T, examID int, response map[string]interface{})
+	}{
+		{
+			name:   "Success",
+			examID: strconv.Itoa(exam.ID),
+			examDto: dtos.UpdateExamDto{
+				Title:              "Updated Title",
+				StartsAt:           time.Now().Add(25 * time.Hour),
+				EndsAt:             time.Now().Add(49 * time.Hour),
+				Type:               constants.EXAM_TYPE_INVITE,
+				MaxCandidatesCount: 20,
+			},
+			expectedStatus: http.StatusOK,
+			validateFunc: func(t *testing.T, examID int, response map[string]interface{}) {
+				var updatedExam models.Exam
+				err := db.DB.Take(&updatedExam, examID).Error
+				assert.NoError(t, err)
+				assert.Equal(t, "Updated Title", updatedExam.Title)
+				assert.Equal(t, constants.EXAM_TYPE_INVITE, updatedExam.Type)
+				assert.Equal(t, 20, updatedExam.MaxCandidatesCount)
+				assert.Empty(t, response["not_updated_fields"])
+			},
+		},
+		{
+			name:   "Cannot update StartsAt and Type after the exam has started",
+			examID: strconv.Itoa(startedExam.ID),
+			examDto: dtos.UpdateExamDto{
+				StartsAt: time.Now().Add(-1 * time.Hour),
+				Type:     constants.EXAM_TYPE_INVITE,
+			},
+			expectedStatus: http.StatusOK,
+			validateFunc: func(t *testing.T, examID int, response map[string]interface{}) {
+				assert.NotEmpty(t, response["not_updated_fields"])
+				notUpdatedFields := response["not_updated_fields"].(map[string]interface{})
+				assert.NotZero(t, notUpdatedFields["StartsAt"])
+				assert.NotZero(t, notUpdatedFields["Type"])
+			},
+		},
+		{
+			name:   "StartsAt cannot be a time in the past",
+			examID: strconv.Itoa(exam.ID),
+			examDto: dtos.UpdateExamDto{
+				StartsAt: time.Now().Add(-1 * time.Hour),
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:   "Cannot update EndsAt after the exam has ended",
+			examID: strconv.Itoa(endedExam.ID),
+			examDto: dtos.UpdateExamDto{
+				EndsAt: time.Now().Add(1 * time.Hour),
+			},
+			expectedStatus: http.StatusOK,
+			validateFunc: func(t *testing.T, examID int, response map[string]interface{}) {
+				assert.NotEmpty(t, response["not_updated_fields"])
+				notUpdatedFields := response["not_updated_fields"].(map[string]interface{})
+				assert.Equal(t, "Cannot update EndsAt after the exam has ended", notUpdatedFields["EndsAt"])
+			},
+		},
+		{
+			name:   "EndsAt cannot be less than or equal to StartsAt",
+			examID: strconv.Itoa(exam.ID),
+			examDto: dtos.UpdateExamDto{
+				StartsAt: time.Now().Add(25 * time.Hour),
+				EndsAt:   time.Now().Add(24 * time.Hour),
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:   "Exam not found",
+			examID: "9999",
+			examDto: dtos.UpdateExamDto{
+				Title: "Non-existent Exam",
+			},
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name:   "Only Title can be updated after exam has ended",
+			examID: strconv.Itoa(endedExam.ID),
+			examDto: dtos.UpdateExamDto{
+				Title:              "Updated Title",
+				StartsAt:           time.Now().Add(25 * time.Hour),
+				EndsAt:             time.Now().Add(49 * time.Hour),
+				Type:               constants.EXAM_TYPE_INVITE,
+				MaxCandidatesCount: 20,
+			},
+			expectedStatus: http.StatusOK,
+			validateFunc: func(t *testing.T, examID int, response map[string]interface{}) {
+				var updatedExam models.Exam
+				err := db.DB.Take(&updatedExam, examID).Error
+				assert.NoError(t, err)
+				assert.Equal(t, "Updated Title", updatedExam.Title)
+				assert.Equal(t, constants.EXAM_TYPE_OPEN, updatedExam.Type)
+				assert.NotEqual(t, 20, updatedExam.MaxCandidatesCount)
+				assert.NotEmpty(t, response["not_updated_fields"])
+				notUpdatedFields := response["not_updated_fields"].(map[string]interface{})
+				assert.NotZero(t, notUpdatedFields["StartsAt"])
+				assert.NotZero(t, notUpdatedFields["EndsAt"])
+				assert.NotZero(t, notUpdatedFields["Type"])
+				assert.NotZero(t, notUpdatedFields["MaxCandidatesCount"])
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			body, _ := json.Marshal(tt.examDto)
+			req := httptest.NewRequest("PATCH", "/exams/"+tt.examID, bytes.NewBuffer(body))
+			req = mux.SetURLVars(req, map[string]string{"examId": tt.examID})
+			w := httptest.NewRecorder()
+
+			UpdateExam(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+
+			if tt.validateFunc != nil {
+				var response map[string]interface{}
+				json.NewDecoder(w.Body).Decode(&response)
+				examID, _ := strconv.Atoi(tt.examID)
+				tt.validateFunc(t, examID, response)
+			}
+		})
+	}
+}
+
 func TestGetExamParticipants(t *testing.T) {
 	testUtils.SetupTestDB(t)
 

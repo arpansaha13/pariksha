@@ -13,6 +13,14 @@ type CreateExamDto struct {
 	PaperID            int       `json:"paper_id" validate:"required"`
 }
 
+type UpdateExamDto struct {
+	Title              string    `json:"title"`
+	StartsAt           time.Time `json:"starts_at"`
+	EndsAt             time.Time `json:"ends_at"`
+	MaxCandidatesCount int       `json:"max_candidates_count"`
+	Type               string    `json:"type"`
+}
+
 type ExamResponse struct {
 	ID                 int       `json:"id"`
 	Title              string    `json:"title"`
