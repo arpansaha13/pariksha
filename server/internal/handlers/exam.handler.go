@@ -20,6 +20,33 @@ import (
 	"github.com/arpansaha13/pariksha/internal/models"
 )
 
+func GetUserExams(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(middlewares.UserIDKey).(int)
+
+	var exams []models.Exam
+	if err := db.DB.Where("created_by = ?", userID).Find(&exams).Error; err != nil {
+		http.Error(w, "Failed to retrieve exams", http.StatusInternalServerError)
+		return
+	}
+
+	var response []dtos.ExamResponse
+	for _, exam := range exams {
+		response = append(response, dtos.ExamResponse{
+			ID:                 exam.ID,
+			Title:              exam.Title,
+			StartsAt:           exam.StartsAt,
+			EndsAt:             exam.EndsAt,
+			CreatedBy:          exam.CreatedBy,
+			Type:               exam.Type,
+			MaxCandidatesCount: exam.MaxCandidatesCount,
+			PaperID:            exam.PaperID,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 func CreateExam(w http.ResponseWriter, r *http.Request) {
 	var examDto dtos.CreateExamDto
 	if err := json.NewDecoder(r.Body).Decode(&examDto); err != nil {

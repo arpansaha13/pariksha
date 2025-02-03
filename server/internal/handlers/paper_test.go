@@ -24,7 +24,7 @@ func TestGetUserPapers(t *testing.T) {
 		testUtils.TeardownTestDB(t)
 	})
 
-	user := testUtils.CreateTestUser(t)
+	user := testUtils.CreateTestUser(t, &models.User{})
 
 	paper1 := testUtils.CreateTestPaper(t, &models.Paper{
 		Title: "Test Paper 1",
@@ -87,7 +87,7 @@ func TestCreatePaper(t *testing.T) {
 		testUtils.TeardownTestDB(t)
 	})
 
-	user := testUtils.CreateTestUser(t)
+	user := testUtils.CreateTestUser(t, &models.User{})
 
 	tests := []struct {
 		name           string
@@ -141,7 +141,7 @@ func TestUpdatePaper(t *testing.T) {
 		testUtils.TeardownTestDB(t)
 	})
 
-	testUtils.CreateTestUser(t)
+	testUtils.CreateTestUser(t, &models.User{})
 	paper := testUtils.CreateTestPaper(t, &models.Paper{})
 
 	tests := []struct {

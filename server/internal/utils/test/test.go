@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -85,14 +86,19 @@ func SetUserContext(ctx context.Context, userID int) context.Context {
 	return context.WithValue(ctx, middlewares.UserIDKey, userID)
 }
 
-func CreateTestUser(t *testing.T) models.User {
+func CreateTestUser(t *testing.T, data *models.User) models.User {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("testPass123"), bcrypt.DefaultCost)
 
 	user := models.User{
-		Email:    "test@example.com",
+		Email:    data.Email,
 		Password: sql.NullString{String: string(hashedPassword), Valid: true},
-		Username: "testUser",
 	}
+
+	if data.Email == "" {
+		user.Email = "test@example.com"
+	}
+
+	user.Username = strings.Split(user.Email, "@")[0]
 
 	if err := db.DB.Create(&user).Error; err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
@@ -101,11 +107,17 @@ func CreateTestUser(t *testing.T) models.User {
 	return user
 }
 
-func CreateGuestUser(t *testing.T) models.User {
+func CreateGuestUser(t *testing.T, data *models.User) models.User {
 	guestUser := models.User{
-		Email:   "guest@example.com",
+		Email:   data.Email,
 		IsGuest: true,
 	}
+
+	if data.Email == "" {
+		guestUser.Email = "guest@example.com"
+	}
+
+	guestUser.Username = strings.Split(guestUser.Email, "@")[0]
 
 	if err := db.DB.Create(&guestUser).Error; err != nil {
 		t.Fatalf("Failed to create guest user: %v", err)

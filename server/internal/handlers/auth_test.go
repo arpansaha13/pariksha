@@ -26,8 +26,8 @@ func TestLogin(t *testing.T) {
 		testUtils.TeardownTestDB(t)
 	})
 
-	testUser := testUtils.CreateTestUser(t)
-	guestUser := testUtils.CreateGuestUser(t)
+	testUser := testUtils.CreateTestUser(t, &models.User{})
+	guestUser := testUtils.CreateGuestUser(t, &models.User{})
 
 	tests := []struct {
 		name           string
@@ -92,8 +92,8 @@ func TestSignUp(t *testing.T) {
 		testUtils.TeardownTestDB(t)
 	})
 
-	existingUser := testUtils.CreateTestUser(t)
-	guestUser := testUtils.CreateGuestUser(t)
+	existingUser := testUtils.CreateTestUser(t, &models.User{})
+	guestUser := testUtils.CreateGuestUser(t, &models.User{})
 
 	tests := []struct {
 		name           string

@@ -19,6 +19,81 @@ import (
 	testUtils "github.com/arpansaha13/pariksha/internal/utils/test"
 )
 
+func TestGetUserExams(t *testing.T) {
+	testUtils.SetupTestDB(t)
+
+	t.Cleanup(func() {
+		testUtils.TeardownTestDB(t)
+	})
+
+	user := testUtils.CreateTestUser(t, &models.User{
+		Email: "test.mail.1@example.com",
+	})
+	otherUser := testUtils.CreateTestUser(t, &models.User{
+		Email: "test.mail.2@example.com",
+	})
+	paper := testUtils.CreateTestPaper(t, &models.Paper{})
+
+	testUtils.CreateTestExam(t, &models.Exam{
+		Title:     "Exam 1",
+		StartsAt:  time.Now().Add(24 * time.Hour),
+		EndsAt:    time.Now().Add(48 * time.Hour),
+		CreatedBy: user.ID,
+		PaperID:   paper.ID,
+	})
+	testUtils.CreateTestExam(t, &models.Exam{
+		Title:     "Exam 2",
+		StartsAt:  time.Now().Add(24 * time.Hour),
+		EndsAt:    time.Now().Add(48 * time.Hour),
+		CreatedBy: user.ID,
+		PaperID:   paper.ID,
+	})
+	testUtils.CreateTestExam(t, &models.Exam{
+		Title:     "Other User's Exam",
+		StartsAt:  time.Now().Add(24 * time.Hour),
+		EndsAt:    time.Now().Add(48 * time.Hour),
+		CreatedBy: otherUser.ID,
+		PaperID:   paper.ID,
+	})
+
+	tests := []struct {
+		name           string
+		userID         int
+		expectedStatus int
+		expectedCount  int
+	}{
+		{
+			name:           "Success",
+			userID:         user.ID,
+			expectedStatus: http.StatusOK,
+			expectedCount:  2,
+		},
+		{
+			name:           "No exams for user",
+			userID:         otherUser.ID,
+			expectedStatus: http.StatusOK,
+			expectedCount:  1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/exams", nil)
+			req = req.WithContext(testUtils.SetUserContext(req.Context(), tt.userID))
+			w := httptest.NewRecorder()
+
+			GetUserExams(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+
+			var response []dtos.ExamResponse
+			err := json.NewDecoder(w.Body).Decode(&response)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedCount, len(response))
+		})
+	}
+}
+
 func TestCreateExam(t *testing.T) {
 	testUtils.SetupTestDB(t)
 
@@ -26,7 +101,7 @@ func TestCreateExam(t *testing.T) {
 		testUtils.TeardownTestDB(t)
 	})
 
-	user := testUtils.CreateTestUser(t)
+	user := testUtils.CreateTestUser(t, &models.User{})
 	paper := testUtils.CreateTestPaper(t, &models.Paper{})
 
 	tests := []struct {
@@ -93,7 +168,7 @@ func TestUpdateExam(t *testing.T) {
 		testUtils.TeardownTestDB(t)
 	})
 
-	user := testUtils.CreateTestUser(t)
+	user := testUtils.CreateTestUser(t, &models.User{})
 	paper := testUtils.CreateTestPaper(t, &models.Paper{})
 	exam := testUtils.CreateTestExam(t, &models.Exam{
 		Title:     "Original Title",
@@ -252,7 +327,7 @@ func TestGetExamParticipants(t *testing.T) {
 		testUtils.TeardownTestDB(t)
 	})
 
-	user := testUtils.CreateTestUser(t)
+	user := testUtils.CreateTestUser(t, &models.User{})
 	paper := testUtils.CreateTestPaper(t, &models.Paper{})
 	exam := testUtils.CreateTestExam(t, &models.Exam{
 		CreatedBy: user.ID,
@@ -317,7 +392,7 @@ func TestStartExam(t *testing.T) {
 
 	now := time.Now()
 
-	user := testUtils.CreateTestUser(t)
+	user := testUtils.CreateTestUser(t, &models.User{})
 	paper := testUtils.CreateTestPaper(t, &models.Paper{})
 	exam := testUtils.CreateTestExam(t, &models.Exam{
 		CreatedBy: user.ID,
@@ -429,7 +504,7 @@ func TestAddExamParticipants(t *testing.T) {
 		testUtils.TeardownTestDB(t)
 	})
 
-	user := testUtils.CreateTestUser(t)
+	user := testUtils.CreateTestUser(t, &models.User{})
 	paper := testUtils.CreateTestPaper(t, &models.Paper{})
 	exam := testUtils.CreateTestExam(t, &models.Exam{
 		StartsAt:  time.Now().Add(24 * time.Hour),
@@ -580,7 +655,7 @@ func TestRemoveExamParticipant(t *testing.T) {
 		testUtils.TeardownTestDB(t)
 	})
 
-	user := testUtils.CreateTestUser(t)
+	user := testUtils.CreateTestUser(t, &models.User{})
 	paper := testUtils.CreateTestPaper(t, &models.Paper{})
 
 	participantCounts, _ := json.Marshal(models.ParticipantCount{
