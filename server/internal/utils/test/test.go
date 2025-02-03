@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -24,13 +25,16 @@ import (
 )
 
 func SetupTestDB(t *testing.T) {
+	if godotenv.Load("../../.env") != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		"localhost",
-		"postgres",
-		"postgres",
-		"pariksha_test",
-		"5433",
-	)
+		os.Getenv("TEST_DB_HOST"),
+		os.Getenv("TEST_DB_USER"),
+		os.Getenv("TEST_DB_PASS"),
+		os.Getenv("TEST_DB_NAME"),
+		os.Getenv("TEST_DB_PORT"))
 
 	silentLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags),
