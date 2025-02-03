@@ -324,13 +324,24 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
+		now := time.Now()
+
+		if exam.StartsAt.After(now) {
+			http.Error(w, "Exam has not started yet", http.StatusBadRequest)
+			return err
+		}
+
+		if exam.EndsAt.Before(now) {
+			http.Error(w, "Exam has ended", http.StatusBadRequest)
+			return err
+		}
+
 		counts, err := exam.GetParticipantCounts()
 		if err != nil {
 			http.Error(w, "Failed to get participant counts", http.StatusInternalServerError)
 			return err
 		}
 
-		now := time.Now()
 		scheduledEndTime := now.Add(time.Duration(exam.Paper.DurationMinutes) * time.Minute)
 
 		// Update participant status and times

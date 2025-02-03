@@ -156,14 +156,42 @@ func TestStartExam(t *testing.T) {
 		testUtils.TeardownTestDB(t)
 	})
 
+	now := time.Now()
+
 	user := testUtils.CreateTestUser(t)
 	paper := testUtils.CreateTestPaper(t, &models.Paper{})
 	exam := testUtils.CreateTestExam(t, &models.Exam{
 		CreatedBy: user.ID,
 		PaperID:   paper.ID,
+		StartsAt:  now.Add(-1 * time.Hour), // Started 1 hour ago
+		EndsAt:    now.Add(1 * time.Hour),  // Ends in 1 hour
+	})
+	futureExam := testUtils.CreateTestExam(t, &models.Exam{
+		Title:     "Future Exam",
+		StartsAt:  now.Add(1 * time.Hour), // Starts in 1 hour
+		EndsAt:    now.Add(2 * time.Hour), // Ends in 2 hours
+		CreatedBy: user.ID,
+		PaperID:   paper.ID,
+	})
+	pastExam := testUtils.CreateTestExam(t, &models.Exam{
+		Title:     "Past Exam",
+		StartsAt:  now.Add(-2 * time.Hour), // Started 2 hours ago
+		EndsAt:    now.Add(-1 * time.Hour), // Ended 1 hour ago
+		CreatedBy: user.ID,
+		PaperID:   paper.ID,
 	})
 	participant := testUtils.CreateTestExamParticipant(t, &models.ExamParticipant{
 		ExamID: exam.ID,
+		UserID: user.ID,
+		Status: constants.PARTICIPANT_STATUS_INVITED,
+	})
+	futureExamParticipant := testUtils.CreateTestExamParticipant(t, &models.ExamParticipant{
+		ExamID: futureExam.ID,
+		UserID: user.ID,
+		Status: constants.PARTICIPANT_STATUS_INVITED,
+	})
+	pastExamParticipant := testUtils.CreateTestExamParticipant(t, &models.ExamParticipant{
+		ExamID: pastExam.ID,
 		UserID: user.ID,
 		Status: constants.PARTICIPANT_STATUS_INVITED,
 	})
@@ -181,13 +209,19 @@ func TestStartExam(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:           "Invalid Exam ID",
-			examID:         "invalid",
-			participantID:  strconv.Itoa(participant.ID),
+			name:           "Exam not started yet",
+			examID:         strconv.Itoa(futureExam.ID),
+			participantID:  strconv.Itoa(futureExamParticipant.ID),
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:           "Already Started",
+			name:           "Exam already ended",
+			examID:         strconv.Itoa(pastExam.ID),
+			participantID:  strconv.Itoa(pastExamParticipant.ID),
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "Participant has already started exam",
 			examID:         strconv.Itoa(exam.ID),
 			participantID:  strconv.Itoa(participant.ID),
 			expectedStatus: http.StatusBadRequest,

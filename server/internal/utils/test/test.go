@@ -162,6 +162,10 @@ func CreateTestExam(t *testing.T, data *models.Exam) models.Exam {
 		exam.Title = "Test Exam"
 	}
 
+	if exam.Type == "" {
+		exam.Type = constants.EXAM_TYPE_OPEN
+	}
+
 	if exam.MaxCandidatesCount == 0 {
 		exam.MaxCandidatesCount = 10
 	}
