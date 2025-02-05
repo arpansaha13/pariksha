@@ -258,6 +258,19 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if exam.Type == constants.EXAM_TYPE_OPEN {
+		http.Error(w, "Participants cannot be added in OPEN exams.", http.StatusBadRequest)
+		return
+	}
+
+	for _, participantDto := range participantsDto {
+		if participantDto.UserID == 0 && participantDto.Email == "" {
+			// Either user_id or email must be provided
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+	}
+
 	// Get current counts
 	counts, err := exam.GetParticipantCounts()
 	if err != nil {
@@ -282,7 +295,7 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 
 		if participantDto.UserID != 0 {
 			userID = participantDto.UserID
-		} else if participantDto.Email != "" {
+		} else {
 			// Create a guest user
 			username := strings.Split(participantDto.Email, "@")[0]
 			user := models.User{
@@ -304,10 +317,6 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			userID = user.ID
-		} else {
-			// Either user_id or email must be provided
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
-			return
 		}
 
 		// Add the participant to the exam
@@ -417,6 +426,19 @@ func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// Helper function to create a new exam participant
+func createExamParticipant(tx *gorm.DB, examID, userID int) (*models.ExamParticipant, error) {
+	participant := models.ExamParticipant{
+		ExamID: examID,
+		UserID: userID,
+	}
+
+	if err := tx.Create(&participant).Error; err != nil {
+		return nil, err
+	}
+	return &participant, nil
+}
+
 func StartExam(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	examID, err := strconv.Atoi(vars["examId"])
@@ -425,29 +447,9 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	participantID, err := strconv.Atoi(vars["participantId"])
-	if err != nil {
-		http.Error(w, "Invalid participant ID", http.StatusBadRequest)
-		return
-	}
+	userID := r.Context().Value(middlewares.UserIDKey).(int)
 
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		var participant models.ExamParticipant
-		if err := tx.Take(&participant, participantID).Error; err != nil {
-			http.Error(w, "Participant not found", http.StatusNotFound)
-			return err
-		}
-
-		if participant.Status != constants.PARTICIPANT_STATUS_INVITED {
-			http.Error(w, "Participant has already started the exam", http.StatusBadRequest)
-			return err
-		}
-
-		if participant.ExamID != examID {
-			http.Error(w, "Participant does not belong to this exam", http.StatusBadRequest)
-			return err
-		}
-
 		var exam models.Exam
 		if err := tx.Preload("Paper").Take(&exam, examID).Error; err != nil {
 			http.Error(w, "Exam not found", http.StatusNotFound)
@@ -456,14 +458,45 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 
 		now := time.Now()
 
+		// Check exam timing constraints
 		if exam.StartsAt.After(now) {
 			http.Error(w, "Exam has not started yet", http.StatusBadRequest)
-			return err
+			return errors.New("exam has not started")
 		}
 
 		if exam.EndsAt.Before(now) {
 			http.Error(w, "Exam has ended", http.StatusBadRequest)
-			return err
+			return errors.New("exam has ended")
+		}
+
+		var participant models.ExamParticipant
+		participantErr := tx.Where("exam_id = ? AND user_id = ?", examID, userID).Take(&participant).Error
+
+		if exam.Type == constants.EXAM_TYPE_OPEN {
+			if participantErr == gorm.ErrRecordNotFound {
+				// For OPEN exams, create new participant if doesn't exist
+				newParticipant, err := createExamParticipant(tx, examID, userID)
+				if err != nil {
+					http.Error(w, "Failed to create participant", http.StatusInternalServerError)
+					return err
+				}
+				participant = *newParticipant
+			} else if participantErr != nil {
+				http.Error(w, "Database error", http.StatusInternalServerError)
+				return participantErr
+			}
+		} else {
+			// For INVITE exams, participant must exist
+			if participantErr != nil {
+				http.Error(w, "Participant not found", http.StatusNotFound)
+				return participantErr
+			}
+		}
+
+		// Check if participant has already started
+		if participant.Status != constants.PARTICIPANT_STATUS_INVITED {
+			http.Error(w, "Participant has already started the exam", http.StatusBadRequest)
+			return errors.New("already started")
 		}
 
 		counts, err := exam.GetParticipantCounts()

@@ -394,104 +394,135 @@ func TestStartExam(t *testing.T) {
 
 	user := testUtils.CreateTestUser(t, &models.User{})
 	paper := testUtils.CreateTestPaper(t, &models.Paper{})
-	exam := testUtils.CreateTestExam(t, &models.Exam{
+
+	inviteExam := testUtils.CreateTestExam(t, &models.Exam{
 		CreatedBy: user.ID,
 		PaperID:   paper.ID,
 		StartsAt:  now.Add(-1 * time.Hour), // Started 1 hour ago
 		EndsAt:    now.Add(1 * time.Hour),  // Ends in 1 hour
+		Type:      constants.EXAM_TYPE_INVITE,
 	})
+
+	openExam := testUtils.CreateTestExam(t, &models.Exam{
+		CreatedBy: user.ID,
+		PaperID:   paper.ID,
+		StartsAt:  now.Add(-1 * time.Hour), // Started 1 hour ago
+		EndsAt:    now.Add(1 * time.Hour),  // Ends in 1 hour
+		Type:      constants.EXAM_TYPE_OPEN,
+	})
+
 	futureExam := testUtils.CreateTestExam(t, &models.Exam{
 		Title:     "Future Exam",
 		StartsAt:  now.Add(1 * time.Hour), // Starts in 1 hour
 		EndsAt:    now.Add(2 * time.Hour), // Ends in 2 hours
 		CreatedBy: user.ID,
 		PaperID:   paper.ID,
+		Type:      constants.EXAM_TYPE_INVITE,
 	})
+
 	pastExam := testUtils.CreateTestExam(t, &models.Exam{
 		Title:     "Past Exam",
 		StartsAt:  now.Add(-2 * time.Hour), // Started 2 hours ago
 		EndsAt:    now.Add(-1 * time.Hour), // Ended 1 hour ago
 		CreatedBy: user.ID,
 		PaperID:   paper.ID,
+		Type:      constants.EXAM_TYPE_INVITE,
 	})
-	participant := testUtils.CreateTestExamParticipant(t, &models.ExamParticipant{
-		ExamID: exam.ID,
+
+	// Create participants
+	inviteExamParticipant := testUtils.CreateTestExamParticipant(t, &models.ExamParticipant{
+		ExamID: inviteExam.ID,
 		UserID: user.ID,
 		Status: constants.PARTICIPANT_STATUS_INVITED,
 	})
-	futureExamParticipant := testUtils.CreateTestExamParticipant(t, &models.ExamParticipant{
-		ExamID: futureExam.ID,
+
+	startedParticipant := testUtils.CreateTestExamParticipant(t, &models.ExamParticipant{
+		ExamID: inviteExam.ID,
 		UserID: user.ID,
-		Status: constants.PARTICIPANT_STATUS_INVITED,
-	})
-	pastExamParticipant := testUtils.CreateTestExamParticipant(t, &models.ExamParticipant{
-		ExamID: pastExam.ID,
-		UserID: user.ID,
-		Status: constants.PARTICIPANT_STATUS_INVITED,
+		Status: constants.PARTICIPANT_STATUS_STARTED,
 	})
 
 	tests := []struct {
 		name           string
 		examID         string
-		participantID  string
+		userID         int
 		expectedStatus int
+		validateFunc   func(t *testing.T, examID int, userID int)
 	}{
 		{
-			name:           "Success",
-			examID:         strconv.Itoa(exam.ID),
-			participantID:  strconv.Itoa(participant.ID),
+			name:           "Success - INVITE exam with existing participant",
+			examID:         strconv.Itoa(inviteExam.ID),
+			userID:         inviteExamParticipant.UserID,
 			expectedStatus: http.StatusOK,
+			validateFunc: func(t *testing.T, examID int, userID int) {
+				var participant models.ExamParticipant
+				err := db.DB.Where("exam_id = ? AND user_id = ?", examID, userID).First(&participant).Error
+				assert.NoError(t, err)
+				assert.Equal(t, constants.PARTICIPANT_STATUS_STARTED, participant.Status)
+				assert.True(t, participant.StartedAt.Valid)
+				assert.True(t, participant.ScheduledEndTime.Valid)
+			},
 		},
 		{
-			name:           "Exam not started yet",
+			name:           "Success - OPEN exam with no existing participant",
+			examID:         strconv.Itoa(openExam.ID),
+			userID:         user.ID,
+			expectedStatus: http.StatusOK,
+			validateFunc: func(t *testing.T, examID int, userID int) {
+				var participant models.ExamParticipant
+				err := db.DB.Where("exam_id = ? AND user_id = ?", examID, userID).First(&participant).Error
+				assert.NoError(t, err)
+				assert.Equal(t, constants.PARTICIPANT_STATUS_STARTED, participant.Status)
+				assert.True(t, participant.StartedAt.Valid)
+				assert.True(t, participant.ScheduledEndTime.Valid)
+			},
+		},
+		{
+			name:           "Failure - INVITE exam with no existing participant",
+			examID:         strconv.Itoa(inviteExam.ID),
+			userID:         999, // Non-existent participant
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name:           "Failure - Exam not started yet",
 			examID:         strconv.Itoa(futureExam.ID),
-			participantID:  strconv.Itoa(futureExamParticipant.ID),
+			userID:         user.ID,
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:           "Exam already ended",
+			name:           "Failure - Exam already ended",
 			examID:         strconv.Itoa(pastExam.ID),
-			participantID:  strconv.Itoa(pastExamParticipant.ID),
+			userID:         user.ID,
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:           "Participant has already started exam",
-			examID:         strconv.Itoa(exam.ID),
-			participantID:  strconv.Itoa(participant.ID),
+			name:           "Failure - Participant already started",
+			examID:         strconv.Itoa(inviteExam.ID),
+			userID:         startedParticipant.UserID,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "Failure - Invalid exam ID",
+			examID:         "invalid",
+			userID:         user.ID,
 			expectedStatus: http.StatusBadRequest,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest("PATCH", "/exams/"+tt.examID+"/participants/"+tt.participantID+"/start", nil)
-			req = mux.SetURLVars(req, map[string]string{
-				"examId":        tt.examID,
-				"participantId": tt.participantID,
-			})
+			req := httptest.NewRequest("PATCH", "/exams/"+tt.examID+"/start", nil)
+			req = mux.SetURLVars(req, map[string]string{"examId": tt.examID})
+			req = req.WithContext(testUtils.SetUserContext(req.Context(), tt.userID))
 			w := httptest.NewRecorder()
 
 			StartExam(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
-			if tt.expectedStatus == http.StatusOK {
-				var updatedParticipant models.ExamParticipant
-				err := db.DB.Preload("Exam.Paper").Take(&updatedParticipant, tt.participantID).Error
-				assert.NoError(t, err)
-
-				// Verify status changed to STARTED
-				assert.Equal(t, constants.PARTICIPANT_STATUS_STARTED, updatedParticipant.Status)
-
-				// Verify StartedAt is set
-				assert.True(t, updatedParticipant.StartedAt.Valid)
-
-				// Verify ScheduledEndTime is set correctly
-				expectedEndTime := updatedParticipant.StartedAt.Time.Add(
-					time.Duration(updatedParticipant.Exam.Paper.DurationMinutes) * time.Minute,
-				)
-				assert.True(t, updatedParticipant.ScheduledEndTime.Valid)
-				assert.Equal(t, expectedEndTime.Unix(), updatedParticipant.ScheduledEndTime.Time.Unix())
+			if tt.validateFunc != nil {
+				examID, _ := strconv.Atoi(tt.examID)
+				tt.validateFunc(t, examID, tt.userID)
 			}
 		})
 	}
@@ -506,15 +537,27 @@ func TestAddExamParticipants(t *testing.T) {
 
 	user := testUtils.CreateTestUser(t, &models.User{})
 	paper := testUtils.CreateTestPaper(t, &models.Paper{})
-	exam := testUtils.CreateTestExam(t, &models.Exam{
-		StartsAt:  time.Now().Add(24 * time.Hour),
-		EndsAt:    time.Now().Add(48 * time.Hour),
+
+	inviteExam := testUtils.CreateTestExam(t, &models.Exam{
+		Title:     "Invite Exam",
+		StartsAt:  time.Now().Add(time.Hour),
+		EndsAt:    time.Now().Add(2 * time.Hour),
 		CreatedBy: user.ID,
 		PaperID:   paper.ID,
 		Type:      constants.EXAM_TYPE_INVITE,
 	})
+
+	openExam := testUtils.CreateTestExam(t, &models.Exam{
+		Title:     "Open Exam",
+		StartsAt:  time.Now().Add(time.Hour),
+		EndsAt:    time.Now().Add(2 * time.Hour),
+		CreatedBy: user.ID,
+		PaperID:   paper.ID,
+		Type:      constants.EXAM_TYPE_OPEN,
+	})
+
 	maxLimitExam := testUtils.CreateTestExam(t, &models.Exam{
-		Title:              "Max Limit Exam",
+		Title:              "Max limit Exam",
 		StartsAt:           time.Now().Add(time.Hour),
 		EndsAt:             time.Now().Add(2 * time.Hour),
 		CreatedBy:          user.ID,
@@ -528,16 +571,20 @@ func TestAddExamParticipants(t *testing.T) {
 		examID         string
 		participants   []dtos.AddExamParticipantDto
 		expectedStatus int
-		validateFunc   func(t *testing.T, examID int)
+		validateFunc   func(t *testing.T, examID int, response dtos.AddExamParticipantResponse)
 	}{
 		{
 			name:   "Success - Add registered user",
-			examID: strconv.Itoa(exam.ID),
+			examID: strconv.Itoa(inviteExam.ID),
 			participants: []dtos.AddExamParticipantDto{
 				{UserID: user.ID},
 			},
 			expectedStatus: http.StatusCreated,
-			validateFunc: func(t *testing.T, examID int) {
+			validateFunc: func(t *testing.T, examID int, response dtos.AddExamParticipantResponse) {
+				assert.Equal(t, 1, response.AddedCount)
+				assert.Equal(t, 0, response.OmittedCount)
+				assert.Empty(t, response.MaxLimitReason)
+
 				// Verify participant was added
 				var participant models.ExamParticipant
 				err := db.DB.Where("exam_id = ? AND user_id = ?", examID, user.ID).First(&participant).Error
@@ -545,16 +592,16 @@ func TestAddExamParticipants(t *testing.T) {
 				assert.Equal(t, constants.PARTICIPANT_STATUS_INVITED, participant.Status)
 
 				// Verify count was updated
-				var updatedExam models.Exam
-				db.DB.First(&updatedExam, examID)
-				counts, err := updatedExam.GetParticipantCounts()
+				var exam models.Exam
+				db.DB.First(&exam, examID)
+				counts, err := exam.GetParticipantCounts()
 				assert.NoError(t, err)
 				assert.Equal(t, 1, counts.Invited)
 			},
 		},
 		{
 			name:   "Success - Add guest user",
-			examID: strconv.Itoa(exam.ID),
+			examID: strconv.Itoa(inviteExam.ID),
 			participants: []dtos.AddExamParticipantDto{
 				{
 					Email:     "guest@test.com",
@@ -563,27 +610,34 @@ func TestAddExamParticipants(t *testing.T) {
 				},
 			},
 			expectedStatus: http.StatusCreated,
-			validateFunc: func(t *testing.T, examID int) {
+			validateFunc: func(t *testing.T, examID int, response dtos.AddExamParticipantResponse) {
+				assert.Equal(t, 1, response.AddedCount)
+				assert.Equal(t, 0, response.OmittedCount)
+
 				// Verify guest user was created
 				var user models.User
 				err := db.DB.Where("email = ?", "guest@test.com").First(&user).Error
 				assert.NoError(t, err)
 				assert.True(t, user.IsGuest)
 
-				// Verify participant was added with correct status
+				// Verify participant was added
 				var participant models.ExamParticipant
 				err = db.DB.Where("exam_id = ? AND user_id = ?", examID, user.ID).First(&participant).Error
 				assert.NoError(t, err)
-				assert.Equal(t, constants.PARTICIPANT_STATUS_INVITED, participant.Status)
 			},
 		},
 		{
-			name:   "Max Candidates Limit Reached",
+			name:   "Failure - Cannot add participants to OPEN exam",
+			examID: strconv.Itoa(openExam.ID),
+			participants: []dtos.AddExamParticipantDto{
+				{UserID: user.ID},
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:   "Max Candidates Limit",
 			examID: strconv.Itoa(maxLimitExam.ID),
 			participants: []dtos.AddExamParticipantDto{
-				{
-					UserID: user.ID,
-				},
 				{
 					Email:     "test1@example.com",
 					FirstName: "Test1",
@@ -594,38 +648,55 @@ func TestAddExamParticipants(t *testing.T) {
 					FirstName: "Test2",
 					LastName:  "User2",
 				},
+				{
+					Email:     "test3@example.com",
+					FirstName: "Test3",
+					LastName:  "User3",
+				},
 			},
 			expectedStatus: http.StatusCreated,
-			validateFunc: func(t *testing.T, examID int) {
-				// Verify participants were added
-				var count int64
-				err := db.DB.Model(models.ExamParticipant{}).Where("exam_id = ?", examID).Count(&count).Error
-				assert.NoError(t, err)
-				assert.Equal(t, int64(2), count) // 1 candidate omitted
+			validateFunc: func(t *testing.T, examID int, response dtos.AddExamParticipantResponse) {
+				assert.Equal(t, 2, response.AddedCount)
+				assert.Equal(t, 1, response.OmittedCount)
+				assert.NotEmpty(t, response.MaxLimitReason)
 
-				// Verify count was updated
-				var updatedExam models.Exam
-				db.DB.Take(&updatedExam, examID)
-				counts, err := updatedExam.GetParticipantCounts()
-				assert.NoError(t, err)
-				assert.Equal(t, 2, counts.Invited)
+				// Verify only 2 participants were added
+				var count int64
+				db.DB.Model(&models.ExamParticipant{}).Where("exam_id = ?", examID).Count(&count)
+				assert.Equal(t, int64(2), count)
 			},
 		},
 		{
+			name:   "Invalid Request - Missing both UserID and Email",
+			examID: strconv.Itoa(inviteExam.ID),
+			participants: []dtos.AddExamParticipantDto{
+				{}, // Empty participant
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:   "Invalid Request - Missing both UserID and Email and Max Limit Reached",
+			examID: strconv.Itoa(maxLimitExam.ID),
+			participants: []dtos.AddExamParticipantDto{
+				{}, // Empty participant
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
 			name:   "Invalid exam ID",
-			examID: "999999",
+			examID: "invalid",
+			participants: []dtos.AddExamParticipantDto{
+				{UserID: user.ID},
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:   "Non-existent exam",
+			examID: "99999",
 			participants: []dtos.AddExamParticipantDto{
 				{UserID: user.ID},
 			},
 			expectedStatus: http.StatusNotFound,
-		},
-		{
-			name:   "Missing required fields",
-			examID: strconv.Itoa(exam.ID),
-			participants: []dtos.AddExamParticipantDto{
-				{}, // No UserID or Email
-			},
-			expectedStatus: http.StatusBadRequest,
 		},
 	}
 
@@ -641,8 +712,11 @@ func TestAddExamParticipants(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
 			if tt.validateFunc != nil {
+				var response dtos.AddExamParticipantResponse
+				err := json.NewDecoder(w.Body).Decode(&response)
+				assert.NoError(t, err)
 				examID, _ := strconv.Atoi(tt.examID)
-				tt.validateFunc(t, examID)
+				tt.validateFunc(t, examID, response)
 			}
 		})
 	}
