@@ -13,7 +13,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
@@ -106,7 +105,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 
 	errs := validate.Do.Struct(signUpDto)
 	if errs != nil {
-		http.Error(w, "Invald request body", http.StatusBadRequest)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
@@ -116,69 +115,69 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	otp, _ := utils.GenerateOTP(constants.VERIFICATION_OTP_LENGTH)
-	linkHash, _ := utils.GenerateAlphaNum(constants.VERIFICATION_HASH_LENGTH)
-
-	otpExpiresInMinutes, _ := strconv.Atoi(
-		utils.GetEnvWithDefault("OTP_EXPIRES_IN_MINUTES", constants.DEFAULT_OTP_EXPIRES_IN_MINUTES),
-	)
-	otpExpiresAt := time.Now().Add(time.Duration(otpExpiresInMinutes) * time.Minute)
-
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(signUpDto.Password), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, "Error hashing password", http.StatusInternalServerError)
 		return
 	}
 
-	// check if the email already exists in UnverifiedUsers
-	var unverifiedUser models.UnverifiedUser
-	err = db.DB.Where("email = ?", signUpDto.Email).Take(&unverifiedUser).Error
+	err = db.DB.Transaction(func(tx *gorm.DB) error {
+		// Create or update user
+		err := tx.Where("email = ?", signUpDto.Email).Take(&user).Error
+		if err == nil {
+			user.Password.String = string(hashedPassword)
 
-	if err == nil {
-		// if yes, then just update the otp in that row
-
-		unverifiedUser.OTP = otp
-		unverifiedUser.OTPExpiresAt = otpExpiresAt
-		if err := db.DB.Save(&unverifiedUser).Error; err != nil {
-			fmt.Println(err)
-			http.Error(w, "Failed to update OTP. Please try again later.", http.StatusInternalServerError)
-			return
+			if err := tx.Save(&user).Error; err != nil {
+				return err
+			}
+		} else if errors.Is(err, gorm.ErrRecordNotFound) {
+			user = models.User{
+				Email:    signUpDto.Email,
+				Username: strings.Split(signUpDto.Email, "@")[0],
+				Password: sql.NullString{String: string(hashedPassword), Valid: true},
+				Verified: false,
+			}
+			if err := tx.Create(&user).Error; err != nil {
+				return err
+			}
+		} else {
+			return err
 		}
-	} else if errors.Is(err, gorm.ErrRecordNotFound) {
-		// else create a new entry.
 
-		newUnverifiedUser := models.UnverifiedUser{
-			Hash:         linkHash,
+		otp, _ := utils.GenerateOTP(constants.VERIFICATION_OTP_LENGTH)
+		otpExpiresInMinutes, _ := strconv.Atoi(
+			utils.GetEnvWithDefault("OTP_EXPIRES_IN_MINUTES", constants.DEFAULT_OTP_EXPIRES_IN_MINUTES),
+		)
+		otpExpiresAt := time.Now().Add(time.Duration(otpExpiresInMinutes) * time.Minute)
+
+		// Create or update OTP entry
+		otpEntry := models.Otp{
+			Email:        signUpDto.Email,
 			OTP:          otp,
 			OTPExpiresAt: otpExpiresAt,
-			Email:        signUpDto.Email,
-			Password:     string(hashedPassword),
+			Purpose:      constants.OTP_PURPOSE_SIGNUP,
 		}
-		if err := db.DB.Create(&newUnverifiedUser).Error; err != nil {
-			fmt.Println(err)
-			http.Error(w, "Failed to create user. Please try again later.", http.StatusInternalServerError)
-			return
+		if err := tx.Save(&otpEntry).Error; err != nil {
+			return err
 		}
-	} else {
-		fmt.Println(err)
-		http.Error(w, "Failed to process request. Please try again later.", http.StatusInternalServerError)
+
+		msg := utils.CreateVerificationMail(signUpDto.Email, otp, otpExpiresInMinutes)
+		if err := utils.SendEmail(signUpDto.Email, msg); err != nil {
+			fmt.Printf("Failed to send verification email: %v\n", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		http.Error(w, "Failed to process signup", http.StatusInternalServerError)
 		return
-	}
-
-	msg := utils.CreateVerificationMail(signUpDto.Email, otp, linkHash, otpExpiresInMinutes)
-
-	if err := utils.SendEmail(signUpDto.Email, msg); err != nil {
-		// Log the error but don't return it to the user since the account was created
-		fmt.Printf("Failed to send verification email: %v\n", err)
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func Verification(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	hash := params["hash"]
-
 	var verificationDto dtos.VerificationDto
 	if err := json.NewDecoder(r.Body).Decode(&verificationDto); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -187,52 +186,32 @@ func Verification(w http.ResponseWriter, r *http.Request) {
 
 	errs := validate.Do.Struct(verificationDto)
 	if errs != nil {
-		http.Error(w, "Invald request body", http.StatusBadRequest)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		var unverifiedUser *models.UnverifiedUser
-		if err := tx.Where("hash = ?", hash).Take(&unverifiedUser).Error; err != nil {
-			http.Error(w, "Invalid or expired link", constants.StatusInvalidToken)
+		var otpEntry models.Otp
+		if err := tx.Where("email = ?", verificationDto.Email).Take(&otpEntry).Error; err != nil {
+			http.Error(w, "Invalid email", http.StatusUnauthorized)
 			return err
 		}
 
-		if verificationDto.OTP != unverifiedUser.OTP || time.Now().After(unverifiedUser.OTPExpiresAt) {
+		if verificationDto.OTP != otpEntry.OTP || time.Now().After(otpEntry.OTPExpiresAt) {
 			http.Error(w, "Invalid or expired OTP", http.StatusUnauthorized)
 			return errors.New("invalid or expired otp")
 		}
 
-		var newUser *models.User
-
-		if err := tx.Model(models.User{}).Where("email = ?", unverifiedUser.Email).Take(&newUser).Error; err != nil {
-			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				http.Error(w, "Something went wrong!", http.StatusInternalServerError)
-				return err
-			}
-
-			newUser = &models.User{
-				Email:    unverifiedUser.Email,
-				Password: sql.NullString{String: unverifiedUser.Password, Valid: true},
-				Username: strings.Split(unverifiedUser.Email, "@")[0],
-			}
-
-			if err := tx.Create(newUser).Error; err != nil {
-				http.Error(w, "Failed to create user", http.StatusInternalServerError)
-				return err
-			}
-		} else {
-			newUser.Verified = true
-			newUser.Password = sql.NullString{String: unverifiedUser.Password, Valid: true}
-
-			if err := tx.Save(&newUser).Error; err != nil {
-				http.Error(w, "Failed to save user", http.StatusInternalServerError)
+		if otpEntry.Purpose == constants.OTP_PURPOSE_SIGNUP {
+			if err := tx.Model(&models.User{}).Where("email = ?", verificationDto.Email).
+				Update("verified", true).Error; err != nil {
+				http.Error(w, "Failed to verify user", http.StatusInternalServerError)
 				return err
 			}
 		}
 
-		if err := tx.Delete(unverifiedUser).Error; err != nil {
-			http.Error(w, "Failed to delete unverified user", http.StatusInternalServerError)
+		if err := tx.Delete(&otpEntry).Error; err != nil {
+			http.Error(w, "Failed to delete OTP entry", http.StatusInternalServerError)
 			return err
 		}
 

@@ -3,13 +3,11 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/arpansaha13/pariksha/internal/constants"
@@ -138,7 +136,7 @@ func TestSignUp(t *testing.T) {
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 			if tt.expectedStatus == http.StatusNoContent {
-				var unverifiedUser models.UnverifiedUser
+				var unverifiedUser models.Otp
 				result := db.DB.Where("email = ?", tt.signUpDto.Email).First(&unverifiedUser)
 				assert.Nil(t, result.Error)
 				assert.NotEmpty(t, unverifiedUser.OTP)
@@ -154,87 +152,90 @@ func TestVerification(t *testing.T) {
 		testUtils.TeardownTestDB(t)
 	})
 
-	// Create unverified users
-	validUnverifiedUser := models.UnverifiedUser{
-		Hash:         "testHash12", // 10-character hash
+	// Create test user and OTP entry
+	email := "verify@example.com"
+	user := testUtils.CreateTestUser(t, &models.User{
+		Email:    email,
+		Verified: false,
+	})
+
+	validOtp := models.Otp{
+		Email:        email,
 		OTP:          "123456",
-		Email:        "verify@example.com",
-		Password:     "hashedPass",
 		OTPExpiresAt: time.Now().Add(15 * time.Minute),
-	}
-	expiredUnverifiedUser := models.UnverifiedUser{
-		Hash:         "expired123", // 10-character hash
-		OTP:          "123457",
-		Email:        "expired@example.com",
-		Password:     "hashedPass",
-		OTPExpiresAt: time.Now().Add(-10 * time.Minute),
+		Purpose:      constants.OTP_PURPOSE_SIGNUP,
 	}
 
-	db.DB.Create(&validUnverifiedUser)
-	db.DB.Create(&expiredUnverifiedUser)
+	expiredOtp := models.Otp{
+		Email:        "expired@example.com",
+		OTP:          "123457",
+		OTPExpiresAt: time.Now().Add(-10 * time.Minute),
+		Purpose:      constants.OTP_PURPOSE_SIGNUP,
+	}
+
+	db.DB.Create(&validOtp)
+	db.DB.Create(&expiredOtp)
 
 	tests := []struct {
 		name           string
-		hash           string
 		verifyDto      dtos.VerificationDto
 		expectedStatus int
+		validateFunc   func(t *testing.T)
 	}{
 		{
-			name: "Invalid OTP",
-			hash: validUnverifiedUser.Hash,
+			name: "Success - Signup verification",
 			verifyDto: dtos.VerificationDto{
-				OTP: "wrong123",
+				Email: email,
+				OTP:   validOtp.OTP,
 			},
-			expectedStatus: http.StatusUnauthorized,
+			expectedStatus: http.StatusNoContent,
+			validateFunc: func(t *testing.T) {
+				var updatedUser models.User
+				db.DB.First(&updatedUser, user.ID)
+				assert.True(t, updatedUser.Verified)
+
+				var otpEntry models.Otp
+				result := db.DB.Where("email = ?", email).First(&otpEntry)
+				assert.Error(t, result.Error) // OTP entry should be deleted
+			},
 		},
 		{
-			name: "Invalid or expired hash (wrong or deleted)",
-			hash: "wrongHash",
+			name: "Invalid OTP",
 			verifyDto: dtos.VerificationDto{
-				OTP: validUnverifiedUser.OTP,
+				Email: email,
+				OTP:   "wrong123",
 			},
-			expectedStatus: constants.StatusInvalidToken,
+			expectedStatus: http.StatusUnauthorized,
 		},
 		{
 			name: "Expired OTP",
-			hash: expiredUnverifiedUser.Hash,
 			verifyDto: dtos.VerificationDto{
-				OTP: expiredUnverifiedUser.OTP,
+				Email: "expired@example.com",
+				OTP:   expiredOtp.OTP,
 			},
 			expectedStatus: http.StatusUnauthorized,
 		},
-		// Note: `unverifiedUser` entry will be deleted after successful verification
 		{
-			name: "Successful verification",
-			hash: validUnverifiedUser.Hash,
+			name: "Invalid email",
 			verifyDto: dtos.VerificationDto{
-				OTP: validUnverifiedUser.OTP,
+				Email: "nonexistent@example.com",
+				OTP:   "123456",
 			},
-			expectedStatus: http.StatusNoContent,
+			expectedStatus: http.StatusUnauthorized,
 		},
 	}
-
-	// TODO: add test for verification of guest user
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			body, _ := json.Marshal(tt.verifyDto)
-			req := httptest.NewRequest("POST", fmt.Sprintf("/auth/verification/%s", tt.hash), bytes.NewBuffer(body))
-			req = mux.SetURLVars(req, map[string]string{"hash": tt.hash})
+			req := httptest.NewRequest("POST", "/auth/verification", bytes.NewBuffer(body))
 			w := httptest.NewRecorder()
 
 			Verification(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
-			if tt.expectedStatus == http.StatusNoContent {
-				// Verify user was created
-				var user models.User
-				result := db.DB.Where("email = ?", validUnverifiedUser.Email).First(&user)
-				assert.Nil(t, result.Error)
-
-				// Verify unverified user was deleted
-				result = db.DB.Where("hash = ?", validUnverifiedUser.Hash).First(&models.UnverifiedUser{})
-				assert.Error(t, result.Error)
+			if tt.validateFunc != nil {
+				tt.validateFunc(t)
 			}
 		})
 	}

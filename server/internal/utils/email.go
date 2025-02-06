@@ -24,11 +24,10 @@ func SendEmail(to string, content string) error {
 }
 
 // CreateHTMLEmailTemplate generates an HTML formatted email message
-func CreateVerificationMail(to string, otp string, linkHash string, expiresInMinutes int) string {
+func CreateVerificationMail(to string, otp string, expiresInMinutes int) string {
 	smtpName := os.Getenv("SMTP_NAME")
 	smtpFrom := os.Getenv("SMTP_FROM")
 	subject := "Verify your email address"
-	link := fmt.Sprintf("http://localhost:3000/auth/verification/%s", linkHash)
 
 	htmlBody := fmt.Sprintf(`
 		<!DOCTYPE html>
@@ -37,13 +36,12 @@ func CreateVerificationMail(to string, otp string, linkHash string, expiresInMin
 				<meta charset="UTF-8">
 			</head>
 			<body>
-				<p>Please use the OTP and verification link below to confirm your email.</p>
+				<p>Please use the OTP below to confirm your email.</p>
 				<p>OTP: <strong>%s</strong></p>
-				<p>Verification link: <a href="%s">%s</a></p>
 				<p>The OTP will expire in <strong>%s minutes</strong>. If you did not request this email you can safely ignore it.</p>
 			</body>
 		</html>
-`, otp, link, link, fmt.Sprintf("%d", expiresInMinutes))
+	`, otp, fmt.Sprintf("%d", expiresInMinutes))
 
 	return fmt.Sprintf("From: %s <%s>\r\n"+
 		"To: %s\r\n"+

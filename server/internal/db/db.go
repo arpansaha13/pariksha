@@ -47,7 +47,7 @@ func autoMigrate() {
 		&models.PaperOwnership{},
 		&models.Question{},
 		&models.Session{},
-		&models.UnverifiedUser{},
+		&models.Otp{},
 	)
 
 	if err != nil {
