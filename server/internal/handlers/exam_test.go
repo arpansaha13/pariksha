@@ -614,11 +614,11 @@ func TestAddExamParticipants(t *testing.T) {
 				assert.Equal(t, 1, response.AddedCount)
 				assert.Equal(t, 0, response.OmittedCount)
 
-				// Verify guest user was created
+				// Verify unverified user was created
 				var user models.User
 				err := db.DB.Where("email = ?", "guest@test.com").First(&user).Error
 				assert.NoError(t, err)
-				assert.True(t, user.IsGuest)
+				assert.False(t, user.Verified)
 
 				// Verify participant was added
 				var participant models.ExamParticipant

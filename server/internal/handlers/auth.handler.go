@@ -40,8 +40,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var user models.User
-	if err := db.DB.Where("email = ?", loginDto.Email).Take(&user).Error; err != nil || user.IsGuest {
-		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
+	if err := db.DB.Where("email = ?", loginDto.Email).Take(&user).Error; err != nil || !user.Verified {
+		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
@@ -111,8 +111,8 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var user models.User
-	if err := db.DB.Where("email = ?", signUpDto.Email).Take(&user).Error; err == nil && !user.IsGuest {
-		http.Error(w, "This email is already registered", http.StatusConflict)
+	if err := db.DB.Where("email = ?", signUpDto.Email).Take(&user).Error; err == nil && user.Verified {
+		http.Error(w, "Email already registered", http.StatusConflict)
 		return
 	}
 
@@ -222,7 +222,7 @@ func Verification(w http.ResponseWriter, r *http.Request) {
 				return err
 			}
 		} else {
-			newUser.IsGuest = false
+			newUser.Verified = true
 			newUser.Password = sql.NullString{String: unverifiedUser.Password, Valid: true}
 
 			if err := tx.Save(&newUser).Error; err != nil {

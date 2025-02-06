@@ -27,7 +27,7 @@ func TestLogin(t *testing.T) {
 	})
 
 	testUser := testUtils.CreateTestUser(t, &models.User{})
-	guestUser := testUtils.CreateGuestUser(t, &models.User{})
+	unverifiedUser := testUtils.CreateUnverifiedUser(t, &models.User{})
 
 	tests := []struct {
 		name           string
@@ -61,7 +61,7 @@ func TestLogin(t *testing.T) {
 		{
 			name: "Guest user",
 			loginDto: dtos.LoginDto{
-				Email:    guestUser.Email,
+				Email:    unverifiedUser.Email,
 				Password: "testPass123",
 			},
 			expectedStatus: http.StatusUnauthorized,
@@ -93,7 +93,7 @@ func TestSignUp(t *testing.T) {
 	})
 
 	existingUser := testUtils.CreateTestUser(t, &models.User{})
-	guestUser := testUtils.CreateGuestUser(t, &models.User{})
+	unverifiedUser := testUtils.CreateUnverifiedUser(t, &models.User{})
 
 	tests := []struct {
 		name           string
@@ -119,7 +119,7 @@ func TestSignUp(t *testing.T) {
 		{
 			name: "Successful signup for guest user",
 			signUpDto: dtos.SignUpDto{
-				Email:    guestUser.Email,
+				Email:    unverifiedUser.Email,
 				Password: "guestPass123",
 			},
 			expectedStatus: http.StatusNoContent,

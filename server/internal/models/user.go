@@ -12,7 +12,7 @@ type User struct {
 	Password  sql.NullString `gorm:"type:varchar(255)"`
 	FirstName sql.NullString `gorm:"column:first_name;type:varchar(255)"`
 	LastName  sql.NullString `gorm:"column:last_name;type:varchar(255)"`
-	IsGuest   bool           `gorm:"default:false;not null"`
+	Verified  bool           `gorm:"default:false;not null"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Exams     []Exam `gorm:"foreignKey:CreatedBy"`

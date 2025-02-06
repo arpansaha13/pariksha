@@ -96,6 +96,7 @@ func CreateTestUser(t *testing.T, data *models.User) models.User {
 	user := models.User{
 		Email:    data.Email,
 		Password: sql.NullString{String: string(hashedPassword), Valid: true},
+		Verified: true,
 	}
 
 	if data.Email == "" {
@@ -111,23 +112,23 @@ func CreateTestUser(t *testing.T, data *models.User) models.User {
 	return user
 }
 
-func CreateGuestUser(t *testing.T, data *models.User) models.User {
-	guestUser := models.User{
-		Email:   data.Email,
-		IsGuest: true,
+func CreateUnverifiedUser(t *testing.T, data *models.User) models.User {
+	user := models.User{
+		Email:    data.Email,
+		Verified: false,
 	}
 
 	if data.Email == "" {
-		guestUser.Email = "guest@example.com"
+		user.Email = "unverified@example.com"
 	}
 
-	guestUser.Username = strings.Split(guestUser.Email, "@")[0]
+	user.Username = strings.Split(user.Email, "@")[0]
 
-	if err := db.DB.Create(&guestUser).Error; err != nil {
-		t.Fatalf("Failed to create guest user: %v", err)
+	if err := db.DB.Create(&user).Error; err != nil {
+		t.Fatalf("Failed to create unverified user: %v", err)
 	}
 
-	return guestUser
+	return user
 }
 
 func CreateTestPaper(t *testing.T, data *models.Paper) models.Paper {

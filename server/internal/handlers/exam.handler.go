@@ -296,11 +296,10 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 		if participantDto.UserID != 0 {
 			userID = participantDto.UserID
 		} else {
-			// Create a guest user
+			// Create an unverified user
 			username := strings.Split(participantDto.Email, "@")[0]
 			user := models.User{
 				Email:    participantDto.Email,
-				IsGuest:  true,
 				Username: username,
 			}
 
@@ -309,11 +308,11 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if participantDto.LastName != "" {
-				user.FirstName = sql.NullString{String: participantDto.LastName, Valid: true}
+				user.LastName = sql.NullString{String: participantDto.LastName, Valid: true}
 			}
 
 			if err := db.DB.Create(&user).Error; err != nil {
-				http.Error(w, "Failed to create guest user", http.StatusInternalServerError)
+				http.Error(w, "Failed to create user", http.StatusInternalServerError)
 				return
 			}
 			userID = user.ID
