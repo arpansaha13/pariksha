@@ -24,8 +24,13 @@ func TestLogin(t *testing.T) {
 		testUtils.TeardownTestDB(t)
 	})
 
-	testUser := testUtils.CreateTestUser(t, &models.User{})
-	unverifiedUser := testUtils.CreateUnverifiedUser(t, &models.User{})
+	testUser := testUtils.CreateTestUser(t, &models.User{
+		Verified: true,
+	})
+	unverifiedUser := testUtils.CreateTestUser(t, &models.User{
+		Email:    "unverified@example.com",
+		Verified: false,
+	})
 
 	tests := []struct {
 		name           string
@@ -90,8 +95,13 @@ func TestSignUp(t *testing.T) {
 		testUtils.TeardownTestDB(t)
 	})
 
-	existingUser := testUtils.CreateTestUser(t, &models.User{})
-	unverifiedUser := testUtils.CreateUnverifiedUser(t, &models.User{})
+	existingUser := testUtils.CreateTestUser(t, &models.User{
+		Verified: true,
+	})
+	unverifiedUser := testUtils.CreateTestUser(t, &models.User{
+		Email:    "unverified@example.com",
+		Verified: false,
+	})
 
 	tests := []struct {
 		name           string
@@ -115,10 +125,18 @@ func TestSignUp(t *testing.T) {
 			expectedStatus: http.StatusConflict,
 		},
 		{
-			name: "Successful signup for guest user",
+			name: "Successful signup for unverified user",
 			signUpDto: dtos.SignUpDto{
 				Email:    unverifiedUser.Email,
-				Password: "guestPass123",
+				Password: "pass123",
+			},
+			expectedStatus: http.StatusNoContent,
+		},
+		{
+			name: "Email already exists but unverified",
+			signUpDto: dtos.SignUpDto{
+				Email:    unverifiedUser.Email,
+				Password: "existingPass123",
 			},
 			expectedStatus: http.StatusNoContent,
 		},
@@ -145,22 +163,21 @@ func TestSignUp(t *testing.T) {
 	}
 }
 
-func TestVerification(t *testing.T) {
+func TestVerifySignup(t *testing.T) {
 	testUtils.SetupTestDB(t)
 
 	t.Cleanup(func() {
 		testUtils.TeardownTestDB(t)
 	})
 
-	// Create test user and OTP entry
-	email := "verify@example.com"
-	user := testUtils.CreateTestUser(t, &models.User{
-		Email:    email,
+	unverifiedEmail := "unverified@example.com"
+	unverifiedUser := testUtils.CreateTestUser(t, &models.User{
+		Email:    unverifiedEmail,
 		Verified: false,
 	})
 
-	validOtp := models.Otp{
-		Email:        email,
+	validSignupOtp := models.Otp{
+		Email:        unverifiedEmail,
 		OTP:          "123456",
 		OTPExpiresAt: time.Now().Add(15 * time.Minute),
 		Purpose:      constants.OTP_PURPOSE_SIGNUP,
@@ -173,36 +190,36 @@ func TestVerification(t *testing.T) {
 		Purpose:      constants.OTP_PURPOSE_SIGNUP,
 	}
 
-	db.DB.Create(&validOtp)
+	db.DB.Create(&validSignupOtp)
 	db.DB.Create(&expiredOtp)
 
 	tests := []struct {
 		name           string
 		verifyDto      dtos.VerificationDto
 		expectedStatus int
-		validateFunc   func(t *testing.T)
+		validateFunc   func(t *testing.T, w *httptest.ResponseRecorder)
 	}{
 		{
 			name: "Success - Signup verification",
 			verifyDto: dtos.VerificationDto{
-				Email: email,
-				OTP:   validOtp.OTP,
+				Email: unverifiedEmail,
+				OTP:   validSignupOtp.OTP,
 			},
 			expectedStatus: http.StatusNoContent,
-			validateFunc: func(t *testing.T) {
+			validateFunc: func(t *testing.T, w *httptest.ResponseRecorder) {
 				var updatedUser models.User
-				db.DB.First(&updatedUser, user.ID)
+				db.DB.First(&updatedUser, unverifiedUser.ID)
 				assert.True(t, updatedUser.Verified)
 
 				var otpEntry models.Otp
-				result := db.DB.Where("email = ?", email).First(&otpEntry)
+				result := db.DB.Where("email = ?", unverifiedEmail).First(&otpEntry)
 				assert.Error(t, result.Error) // OTP entry should be deleted
 			},
 		},
 		{
 			name: "Invalid OTP",
 			verifyDto: dtos.VerificationDto{
-				Email: email,
+				Email: unverifiedEmail,
 				OTP:   "wrong123",
 			},
 			expectedStatus: http.StatusUnauthorized,
@@ -215,11 +232,106 @@ func TestVerification(t *testing.T) {
 			},
 			expectedStatus: http.StatusUnauthorized,
 		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			body, _ := json.Marshal(tt.verifyDto)
+			req := httptest.NewRequest("POST", "/auth/verification/signup", bytes.NewBuffer(body))
+			w := httptest.NewRecorder()
+
+			VerifySignup(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			if tt.validateFunc != nil {
+				tt.validateFunc(t, w)
+			}
+		})
+	}
+}
+
+func TestVerifyLogin(t *testing.T) {
+	testUtils.SetupTestDB(t)
+
+	t.Cleanup(func() {
+		testUtils.TeardownTestDB(t)
+	})
+
+	verifiedEmail := "verified@example.com"
+	unverifiedEmail := "unverified@example.com"
+
+	verifiedUser := testUtils.CreateTestUser(t, &models.User{
+		Email:    verifiedEmail,
+		Verified: true,
+	})
+
+	testUtils.CreateTestUser(t, &models.User{
+		Email:    unverifiedEmail,
+		Verified: false,
+	})
+
+	validLoginOtp := models.Otp{
+		Email:        verifiedEmail,
+		OTP:          "654321",
+		OTPExpiresAt: time.Now().Add(15 * time.Minute),
+		Purpose:      constants.OTP_PURPOSE_LOGIN,
+	}
+
+	unverifiedLoginOtp := models.Otp{
+		Email:        unverifiedEmail,
+		OTP:          "111111",
+		OTPExpiresAt: time.Now().Add(15 * time.Minute),
+		Purpose:      constants.OTP_PURPOSE_LOGIN,
+	}
+
+	db.DB.Create(&validLoginOtp)
+	db.DB.Create(&unverifiedLoginOtp)
+
+	tests := []struct {
+		name           string
+		verifyDto      dtos.VerificationDto
+		expectedStatus int
+		validateFunc   func(t *testing.T, w *httptest.ResponseRecorder)
+	}{
 		{
-			name: "Invalid email",
+			name: "Success - Login verification",
 			verifyDto: dtos.VerificationDto{
-				Email: "nonexistent@example.com",
-				OTP:   "123456",
+				Email: verifiedEmail,
+				OTP:   validLoginOtp.OTP,
+			},
+			expectedStatus: http.StatusOK,
+			validateFunc: func(t *testing.T, w *httptest.ResponseRecorder) {
+				assert.Contains(t, w.Header().Get("Set-Cookie"), "token=")
+
+				var response map[string]interface{}
+				err := json.NewDecoder(w.Body).Decode(&response)
+				assert.NoError(t, err)
+				assert.Equal(t, verifiedUser.Email, response["email"])
+				assert.Equal(t, verifiedUser.Username, response["username"])
+
+				var otpEntry models.Otp
+				result := db.DB.Where("email = ?", verifiedEmail).First(&otpEntry)
+				assert.Error(t, result.Error)
+
+				cookie := w.Result().Cookies()[0]
+				var session models.Session
+				result = db.DB.Where("key = ?", cookie.Value).First(&session)
+				assert.NoError(t, result.Error)
+			},
+		},
+		{
+			name: "Failed - Unverified user attempting login",
+			verifyDto: dtos.VerificationDto{
+				Email: unverifiedEmail,
+				OTP:   unverifiedLoginOtp.OTP,
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "Invalid OTP",
+			verifyDto: dtos.VerificationDto{
+				Email: verifiedEmail,
+				OTP:   "wrong123",
 			},
 			expectedStatus: http.StatusUnauthorized,
 		},
@@ -228,10 +340,79 @@ func TestVerification(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			body, _ := json.Marshal(tt.verifyDto)
-			req := httptest.NewRequest("POST", "/auth/verification", bytes.NewBuffer(body))
+			req := httptest.NewRequest("POST", "/auth/verification/login", bytes.NewBuffer(body))
 			w := httptest.NewRecorder()
 
-			Verification(w, req)
+			VerifyLogin(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			if tt.validateFunc != nil {
+				tt.validateFunc(t, w)
+			}
+		})
+	}
+}
+
+func TestLoginWithOtp(t *testing.T) {
+	testUtils.SetupTestDB(t)
+
+	t.Cleanup(func() {
+		testUtils.TeardownTestDB(t)
+	})
+
+	verifiedUser := testUtils.CreateTestUser(t, &models.User{
+		Email:    "verified@example.com",
+		Verified: true,
+	})
+
+	tests := []struct {
+		name           string
+		loginOtpDto    dtos.LoginWithOtpDto
+		expectedStatus int
+		validateFunc   func(t *testing.T)
+	}{
+		{
+			name: "Success - OTP created and sent",
+			loginOtpDto: dtos.LoginWithOtpDto{
+				Email: verifiedUser.Email,
+			},
+			expectedStatus: http.StatusNoContent,
+			validateFunc: func(t *testing.T) {
+				var otpEntry models.Otp
+				result := db.DB.Where("email = ? AND purpose = ?",
+					verifiedUser.Email,
+					constants.OTP_PURPOSE_LOGIN,
+				).First(&otpEntry)
+
+				assert.NoError(t, result.Error)
+				assert.Equal(t, constants.OTP_PURPOSE_LOGIN, otpEntry.Purpose)
+				assert.NotEmpty(t, otpEntry.OTP)
+				assert.True(t, otpEntry.OTPExpiresAt.After(time.Now()))
+			},
+		},
+		{
+			name: "Invalid email format",
+			loginOtpDto: dtos.LoginWithOtpDto{
+				Email: "invalid-email",
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Empty email",
+			loginOtpDto: dtos.LoginWithOtpDto{
+				Email: "",
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			body, _ := json.Marshal(tt.loginOtpDto)
+			req := httptest.NewRequest("POST", "/auth/login/otp", bytes.NewBuffer(body))
+			w := httptest.NewRecorder()
+
+			LoginWithOtp(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 			if tt.validateFunc != nil {

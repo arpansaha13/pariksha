@@ -96,7 +96,7 @@ func CreateTestUser(t *testing.T, data *models.User) models.User {
 	user := models.User{
 		Email:    data.Email,
 		Password: sql.NullString{String: string(hashedPassword), Valid: true},
-		Verified: true,
+		Verified: data.Verified,
 	}
 
 	if data.Email == "" {
@@ -107,25 +107,6 @@ func CreateTestUser(t *testing.T, data *models.User) models.User {
 
 	if err := db.DB.Create(&user).Error; err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
-	}
-
-	return user
-}
-
-func CreateUnverifiedUser(t *testing.T, data *models.User) models.User {
-	user := models.User{
-		Email:    data.Email,
-		Verified: false,
-	}
-
-	if data.Email == "" {
-		user.Email = "unverified@example.com"
-	}
-
-	user.Username = strings.Split(user.Email, "@")[0]
-
-	if err := db.DB.Create(&user).Error; err != nil {
-		t.Fatalf("Failed to create unverified user: %v", err)
 	}
 
 	return user

@@ -24,6 +24,44 @@ import (
 	"github.com/arpansaha13/pariksha/internal/utils"
 )
 
+func createSessionAndSetCookie(w http.ResponseWriter, user models.User) error {
+	sessionKey := uuid.New()
+	sessionExpiresInHours, _ := strconv.Atoi(
+		utils.GetEnvWithDefault("SESSION_EXPIRES_IN_HOURS", constants.DEFAULT_SESSION_EXPIRES_IN_HOURS),
+	)
+	sessionExpiresAt := time.Now().Add(time.Duration(sessionExpiresInHours) * time.Hour)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": user.ID,
+		"exp":     sessionExpiresAt.Unix(),
+	})
+	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
+	if err != nil {
+		return err
+	}
+
+	session := models.Session{
+		Key:       sessionKey,
+		Token:     tokenString,
+		ExpiresAt: sessionExpiresAt,
+	}
+
+	if err := db.DB.Create(&session).Error; err != nil {
+		return err
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     utils.GetEnvWithDefault("SESSION_COOKIE_NAME", constants.DEFAULT_SESSION_COOKIE_NAME),
+		Value:    sessionKey.String(),
+		Expires:  session.ExpiresAt,
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	return nil
+}
+
 func Login(w http.ResponseWriter, r *http.Request) {
 	var loginDto dtos.LoginDto
 
@@ -49,41 +87,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionKey := uuid.New()
-	sessionExpiresInHours, _ := strconv.Atoi(
-		utils.GetEnvWithDefault("SESSION_EXPIRES_IN_HOURS", constants.DEFAULT_SESSION_EXPIRES_IN_HOURS),
-	)
-	sessionExpiresAt := time.Now().Add(time.Duration(sessionExpiresInHours) * time.Hour)
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": user.ID,
-		"exp":     sessionExpiresAt.Unix(),
-	})
-	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
-	if err != nil {
-		http.Error(w, "Failed to create token", http.StatusInternalServerError)
-		return
-	}
-
-	session := models.Session{
-		Key:       sessionKey,
-		Token:     tokenString,
-		ExpiresAt: sessionExpiresAt,
-	}
-
-	if err := db.DB.Create(&session).Error; err != nil {
+	if err := createSessionAndSetCookie(w, user); err != nil {
 		http.Error(w, "Failed to create session", http.StatusInternalServerError)
 		return
 	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     utils.GetEnvWithDefault("SESSION_COOKIE_NAME", constants.DEFAULT_SESSION_COOKIE_NAME),
-		Value:    sessionKey.String(),
-		Expires:  session.ExpiresAt,
-		HttpOnly: true,
-		Secure:   true,
-		Path:     "/",
-		SameSite: http.SameSiteStrictMode,
-	})
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -177,7 +184,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func Verification(w http.ResponseWriter, r *http.Request) {
+func VerifySignup(w http.ResponseWriter, r *http.Request) {
 	var verificationDto dtos.VerificationDto
 	if err := json.NewDecoder(r.Body).Decode(&verificationDto); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -190,9 +197,12 @@ func Verification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var otpEntry models.Otp
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		var otpEntry models.Otp
-		if err := tx.Where("email = ?", verificationDto.Email).Take(&otpEntry).Error; err != nil {
+		if err := tx.Where("email = ? AND purpose = ?",
+			verificationDto.Email,
+			constants.OTP_PURPOSE_SIGNUP,
+		).Take(&otpEntry).Error; err != nil {
 			http.Error(w, "Invalid email", http.StatusUnauthorized)
 			return err
 		}
@@ -202,12 +212,10 @@ func Verification(w http.ResponseWriter, r *http.Request) {
 			return errors.New("invalid or expired otp")
 		}
 
-		if otpEntry.Purpose == constants.OTP_PURPOSE_SIGNUP {
-			if err := tx.Model(&models.User{}).Where("email = ?", verificationDto.Email).
-				Update("verified", true).Error; err != nil {
-				http.Error(w, "Failed to verify user", http.StatusInternalServerError)
-				return err
-			}
+		if err := tx.Model(&models.User{}).Where("email = ?", verificationDto.Email).
+			Update("verified", true).Error; err != nil {
+			http.Error(w, "Failed to verify user", http.StatusInternalServerError)
+			return err
 		}
 
 		if err := tx.Delete(&otpEntry).Error; err != nil {
@@ -219,6 +227,114 @@ func Verification(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func VerifyLogin(w http.ResponseWriter, r *http.Request) {
+	var verificationDto dtos.VerificationDto
+	if err := json.NewDecoder(r.Body).Decode(&verificationDto); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	errs := validate.Do.Struct(verificationDto)
+	if errs != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	var otpEntry models.Otp
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("email = ? AND purpose = ?",
+			verificationDto.Email,
+			constants.OTP_PURPOSE_LOGIN,
+		).Take(&otpEntry).Error; err != nil {
+			http.Error(w, "Invalid email", http.StatusUnauthorized)
+			return err
+		}
+
+		if verificationDto.OTP != otpEntry.OTP || time.Now().After(otpEntry.OTPExpiresAt) {
+			http.Error(w, "Invalid or expired OTP", http.StatusUnauthorized)
+			return errors.New("invalid or expired otp")
+		}
+
+		var user models.User
+		if err := tx.Where("email = ?", verificationDto.Email).Take(&user).Error; err != nil {
+			http.Error(w, "User not found", http.StatusUnauthorized)
+			return err
+		}
+
+		if !user.Verified {
+			http.Error(w, "User not verified", http.StatusUnauthorized)
+			return errors.New("user not verified")
+		}
+
+		if err := createSessionAndSetCookie(w, user); err != nil {
+			http.Error(w, "Failed to create session", http.StatusInternalServerError)
+			return err
+		}
+
+		if err := tx.Delete(&otpEntry).Error; err != nil {
+			http.Error(w, "Failed to delete OTP entry", http.StatusInternalServerError)
+			return err
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"id":        user.ID,
+			"username":  user.Username,
+			"email":     user.Email,
+			"firstName": user.FirstName.String,
+			"lastName":  user.LastName.String,
+		})
+
+		return nil
+	})
+
+	if err != nil {
+		return
+	}
+}
+
+func LoginWithOtp(w http.ResponseWriter, r *http.Request) {
+	var loginOtpDto dtos.LoginWithOtpDto
+
+	if err := json.NewDecoder(r.Body).Decode(&loginOtpDto); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	errs := validate.Do.Struct(loginOtpDto)
+	if errs != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	otp, _ := utils.GenerateOTP(constants.VERIFICATION_OTP_LENGTH)
+	otpExpiresInMinutes, _ := strconv.Atoi(
+		utils.GetEnvWithDefault("OTP_EXPIRES_IN_MINUTES", constants.DEFAULT_OTP_EXPIRES_IN_MINUTES),
+	)
+	otpExpiresAt := time.Now().Add(time.Duration(otpExpiresInMinutes) * time.Minute)
+
+	otpEntry := models.Otp{
+		Email:        loginOtpDto.Email,
+		OTP:          otp,
+		OTPExpiresAt: otpExpiresAt,
+		Purpose:      constants.OTP_PURPOSE_LOGIN,
+	}
+
+	if err := db.DB.Save(&otpEntry).Error; err != nil {
+		http.Error(w, "Failed to create OTP", http.StatusInternalServerError)
+		return
+	}
+
+	msg := utils.CreateLoginOtpMail(loginOtpDto.Email, otp, otpExpiresInMinutes)
+
+	if err := utils.SendEmail(loginOtpDto.Email, msg); err != nil {
+		http.Error(w, "Failed to send OTP", http.StatusInternalServerError)
 		return
 	}
 
