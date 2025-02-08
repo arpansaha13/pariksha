@@ -14,6 +14,36 @@ import (
 	"github.com/arpansaha13/pariksha/internal/models"
 )
 
+func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
+	participantID := mux.Vars(r)["participantId"]
+
+	var answers []models.Answer
+	if err := db.DB.Where("exam_participant_id = ?", participantID).Find(&answers).Error; err != nil {
+		http.Error(w, "Answers not found", http.StatusNotFound)
+		return
+	}
+
+	if len(answers) == 0 {
+		http.Error(w, "Answers not found", http.StatusNotFound)
+		return
+	}
+
+	var response []dtos.AnswerResponse
+	for _, answer := range answers {
+		response = append(response, dtos.AnswerResponse{
+			ID:                answer.ID,
+			ExamParticipantID: answer.ExamParticipantID,
+			QuestionID:        answer.QuestionID,
+			Answer:            answer.Answer.String,
+			Comments:          answer.Comments.String,
+			ScoreAwarded:      answer.ScoreAwarded,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 func CreateAnswers(w http.ResponseWriter, r *http.Request) {
 	var answerDTOs []dtos.AnswerDTO
 	if err := json.NewDecoder(r.Body).Decode(&answerDTOs); err != nil {

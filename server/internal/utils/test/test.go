@@ -219,3 +219,18 @@ func CreateTestQuestion(t *testing.T, data *models.Question) models.Question {
 
 	return question
 }
+
+func CreateTestAnswer(t *testing.T, data *models.Answer) models.Answer {
+	answer := models.Answer{
+		ExamParticipantID: data.ExamParticipantID,
+		QuestionID:        data.QuestionID,
+		Answer:            data.Answer,
+		ScoreAwarded:      data.ScoreAwarded,
+	}
+
+	if err := db.DB.Create(&answer).Error; err != nil {
+		t.Fatalf("Failed to create test answer: %v", err)
+	}
+
+	return answer
+}
