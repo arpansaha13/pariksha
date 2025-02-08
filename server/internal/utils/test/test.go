@@ -180,9 +180,13 @@ func CreateTestExam(t *testing.T, data *models.Exam) models.Exam {
 
 func CreateTestExamParticipant(t *testing.T, data *models.ExamParticipant) models.ExamParticipant {
 	participant := models.ExamParticipant{
-		ExamID: data.ExamID,
-		UserID: data.UserID,
-		Status: data.Status,
+		ExamID:           data.ExamID,
+		UserID:           data.UserID,
+		Status:           data.Status,
+		StartedAt:        data.StartedAt,
+		EndedAt:          data.EndedAt,
+		ScoreAwarded:     data.ScoreAwarded,
+		ScheduledEndTime: data.ScheduledEndTime,
 	}
 
 	if err := db.DB.Create(&participant).Error; err != nil {

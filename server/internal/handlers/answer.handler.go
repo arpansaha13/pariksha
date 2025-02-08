@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/arpansaha13/pariksha/internal/config/validate"
+	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/middlewares"
@@ -61,15 +62,14 @@ func CreateAnswers(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int)
 	examID := mux.Vars(r)["examId"]
 
-	var exam models.Exam
-	if err := db.DB.Take(&exam, examID).Error; err != nil {
-		http.Error(w, "Exam not found", http.StatusNotFound)
-		return
-	}
-
 	var examParticipant models.ExamParticipant
 	if err := db.DB.Where("exam_id = ? AND user_id = ?", examID, userID).Take(&examParticipant).Error; err != nil {
 		http.Error(w, "Exam participant not found", http.StatusNotFound)
+		return
+	}
+
+	if examParticipant.Status != constants.PARTICIPANT_STATUS_STARTED {
+		http.Error(w, "Exam has not started", http.StatusBadRequest)
 		return
 	}
 
@@ -77,7 +77,7 @@ func CreateAnswers(w http.ResponseWriter, r *http.Request) {
 	skippedCount := 0
 
 	for _, answerDTO := range answerDTOs {
-		if answerDTO.SubmittedAt.After(exam.EndsAt) {
+		if answerDTO.SubmittedAt.After(examParticipant.ScheduledEndTime.Time) {
 			skippedCount++
 			continue
 		}
@@ -100,6 +100,10 @@ func CreateAnswers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	if skippedCount == totalCount {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusCreated)
+	}
 	json.NewEncoder(w).Encode(response)
 }

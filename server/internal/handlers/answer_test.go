@@ -58,6 +58,15 @@ func TestCreateAnswers(t *testing.T) {
 	testUtils.CreateTestExamParticipant(t, &models.ExamParticipant{
 		ExamID: exam.ID,
 		UserID: participantUser.ID,
+		Status: constants.PARTICIPANT_STATUS_STARTED,
+		StartedAt: sql.NullTime{
+			Time:  time.Now().Add(2 * time.Minute),
+			Valid: true,
+		},
+		ScheduledEndTime: sql.NullTime{
+			Time:  time.Now().Add((time.Duration(paper.DurationMinutes + 2)) * time.Minute),
+			Valid: true,
+		},
 	})
 
 	tests := []struct {
@@ -71,7 +80,7 @@ func TestCreateAnswers(t *testing.T) {
 			answerDTOs: []dtos.AnswerDTO{
 				{
 					Answer:      "Answer 1",
-					SubmittedAt: time.Now(),
+					SubmittedAt: time.Now().Add(3 * time.Minute),
 					QuestionID:  question1.ID,
 				},
 			},
@@ -82,7 +91,7 @@ func TestCreateAnswers(t *testing.T) {
 			},
 		},
 		{
-			name: "Answer submitted after exam end time",
+			name: "Answer submitted after scheduled end time",
 			answerDTOs: []dtos.AnswerDTO{
 				{
 					Answer:      "Answer 1",
@@ -90,7 +99,7 @@ func TestCreateAnswers(t *testing.T) {
 					QuestionID:  question1.ID,
 				},
 			},
-			expectedStatus: http.StatusCreated,
+			expectedStatus: http.StatusOK,
 			expectedResponse: map[string]int{
 				"totalCount":   1,
 				"skippedCount": 1,
@@ -101,7 +110,7 @@ func TestCreateAnswers(t *testing.T) {
 			answerDTOs: []dtos.AnswerDTO{
 				{
 					Answer:      "Answer 1",
-					SubmittedAt: time.Now(),
+					SubmittedAt: time.Now().Add(3 * time.Minute),
 					QuestionID:  question1.ID,
 				},
 				{
