@@ -3,9 +3,11 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 
 	"github.com/arpansaha13/pariksha/internal/config/validate"
 	"github.com/arpansaha13/pariksha/internal/constants"
@@ -106,4 +108,81 @@ func CreateAnswers(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 	}
 	json.NewEncoder(w).Encode(response)
+}
+
+func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
+	var updateDTO dtos.UpdateAnswerForEvaluationDTO
+	if err := json.NewDecoder(r.Body).Decode(&updateDTO); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := validate.Do.Struct(updateDTO); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var answer models.Answer
+		if err := tx.Take(&answer, updateDTO.AnswerID).Error; err != nil {
+			http.Error(w, "Answer not found", http.StatusNotFound)
+			return err
+		}
+
+		var question models.Question
+		if err := tx.Take(&question, answer.QuestionID).Error; err != nil {
+			http.Error(w, "Question not found", http.StatusNotFound)
+			return err
+		}
+
+		if updateDTO.NewScore != nil && *updateDTO.NewScore > question.MaxScore {
+			http.Error(w, "New score exceeds max score for the question", http.StatusBadRequest)
+			return errors.New("new score exceeds max score for the question")
+		}
+
+		isUpdated := false
+
+		if updateDTO.NewScore != nil {
+			var examParticipant models.ExamParticipant
+			if err := tx.Take(&examParticipant, answer.ExamParticipantID).Error; err != nil {
+				http.Error(w, "Exam participant not found", http.StatusNotFound)
+				return err
+			}
+
+			examParticipant.ScoreAwarded = examParticipant.ScoreAwarded - answer.ScoreAwarded + *updateDTO.NewScore
+			answer.ScoreAwarded = *updateDTO.NewScore
+
+			if err := tx.Save(&examParticipant).Error; err != nil {
+				http.Error(w, "Failed to update exam participant", http.StatusInternalServerError)
+				return err
+			}
+
+			isUpdated = true
+		}
+
+		if updateDTO.Evaluated != nil {
+			answer.Evaluated = *updateDTO.Evaluated
+			isUpdated = true
+		}
+
+		if updateDTO.Comments != nil {
+			answer.Comments = sql.NullString{String: *updateDTO.Comments, Valid: true}
+			isUpdated = true
+		}
+
+		if isUpdated {
+			if err := tx.Save(&answer).Error; err != nil {
+				http.Error(w, "Failed to update answer", http.StatusInternalServerError)
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

@@ -16,3 +16,10 @@ type AnswerResponse struct {
 	ScoreAwarded      int
 	Comments          string
 }
+
+type UpdateAnswerForEvaluationDTO struct {
+	AnswerID  int     `json:"answer_id" validate:"required"`
+	NewScore  *int    `json:"new_score"`
+	Evaluated *bool   `json:"evaluated"`
+	Comments  *string `json:"comments"`
+}

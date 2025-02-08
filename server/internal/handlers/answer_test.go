@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/arpansaha13/pariksha/internal/constants"
+	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/middlewares"
 	"github.com/arpansaha13/pariksha/internal/models"
@@ -289,6 +290,118 @@ func TestGetParticipantAnswers(t *testing.T) {
 				var answers []dtos.AnswerResponse
 				json.NewDecoder(w.Body).Decode(&answers)
 				assert.Equal(t, tt.expectedAnswers, answers)
+			}
+		})
+	}
+}
+
+func TestUpdateAnswerForEvaluation(t *testing.T) {
+	testUtils.SetupTestDB(t)
+
+	t.Cleanup(func() {
+		testUtils.TeardownTestDB(t)
+	})
+
+	user := testUtils.CreateTestUser(t, &models.User{
+		Verified: true,
+	})
+	participantUser := testUtils.CreateTestUser(t, &models.User{
+		Email:    "participant@example.com",
+		Verified: true,
+	})
+	paper := testUtils.CreateTestPaper(t, &models.Paper{})
+	question := testUtils.CreateTestQuestion(t, &models.Question{
+		PaperID:  paper.ID,
+		Type:     constants.QUESTION_TYPE_SHORT,
+		MaxScore: 10,
+	})
+	exam := testUtils.CreateTestExam(t, &models.Exam{
+		StartsAt:  time.Now().Add(-1 * time.Hour),
+		EndsAt:    time.Now().Add(1 * time.Hour),
+		CreatedBy: user.ID,
+		PaperID:   paper.ID,
+	})
+	examParticipant := testUtils.CreateTestExamParticipant(t, &models.ExamParticipant{
+		ExamID: exam.ID,
+		UserID: participantUser.ID,
+	})
+	answer := testUtils.CreateTestAnswer(t, &models.Answer{
+		ExamParticipantID: examParticipant.ID,
+		QuestionID:        question.ID,
+		Answer:            sql.NullString{String: "Answer 1", Valid: true},
+	})
+
+	tests := []struct {
+		name               string
+		updateDTO          dtos.UpdateAnswerForEvaluationDTO
+		expectedStatus     int
+		expectedTotalScore int
+	}{
+		{
+			name: "Successful update",
+			updateDTO: dtos.UpdateAnswerForEvaluationDTO{
+				AnswerID:  answer.ID,
+				NewScore:  testUtils.IntPointer(10),
+				Evaluated: testUtils.BoolPointer(true),
+				Comments:  testUtils.StringPointer("Good answer"),
+			},
+			expectedStatus:     http.StatusOK,
+			expectedTotalScore: 10,
+		},
+		{
+			name: "Answer not found",
+			updateDTO: dtos.UpdateAnswerForEvaluationDTO{
+				AnswerID:  9999,
+				NewScore:  testUtils.IntPointer(10),
+				Evaluated: testUtils.BoolPointer(true),
+				Comments:  testUtils.StringPointer("Good answer"),
+			},
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name: "Invalid request body",
+			updateDTO: dtos.UpdateAnswerForEvaluationDTO{
+				NewScore:  testUtils.IntPointer(10),
+				Evaluated: testUtils.BoolPointer(true),
+				Comments:  testUtils.StringPointer("Good answer"),
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "New score exceeds max score",
+			updateDTO: dtos.UpdateAnswerForEvaluationDTO{
+				AnswerID:  answer.ID,
+				NewScore:  testUtils.IntPointer(15),
+				Evaluated: testUtils.BoolPointer(true),
+				Comments:  testUtils.StringPointer("Good answer"),
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			body, _ := json.Marshal(tt.updateDTO)
+			req, _ := http.NewRequest("PATCH", "/answers", bytes.NewBuffer(body))
+
+			rr := httptest.NewRecorder()
+			handler := http.HandlerFunc(UpdateAnswerForEvaluation)
+			handler.ServeHTTP(rr, req)
+
+			assert.Equal(t, tt.expectedStatus, rr.Code)
+
+			if tt.expectedStatus == http.StatusOK {
+				var updatedAnswer models.Answer
+				err := db.DB.Take(&updatedAnswer, tt.updateDTO.AnswerID).Error
+				assert.NoError(t, err)
+				assert.Equal(t, *tt.updateDTO.NewScore, updatedAnswer.ScoreAwarded)
+				assert.Equal(t, *tt.updateDTO.Evaluated, updatedAnswer.Evaluated)
+				assert.Equal(t, *tt.updateDTO.Comments, updatedAnswer.Comments.String)
+
+				var updatedExamParticipant models.ExamParticipant
+				err = db.DB.Take(&updatedExamParticipant, examParticipant.ID).Error
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedTotalScore, updatedExamParticipant.ScoreAwarded)
 			}
 		})
 	}

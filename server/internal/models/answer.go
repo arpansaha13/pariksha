@@ -9,6 +9,7 @@ type Answer struct {
 	Answer            sql.NullString  `gorm:"type:text"`
 	ScoreAwarded      int             `gorm:"default:0;not null"`
 	Comments          sql.NullString  `gorm:"type:text"`
+	Evaluated         bool            `gorm:"default:false;not null"`
 	ExamParticipant   ExamParticipant `gorm:"foreignKey:ExamParticipantID"`
 	Question          Question        `gorm:"foreignKey:QuestionID"`
 }

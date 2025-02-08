@@ -238,3 +238,15 @@ func CreateTestAnswer(t *testing.T, data *models.Answer) models.Answer {
 
 	return answer
 }
+
+func IntPointer(num int) *int {
+	return &num
+}
+
+func BoolPointer(boolean bool) *bool {
+	return &boolean
+}
+
+func StringPointer(str string) *string {
+	return &str
+}
