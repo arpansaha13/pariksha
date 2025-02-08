@@ -47,8 +47,8 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func CreateAnswers(w http.ResponseWriter, r *http.Request) {
-	var answerDTOs []dtos.AnswerDTO
+func UpsertAnswers(w http.ResponseWriter, r *http.Request) {
+	var answerDTOs []dtos.UpsertAnswerDto
 	if err := json.NewDecoder(r.Body).Decode(&answerDTOs); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -84,15 +84,30 @@ func CreateAnswers(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		answer := models.Answer{
-			ExamParticipantID: examParticipant.ID,
-			QuestionID:        answerDTO.QuestionID,
-			Answer:            sql.NullString{String: answerDTO.Answer, Valid: true},
-		}
-
-		if err := db.DB.Create(&answer).Error; err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		var answer models.Answer
+		if err := db.DB.Where("exam_participant_id = ? AND question_id = ?", examParticipant.ID, answerDTO.QuestionID).Take(&answer).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				// Create a new answer if it does not exist
+				answer = models.Answer{
+					ExamParticipantID: examParticipant.ID,
+					QuestionID:        answerDTO.QuestionID,
+					Answer:            sql.NullString{String: answerDTO.Answer, Valid: true},
+				}
+				if err := db.DB.Create(&answer).Error; err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			} else {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		} else {
+			// Update the existing answer
+			answer.Answer = sql.NullString{String: answerDTO.Answer, Valid: true}
+			if err := db.DB.Save(&answer).Error; err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 	}
 

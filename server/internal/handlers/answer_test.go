@@ -22,7 +22,7 @@ import (
 	testUtils "github.com/arpansaha13/pariksha/internal/utils/test"
 )
 
-func TestCreateAnswers(t *testing.T) {
+func TestUpsertAnswers(t *testing.T) {
 	testUtils.SetupTestDB(t)
 
 	t.Cleanup(func() {
@@ -93,14 +93,14 @@ func TestCreateAnswers(t *testing.T) {
 	tests := []struct {
 		name             string
 		examID           string
-		answerDTOs       []dtos.AnswerDTO
+		answerDTOs       []dtos.UpsertAnswerDto
 		expectedStatus   int
 		expectedResponse map[string]int
 	}{
 		{
 			name:   "Successful answer submission",
 			examID: strconv.Itoa(exam.ID),
-			answerDTOs: []dtos.AnswerDTO{
+			answerDTOs: []dtos.UpsertAnswerDto{
 				{
 					Answer:      "Answer 1",
 					SubmittedAt: time.Now().Add(3 * time.Minute),
@@ -114,9 +114,25 @@ func TestCreateAnswers(t *testing.T) {
 			},
 		},
 		{
+			name:   "Successful answer update",
+			examID: strconv.Itoa(exam.ID),
+			answerDTOs: []dtos.UpsertAnswerDto{
+				{
+					Answer:      "Answer 1 updated",
+					SubmittedAt: time.Now().Add(3 * time.Minute),
+					QuestionID:  question1.ID,
+				},
+			},
+			expectedStatus: http.StatusCreated,
+			expectedResponse: map[string]int{
+				"totalCount":   1,
+				"skippedCount": 0,
+			},
+		},
+		{
 			name:   "Answer submitted after scheduled end time",
 			examID: strconv.Itoa(exam.ID),
-			answerDTOs: []dtos.AnswerDTO{
+			answerDTOs: []dtos.UpsertAnswerDto{
 				{
 					Answer:      "Answer 1",
 					SubmittedAt: time.Now().Add(2 * time.Hour),
@@ -132,7 +148,7 @@ func TestCreateAnswers(t *testing.T) {
 		{
 			name:   "Mixed valid and invalid answers",
 			examID: strconv.Itoa(exam.ID),
-			answerDTOs: []dtos.AnswerDTO{
+			answerDTOs: []dtos.UpsertAnswerDto{
 				{
 					Answer:      "Answer 1",
 					SubmittedAt: time.Now().Add(3 * time.Minute),
@@ -153,7 +169,7 @@ func TestCreateAnswers(t *testing.T) {
 		{
 			name:   "Answer submitted after exam ends",
 			examID: strconv.Itoa(endedExam.ID),
-			answerDTOs: []dtos.AnswerDTO{
+			answerDTOs: []dtos.UpsertAnswerDto{
 				{
 					Answer:      "Answer 1",
 					SubmittedAt: time.Now(),
@@ -172,7 +188,7 @@ func TestCreateAnswers(t *testing.T) {
 			req = req.WithContext(context.WithValue(req.Context(), middlewares.UserIDKey, participantUser.ID))
 
 			rr := httptest.NewRecorder()
-			handler := http.HandlerFunc(CreateAnswers)
+			handler := http.HandlerFunc(UpsertAnswers)
 			handler.ServeHTTP(rr, req)
 
 			assert.Equal(t, tt.expectedStatus, rr.Code)
