@@ -54,6 +54,12 @@ func TestCreateAnswers(t *testing.T) {
 		CreatedBy: user.ID,
 		PaperID:   paper.ID,
 	})
+	endedExam := testUtils.CreateTestExam(t, &models.Exam{
+		StartsAt:  time.Now().Add(-3 * time.Hour),
+		EndsAt:    time.Now().Add(-1 * time.Hour),
+		CreatedBy: user.ID,
+		PaperID:   paper.ID,
+	})
 
 	testUtils.CreateTestExamParticipant(t, &models.ExamParticipant{
 		ExamID: exam.ID,
@@ -69,14 +75,30 @@ func TestCreateAnswers(t *testing.T) {
 		},
 	})
 
+	testUtils.CreateTestExamParticipant(t, &models.ExamParticipant{
+		ExamID: endedExam.ID,
+		UserID: participantUser.ID,
+		Status: constants.PARTICIPANT_STATUS_ENDED,
+		StartedAt: sql.NullTime{
+			Time:  time.Now().Add(-2 * time.Hour),
+			Valid: true,
+		},
+		ScheduledEndTime: sql.NullTime{
+			Time:  time.Now().Add((time.Duration(paper.DurationMinutes + 2)) * time.Minute),
+			Valid: true,
+		},
+	})
+
 	tests := []struct {
 		name             string
+		examID           string
 		answerDTOs       []dtos.AnswerDTO
 		expectedStatus   int
 		expectedResponse map[string]int
 	}{
 		{
-			name: "Successful answer submission",
+			name:   "Successful answer submission",
+			examID: strconv.Itoa(exam.ID),
 			answerDTOs: []dtos.AnswerDTO{
 				{
 					Answer:      "Answer 1",
@@ -91,7 +113,8 @@ func TestCreateAnswers(t *testing.T) {
 			},
 		},
 		{
-			name: "Answer submitted after scheduled end time",
+			name:   "Answer submitted after scheduled end time",
+			examID: strconv.Itoa(exam.ID),
 			answerDTOs: []dtos.AnswerDTO{
 				{
 					Answer:      "Answer 1",
@@ -106,7 +129,8 @@ func TestCreateAnswers(t *testing.T) {
 			},
 		},
 		{
-			name: "Mixed valid and invalid answers",
+			name:   "Mixed valid and invalid answers",
+			examID: strconv.Itoa(exam.ID),
 			answerDTOs: []dtos.AnswerDTO{
 				{
 					Answer:      "Answer 1",
@@ -125,14 +149,25 @@ func TestCreateAnswers(t *testing.T) {
 				"skippedCount": 1,
 			},
 		},
+		{
+			name:   "Answer submitted after exam ends",
+			examID: strconv.Itoa(endedExam.ID),
+			answerDTOs: []dtos.AnswerDTO{
+				{
+					Answer:      "Answer 1",
+					SubmittedAt: time.Now(),
+					QuestionID:  question1.ID,
+				},
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			examID := strconv.Itoa(exam.ID)
 			body, _ := json.Marshal(tt.answerDTOs)
-			req, _ := http.NewRequest("POST", "/exams/"+examID+"/answers", bytes.NewBuffer(body))
-			req = mux.SetURLVars(req, map[string]string{"examId": examID})
+			req, _ := http.NewRequest("POST", "/exams/"+tt.examID+"/answers", bytes.NewBuffer(body))
+			req = mux.SetURLVars(req, map[string]string{"examId": tt.examID})
 			req = req.WithContext(context.WithValue(req.Context(), middlewares.UserIDKey, participantUser.ID))
 
 			rr := httptest.NewRecorder()
@@ -141,9 +176,11 @@ func TestCreateAnswers(t *testing.T) {
 
 			assert.Equal(t, tt.expectedStatus, rr.Code)
 
-			var response map[string]int
-			json.NewDecoder(rr.Body).Decode(&response)
-			assert.Equal(t, tt.expectedResponse, response)
+			if tt.expectedStatus == http.StatusOK || tt.expectedStatus == http.StatusCreated {
+				var response map[string]int
+				json.NewDecoder(rr.Body).Decode(&response)
+				assert.Equal(t, tt.expectedResponse, response)
+			}
 		})
 	}
 }

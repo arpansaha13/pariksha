@@ -536,3 +536,24 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func EndExam(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	examID := mux.Vars(r)["examId"]
+
+	var examParticipant models.ExamParticipant
+	if err := db.DB.Where("exam_id = ? AND user_id = ?", examID, userID).Take(&examParticipant).Error; err != nil {
+		http.Error(w, "Exam participant not found", http.StatusNotFound)
+		return
+	}
+
+	examParticipant.Status = constants.PARTICIPANT_STATUS_ENDED
+	examParticipant.EndedAt = sql.NullTime{Time: time.Now(), Valid: true}
+
+	if err := db.DB.Save(&examParticipant).Error; err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

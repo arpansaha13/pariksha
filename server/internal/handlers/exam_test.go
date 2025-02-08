@@ -528,6 +528,70 @@ func TestStartExam(t *testing.T) {
 	}
 }
 
+func TestEndExam(t *testing.T) {
+	testUtils.SetupTestDB(t)
+
+	t.Cleanup(func() {
+		testUtils.TeardownTestDB(t)
+	})
+
+	user := testUtils.CreateTestUser(t, &models.User{})
+	paper := testUtils.CreateTestPaper(t, &models.Paper{})
+	exam := testUtils.CreateTestExam(t, &models.Exam{
+		StartsAt:  time.Now().Add(-1 * time.Hour),
+		EndsAt:    time.Now().Add(1 * time.Hour),
+		CreatedBy: user.ID,
+		PaperID:   paper.ID,
+	})
+	testUtils.CreateTestExamParticipant(t, &models.ExamParticipant{
+		ExamID: exam.ID,
+		UserID: user.ID,
+		Status: constants.PARTICIPANT_STATUS_STARTED,
+	})
+
+	tests := []struct {
+		name           string
+		examID         string
+		userID         int
+		expectedStatus int
+	}{
+		{
+			name:           "Success",
+			examID:         strconv.Itoa(exam.ID),
+			userID:         user.ID,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Exam participant not found",
+			examID:         strconv.Itoa(exam.ID),
+			userID:         9999, // Non-existent user
+			expectedStatus: http.StatusNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, _ := http.NewRequest("PATCH", "/exams/"+tt.examID+"/end", nil)
+			req = mux.SetURLVars(req, map[string]string{"examId": tt.examID})
+			req = req.WithContext(testUtils.SetUserContext(req.Context(), tt.userID))
+
+			rr := httptest.NewRecorder()
+			handler := http.HandlerFunc(EndExam)
+			handler.ServeHTTP(rr, req)
+
+			assert.Equal(t, tt.expectedStatus, rr.Code)
+
+			if tt.expectedStatus == http.StatusOK {
+				var updatedExamParticipant models.ExamParticipant
+				err := db.DB.Where("exam_id = ? AND user_id = ?", tt.examID, tt.userID).Take(&updatedExamParticipant).Error
+				assert.NoError(t, err)
+				assert.Equal(t, constants.PARTICIPANT_STATUS_ENDED, updatedExamParticipant.Status)
+				assert.True(t, updatedExamParticipant.EndedAt.Valid)
+			}
+		})
+	}
+}
+
 func TestAddExamParticipants(t *testing.T) {
 	testUtils.SetupTestDB(t)
 
