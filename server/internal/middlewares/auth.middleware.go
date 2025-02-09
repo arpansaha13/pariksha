@@ -2,44 +2,24 @@ package middlewares
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"gorm.io/gorm"
 
-	"github.com/arpansaha13/pariksha/internal/constants"
-	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/models"
-	"github.com/arpansaha13/pariksha/internal/utils"
 )
 
-type contextKey string
+type userContextKey string
 
-const UserIDKey contextKey = "user_id"
+const UserIDKey userContextKey = "user_id"
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sessionCookieName := utils.GetEnvWithDefault("SESSION_COOKIE_NAME", constants.DEFAULT_SESSION_COOKIE_NAME)
-
-		cookie, err := r.Cookie(sessionCookieName)
-		if err != nil {
+		session, ok := r.Context().Value(SessionKey).(*models.Session)
+		if !ok || session == nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		sessionKey := cookie.Value
-		var session models.Session
-		err = db.DB.Where("key = ?", sessionKey).First(&session).Error
-
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
-				return
-			}
-			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 			return
 		}
 
