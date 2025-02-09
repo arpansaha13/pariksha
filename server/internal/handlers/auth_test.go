@@ -35,12 +35,12 @@ func TestLogin(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		loginDto       dtos.LoginDto
+		loginDto       dtos.LoginWithPasswordDto
 		expectedStatus int
 	}{
 		{
 			name: "Successful login",
-			loginDto: dtos.LoginDto{
+			loginDto: dtos.LoginWithPasswordDto{
 				Email:    testUser.Email,
 				Password: "testPass123",
 			},
@@ -48,7 +48,7 @@ func TestLogin(t *testing.T) {
 		},
 		{
 			name: "Invalid password",
-			loginDto: dtos.LoginDto{
+			loginDto: dtos.LoginWithPasswordDto{
 				Email:    testUser.Email,
 				Password: "wrongPass",
 			},
@@ -56,7 +56,7 @@ func TestLogin(t *testing.T) {
 		},
 		{
 			name: "Non-existent user",
-			loginDto: dtos.LoginDto{
+			loginDto: dtos.LoginWithPasswordDto{
 				Email:    "nonexistent@example.com",
 				Password: "testPass123",
 			},
@@ -64,7 +64,7 @@ func TestLogin(t *testing.T) {
 		},
 		{
 			name: "Guest user",
-			loginDto: dtos.LoginDto{
+			loginDto: dtos.LoginWithPasswordDto{
 				Email:    unverifiedUser.Email,
 				Password: "testPass123",
 			},
@@ -78,7 +78,7 @@ func TestLogin(t *testing.T) {
 			req := httptest.NewRequest("POST", "/auth/login", bytes.NewBuffer(body))
 			w := httptest.NewRecorder()
 
-			Login(w, req)
+			LoginWithPassword(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
@@ -344,7 +344,7 @@ func TestVerifyLogin(t *testing.T) {
 			req := httptest.NewRequest("POST", "/auth/verification/login", bytes.NewBuffer(body))
 			w := httptest.NewRecorder()
 
-			VerifyLogin(w, req)
+			VerifyLoginWithOtp(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 			if tt.validateFunc != nil {

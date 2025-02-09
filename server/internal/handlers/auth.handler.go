@@ -62,8 +62,8 @@ func createSessionAndSetCookie(w http.ResponseWriter, user models.User) error {
 	return nil
 }
 
-func Login(w http.ResponseWriter, r *http.Request) {
-	var loginDto dtos.LoginDto
+func LoginWithPassword(w http.ResponseWriter, r *http.Request) {
+	var loginDto dtos.LoginWithPasswordDto
 
 	if err := json.NewDecoder(r.Body).Decode(&loginDto); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -233,7 +233,49 @@ func VerifySignup(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func VerifyLogin(w http.ResponseWriter, r *http.Request) {
+func LoginWithOtp(w http.ResponseWriter, r *http.Request) {
+	var loginOtpDto dtos.LoginWithOtpDto
+
+	if err := json.NewDecoder(r.Body).Decode(&loginOtpDto); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	errs := validate.Do.Struct(loginOtpDto)
+	if errs != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	otp, _ := utils.GenerateOTP(constants.VERIFICATION_OTP_LENGTH)
+	otpExpiresInMinutes, _ := strconv.Atoi(
+		utils.GetEnvWithDefault("OTP_EXPIRES_IN_MINUTES", constants.DEFAULT_OTP_EXPIRES_IN_MINUTES),
+	)
+	otpExpiresAt := time.Now().Add(time.Duration(otpExpiresInMinutes) * time.Minute)
+
+	otpEntry := models.Otp{
+		Email:        loginOtpDto.Email,
+		OTP:          otp,
+		OTPExpiresAt: otpExpiresAt,
+		Purpose:      constants.OTP_PURPOSE_LOGIN,
+	}
+
+	if err := db.DB.Save(&otpEntry).Error; err != nil {
+		http.Error(w, "Failed to create OTP", http.StatusInternalServerError)
+		return
+	}
+
+	msg := utils.CreateLoginOtpMail(loginOtpDto.Email, otp, otpExpiresInMinutes)
+
+	if err := utils.SendEmail(loginOtpDto.Email, msg); err != nil {
+		http.Error(w, "Failed to send OTP", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func VerifyLoginWithOtp(w http.ResponseWriter, r *http.Request) {
 	var verificationDto dtos.VerificationDto
 	if err := json.NewDecoder(r.Body).Decode(&verificationDto); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -297,48 +339,6 @@ func VerifyLogin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-}
-
-func LoginWithOtp(w http.ResponseWriter, r *http.Request) {
-	var loginOtpDto dtos.LoginWithOtpDto
-
-	if err := json.NewDecoder(r.Body).Decode(&loginOtpDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	errs := validate.Do.Struct(loginOtpDto)
-	if errs != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	otp, _ := utils.GenerateOTP(constants.VERIFICATION_OTP_LENGTH)
-	otpExpiresInMinutes, _ := strconv.Atoi(
-		utils.GetEnvWithDefault("OTP_EXPIRES_IN_MINUTES", constants.DEFAULT_OTP_EXPIRES_IN_MINUTES),
-	)
-	otpExpiresAt := time.Now().Add(time.Duration(otpExpiresInMinutes) * time.Minute)
-
-	otpEntry := models.Otp{
-		Email:        loginOtpDto.Email,
-		OTP:          otp,
-		OTPExpiresAt: otpExpiresAt,
-		Purpose:      constants.OTP_PURPOSE_LOGIN,
-	}
-
-	if err := db.DB.Save(&otpEntry).Error; err != nil {
-		http.Error(w, "Failed to create OTP", http.StatusInternalServerError)
-		return
-	}
-
-	msg := utils.CreateLoginOtpMail(loginOtpDto.Email, otp, otpExpiresInMinutes)
-
-	if err := utils.SendEmail(loginOtpDto.Email, msg); err != nil {
-		http.Error(w, "Failed to send OTP", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
 }
 
 func ForgotPassword(w http.ResponseWriter, r *http.Request) {

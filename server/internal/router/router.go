@@ -16,11 +16,11 @@ func SetupRouter() *mux.Router {
 	protectedRouter.Use(middlewares.AuthMiddleware)
 
 	// Auth Routes
-	authRouter.HandleFunc("/login", handlers.Login).Methods("POST")
+	authRouter.HandleFunc("/login", handlers.LoginWithPassword).Methods("POST")
 	authRouter.HandleFunc("/login/otp", handlers.LoginWithOtp).Methods("POST")
 	authRouter.HandleFunc("/signup", handlers.SignUp).Methods("POST")
 	authRouter.HandleFunc("/verification/signup", handlers.VerifySignup).Methods("POST")
-	authRouter.HandleFunc("/verification/login", handlers.VerifyLogin).Methods("POST")
+	authRouter.HandleFunc("/verification/login", handlers.VerifyLoginWithOtp).Methods("POST")
 	authRouter.HandleFunc("/forgot-password", handlers.ForgotPassword).Methods("POST")
 	authRouter.HandleFunc("/reset-password", handlers.ResetPassword).Methods("POST")
 
