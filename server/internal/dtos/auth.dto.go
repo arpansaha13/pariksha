@@ -18,3 +18,7 @@ type VerificationDto struct {
 type LoginWithOtpDto struct {
 	Email string `json:"email" validate:"required,email"`
 }
+
+type ForgotPasswordDto struct {
+	Email string `json:"email" validate:"required,email"`
+}

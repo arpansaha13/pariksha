@@ -340,3 +340,50 @@ func LoginWithOtp(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var forgotPasswordDto dtos.ForgotPasswordDto
+	if err := json.NewDecoder(r.Body).Decode(&forgotPasswordDto); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	errs := validate.Do.Struct(forgotPasswordDto)
+	if errs != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	var user models.User
+	if err := db.DB.Where("email = ? AND verified = ?", forgotPasswordDto.Email, true).Take(&user).Error; err != nil {
+		http.Error(w, "Email not found or not verified", http.StatusNotFound)
+		return
+	}
+
+	otp, _ := utils.GenerateOTP(constants.VERIFICATION_OTP_LENGTH)
+	otpExpiresInMinutes, _ := strconv.Atoi(
+		utils.GetEnvWithDefault("OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD", constants.DEFAULT_OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD),
+	)
+	otpExpiresAt := time.Now().Add(time.Duration(otpExpiresInMinutes) * time.Minute)
+
+	otpEntry := models.Otp{
+		Email:        forgotPasswordDto.Email,
+		OTP:          otp,
+		OTPExpiresAt: otpExpiresAt,
+		Purpose:      constants.OTP_PURPOSE_FORGOT_PASSWORD,
+	}
+
+	if err := db.DB.Save(&otpEntry).Error; err != nil {
+		http.Error(w, "Failed to create OTP", http.StatusInternalServerError)
+		return
+	}
+
+	msg := utils.CreateForgotPasswordMail(forgotPasswordDto.Email, otp, otpExpiresInMinutes)
+
+	if err := utils.SendEmail(forgotPasswordDto.Email, msg); err != nil {
+		http.Error(w, "Failed to send OTP", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

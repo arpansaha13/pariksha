@@ -79,3 +79,31 @@ func CreateLoginOtpMail(to string, otp string, expiresInMinutes int) string {
 		"\r\n"+
 		"%s\r\n", smtpName, smtpFrom, to, subject, htmlBody)
 }
+
+func CreateForgotPasswordMail(to string, otp string, expiresInMinutes int) string {
+	smtpName := os.Getenv("SMTP_NAME")
+	smtpFrom := os.Getenv("SMTP_FROM")
+	subject := "Reset Your Password"
+
+	htmlBody := fmt.Sprintf(`
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="UTF-8">
+            </head>
+            <body>
+                <p>Here is your OTP to reset your password.</p>
+                <p>OTP: <strong>%s</strong></p>
+                <p>The OTP will expire in <strong>%d minutes</strong>. If you did not request this, please secure your account.</p>
+            </body>
+        </html>
+    `, otp, expiresInMinutes)
+
+	return fmt.Sprintf("From: %s <%s>\r\n"+
+		"To: %s\r\n"+
+		"Subject: %s\r\n"+
+		"MIME-Version: 1.0\r\n"+
+		"Content-Type: text/html; charset=UTF-8\r\n"+
+		"\r\n"+
+		"%s\r\n", smtpName, smtpFrom, to, subject, htmlBody)
+}

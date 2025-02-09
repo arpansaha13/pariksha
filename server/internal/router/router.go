@@ -21,6 +21,7 @@ func SetupRouter() *mux.Router {
 	authRouter.HandleFunc("/signup", handlers.SignUp).Methods("POST")
 	authRouter.HandleFunc("/verification/signup", handlers.VerifySignup).Methods("POST")
 	authRouter.HandleFunc("/verification/login", handlers.VerifyLogin).Methods("POST")
+	authRouter.HandleFunc("/forgot-password", handlers.ForgotPassword).Methods("POST")
 
 	// Paper Routes
 	protectedRouter.HandleFunc("/papers", handlers.GetUserPapers).Methods("GET")
@@ -42,6 +43,9 @@ func SetupRouter() *mux.Router {
 	protectedRouter.HandleFunc("/exams/{examId}/participants/{participantId}", handlers.RemoveExamParticipant).Methods("DELETE")
 	protectedRouter.HandleFunc("/exams/{examId}/start", handlers.StartExam).Methods("PATCH")
 	protectedRouter.HandleFunc("/exams/{examId}/end", handlers.EndExam).Methods("PATCH")
+
+	// Exam Participant Routes
+	protectedRouter.HandleFunc("/participants/{participantId}/evaluate", handlers.MarkAsEvaluated).Methods("PATCH")
 
 	// Answer Routes
 	protectedRouter.HandleFunc("/exams/{examId}/answers", handlers.UpsertAnswers).Methods("POST")

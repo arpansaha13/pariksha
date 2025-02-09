@@ -201,3 +201,40 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func MarkAsEvaluated(w http.ResponseWriter, r *http.Request) {
+	participantID := mux.Vars(r)["participantId"]
+
+	var examParticipant models.ExamParticipant
+	if err := db.DB.Take(&examParticipant, participantID).Error; err != nil {
+		http.Error(w, "Exam participant not found", http.StatusNotFound)
+		return
+	}
+
+	if examParticipant.Status != constants.PARTICIPANT_STATUS_ENDED {
+		http.Error(w, "Evaluation can only start if the exam has ended", http.StatusBadRequest)
+		return
+	}
+
+	var unevaluatedCount int64
+	if err := db.DB.Model(&models.Answer{}).Where("exam_participant_id = ? AND evaluated = ?", participantID, false).Count(&unevaluatedCount).Error; err != nil {
+		http.Error(w, "Failed to count unevaluated answers", http.StatusInternalServerError)
+		return
+	}
+
+	if unevaluatedCount == 0 {
+		examParticipant.Status = constants.PARTICIPANT_STATUS_EVALUATED
+		if err := db.DB.Save(&examParticipant).Error; err != nil {
+			http.Error(w, "Failed to update exam participant status", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	response := map[string]int64{
+		"unevaluatedCount": unevaluatedCount,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}

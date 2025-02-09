@@ -421,3 +421,83 @@ func TestLoginWithOtp(t *testing.T) {
 		})
 	}
 }
+
+func TestForgotPassword(t *testing.T) {
+	testUtils.SetupTestDB(t)
+
+	t.Cleanup(func() {
+		testUtils.TeardownTestDB(t)
+	})
+
+	verifiedUser := testUtils.CreateTestUser(t, &models.User{
+		Email:    "verified@example.com",
+		Verified: true,
+	})
+	unverifiedUser := testUtils.CreateTestUser(t, &models.User{
+		Email:    "unverified@example.com",
+		Verified: false,
+	})
+
+	tests := []struct {
+		name              string
+		forgotPasswordDto dtos.ForgotPasswordDto
+		expectedStatus    int
+		validateFunc      func(t *testing.T)
+	}{
+		{
+			name: "Success - OTP created and sent",
+			forgotPasswordDto: dtos.ForgotPasswordDto{
+				Email: verifiedUser.Email,
+			},
+			expectedStatus: http.StatusNoContent,
+			validateFunc: func(t *testing.T) {
+				var otpEntry models.Otp
+				result := db.DB.Where("email = ? AND purpose = ?",
+					verifiedUser.Email,
+					constants.OTP_PURPOSE_FORGOT_PASSWORD,
+				).First(&otpEntry)
+
+				assert.NoError(t, result.Error)
+				assert.Equal(t, constants.OTP_PURPOSE_FORGOT_PASSWORD, otpEntry.Purpose)
+				assert.NotEmpty(t, otpEntry.OTP)
+				assert.True(t, otpEntry.OTPExpiresAt.After(time.Now()))
+			},
+		},
+		{
+			name: "Email not found or not verified",
+			forgotPasswordDto: dtos.ForgotPasswordDto{
+				Email: unverifiedUser.Email,
+			},
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name: "Invalid email format",
+			forgotPasswordDto: dtos.ForgotPasswordDto{
+				Email: "invalid-email",
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Empty email",
+			forgotPasswordDto: dtos.ForgotPasswordDto{
+				Email: "",
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			body, _ := json.Marshal(tt.forgotPasswordDto)
+			req := httptest.NewRequest("POST", "/auth/forgot-password", bytes.NewBuffer(body))
+			w := httptest.NewRecorder()
+
+			ForgotPassword(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			if tt.validateFunc != nil {
+				tt.validateFunc(t)
+			}
+		})
+	}
+}

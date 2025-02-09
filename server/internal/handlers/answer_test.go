@@ -422,3 +422,92 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 		})
 	}
 }
+
+func TestMarkAsEvaluated(t *testing.T) {
+	testUtils.SetupTestDB(t)
+
+	t.Cleanup(func() {
+		testUtils.TeardownTestDB(t)
+	})
+
+	user := testUtils.CreateTestUser(t, &models.User{
+		Verified: true,
+	})
+	paper := testUtils.CreateTestPaper(t, &models.Paper{})
+	question := testUtils.CreateTestQuestion(t, &models.Question{
+		PaperID:  paper.ID,
+		Type:     constants.QUESTION_TYPE_SHORT,
+		MaxScore: 10,
+	})
+	exam := testUtils.CreateTestExam(t, &models.Exam{
+		StartsAt:  time.Now().Add(-2 * time.Hour),
+		EndsAt:    time.Now().Add(-1 * time.Hour),
+		CreatedBy: user.ID,
+		PaperID:   paper.ID,
+	})
+	examParticipant := testUtils.CreateTestExamParticipant(t, &models.ExamParticipant{
+		ExamID: exam.ID,
+		UserID: user.ID,
+		Status: constants.PARTICIPANT_STATUS_ENDED,
+	})
+	testUtils.CreateTestAnswer(t, &models.Answer{
+		ExamParticipantID: examParticipant.ID,
+		QuestionID:        question.ID,
+		Answer:            sql.NullString{String: "Answer 1", Valid: true},
+		Evaluated:         false,
+	})
+
+	tests := []struct {
+		name               string
+		participantID      string
+		expectedStatus     int
+		expectedCount      int64
+		expectedStatusCode int
+	}{
+		{
+			name:               "Successful evaluation",
+			participantID:      strconv.Itoa(examParticipant.ID),
+			expectedStatus:     http.StatusOK,
+			expectedCount:      1,
+			expectedStatusCode: constants.PARTICIPANT_STATUS_EVALUATED,
+		},
+		{
+			name:               "Evaluation can only start if the exam has ended",
+			participantID:      strconv.Itoa(examParticipant.ID),
+			expectedStatus:     http.StatusBadRequest,
+			expectedCount:      1,
+			expectedStatusCode: constants.PARTICIPANT_STATUS_ENDED,
+		},
+		{
+			name:               "Exam participant not found",
+			participantID:      "9999",
+			expectedStatus:     http.StatusNotFound,
+			expectedCount:      0,
+			expectedStatusCode: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, _ := http.NewRequest("PATCH", "/participants/"+tt.participantID+"/evaluate", nil)
+			req = mux.SetURLVars(req, map[string]string{"participantId": tt.participantID})
+
+			rr := httptest.NewRecorder()
+			handler := http.HandlerFunc(MarkAsEvaluated)
+			handler.ServeHTTP(rr, req)
+
+			assert.Equal(t, tt.expectedStatus, rr.Code)
+
+			if tt.expectedStatus == http.StatusOK {
+				var response map[string]int64
+				json.NewDecoder(rr.Body).Decode(&response)
+				assert.Equal(t, tt.expectedCount, response["unevaluatedCount"])
+
+				var updatedExamParticipant models.ExamParticipant
+				err := db.DB.Take(&updatedExamParticipant, tt.participantID).Error
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedStatusCode, updatedExamParticipant.Status)
+			}
+		})
+	}
+}

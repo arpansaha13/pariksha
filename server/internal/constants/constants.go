@@ -3,10 +3,11 @@ package constants
 const StatusInvalidToken = 498
 
 const (
-	DEFAULT_API_PORT                 string = "4000"
-	DEFAULT_OTP_EXPIRES_IN_MINUTES   string = "15"
-	DEFAULT_SESSION_EXPIRES_IN_HOURS string = "24"
-	DEFAULT_SESSION_COOKIE_NAME      string = "token"
+	DEFAULT_API_PORT                               string = "4000"
+	DEFAULT_OTP_EXPIRES_IN_MINUTES                 string = "15"
+	DEFAULT_SESSION_EXPIRES_IN_HOURS               string = "24"
+	DEFAULT_SESSION_COOKIE_NAME                    string = "token"
+	DEFAULT_OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD        = "30"
 )
 
 const (
@@ -35,9 +36,11 @@ const (
 	PARTICIPANT_STATUS_INVITED    = 1
 	PARTICIPANT_STATUS_STARTED    = 2
 	PARTICIPANT_STATUS_ENDED      = 3
+	PARTICIPANT_STATUS_EVALUATED  = 4
 )
 
 const (
-	OTP_PURPOSE_SIGNUP = 1
-	OTP_PURPOSE_LOGIN  = 2
+	OTP_PURPOSE_SIGNUP          = 1
+	OTP_PURPOSE_LOGIN           = 2
+	OTP_PURPOSE_FORGOT_PASSWORD = 3
 )
