@@ -8,13 +8,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
+	"github.com/arpansaha13/pariksha/internal/middlewares"
 	"github.com/arpansaha13/pariksha/internal/models"
+	"github.com/arpansaha13/pariksha/internal/utils"
 	testUtils "github.com/arpansaha13/pariksha/internal/utils/test"
 )
 
@@ -629,6 +632,81 @@ func TestResetPassword(t *testing.T) {
 			if tt.validateFunc != nil {
 				tt.validateFunc(t)
 			}
+		})
+	}
+}
+
+func TestCsrfMiddleware(t *testing.T) {
+	testUtils.SetupTestDB(t)
+
+	t.Cleanup(func() {
+		testUtils.TeardownTestDB(t)
+	})
+
+	// Create a test user and session
+	testUtils.CreateTestUser(t, &models.User{
+		Verified: true,
+	})
+	sessionKey := uuid.New()
+	csrfToken, _ := utils.GenerateBase64String(32)
+	session := models.Session{
+		Key:       sessionKey,
+		Token:     "testToken",
+		ExpiresAt: time.Now().Add(1 * time.Hour),
+		CsrfToken: csrfToken,
+	}
+	db.DB.Create(&session)
+
+	tests := []struct {
+		name           string
+		method         string
+		csrfToken      string
+		expectedStatus int
+	}{
+		{
+			name:           "Valid CSRF token",
+			method:         "POST",
+			csrfToken:      csrfToken,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Missing CSRF token",
+			method:         "POST",
+			csrfToken:      "",
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name:           "Invalid CSRF token",
+			method:         "POST",
+			csrfToken:      "invalidToken",
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name:           "Safe method without CSRF token",
+			method:         "GET",
+			csrfToken:      "",
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(tt.method, "/protected", nil)
+			req.AddCookie(&http.Cookie{
+				Name:  utils.GetEnvWithDefault("SESSION_COOKIE_NAME", constants.DEFAULT_SESSION_COOKIE_NAME),
+				Value: sessionKey.String(),
+			})
+			if tt.csrfToken != "" {
+				req.Header.Set("X-CSRFToken", tt.csrfToken)
+			}
+			w := httptest.NewRecorder()
+
+			handler := middlewares.CsrfMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			}))
+			handler.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
 		})
 	}
 }

@@ -24,7 +24,7 @@ import (
 	"github.com/arpansaha13/pariksha/internal/utils"
 )
 
-func createSessionAndSetCookie(w http.ResponseWriter, user models.User) error {
+func createSessionAndSetCookies(w http.ResponseWriter, user models.User) error {
 	sessionKey := uuid.New()
 	sessionExpiresInHours, _ := strconv.Atoi(
 		utils.GetEnvWithDefault("SESSION_EXPIRES_IN_HOURS", constants.DEFAULT_SESSION_EXPIRES_IN_HOURS),
@@ -39,27 +39,41 @@ func createSessionAndSetCookie(w http.ResponseWriter, user models.User) error {
 		return err
 	}
 
+	csrfToken, err := utils.GenerateBase64String(constants.CSRF_TOKEN_LENGTH)
+	if err != nil {
+		return err
+	}
+
 	session := models.Session{
 		Key:       sessionKey,
 		Token:     tokenString,
 		ExpiresAt: sessionExpiresAt,
+		CsrfToken: csrfToken,
 	}
 
 	if err := db.DB.Create(&session).Error; err != nil {
 		return err
 	}
 
+	sessionCookieName := utils.GetEnvWithDefault("SESSION_COOKIE_NAME", constants.DEFAULT_SESSION_COOKIE_NAME)
+	setCookie(w, sessionCookieName, sessionKey.String(), session.ExpiresAt)
+
+	csrfTokenCookieName := utils.GetEnvWithDefault("CSRF_TOKEN_COOKIE_NAME", constants.DEFAULT_CSRFTOKEN_COOKIE_NAME)
+	setCookie(w, csrfTokenCookieName, csrfToken, session.ExpiresAt)
+
+	return nil
+}
+
+func setCookie(w http.ResponseWriter, name, value string, expires time.Time) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     utils.GetEnvWithDefault("SESSION_COOKIE_NAME", constants.DEFAULT_SESSION_COOKIE_NAME),
-		Value:    sessionKey.String(),
-		Expires:  session.ExpiresAt,
+		Name:     name,
+		Value:    value,
+		Expires:  expires,
 		HttpOnly: true,
 		Secure:   true,
 		Path:     "/",
 		SameSite: http.SameSiteStrictMode,
 	})
-
-	return nil
 }
 
 func LoginWithPassword(w http.ResponseWriter, r *http.Request) {
@@ -72,7 +86,7 @@ func LoginWithPassword(w http.ResponseWriter, r *http.Request) {
 
 	errs := validate.Do.Struct(loginDto)
 	if errs != nil {
-		http.Error(w, "Invald request body", http.StatusBadRequest)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
@@ -87,7 +101,7 @@ func LoginWithPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := createSessionAndSetCookie(w, user); err != nil {
+	if err := createSessionAndSetCookies(w, user); err != nil {
 		http.Error(w, "Failed to create session", http.StatusInternalServerError)
 		return
 	}
@@ -314,7 +328,7 @@ func VerifyLoginWithOtp(w http.ResponseWriter, r *http.Request) {
 			return errors.New("user not verified")
 		}
 
-		if err := createSessionAndSetCookie(w, user); err != nil {
+		if err := createSessionAndSetCookies(w, user); err != nil {
 			http.Error(w, "Failed to create session", http.StatusInternalServerError)
 			return err
 		}
