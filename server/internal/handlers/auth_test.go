@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
@@ -493,6 +494,136 @@ func TestForgotPassword(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			ForgotPassword(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			if tt.validateFunc != nil {
+				tt.validateFunc(t)
+			}
+		})
+	}
+}
+
+func TestResetPassword(t *testing.T) {
+	testUtils.SetupTestDB(t)
+
+	t.Cleanup(func() {
+		testUtils.TeardownTestDB(t)
+	})
+
+	verifiedUser := testUtils.CreateTestUser(t, &models.User{
+		Email:    "verified@example.com",
+		Verified: true,
+	})
+
+	unverifiedUser := testUtils.CreateTestUser(t, &models.User{
+		Email:    "unverified@example.com",
+		Verified: false,
+	})
+
+	validOtp := models.Otp{
+		Email:        verifiedUser.Email,
+		OTP:          "123456",
+		OTPExpiresAt: time.Now().Add(15 * time.Minute),
+		Purpose:      constants.OTP_PURPOSE_FORGOT_PASSWORD,
+	}
+
+	expiredOtp := models.Otp{
+		Email:        verifiedUser.Email,
+		OTP:          "expiredOtp",
+		OTPExpiresAt: time.Now().Add(-15 * time.Minute),
+		Purpose:      constants.OTP_PURPOSE_FORGOT_PASSWORD,
+	}
+
+	db.DB.Create(&validOtp)
+	db.DB.Create(&expiredOtp)
+
+	tests := []struct {
+		name             string
+		resetPasswordDto dtos.ResetPasswordDto
+		expectedStatus   int
+		validateFunc     func(t *testing.T)
+	}{
+		{
+			name: "Success - Password reset",
+			resetPasswordDto: dtos.ResetPasswordDto{
+				Email:       verifiedUser.Email,
+				OldPassword: "oldPassword",
+				NewPassword: "newPassword123",
+				OTP:         validOtp.OTP,
+			},
+			expectedStatus: http.StatusNoContent,
+			validateFunc: func(t *testing.T) {
+				var user models.User
+				err := db.DB.Where("email = ?", verifiedUser.Email).Take(&user).Error
+				assert.NoError(t, err)
+
+				err = bcrypt.CompareHashAndPassword([]byte(user.Password.String), []byte("newPassword123"))
+				assert.NoError(t, err)
+
+				var otpEntry models.Otp
+				err = db.DB.Where("email = ?", verifiedUser.Email).Take(&otpEntry).Error
+				assert.Error(t, err) // OTP entry should be deleted
+			},
+		},
+		{
+			name: "Invalid OTP",
+			resetPasswordDto: dtos.ResetPasswordDto{
+				Email:       verifiedUser.Email,
+				OldPassword: "oldPassword",
+				NewPassword: "newPassword123",
+				OTP:         "wrongOtp",
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "Invalid old password",
+			resetPasswordDto: dtos.ResetPasswordDto{
+				Email:       verifiedUser.Email,
+				OldPassword: "wrongOldPassword",
+				NewPassword: "newPassword123",
+				OTP:         validOtp.OTP,
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "Invalid email",
+			resetPasswordDto: dtos.ResetPasswordDto{
+				Email:       "invalid@example.com",
+				OldPassword: "oldPassword",
+				NewPassword: "newPassword123",
+				OTP:         validOtp.OTP,
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "Expired OTP",
+			resetPasswordDto: dtos.ResetPasswordDto{
+				Email:       verifiedUser.Email,
+				OldPassword: "oldPassword",
+				NewPassword: "newPassword123",
+				OTP:         expiredOtp.OTP,
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "Unverified user",
+			resetPasswordDto: dtos.ResetPasswordDto{
+				Email:       unverifiedUser.Email,
+				OldPassword: "oldPassword",
+				NewPassword: "newPassword123",
+				OTP:         validOtp.OTP,
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			body, _ := json.Marshal(tt.resetPasswordDto)
+			req := httptest.NewRequest("POST", "/auth/reset-password", bytes.NewBuffer(body))
+			w := httptest.NewRecorder()
+
+			ResetPassword(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 			if tt.validateFunc != nil {

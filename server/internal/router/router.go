@@ -22,6 +22,7 @@ func SetupRouter() *mux.Router {
 	authRouter.HandleFunc("/verification/signup", handlers.VerifySignup).Methods("POST")
 	authRouter.HandleFunc("/verification/login", handlers.VerifyLogin).Methods("POST")
 	authRouter.HandleFunc("/forgot-password", handlers.ForgotPassword).Methods("POST")
+	authRouter.HandleFunc("/reset-password", handlers.ResetPassword).Methods("POST")
 
 	// Paper Routes
 	protectedRouter.HandleFunc("/papers", handlers.GetUserPapers).Methods("GET")

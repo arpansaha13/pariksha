@@ -107,3 +107,30 @@ func CreateForgotPasswordMail(to string, otp string, expiresInMinutes int) strin
 		"\r\n"+
 		"%s\r\n", smtpName, smtpFrom, to, subject, htmlBody)
 }
+
+func CreateResetPasswordSuccessMail(to string) string {
+	smtpName := os.Getenv("SMTP_NAME")
+	smtpFrom := os.Getenv("SMTP_FROM")
+	subject := "Password Reset Successful"
+
+	htmlBody := `
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="UTF-8">
+            </head>
+            <body>
+                <p>Your password has been successfully reset.</p>
+                <p>If you did not request this change, please secure your account immediately.</p>
+            </body>
+        </html>
+    `
+
+	return fmt.Sprintf("From: %s <%s>\r\n"+
+		"To: %s\r\n"+
+		"Subject: %s\r\n"+
+		"MIME-Version: 1.0\r\n"+
+		"Content-Type: text/html; charset=UTF-8\r\n"+
+		"\r\n"+
+		"%s\r\n", smtpName, smtpFrom, to, subject, htmlBody)
+}

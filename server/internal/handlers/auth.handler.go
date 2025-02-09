@@ -387,3 +387,78 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var resetPasswordDto dtos.ResetPasswordDto
+	if err := json.NewDecoder(r.Body).Decode(&resetPasswordDto); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	errs := validate.Do.Struct(resetPasswordDto)
+	if errs != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	var otpEntry models.Otp
+	if err := db.DB.Where("email = ? AND otp = ? AND purpose = ?",
+		resetPasswordDto.Email,
+		resetPasswordDto.OTP,
+		constants.OTP_PURPOSE_FORGOT_PASSWORD,
+	).Take(&otpEntry).Error; err != nil {
+		http.Error(w, "Invalid or expired OTP", http.StatusUnauthorized)
+		return
+	}
+
+	if time.Now().After(otpEntry.OTPExpiresAt) {
+		http.Error(w, "OTP has expired", http.StatusUnauthorized)
+		return
+	}
+
+	var user models.User
+	if err := db.DB.Where("email = ?", resetPasswordDto.Email).Take(&user).Error; err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	if !user.Verified {
+		http.Error(w, "User not verified", http.StatusUnauthorized)
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password.String), []byte(resetPasswordDto.OldPassword)); err != nil {
+		http.Error(w, "Invalid old password", http.StatusUnauthorized)
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(resetPasswordDto.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "Error hashing new password", http.StatusInternalServerError)
+		return
+	}
+
+	err = db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&user).Update("password", sql.NullString{String: string(hashedPassword), Valid: true}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Delete(&otpEntry).Error; err != nil {
+			return err
+		}
+
+		msg := utils.CreateResetPasswordSuccessMail(resetPasswordDto.Email)
+		if err := utils.SendEmail(resetPasswordDto.Email, msg); err != nil {
+			fmt.Printf("Failed to send reset password success email: %v\n", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		http.Error(w, "Failed to reset password", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

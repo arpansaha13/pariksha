@@ -22,3 +22,10 @@ type LoginWithOtpDto struct {
 type ForgotPasswordDto struct {
 	Email string `json:"email" validate:"required,email"`
 }
+
+type ResetPasswordDto struct {
+	Email       string `json:"email" validate:"required,email"`
+	OldPassword string `json:"oldPassword" validate:"required"`
+	NewPassword string `json:"newPassword" validate:"required"`
+	OTP         string `json:"otp" validate:"required"`
+}
