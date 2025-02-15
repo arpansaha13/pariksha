@@ -1,0 +1,60 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: ./server/Dockerfile
+    image: server
+    container_name: server
+    env_file:
+      - docker-env/server.env
+    ports:
+      - 4000:4000
+    depends_on:
+      db:
+        condition: service_healthy
+      mail:
+        condition: service_started
+    networks:
+      - pariksha-network
+
+  mail:
+    build:
+      context: .
+      dockerfile: ./mail/Dockerfile
+    image: service__mail
+    container_name: service__mail
+    env_file:
+      - docker-env/mail.env
+    ports:
+      - 4010:4010
+    networks:
+      - pariksha-network
+
+  db:
+    image: postgres:15.10
+    restart: always
+    container_name: db
+    env_file:
+      - docker-env/pg.env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    expose:
+      - "5432"
+    ports:
+      - 6000:5432
+    volumes:
+      - ./pg-data:/var/lib/postgresql/data
+    networks:
+      - pariksha-network
+
+volumes:
+  pg-data:
+
+networks:
+  pariksha-network:
