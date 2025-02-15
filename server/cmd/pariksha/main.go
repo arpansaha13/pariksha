@@ -4,69 +4,31 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
-	"github.com/joho/godotenv"
-
-	"github.com/arpansaha13/pariksha/internal/config/validate"
-	"github.com/arpansaha13/pariksha/internal/constants"
+	"github.com/arpansaha13/pariksha/internal/config/env"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/router"
-	"github.com/arpansaha13/pariksha/internal/utils"
+	"github.com/arpansaha13/pariksha/internal/services"
 )
 
 func main() {
-	loadEnv()
-	validateEnv()
-
-	db.Init()
-
-	// Ensure the database connection is closed on application exit
-	sqlDb, _ := db.DB.DB()
-	defer sqlDb.Close()
+	defer closeConnections()
 
 	r := router.SetupRouter()
 
-	validate.Init()
+	port := env.API_PORT
+	fmt.Printf("Server starting on localhost:%s\n", port)
 
-	// Remove hostname in production
-	// https://stackoverflow.com/questions/55201561/golang-run-on-windows-without-deal-with-the-firewall/65393403#65393403
-	port := utils.GetEnvWithDefault("API_PORT", constants.DEFAULT_API_PORT)
-	addr := "localhost:" + port
-	fmt.Printf("Server starting on %s\n", addr)
-
+	addr := ":" + port
 	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func loadEnv() {
-	err := godotenv.Load()
+// Ensure the connections are closed on application exit
+func closeConnections() {
+	sqlDb, _ := db.DB.DB()
+	sqlDb.Close()
 
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-}
-
-func validateEnv() {
-	requiredEnvVars := []string{
-		"GO_ENV",
-		"DB_HOST",
-		"DB_USER",
-		"DB_PASS",
-		"DB_NAME",
-		"JWT_SECRET_KEY",
-		"SMTP_NAME",
-		"SMTP_USER",
-		"SMTP_FROM",
-		"SMTP_PASSWORD",
-		"SMTP_HOST",
-		"SMTP_PORT",
-	}
-
-	for _, envVar := range requiredEnvVars {
-		if os.Getenv(envVar) == "" {
-			log.Fatalf("%s is not set", envVar)
-		}
-	}
+	services.MailServiceConn.Close()
 }

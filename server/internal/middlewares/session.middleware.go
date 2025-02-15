@@ -4,10 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/arpansaha13/pariksha/internal/constants"
+	"github.com/arpansaha13/pariksha/internal/config/env"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/models"
-	"github.com/arpansaha13/pariksha/internal/utils"
 )
 
 type sessionContextKey string
@@ -16,8 +15,7 @@ const SessionKey sessionContextKey = "session"
 
 func SessionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sessionCookieName := utils.GetEnvWithDefault("SESSION_COOKIE_NAME", constants.DEFAULT_SESSION_COOKIE_NAME)
-		sessionCookie, err := r.Cookie(sessionCookieName)
+		sessionCookie, err := r.Cookie(env.SESSION_COOKIE_NAME)
 		if err != nil {
 			ctx := context.WithValue(r.Context(), SessionKey, nil)
 			next.ServeHTTP(w, r.WithContext(ctx))

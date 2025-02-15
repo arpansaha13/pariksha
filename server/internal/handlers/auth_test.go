@@ -12,12 +12,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/arpansaha13/common/pkg/utils"
+	"github.com/arpansaha13/pariksha/internal/config/env"
 	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/middlewares"
 	"github.com/arpansaha13/pariksha/internal/models"
-	"github.com/arpansaha13/pariksha/internal/utils"
 	testUtils "github.com/arpansaha13/pariksha/internal/utils/test"
 )
 
@@ -693,7 +694,7 @@ func TestCsrfMiddleware(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(tt.method, "/protected", nil)
 			req.AddCookie(&http.Cookie{
-				Name:  utils.GetEnvWithDefault("SESSION_COOKIE_NAME", constants.DEFAULT_SESSION_COOKIE_NAME),
+				Name:  utils.GetEnvWithDefault("SESSION_COOKIE_NAME", env.SESSION_COOKIE_NAME),
 				Value: sessionKey.String(),
 			})
 			if tt.csrfToken != "" {

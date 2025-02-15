@@ -1,32 +1,61 @@
-package utils
+package services
 
 import (
+	"context"
 	"fmt"
 	"net/smtp"
-	"os"
+
+	"github.com/arpansaha13/mail/internal/api"
+	"github.com/arpansaha13/mail/internal/config/env"
 )
 
-func SendEmail(to string, content string) error {
-	user := os.Getenv("SMTP_USER")
-	from := os.Getenv("SMTP_FROM")
-	password := os.Getenv("SMTP_PASSWORD")
-	smtpHost := os.Getenv("SMTP_HOST")
-	smtpPort := os.Getenv("SMTP_PORT")
+type MailServiceServer struct {
+	api.UnimplementedMailServiceServer
+}
+
+func (s *MailServiceServer) SendVerificationMail(ctx context.Context, req *api.SendVerificationMailRequest) (*api.MailResponse, error) {
+	template := createVerificationMailTemplate(req.To, req.Otp, int(req.ExpiresInMinutes))
+
+	return sendMail(req.To, template)
+}
+
+func (s *MailServiceServer) SendForgotPasswordMail(ctx context.Context, req *api.SendForgotPasswordMailRequest) (*api.MailResponse, error) {
+	template := createForgotPasswordMailTemplate(req.To, req.Otp, int(req.ExpiresInMinutes))
+
+	return sendMail(req.To, template)
+}
+
+func (s *MailServiceServer) SendLoginOtpMail(ctx context.Context, req *api.SendLoginOtpMailRequest) (*api.MailResponse, error) {
+	template := createLoginOtpMailTemplate(req.To, req.Otp, int(req.ExpiresInMinutes))
+
+	return sendMail(req.To, template)
+}
+
+func (s *MailServiceServer) SendResetPasswordSuccessMail(ctx context.Context, req *api.SendResetPasswordSuccessMailRequest) (*api.MailResponse, error) {
+	template := createResetPasswordSuccessMailTemplate(req.To)
+
+	return sendMail(req.To, template)
+}
+
+func sendMail(to string, content string) (*api.MailResponse, error) {
+	user := env.SMTP_USER
+	from := env.SMTP_FROM
+	password := env.SMTP_PASSWORD
+	smtpHost := env.SMTP_HOST
+	smtpPort := env.SMTP_PORT
 
 	auth := smtp.PlainAuth("", user, password, smtpHost)
 
 	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{to}, []byte(content))
 	if err != nil {
-		return fmt.Errorf("failed to send email: %w", err)
+		fmt.Println(err)
+		return &api.MailResponse{Success: false, Error: "failed to send email"}, fmt.Errorf("failed to send email: %w", err)
 	}
 
-	return nil
+	return &api.MailResponse{Success: true}, nil
 }
 
-// CreateHTMLEmailTemplate generates an HTML formatted email message
-func CreateVerificationMail(to string, otp string, expiresInMinutes int) string {
-	smtpName := os.Getenv("SMTP_NAME")
-	smtpFrom := os.Getenv("SMTP_FROM")
+func createVerificationMailTemplate(to string, otp string, expiresInMinutes int) string {
 	subject := "Verify your email address"
 
 	htmlBody := fmt.Sprintf(`
@@ -49,12 +78,10 @@ func CreateVerificationMail(to string, otp string, expiresInMinutes int) string 
 		"MIME-Version: 1.0\r\n"+
 		"Content-Type: text/html; charset=UTF-8\r\n"+
 		"\r\n"+
-		"%s\r\n", smtpName, smtpFrom, to, subject, htmlBody)
+		"%s\r\n", env.SMTP_NAME, env.SMTP_FROM, to, subject, htmlBody)
 }
 
-func CreateLoginOtpMail(to string, otp string, expiresInMinutes int) string {
-	smtpName := os.Getenv("SMTP_NAME")
-	smtpFrom := os.Getenv("SMTP_FROM")
+func createLoginOtpMailTemplate(to string, otp string, expiresInMinutes int) string {
 	subject := "Login OTP"
 
 	htmlBody := fmt.Sprintf(`
@@ -77,12 +104,10 @@ func CreateLoginOtpMail(to string, otp string, expiresInMinutes int) string {
 		"MIME-Version: 1.0\r\n"+
 		"Content-Type: text/html; charset=UTF-8\r\n"+
 		"\r\n"+
-		"%s\r\n", smtpName, smtpFrom, to, subject, htmlBody)
+		"%s\r\n", env.SMTP_NAME, env.SMTP_FROM, to, subject, htmlBody)
 }
 
-func CreateForgotPasswordMail(to string, otp string, expiresInMinutes int) string {
-	smtpName := os.Getenv("SMTP_NAME")
-	smtpFrom := os.Getenv("SMTP_FROM")
+func createForgotPasswordMailTemplate(to string, otp string, expiresInMinutes int) string {
 	subject := "Reset Your Password"
 
 	htmlBody := fmt.Sprintf(`
@@ -105,12 +130,10 @@ func CreateForgotPasswordMail(to string, otp string, expiresInMinutes int) strin
 		"MIME-Version: 1.0\r\n"+
 		"Content-Type: text/html; charset=UTF-8\r\n"+
 		"\r\n"+
-		"%s\r\n", smtpName, smtpFrom, to, subject, htmlBody)
+		"%s\r\n", env.SMTP_NAME, env.SMTP_FROM, to, subject, htmlBody)
 }
 
-func CreateResetPasswordSuccessMail(to string) string {
-	smtpName := os.Getenv("SMTP_NAME")
-	smtpFrom := os.Getenv("SMTP_FROM")
+func createResetPasswordSuccessMailTemplate(to string) string {
 	subject := "Password Reset Successful"
 
 	htmlBody := `
@@ -132,5 +155,5 @@ func CreateResetPasswordSuccessMail(to string) string {
 		"MIME-Version: 1.0\r\n"+
 		"Content-Type: text/html; charset=UTF-8\r\n"+
 		"\r\n"+
-		"%s\r\n", smtpName, smtpFrom, to, subject, htmlBody)
+		"%s\r\n", env.SMTP_NAME, env.SMTP_FROM, to, subject, htmlBody)
 }

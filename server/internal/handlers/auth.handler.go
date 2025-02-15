@@ -1,13 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -16,20 +16,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
+	"github.com/arpansaha13/common/pkg/utils"
+	"github.com/arpansaha13/pariksha/internal/api"
+	"github.com/arpansaha13/pariksha/internal/config/env"
 	"github.com/arpansaha13/pariksha/internal/config/validate"
 	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/models"
-	"github.com/arpansaha13/pariksha/internal/utils"
+	"github.com/arpansaha13/pariksha/internal/services"
 )
 
 func createSessionAndSetCookies(w http.ResponseWriter, user models.User) error {
 	sessionKey := uuid.New()
-	sessionExpiresInHours, _ := strconv.Atoi(
-		utils.GetEnvWithDefault("SESSION_EXPIRES_IN_HOURS", constants.DEFAULT_SESSION_EXPIRES_IN_HOURS),
-	)
-	sessionExpiresAt := time.Now().Add(time.Duration(sessionExpiresInHours) * time.Hour)
+	sessionExpiresAt := time.Now().Add(time.Duration(env.SESSION_EXPIRES_IN_HOURS) * time.Hour)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": user.ID,
 		"exp":     sessionExpiresAt.Unix(),
@@ -55,11 +55,8 @@ func createSessionAndSetCookies(w http.ResponseWriter, user models.User) error {
 		return err
 	}
 
-	sessionCookieName := utils.GetEnvWithDefault("SESSION_COOKIE_NAME", constants.DEFAULT_SESSION_COOKIE_NAME)
-	setCookie(w, sessionCookieName, sessionKey.String(), session.ExpiresAt)
-
-	csrfTokenCookieName := utils.GetEnvWithDefault("CSRF_TOKEN_COOKIE_NAME", constants.DEFAULT_CSRFTOKEN_COOKIE_NAME)
-	setCookie(w, csrfTokenCookieName, csrfToken, session.ExpiresAt)
+	setCookie(w, env.SESSION_COOKIE_NAME, sessionKey.String(), session.ExpiresAt)
+	setCookie(w, env.CSRFTOKEN_COOKIE_NAME, csrfToken, session.ExpiresAt)
 
 	return nil
 }
@@ -166,9 +163,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		}
 
 		otp, _ := utils.GenerateOTP(constants.VERIFICATION_OTP_LENGTH)
-		otpExpiresInMinutes, _ := strconv.Atoi(
-			utils.GetEnvWithDefault("OTP_EXPIRES_IN_MINUTES", constants.DEFAULT_OTP_EXPIRES_IN_MINUTES),
-		)
+		otpExpiresInMinutes := env.OTP_EXPIRES_IN_MINUTES
 		otpExpiresAt := time.Now().Add(time.Duration(otpExpiresInMinutes) * time.Minute)
 
 		// Create or update OTP entry
@@ -182,8 +177,16 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		msg := utils.CreateVerificationMail(signUpDto.Email, otp, otpExpiresInMinutes)
-		if err := utils.SendEmail(signUpDto.Email, msg); err != nil {
+		_, err = services.MailService.SendVerificationMail(
+			context.Background(),
+			&api.SendVerificationMailRequest{
+				To:               signUpDto.Email,
+				Otp:              otp,
+				ExpiresInMinutes: int32(otpExpiresInMinutes),
+			},
+		)
+
+		if err != nil {
 			fmt.Printf("Failed to send verification email: %v\n", err)
 		}
 
@@ -262,9 +265,7 @@ func LoginWithOtp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	otp, _ := utils.GenerateOTP(constants.VERIFICATION_OTP_LENGTH)
-	otpExpiresInMinutes, _ := strconv.Atoi(
-		utils.GetEnvWithDefault("OTP_EXPIRES_IN_MINUTES", constants.DEFAULT_OTP_EXPIRES_IN_MINUTES),
-	)
+	otpExpiresInMinutes := env.OTP_EXPIRES_IN_MINUTES
 	otpExpiresAt := time.Now().Add(time.Duration(otpExpiresInMinutes) * time.Minute)
 
 	otpEntry := models.Otp{
@@ -279,9 +280,16 @@ func LoginWithOtp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg := utils.CreateLoginOtpMail(loginOtpDto.Email, otp, otpExpiresInMinutes)
+	_, err := services.MailService.SendLoginOtpMail(
+		context.Background(),
+		&api.SendLoginOtpMailRequest{
+			To:               loginOtpDto.Email,
+			Otp:              otp,
+			ExpiresInMinutes: int32(otpExpiresInMinutes),
+		},
+	)
 
-	if err := utils.SendEmail(loginOtpDto.Email, msg); err != nil {
+	if err != nil {
 		http.Error(w, "Failed to send OTP", http.StatusInternalServerError)
 		return
 	}
@@ -375,9 +383,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	otp, _ := utils.GenerateOTP(constants.VERIFICATION_OTP_LENGTH)
-	otpExpiresInMinutes, _ := strconv.Atoi(
-		utils.GetEnvWithDefault("OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD", constants.DEFAULT_OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD),
-	)
+	otpExpiresInMinutes := env.OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD
 	otpExpiresAt := time.Now().Add(time.Duration(otpExpiresInMinutes) * time.Minute)
 
 	otpEntry := models.Otp{
@@ -392,9 +398,16 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg := utils.CreateForgotPasswordMail(forgotPasswordDto.Email, otp, otpExpiresInMinutes)
+	_, err := services.MailService.SendForgotPasswordMail(
+		context.Background(),
+		&api.SendForgotPasswordMailRequest{
+			To:               forgotPasswordDto.Email,
+			Otp:              otp,
+			ExpiresInMinutes: int32(otpExpiresInMinutes),
+		},
+	)
 
-	if err := utils.SendEmail(forgotPasswordDto.Email, msg); err != nil {
+	if err != nil {
 		http.Error(w, "Failed to send OTP", http.StatusInternalServerError)
 		return
 	}
@@ -461,8 +474,12 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		msg := utils.CreateResetPasswordSuccessMail(resetPasswordDto.Email)
-		if err := utils.SendEmail(resetPasswordDto.Email, msg); err != nil {
+		_, err := services.MailService.SendForgotPasswordMail(
+			context.Background(),
+			&api.SendForgotPasswordMailRequest{To: resetPasswordDto.Email},
+		)
+
+		if err != nil {
 			fmt.Printf("Failed to send reset password success email: %v\n", err)
 		}
 

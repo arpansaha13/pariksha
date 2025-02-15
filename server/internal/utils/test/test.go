@@ -17,7 +17,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"github.com/arpansaha13/pariksha/internal/config/validate"
 	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/middlewares"
@@ -49,8 +48,6 @@ func SetupTestDB(t *testing.T) {
 	db.DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: silentLogger,
 	})
-
-	validate.Init()
 
 	if err != nil {
 		t.Fatalf("Failed to connect to test database: %v", err)

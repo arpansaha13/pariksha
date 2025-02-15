@@ -3,12 +3,9 @@ package constants
 const StatusInvalidToken = 498
 
 const (
-	DEFAULT_API_PORT                               string = "4000"
-	DEFAULT_OTP_EXPIRES_IN_MINUTES                 string = "15"
-	DEFAULT_SESSION_EXPIRES_IN_HOURS               string = "24"
-	DEFAULT_SESSION_COOKIE_NAME                    string = "token"
-	DEFAULT_CSRFTOKEN_COOKIE_NAME                  string = "csrftoken"
-	DEFAULT_OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD        = "30"
+	GO_ENV_DEV        string = "development"
+	GO_ENV_PROD       string = "production"
+	GO_ENV_DOCKER_DEV string = "docker-development"
 )
 
 const (
