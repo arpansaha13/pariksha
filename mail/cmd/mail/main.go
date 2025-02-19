@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 
-	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 
 	"github.com/arpansaha13/mail/internal/api"
@@ -14,10 +13,6 @@ import (
 )
 
 func main() {
-	if godotenv.Load() != nil {
-		log.Fatalf("Error loading .env file")
-	}
-
 	port := env.MAIL_SERVER_PORT
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {

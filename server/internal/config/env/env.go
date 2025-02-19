@@ -17,10 +17,12 @@ var (
 	SESSION_COOKIE_NAME                    string
 	CSRFTOKEN_COOKIE_NAME                  string
 	OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD int
+	MAIL_SERVER_HOST                       string
+	MAIL_SERVER_PORT                       string
 )
 
 func init() {
-	if godotenv.Load() != nil {
+	if os.Getenv("GO_ENV") == "development" && godotenv.Load() != nil {
 		log.Fatalf("Error loading .env file")
 	}
 
@@ -32,6 +34,7 @@ func init() {
 		"DB_PASS",
 		"DB_NAME",
 		"JWT_SECRET_KEY",
+		"MAIL_SERVER_PORT",
 	}
 
 	for _, envVar := range requiredEnvVars {
@@ -46,4 +49,7 @@ func init() {
 	SESSION_COOKIE_NAME = utils.GetEnvWithDefault("SESSION_COOKIE_NAME", "token")
 	CSRFTOKEN_COOKIE_NAME = utils.GetEnvWithDefault("CSRFTOKEN_COOKIE_NAME", "csrftoken")
 	OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD, _ = strconv.Atoi(utils.GetEnvWithDefault("OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD", "30"))
+
+	MAIL_SERVER_HOST = utils.GetEnvWithDefault("MAIL_SERVER_HOST", "")
+	MAIL_SERVER_PORT = os.Getenv("MAIL_SERVER_PORT")
 }

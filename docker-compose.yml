@@ -16,6 +16,18 @@ services:
         condition: service_started
     networks:
       - pariksha-network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./server/internal
+          target: /app/server/internal
+        - action: rebuild
+          path: ./server/cmd
+          target: /app/server/cmd
+        - action: rebuild
+          path: ./server/go.mod
+        - action: rebuild
+          path: ./server/go.sum
 
   mail:
     build:
@@ -29,6 +41,18 @@ services:
       - 4010:4010
     networks:
       - pariksha-network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./mail/internal
+          target: /app/mail/internal
+        - action: rebuild
+          path: ./mail/cmd
+          target: /app/mail/cmd
+        - action: rebuild
+          path: ./mail/go.mod
+        - action: rebuild
+          path: ./mail/go.sum
 
   db:
     image: postgres:15.10

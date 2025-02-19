@@ -10,13 +10,18 @@ COPY common/ .
 
 WORKDIR /app/mail
 
+# https://medium.com/@marcin.niemira/optimise-docker-build-for-go-c03d6eb8b4b
+
+ENV CGO_ENABLED=1
+ENV GOCACHE=/go-cache
+ENV GOMODCACHE=/gomod-cache
+
 COPY mail/go.mod mail/go.sum ./
+COPY mail/gowatch.yml ./
+COPY mail/cmd/ ./cmd/
+COPY mail/internal/ ./internal/
 
-RUN go mod download
-
-COPY mail/ .
-
-RUN go build -o ./bin/pariksha_mail ./cmd/mail/main.go
+RUN --mount=type=cache,target=/gomod-cache --mount=type=cache,target=/go-cache go build -o ./bin/pariksha_mail ./cmd/mail/main.go
 
 EXPOSE 4010
 

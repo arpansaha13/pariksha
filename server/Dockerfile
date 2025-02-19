@@ -6,17 +6,22 @@ COPY common/go.mod ./
 
 RUN go mod download
 
-COPY common/. .
+COPY common/ .
 
 WORKDIR /app/server
 
+# https://medium.com/@marcin.niemira/optimise-docker-build-for-go-c03d6eb8b4b
+
+ENV CGO_ENABLED=1
+ENV GOCACHE=/go-cache
+ENV GOMODCACHE=/gomod-cache
+
 COPY server/go.mod server/go.sum ./
+COPY server/gowatch.yml ./
+COPY server/cmd/ ./cmd/
+COPY server/internal/ ./internal/
 
-RUN go mod download
-
-COPY server/. .
-
-RUN go build -o ./bin/pariksha ./cmd/pariksha/main.go
+RUN --mount=type=cache,target=/gomod-cache --mount=type=cache,target=/go-cache go build -o ./bin/pariksha ./cmd/pariksha/main.go
 
 EXPOSE 4000
 

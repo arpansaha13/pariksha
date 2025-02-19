@@ -7,12 +7,13 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/arpansaha13/pariksha/internal/api"
+	"github.com/arpansaha13/pariksha/internal/config/env"
 )
 
 var MailService api.MailServiceClient
 var MailServiceConn *grpc.ClientConn
 
-var mailServerAddr = "localhost:4010"
+var mailServerAddr = env.MAIL_SERVER_HOST + ":" + env.MAIL_SERVER_PORT
 
 func init() {
 	var err error

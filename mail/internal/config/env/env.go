@@ -20,7 +20,7 @@ var (
 )
 
 func init() {
-	if godotenv.Load() != nil {
+	if os.Getenv("GO_ENV") == "development" && godotenv.Load() != nil {
 		log.Fatalf("Error loading .env file")
 	}
 
