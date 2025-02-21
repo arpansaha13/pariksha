@@ -10,8 +10,8 @@ import (
 func SetupRouter() *mux.Router {
 	r := mux.NewRouter()
 
-	authRouter := r.PathPrefix("/auth").Subrouter()
-	protectedRouter := r.PathPrefix("/").Subrouter()
+	authRouter := r.PathPrefix("/api/auth").Subrouter()
+	protectedRouter := r.PathPrefix("/api").Subrouter()
 
 	protectedRouter.Use(middlewares.SessionMiddleware)
 	protectedRouter.Use(middlewares.CsrfMiddleware)
