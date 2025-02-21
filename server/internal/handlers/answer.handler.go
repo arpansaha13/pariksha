@@ -9,8 +9,8 @@ import (
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 
+	"github.com/arpansaha13/common/pkg/constants"
 	"github.com/arpansaha13/pariksha/internal/config/validate"
-	"github.com/arpansaha13/pariksha/internal/constants"
 	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/middlewares"

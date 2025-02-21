@@ -8,7 +8,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"github.com/arpansaha13/pariksha/internal/constants"
+	"github.com/arpansaha13/common/pkg/constants"
 	"github.com/arpansaha13/pariksha/internal/models"
 )
 

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/arpansaha13/pariksha/internal/constants"
+	"github.com/arpansaha13/common/pkg/constants"
 )
 
 type MCQQuestion struct {
