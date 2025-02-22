@@ -6,14 +6,14 @@ services:
     image: server
     container_name: server
     env_file:
-      - docker-env/server.env
+      - docker/env/server.env
     ports:
       - 4000:4000
     depends_on:
       db:
         condition: service_healthy
-      mail:
-        condition: service_started
+      sessionsDb:
+        condition: service_healthy
       rabbit:
         condition: service_started
     networks:
@@ -35,12 +35,10 @@ services:
     build:
       context: .
       dockerfile: ./mail/Dockerfile
-    image: service__mail
-    container_name: service__mail
+    image: worker__mail
+    container_name: worker__mail
     env_file:
-      - docker-env/mail.env
-    # ports:
-    #   - 4010:4010
+      - docker/env/mail.env
     depends_on:
       rabbit:
         condition: service_started
@@ -74,7 +72,7 @@ services:
     restart: always
     container_name: db
     env_file:
-      - docker-env/pg.env
+      - docker/env/pg.env
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_DB=${POSTGRES_DB}
@@ -88,12 +86,32 @@ services:
     ports:
       - 6000:5432 # needed for pgAdmin
     volumes:
-      - ./pg-data:/var/lib/postgresql/data
+      - ./docker/data/db:/var/lib/postgresql/data
     networks:
       - pariksha-network
 
-volumes:
-  pg-data:
+  sessionsDb:
+    image: postgres:15.10
+    restart: always
+    container_name: db__sessions
+    env_file:
+      - docker/env/sessionsDb.env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB_SESSIONS}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_SESSIONS}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    expose:
+      - "5432"
+    ports:
+      - 6010:5432 # needed for pgAdmin
+    volumes:
+      - ./docker/data/sessionsDb:/var/lib/postgresql/data
+    networks:
+      - pariksha-network
 
 networks:
   pariksha-network:

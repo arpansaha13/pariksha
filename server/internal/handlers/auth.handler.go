@@ -18,9 +18,9 @@ import (
 	"github.com/arpansaha13/common/pkg/constants"
 	"github.com/arpansaha13/common/pkg/types"
 	"github.com/arpansaha13/common/pkg/utils"
+	"github.com/arpansaha13/pariksha/internal/config/db"
 	"github.com/arpansaha13/pariksha/internal/config/env"
 	"github.com/arpansaha13/pariksha/internal/config/validate"
-	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/models"
 	"github.com/arpansaha13/pariksha/internal/services"
@@ -50,7 +50,7 @@ func createSessionAndSetCookies(w http.ResponseWriter, user models.User) error {
 		CsrfToken: csrfToken,
 	}
 
-	if err := db.DB.Create(&session).Error; err != nil {
+	if err := db.Sessions.Create(&session).Error; err != nil {
 		return err
 	}
 

@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/arpansaha13/pariksha/internal/config/db"
 	"github.com/arpansaha13/pariksha/internal/config/env"
-	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/router"
 	"github.com/arpansaha13/pariksha/internal/services"
 )

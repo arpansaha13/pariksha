@@ -12,19 +12,19 @@ import (
 	"github.com/arpansaha13/pariksha/internal/models"
 )
 
-var DB *gorm.DB
+var Sessions *gorm.DB
 
 func init() {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASS"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_SSLMODE"))
+		os.Getenv("SESSIONS_DB_HOST"),
+		os.Getenv("SESSIONS_DB_USER"),
+		os.Getenv("SESSIONS_DB_PASS"),
+		os.Getenv("SESSIONS_DB_NAME"),
+		os.Getenv("SESSIONS_DB_PORT"),
+		os.Getenv("SESSIONS_DB_SSLMODE"))
 
 	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	Sessions, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
 		log.Fatal(err)
@@ -32,21 +32,13 @@ func init() {
 
 	// Only run auto-migrations in development environment
 	if os.Getenv("GO_ENV") == constants.GO_ENV_DEV || os.Getenv("GO_ENV") == constants.GO_ENV_DOCKER_DEV {
-		autoMigrate()
+		autoMigrateSessionsDb()
 	}
 }
 
-func autoMigrate() {
-	err := DB.AutoMigrate(
-		&models.User{},
-		&models.Exam{},
-		&models.Answer{},
-		&models.ExamParticipant{},
-		&models.Paper{},
-		&models.PaperOwnership{},
-		&models.Question{},
+func autoMigrateSessionsDb() {
+	err := Sessions.AutoMigrate(
 		&models.Session{},
-		&models.Otp{},
 	)
 
 	if err != nil {

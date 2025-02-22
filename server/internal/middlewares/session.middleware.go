@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/arpansaha13/pariksha/internal/config/db"
 	"github.com/arpansaha13/pariksha/internal/config/env"
-	"github.com/arpansaha13/pariksha/internal/db"
 	"github.com/arpansaha13/pariksha/internal/models"
 )
 
@@ -23,7 +23,7 @@ func SessionMiddleware(next http.Handler) http.Handler {
 		}
 
 		var session models.Session
-		err = db.DB.Where("key = ?", sessionCookie.Value).Take(&session).Error
+		err = db.Sessions.Where("key = ?", sessionCookie.Value).Take(&session).Error
 		if err != nil {
 			ctx := context.WithValue(r.Context(), SessionKey, nil)
 			next.ServeHTTP(w, r.WithContext(ctx))
