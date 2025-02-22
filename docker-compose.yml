@@ -15,7 +15,7 @@ services:
       sessionsDb:
         condition: service_healthy
       rabbit:
-        condition: service_started
+        condition: service_healthy
     networks:
       - pariksha-network
     develop:
@@ -41,7 +41,7 @@ services:
       - docker/env/mail.env
     depends_on:
       rabbit:
-        condition: service_started
+        condition: service_healthy
     networks:
       - pariksha-network
     develop:
@@ -60,9 +60,14 @@ services:
   rabbit:
     image: rabbitmq:3-management
     container_name: rabbit
+    healthcheck:
+      test: rabbitmq-diagnostics -q status
+      interval: 10s
+      timeout: 40s
+      retries: 3
     volumes:
-     - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/mnesia/
-     - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+     - ./docker/data/rabbit/:/var/lib/rabbitmq/mnesia/
+     - ./docker/conf/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
     restart: always
     networks:
       - pariksha-network
