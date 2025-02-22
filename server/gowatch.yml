@@ -1,7 +1,0 @@
-appname: pariksha
-output: ./bin/pariksha.exe
-watch_exts: [.go, .tpl, .tmpl]
-watch_paths: ["."]
-build_args:
-    - ./cmd/pariksha/main.go
-build_delay: 200

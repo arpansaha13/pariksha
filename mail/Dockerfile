@@ -17,7 +17,6 @@ ENV GOCACHE=/go-cache
 ENV GOMODCACHE=/gomod-cache
 
 COPY mail/go.mod mail/go.sum ./
-COPY mail/gowatch.yml ./
 COPY mail/cmd/ ./cmd/
 COPY mail/internal/ ./internal/
 

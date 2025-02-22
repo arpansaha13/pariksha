@@ -1,7 +1,0 @@
-appname: pariksha_mail
-output: ./bin/pariksha_mail.exe
-watch_exts: [.go, .tpl, .tmpl]
-watch_paths: ["."]
-build_args:
-    - ./cmd/mail/main.go
-build_delay: 200
