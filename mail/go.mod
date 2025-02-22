@@ -10,6 +10,7 @@ require (
 )
 
 require (
+	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
@@ -17,4 +18,5 @@ require (
 )
 
 replace github.com/arpansaha13/common => ../common
+
 replace github.com/arpansaha13/common/pkg/utils => ../common/pkg/utils

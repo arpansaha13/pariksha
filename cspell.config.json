@@ -22,6 +22,7 @@
     }
   ],
   "words": [
+    "amqp",
     "arpansaha",
     "csrftoken",
     "dbname",
@@ -34,12 +35,15 @@
     "gorm",
     "gowatch",
     "healthcheck",
+    "isready",
     "jackc",
     "jinzhu",
     "joho",
+    "mnesia",
     "pariksha",
     "pgpassfile",
     "pgservicefile",
+    "rabbitmq",
     "signup",
     "sslmode",
     "stretchr",

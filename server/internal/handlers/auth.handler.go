@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -17,8 +16,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/arpansaha13/common/pkg/constants"
+	"github.com/arpansaha13/common/pkg/types"
 	"github.com/arpansaha13/common/pkg/utils"
-	"github.com/arpansaha13/pariksha/internal/api"
 	"github.com/arpansaha13/pariksha/internal/config/env"
 	"github.com/arpansaha13/pariksha/internal/config/validate"
 	"github.com/arpansaha13/pariksha/internal/db"
@@ -177,18 +176,13 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		_, err = services.MailService.SendVerificationMail(
-			context.Background(),
-			&api.SendVerificationMailRequest{
+		services.MailService.SendVerificationMail(
+			&types.MailRequestVerification{
 				To:               signUpDto.Email,
 				Otp:              otp,
-				ExpiresInMinutes: int32(otpExpiresInMinutes),
+				ExpiresInMinutes: otpExpiresInMinutes,
 			},
 		)
-
-		if err != nil {
-			fmt.Printf("Failed to send verification email: %v\n", err)
-		}
 
 		return nil
 	})
@@ -280,19 +274,13 @@ func LoginWithOtp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := services.MailService.SendLoginOtpMail(
-		context.Background(),
-		&api.SendLoginOtpMailRequest{
+	services.MailService.SendLoginOtpMail(
+		&types.MailRequestLoginOtp{
 			To:               loginOtpDto.Email,
 			Otp:              otp,
-			ExpiresInMinutes: int32(otpExpiresInMinutes),
+			ExpiresInMinutes: otpExpiresInMinutes,
 		},
 	)
-
-	if err != nil {
-		http.Error(w, "Failed to send OTP", http.StatusInternalServerError)
-		return
-	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -398,19 +386,13 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := services.MailService.SendForgotPasswordMail(
-		context.Background(),
-		&api.SendForgotPasswordMailRequest{
+	services.MailService.SendForgotPasswordMail(
+		&types.MailRequestForgotPassword{
 			To:               forgotPasswordDto.Email,
 			Otp:              otp,
-			ExpiresInMinutes: int32(otpExpiresInMinutes),
+			ExpiresInMinutes: otpExpiresInMinutes,
 		},
 	)
-
-	if err != nil {
-		http.Error(w, "Failed to send OTP", http.StatusInternalServerError)
-		return
-	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -474,9 +456,8 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		_, err := services.MailService.SendForgotPasswordMail(
-			context.Background(),
-			&api.SendForgotPasswordMailRequest{To: resetPasswordDto.Email},
+		services.MailService.SendResetPasswordMail(
+			&types.MailRequestResetPassword{To: resetPasswordDto.Email},
 		)
 
 		if err != nil {

@@ -27,6 +27,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	golang.org/x/net v0.32.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
@@ -38,4 +39,5 @@ require (
 )
 
 replace github.com/arpansaha13/common => ../common
+
 replace github.com/arpansaha13/common/pkg/utils => ../common/pkg/utils

@@ -8,6 +8,8 @@ const (
 	GO_ENV_DOCKER_DEV string = "docker-development"
 )
 
+const RABBIT_MAIL_QUEUE_NAME string = "mail"
+
 const (
 	VERIFICATION_OTP_LENGTH  int = 6
 	VERIFICATION_HASH_LENGTH int = 10
@@ -42,4 +44,11 @@ const (
 	OTP_PURPOSE_SIGNUP          = 1
 	OTP_PURPOSE_LOGIN           = 2
 	OTP_PURPOSE_FORGOT_PASSWORD = 3
+)
+
+const (
+	MAIL_TYPE_VERIFICATION    = "verification"
+	MAIL_TYPE_LOGIN_OTP       = "login_otp"
+	MAIL_TYPE_FORGOT_PASSWORD = "forgot_password"
+	MAIL_TYPE_RESET_PASSWORD  = "reset_password"
 )
