@@ -3,7 +3,7 @@ package middlewares
 import (
 	"net/http"
 
-	"github.com/arpansaha13/pariksha/internal/models"
+	"github.com/arpansaha13/common/pkg/models"
 )
 
 var unsafeMethods = map[string]bool{

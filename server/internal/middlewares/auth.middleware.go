@@ -8,7 +8,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
-	"github.com/arpansaha13/pariksha/internal/models"
+	"github.com/arpansaha13/common/pkg/models"
 )
 
 type userContextKey string

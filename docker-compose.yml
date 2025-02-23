@@ -27,6 +27,8 @@ services:
           path: ./server/cmd
           target: /app/server/cmd
         - action: rebuild
+          path: ./common
+        - action: rebuild
           path: ./server/go.mod
         - action: rebuild
           path: ./server/go.sum
@@ -52,6 +54,8 @@ services:
         - action: rebuild
           path: ./mail/cmd
           target: /app/mail/cmd
+        - action: rebuild
+          path: ./common
         - action: rebuild
           path: ./mail/go.mod
         - action: rebuild

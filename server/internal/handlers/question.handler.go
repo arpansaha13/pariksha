@@ -10,10 +10,10 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/arpansaha13/common/pkg/constants"
+	"github.com/arpansaha13/common/pkg/models"
 	"github.com/arpansaha13/pariksha/internal/config/db"
 	"github.com/arpansaha13/pariksha/internal/config/validate"
 	"github.com/arpansaha13/pariksha/internal/dtos"
-	"github.com/arpansaha13/pariksha/internal/models"
 )
 
 func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {

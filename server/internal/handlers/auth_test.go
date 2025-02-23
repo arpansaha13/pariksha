@@ -13,12 +13,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/arpansaha13/common/pkg/constants"
+	"github.com/arpansaha13/common/pkg/models"
 	"github.com/arpansaha13/common/pkg/utils"
 	"github.com/arpansaha13/pariksha/internal/config/db"
 	"github.com/arpansaha13/pariksha/internal/config/env"
 	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/middlewares"
-	"github.com/arpansaha13/pariksha/internal/models"
 	testUtils "github.com/arpansaha13/pariksha/internal/utils/test"
 )
 
