@@ -3,12 +3,10 @@ package middlewares
 import (
 	"context"
 	"net/http"
-	"os"
-	"time"
 
-	"github.com/dgrijalva/jwt-go"
-
-	"github.com/arpansaha13/common/pkg/models"
+	"github.com/arpansaha13/common/pkg/proto"
+	"github.com/arpansaha13/pariksha/internal/config/env"
+	"github.com/arpansaha13/pariksha/internal/services"
 )
 
 type userContextKey string
@@ -17,35 +15,25 @@ const UserIDKey userContextKey = "user_id"
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, ok := r.Context().Value(SessionKey).(*models.Session)
-		if !ok || session == nil {
+		sessionCookie, err := r.Cookie(env.SESSION_COOKIE_NAME)
+		if err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		if session.ExpiresAt.Before(time.Now()) {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		token, err := jwt.Parse(session.Token, func(token *jwt.Token) (interface{}, error) {
-			return []byte(os.Getenv("JWT_SECRET_KEY")), nil
+		csrfToken := r.Header.Get("X-CSRFToken")
+		authService := services.GetAuthService()
+		response, err := authService.Client().Authenticate(context.Background(), &proto.AuthenticateRequest{
+			SessionKey: sessionCookie.Value,
+			CsrfToken:  csrfToken,
 		})
 
-		if err != nil || !token.Valid {
+		if err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok || !token.Valid {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		userID := int(claims["user_id"].(float64))
-
-		ctx := context.WithValue(r.Context(), UserIDKey, userID)
+		ctx := context.WithValue(r.Context(), UserIDKey, int(response.UserId))
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

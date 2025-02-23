@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "/proto";
+
+// Common error response structure
+message ErrorResponse {
+  int32 code = 1;        // HTTP status code
+  string message = 2;    // Error message
+  string details = 3;    // Optional additional error details
+}
+
+service AuthService {
+  // Login with password
+  rpc LoginWithPassword(LoginWithPasswordRequest) returns (UserResponse) {
+    // Possible errors:
+    // - INVALID_ARGUMENT (400): Invalid request body
+    // - UNAUTHENTICATED (401): Invalid credentials
+    // - INTERNAL (500): Failed to create session
+  }
+
+  // Login with OTP flow
+  rpc InitiateLoginWithOtp(LoginWithOtpRequest) returns (EmptyResponse) {
+    // Possible errors:
+    // - INVALID_ARGUMENT (400): Invalid request body
+    // - INTERNAL (500): Failed to create OTP
+  }
+
+  rpc VerifyLoginOtp(VerificationRequest) returns (UserResponse) {
+    // Possible errors:
+    // - INVALID_ARGUMENT (400): Invalid request body
+    // - UNAUTHENTICATED (401): Invalid email/OTP or user not verified
+    // - INTERNAL (500): Failed to create session
+  }
+
+  // Signup flow
+  rpc SignUp(SignUpRequest) returns (EmptyResponse) {
+    // Possible errors:
+    // - INVALID_ARGUMENT (400): Invalid request body
+    // - ALREADY_EXISTS (409): Email already registered
+    // - INTERNAL (500): Failed to process signup
+  }
+
+  rpc VerifySignup(VerificationRequest) returns (EmptyResponse) {
+    // Possible errors:
+    // - INVALID_ARGUMENT (400): Invalid request body
+    // - UNAUTHENTICATED (401): Invalid email or OTP
+    // - INTERNAL (500): Failed to verify user
+  }
+
+  // Password reset flow
+  rpc ForgotPassword(ForgotPasswordRequest) returns (EmptyResponse) {
+    // Possible errors:
+    // - INVALID_ARGUMENT (400): Invalid request body
+    // - NOT_FOUND (404): Email not found or not verified
+    // - INTERNAL (500): Failed to create OTP
+  }
+
+  rpc ResetPassword(ResetPasswordRequest) returns (EmptyResponse) {
+    // Possible errors:
+    // - INVALID_ARGUMENT (400): Invalid request body
+    // - UNAUTHENTICATED (401): Invalid OTP or old password
+    // - NOT_FOUND (404): User not found
+    // - INTERNAL (500): Failed to reset password
+  }
+
+  // Authenticate session
+  rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse) {
+    // Possible errors:
+    // - INVALID_ARGUMENT (400): Missing session key or CSRF token
+    // - UNAUTHENTICATED (401): Invalid or expired session
+  }
+}
+
+message LoginWithPasswordRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginWithOtpRequest {
+  string email = 1;
+}
+
+message SignUpRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message VerificationRequest {
+  string email = 1;
+  string otp = 2;
+}
+
+message ForgotPasswordRequest {
+  string email = 1;
+}
+
+message ResetPasswordRequest {
+  string email = 1;
+  string old_password = 2;
+  string new_password = 3;
+  string otp = 4;
+}
+
+message UserResponse {
+  int32 id = 1;
+  string username = 2;
+  string email = 3;
+  string first_name = 4;
+  string last_name = 5;
+}
+
+message EmptyResponse {}
+
+message AuthenticateRequest {
+  string session_key = 1;
+  string csrf_token = 2;
+}
+
+message AuthenticateResponse {
+  int32 user_id = 1;
+}

@@ -5,9 +5,9 @@ import (
 
 	rabbit "github.com/rabbitmq/amqp091-go"
 
+	"github.com/arpansaha13/auth/internal/config/env"
 	"github.com/arpansaha13/common/pkg/constants"
 	"github.com/arpansaha13/common/pkg/utils"
-	"github.com/arpansaha13/pariksha/internal/config/env"
 )
 
 var rabbitConn *rabbit.Connection

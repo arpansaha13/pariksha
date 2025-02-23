@@ -3,7 +3,6 @@ services:
     build:
       context: .
       dockerfile: ./server/Dockerfile
-    image: server
     container_name: server
     env_file:
       - docker/env/server.env
@@ -12,10 +11,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      sessionsDb:
-        condition: service_healthy
-      rabbit:
-        condition: service_healthy
+      auth:
+        condition: service_started
     networks:
       - pariksha-network
     develop:
@@ -33,12 +30,43 @@ services:
         - action: rebuild
           path: ./server/go.sum
 
+  auth:
+    build:
+      context: .
+      dockerfile: ./auth/Dockerfile
+    container_name: auth_service
+    env_file:
+      - docker/env/auth.env
+    depends_on:
+      db:
+        condition: service_healthy
+      sessionsDb:
+        condition: service_healthy
+      rabbit:
+        condition: service_healthy
+    networks:
+      - pariksha-network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./auth/internal
+          target: /app/auth/internal
+        - action: rebuild
+          path: ./auth/cmd
+          target: /app/auth/cmd
+        - action: rebuild
+          path: ./common
+        - action: rebuild
+          path: ./auth/go.mod
+        - action: rebuild
+          path: ./auth/go.sum
+
   mail:
     build:
       context: .
       dockerfile: ./mail/Dockerfile
-    image: worker__mail
-    container_name: worker__mail
+    image: mail_worker
+    container_name: mail_worker
     env_file:
       - docker/env/mail.env
     depends_on:
@@ -67,7 +95,7 @@ services:
     healthcheck:
       test: rabbitmq-diagnostics -q status
       interval: 10s
-      timeout: 40s
+      timeout: 50s
       retries: 3
     volumes:
      - ./docker/data/rabbit/:/var/lib/rabbitmq/mnesia/
@@ -102,7 +130,7 @@ services:
   sessionsDb:
     image: postgres:15.10
     restart: always
-    container_name: db__sessions
+    container_name: sessions_db
     env_file:
       - docker/env/sessionsDb.env
     environment:

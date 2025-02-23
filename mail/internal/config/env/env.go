@@ -4,8 +4,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/joho/godotenv"
-
 	"github.com/arpansaha13/common/pkg/utils"
 )
 
@@ -22,10 +20,6 @@ var (
 )
 
 func init() {
-	if os.Getenv("GO_ENV") == "development" && godotenv.Load() != nil {
-		log.Fatalf("Error loading .env file")
-	}
-
 	requiredEnvVars := []string{
 		"SMTP_NAME",
 		"SMTP_USER",

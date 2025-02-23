@@ -8,8 +8,8 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	"github.com/arpansaha13/auth/internal/models"
 	"github.com/arpansaha13/common/pkg/constants"
-	"github.com/arpansaha13/common/pkg/models"
 )
 
 var Sessions *gorm.DB

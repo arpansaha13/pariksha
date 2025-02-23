@@ -1,194 +1,83 @@
 package handlers
 
 import (
-	"database/sql"
+	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
-	"os"
-	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 
-	"github.com/arpansaha13/common/pkg/constants"
-	"github.com/arpansaha13/common/pkg/models"
-	"github.com/arpansaha13/common/pkg/types"
-	"github.com/arpansaha13/common/pkg/utils"
-	"github.com/arpansaha13/pariksha/internal/config/db"
+	"github.com/arpansaha13/common/pkg/proto"
 	"github.com/arpansaha13/pariksha/internal/config/env"
-	"github.com/arpansaha13/pariksha/internal/config/validate"
-	"github.com/arpansaha13/pariksha/internal/dtos"
 	"github.com/arpansaha13/pariksha/internal/services"
 )
 
-func createSessionAndSetCookies(w http.ResponseWriter, user models.User) error {
-	sessionKey := uuid.New()
-	sessionExpiresAt := time.Now().Add(time.Duration(env.SESSION_EXPIRES_IN_HOURS) * time.Hour)
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": user.ID,
-		"exp":     sessionExpiresAt.Unix(),
-	})
-	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
-	if err != nil {
-		return err
-	}
+func setCookiesFromMetadata(w http.ResponseWriter, md metadata.MD) {
+	sessionKey := md.Get("session-key")[0]
+	csrfToken := md.Get("csrf-token")[0]
+	expiresAt, _ := time.Parse(time.RFC3339, md.Get("expires-at")[0])
 
-	csrfToken, err := utils.GenerateBase64String(constants.CSRF_TOKEN_LENGTH)
-	if err != nil {
-		return err
-	}
-
-	session := models.Session{
-		Key:       sessionKey,
-		Token:     tokenString,
-		ExpiresAt: sessionExpiresAt,
-		CsrfToken: csrfToken,
-	}
-
-	if err := db.Sessions.Create(&session).Error; err != nil {
-		return err
-	}
-
-	setCookie(w, env.SESSION_COOKIE_NAME, sessionKey.String(), session.ExpiresAt)
-	setCookie(w, env.CSRFTOKEN_COOKIE_NAME, csrfToken, session.ExpiresAt)
-
-	return nil
-}
-
-func setCookie(w http.ResponseWriter, name, value string, expires time.Time) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     name,
-		Value:    value,
-		Expires:  expires,
+		Name:     env.SESSION_COOKIE_NAME,
+		Value:    sessionKey,
+		Expires:  expiresAt,
 		HttpOnly: true,
 		Secure:   true,
-		Path:     "/",
+		Path:     "/api/",
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     env.CSRFTOKEN_COOKIE_NAME,
+		Value:    csrfToken,
+		Expires:  expiresAt,
+		HttpOnly: false,
+		Secure:   true,
+		Path:     "/api/",
 		SameSite: http.SameSiteStrictMode,
 	})
 }
 
 func LoginWithPassword(w http.ResponseWriter, r *http.Request) {
-	var loginDto dtos.LoginWithPasswordDto
-
-	if err := json.NewDecoder(r.Body).Decode(&loginDto); err != nil {
+	var loginReq proto.LoginWithPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&loginReq); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	errs := validate.Do.Struct(loginDto)
-	if errs != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	var header metadata.MD
+	authService := services.GetAuthService()
+	response, err := authService.Client().LoginWithPassword(
+		context.Background(),
+		&loginReq,
+		grpc.Header(&header),
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	var user models.User
-	if err := db.DB.Where("email = ?", loginDto.Email).Take(&user).Error; err != nil || !user.Verified {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
-		return
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password.String), []byte(loginDto.Password)); err != nil {
-		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
-		return
-	}
-
-	if err := createSessionAndSetCookies(w, user); err != nil {
-		http.Error(w, "Failed to create session", http.StatusInternalServerError)
-		return
-	}
+	setCookiesFromMetadata(w, header)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"id":        user.ID,
-		"username":  user.Username,
-		"email":     user.Email,
-		"firstName": user.FirstName.String,
-		"lastName":  user.LastName.String,
-	})
+	json.NewEncoder(w).Encode(response)
 }
 
 func SignUp(w http.ResponseWriter, r *http.Request) {
-	var signUpDto dtos.SignUpDto
-
-	if err := json.NewDecoder(r.Body).Decode(&signUpDto); err != nil {
+	var signUpReq proto.SignUpRequest
+	if err := json.NewDecoder(r.Body).Decode(&signUpReq); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	errs := validate.Do.Struct(signUpDto)
-	if errs != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	var user models.User
-	if err := db.DB.Where("email = ?", signUpDto.Email).Take(&user).Error; err == nil && user.Verified {
-		http.Error(w, "Email already registered", http.StatusConflict)
-		return
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(signUpDto.Password), bcrypt.DefaultCost)
+	authService := services.GetAuthService()
+	_, err := authService.Client().SignUp(context.Background(), &signUpReq)
 	if err != nil {
-		http.Error(w, "Error hashing password", http.StatusInternalServerError)
-		return
-	}
-
-	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		// Create or update user
-		err := tx.Where("email = ?", signUpDto.Email).Take(&user).Error
-		if err == nil {
-			user.Password.String = string(hashedPassword)
-
-			if err := tx.Save(&user).Error; err != nil {
-				return err
-			}
-		} else if errors.Is(err, gorm.ErrRecordNotFound) {
-			user = models.User{
-				Email:    signUpDto.Email,
-				Username: strings.Split(signUpDto.Email, "@")[0],
-				Password: sql.NullString{String: string(hashedPassword), Valid: true},
-				Verified: false,
-			}
-			if err := tx.Create(&user).Error; err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
-
-		otp, _ := utils.GenerateOTP(constants.VERIFICATION_OTP_LENGTH)
-		otpExpiresInMinutes := env.OTP_EXPIRES_IN_MINUTES
-		otpExpiresAt := time.Now().Add(time.Duration(otpExpiresInMinutes) * time.Minute)
-
-		// Create or update OTP entry
-		otpEntry := models.Otp{
-			Email:        signUpDto.Email,
-			OTP:          otp,
-			OTPExpiresAt: otpExpiresAt,
-			Purpose:      constants.OTP_PURPOSE_SIGNUP,
-		}
-		if err := tx.Save(&otpEntry).Error; err != nil {
-			return err
-		}
-
-		services.MailService.SendVerificationMail(
-			&types.MailRequestVerification{
-				To:               signUpDto.Email,
-				Otp:              otp,
-				ExpiresInMinutes: otpExpiresInMinutes,
-			},
-		)
-
-		return nil
-	})
-
-	if err != nil {
-		http.Error(w, "Failed to process signup", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -196,48 +85,16 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 }
 
 func VerifySignup(w http.ResponseWriter, r *http.Request) {
-	var verificationDto dtos.VerificationDto
-	if err := json.NewDecoder(r.Body).Decode(&verificationDto); err != nil {
+	var verificationReq proto.VerificationRequest
+	if err := json.NewDecoder(r.Body).Decode(&verificationReq); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	errs := validate.Do.Struct(verificationDto)
-	if errs != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	var otpEntry models.Otp
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("email = ? AND purpose = ?",
-			verificationDto.Email,
-			constants.OTP_PURPOSE_SIGNUP,
-		).Take(&otpEntry).Error; err != nil {
-			http.Error(w, "Invalid email", http.StatusUnauthorized)
-			return err
-		}
-
-		if verificationDto.OTP != otpEntry.OTP || time.Now().After(otpEntry.OTPExpiresAt) {
-			http.Error(w, "Invalid or expired OTP", http.StatusUnauthorized)
-			return errors.New("invalid or expired otp")
-		}
-
-		if err := tx.Model(&models.User{}).Where("email = ?", verificationDto.Email).
-			Update("verified", true).Error; err != nil {
-			http.Error(w, "Failed to verify user", http.StatusInternalServerError)
-			return err
-		}
-
-		if err := tx.Delete(&otpEntry).Error; err != nil {
-			http.Error(w, "Failed to delete OTP entry", http.StatusInternalServerError)
-			return err
-		}
-
-		return nil
-	})
-
+	authService := services.GetAuthService()
+	_, err := authService.Client().VerifySignup(context.Background(), &verificationReq)
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -245,230 +102,89 @@ func VerifySignup(w http.ResponseWriter, r *http.Request) {
 }
 
 func LoginWithOtp(w http.ResponseWriter, r *http.Request) {
-	var loginOtpDto dtos.LoginWithOtpDto
-
-	if err := json.NewDecoder(r.Body).Decode(&loginOtpDto); err != nil {
+	var loginOtpReq proto.LoginWithOtpRequest
+	if err := json.NewDecoder(r.Body).Decode(&loginOtpReq); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	errs := validate.Do.Struct(loginOtpDto)
-	if errs != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	authService := services.GetAuthService()
+	_, err := authService.Client().InitiateLoginWithOtp(context.Background(), &loginOtpReq)
+	if err != nil {
+		// Convert gRPC status error to appropriate HTTP status code
+		st, ok := status.FromError(err)
+		if !ok {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		switch st.Code() {
+		case codes.InvalidArgument:
+			http.Error(w, st.Message(), http.StatusBadRequest)
+		case codes.Unauthenticated:
+			http.Error(w, st.Message(), http.StatusUnauthorized)
+		default:
+			http.Error(w, st.Message(), http.StatusInternalServerError)
+		}
 		return
 	}
-
-	otp, _ := utils.GenerateOTP(constants.VERIFICATION_OTP_LENGTH)
-	otpExpiresInMinutes := env.OTP_EXPIRES_IN_MINUTES
-	otpExpiresAt := time.Now().Add(time.Duration(otpExpiresInMinutes) * time.Minute)
-
-	otpEntry := models.Otp{
-		Email:        loginOtpDto.Email,
-		OTP:          otp,
-		OTPExpiresAt: otpExpiresAt,
-		Purpose:      constants.OTP_PURPOSE_LOGIN,
-	}
-
-	if err := db.DB.Save(&otpEntry).Error; err != nil {
-		http.Error(w, "Failed to create OTP", http.StatusInternalServerError)
-		return
-	}
-
-	services.MailService.SendLoginOtpMail(
-		&types.MailRequestLoginOtp{
-			To:               loginOtpDto.Email,
-			Otp:              otp,
-			ExpiresInMinutes: otpExpiresInMinutes,
-		},
-	)
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func VerifyLoginWithOtp(w http.ResponseWriter, r *http.Request) {
-	var verificationDto dtos.VerificationDto
-	if err := json.NewDecoder(r.Body).Decode(&verificationDto); err != nil {
+	var verificationReq proto.VerificationRequest
+	if err := json.NewDecoder(r.Body).Decode(&verificationReq); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	errs := validate.Do.Struct(verificationDto)
-	if errs != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	var otpEntry models.Otp
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("email = ? AND purpose = ?",
-			verificationDto.Email,
-			constants.OTP_PURPOSE_LOGIN,
-		).Take(&otpEntry).Error; err != nil {
-			http.Error(w, "Invalid email", http.StatusUnauthorized)
-			return err
-		}
-
-		if verificationDto.OTP != otpEntry.OTP || time.Now().After(otpEntry.OTPExpiresAt) {
-			http.Error(w, "Invalid or expired OTP", http.StatusUnauthorized)
-			return errors.New("invalid or expired otp")
-		}
-
-		var user models.User
-		if err := tx.Where("email = ?", verificationDto.Email).Take(&user).Error; err != nil {
-			http.Error(w, "User not found", http.StatusUnauthorized)
-			return err
-		}
-
-		if !user.Verified {
-			http.Error(w, "User not verified", http.StatusUnauthorized)
-			return errors.New("user not verified")
-		}
-
-		if err := createSessionAndSetCookies(w, user); err != nil {
-			http.Error(w, "Failed to create session", http.StatusInternalServerError)
-			return err
-		}
-
-		if err := tx.Delete(&otpEntry).Error; err != nil {
-			http.Error(w, "Failed to delete OTP entry", http.StatusInternalServerError)
-			return err
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"id":        user.ID,
-			"username":  user.Username,
-			"email":     user.Email,
-			"firstName": user.FirstName.String,
-			"lastName":  user.LastName.String,
-		})
-
-		return nil
-	})
-
+	var header metadata.MD
+	authService := services.GetAuthService()
+	response, err := authService.Client().VerifyLoginOtp(
+		context.Background(),
+		&verificationReq,
+		grpc.Header(&header),
+	)
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	setCookiesFromMetadata(w, header)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
 func ForgotPassword(w http.ResponseWriter, r *http.Request) {
-	var forgotPasswordDto dtos.ForgotPasswordDto
-	if err := json.NewDecoder(r.Body).Decode(&forgotPasswordDto); err != nil {
+	var forgotPasswordReq proto.ForgotPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&forgotPasswordReq); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	errs := validate.Do.Struct(forgotPasswordDto)
-	if errs != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	authService := services.GetAuthService()
+	_, err := authService.Client().ForgotPassword(context.Background(), &forgotPasswordReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	var user models.User
-	if err := db.DB.Where("email = ? AND verified = ?", forgotPasswordDto.Email, true).Take(&user).Error; err != nil {
-		http.Error(w, "Email not found or not verified", http.StatusNotFound)
-		return
-	}
-
-	otp, _ := utils.GenerateOTP(constants.VERIFICATION_OTP_LENGTH)
-	otpExpiresInMinutes := env.OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD
-	otpExpiresAt := time.Now().Add(time.Duration(otpExpiresInMinutes) * time.Minute)
-
-	otpEntry := models.Otp{
-		Email:        forgotPasswordDto.Email,
-		OTP:          otp,
-		OTPExpiresAt: otpExpiresAt,
-		Purpose:      constants.OTP_PURPOSE_FORGOT_PASSWORD,
-	}
-
-	if err := db.DB.Save(&otpEntry).Error; err != nil {
-		http.Error(w, "Failed to create OTP", http.StatusInternalServerError)
-		return
-	}
-
-	services.MailService.SendForgotPasswordMail(
-		&types.MailRequestForgotPassword{
-			To:               forgotPasswordDto.Email,
-			Otp:              otp,
-			ExpiresInMinutes: otpExpiresInMinutes,
-		},
-	)
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func ResetPassword(w http.ResponseWriter, r *http.Request) {
-	var resetPasswordDto dtos.ResetPasswordDto
-	if err := json.NewDecoder(r.Body).Decode(&resetPasswordDto); err != nil {
+	var resetPasswordReq proto.ResetPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&resetPasswordReq); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	errs := validate.Do.Struct(resetPasswordDto)
-	if errs != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	var otpEntry models.Otp
-	if err := db.DB.Where("email = ? AND otp = ? AND purpose = ?",
-		resetPasswordDto.Email,
-		resetPasswordDto.OTP,
-		constants.OTP_PURPOSE_FORGOT_PASSWORD,
-	).Take(&otpEntry).Error; err != nil {
-		http.Error(w, "Invalid or expired OTP", http.StatusUnauthorized)
-		return
-	}
-
-	if time.Now().After(otpEntry.OTPExpiresAt) {
-		http.Error(w, "OTP has expired", http.StatusUnauthorized)
-		return
-	}
-
-	var user models.User
-	if err := db.DB.Where("email = ?", resetPasswordDto.Email).Take(&user).Error; err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
-
-	if !user.Verified {
-		http.Error(w, "User not verified", http.StatusUnauthorized)
-		return
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password.String), []byte(resetPasswordDto.OldPassword)); err != nil {
-		http.Error(w, "Invalid old password", http.StatusUnauthorized)
-		return
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(resetPasswordDto.NewPassword), bcrypt.DefaultCost)
+	authService := services.GetAuthService()
+	_, err := authService.Client().ResetPassword(context.Background(), &resetPasswordReq)
 	if err != nil {
-		http.Error(w, "Error hashing new password", http.StatusInternalServerError)
-		return
-	}
-
-	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&user).Update("password", sql.NullString{String: string(hashedPassword), Valid: true}).Error; err != nil {
-			return err
-		}
-
-		if err := tx.Delete(&otpEntry).Error; err != nil {
-			return err
-		}
-
-		services.MailService.SendResetPasswordMail(
-			&types.MailRequestResetPassword{To: resetPasswordDto.Email},
-		)
-
-		if err != nil {
-			fmt.Printf("Failed to send reset password success email: %v\n", err)
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		http.Error(w, "Failed to reset password", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
