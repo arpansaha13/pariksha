@@ -42,6 +42,29 @@ func setCookiesFromMetadata(w http.ResponseWriter, md metadata.MD) {
 	})
 }
 
+func handleGRPCError(w http.ResponseWriter, err error) {
+	st, ok := status.FromError(err)
+	if !ok {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	switch st.Code() {
+	case codes.InvalidArgument:
+		http.Error(w, st.Message(), http.StatusBadRequest)
+	case codes.Unauthenticated:
+		http.Error(w, st.Message(), http.StatusUnauthorized)
+	case codes.AlreadyExists:
+		http.Error(w, st.Message(), http.StatusConflict)
+	case codes.NotFound:
+		http.Error(w, st.Message(), http.StatusNotFound)
+	case codes.PermissionDenied:
+		http.Error(w, st.Message(), http.StatusForbidden)
+	default:
+		http.Error(w, st.Message(), http.StatusInternalServerError)
+	}
+}
+
 func LoginWithPassword(w http.ResponseWriter, r *http.Request) {
 	var loginReq proto.LoginWithPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&loginReq); err != nil {
@@ -57,7 +80,8 @@ func LoginWithPassword(w http.ResponseWriter, r *http.Request) {
 		grpc.Header(&header),
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleGRPCError(w, err)
+		// http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -77,7 +101,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	authService := services.GetAuthService()
 	_, err := authService.Client().SignUp(context.Background(), &signUpReq)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleGRPCError(w, err)
 		return
 	}
 
@@ -94,7 +118,7 @@ func VerifySignup(w http.ResponseWriter, r *http.Request) {
 	authService := services.GetAuthService()
 	_, err := authService.Client().VerifySignup(context.Background(), &verificationReq)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleGRPCError(w, err)
 		return
 	}
 
@@ -167,7 +191,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	authService := services.GetAuthService()
 	_, err := authService.Client().ForgotPassword(context.Background(), &forgotPasswordReq)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleGRPCError(w, err)
 		return
 	}
 
