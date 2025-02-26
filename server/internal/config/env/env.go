@@ -3,17 +3,15 @@ package env
 import (
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/arpansaha13/common/pkg/utils"
 )
 
 var (
-	API_PORT                 string
-	OTP_EXPIRES_IN_MINUTES   int
-	SESSION_EXPIRES_IN_HOURS int
-	SESSION_COOKIE_NAME      string
-	CSRFTOKEN_COOKIE_NAME    string
+	GO_ENV                string
+	API_PORT              string
+	SESSION_COOKIE_NAME   string
+	CSRFTOKEN_COOKIE_NAME string
 )
 
 var (
@@ -47,9 +45,8 @@ func init() {
 		}
 	}
 
+	GO_ENV = os.Getenv("GO_ENV")
 	API_PORT = utils.GetEnvWithDefault("API_PORT", "4000")
-	OTP_EXPIRES_IN_MINUTES, _ = strconv.Atoi(utils.GetEnvWithDefault("OTP_EXPIRES_IN_MINUTES", "15"))
-	SESSION_EXPIRES_IN_HOURS, _ = strconv.Atoi(utils.GetEnvWithDefault("SESSION_EXPIRES_IN_HOURS", "24"))
 	SESSION_COOKIE_NAME = utils.GetEnvWithDefault("SESSION_COOKIE_NAME", "token")
 	CSRFTOKEN_COOKIE_NAME = utils.GetEnvWithDefault("CSRFTOKEN_COOKIE_NAME", "csrftoken")
 

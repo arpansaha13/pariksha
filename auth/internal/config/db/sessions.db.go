@@ -3,46 +3,65 @@ package db
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	"github.com/arpansaha13/auth/internal/config/env"
 	"github.com/arpansaha13/auth/internal/models"
 	"github.com/arpansaha13/common/pkg/constants"
 )
 
 var Sessions *gorm.DB
 
-func init() {
+// InitSessionsDB initializes the sessions database connection with given parameters
+func InitSessionsDB(host, port, user, password, dbname, sslmode string) error {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
-		os.Getenv("SESSIONS_DB_HOST"),
-		os.Getenv("SESSIONS_DB_USER"),
-		os.Getenv("SESSIONS_DB_PASS"),
-		os.Getenv("SESSIONS_DB_NAME"),
-		os.Getenv("SESSIONS_DB_PORT"),
-		os.Getenv("SESSIONS_DB_SSLMODE"))
+		host, user, password, dbname, port, sslmode)
 
 	var err error
 	Sessions, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to connect to sessions database: %v", err)
 	}
 
-	// Only run auto-migrations in development environment
-	if os.Getenv("GO_ENV") == constants.GO_ENV_DEV || os.Getenv("GO_ENV") == constants.GO_ENV_DOCKER_DEV {
-		autoMigrateSessionsDb()
-	}
+	return nil
 }
 
-func autoMigrateSessionsDb() {
+// AutoMigrateSessionsDB runs migrations for the sessions database
+func AutoMigrateSessionsDB() error {
 	err := Sessions.AutoMigrate(
 		&models.Session{},
 	)
-
 	if err != nil {
-		log.Fatal("Failed to auto-migrate database:", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to auto-migrate sessions database: %v", err)
+	}
+	return nil
+}
+
+func init() {
+	// Skip initialization if in test environment
+	if env.GO_ENV == constants.GO_ENV_TEST {
+		return
+	}
+
+	// Initialize with environment variables for non-test environments
+	err := InitSessionsDB(
+		env.SESSIONS_DB_HOST,
+		env.SESSIONS_DB_PORT,
+		env.SESSIONS_DB_USER,
+		env.SESSIONS_DB_PASS,
+		env.SESSIONS_DB_NAME,
+		env.SESSIONS_DB_SSLMODE,
+	)
+	if err != nil {
+		log.Fatal("Failed to initialize sessions database:", err)
+	}
+
+	// Only run auto-migrations in development environment
+	if env.GO_ENV == constants.GO_ENV_DEV || env.GO_ENV == constants.GO_ENV_DOCKER_DEV {
+		if err := AutoMigrateSessionsDB(); err != nil {
+			log.Fatal(err)
+		}
 	}
 }

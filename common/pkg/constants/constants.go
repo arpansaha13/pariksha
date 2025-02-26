@@ -6,6 +6,7 @@ const (
 	GO_ENV_DEV        string = "development"
 	GO_ENV_PROD       string = "production"
 	GO_ENV_DOCKER_DEV string = "docker-development"
+	GO_ENV_TEST       string = "test"
 )
 
 const RABBIT_MAIL_QUEUE_NAME string = "mail"

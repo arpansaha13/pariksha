@@ -10,6 +10,7 @@ import (
 
 	"github.com/arpansaha13/common/pkg/constants"
 	"github.com/arpansaha13/common/pkg/models"
+	"github.com/arpansaha13/pariksha/internal/config/env"
 )
 
 var DB *gorm.DB
@@ -31,7 +32,7 @@ func init() {
 	}
 
 	// Only run auto-migrations in development environment
-	if os.Getenv("GO_ENV") == constants.GO_ENV_DEV || os.Getenv("GO_ENV") == constants.GO_ENV_DOCKER_DEV {
+	if env.GO_ENV == constants.GO_ENV_DEV || env.GO_ENV == constants.GO_ENV_DOCKER_DEV {
 		autoMigrate()
 	}
 }
