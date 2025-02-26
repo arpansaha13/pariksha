@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 
 	"github.com/arpansaha13/auth/internal/config/env"
 	"github.com/arpansaha13/common/pkg/constants"
@@ -20,16 +21,30 @@ func InitDB(host, port, user, password, dbname, sslmode string) error {
 		host, user, password, dbname, port, sslmode)
 
 	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	config := &gorm.Config{}
+
+	// Disable logging in test environment
+	if env.GO_ENV == constants.GO_ENV_TEST {
+		config.Logger = logger.Default.LogMode(logger.Silent)
+	}
+
+	DB, err = gorm.Open(postgres.Open(dsn), config)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %v", err)
+	}
+
+	// Only run auto-migrations in development and test environments
+	if env.GO_ENV == constants.GO_ENV_DEV || env.GO_ENV == constants.GO_ENV_DOCKER_DEV || env.GO_ENV == constants.GO_ENV_TEST {
+		if err := autoMigrateDB(); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
 // AutoMigrateDB runs migrations for the main database
-func AutoMigrateDB() error {
+func autoMigrateDB() error {
 	err := DB.AutoMigrate(
 		&models.User{},
 		&models.Exam{},
@@ -63,12 +78,5 @@ func init() {
 	)
 	if err != nil {
 		log.Fatal("Failed to initialize database:", err)
-	}
-
-	// Only run auto-migrations in development environment
-	if env.GO_ENV == constants.GO_ENV_DEV || env.GO_ENV == constants.GO_ENV_DOCKER_DEV {
-		if err := AutoMigrateDB(); err != nil {
-			log.Fatal(err)
-		}
 	}
 }

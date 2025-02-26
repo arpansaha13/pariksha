@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 
 	"github.com/arpansaha13/auth/internal/config/env"
 	"github.com/arpansaha13/auth/internal/models"
@@ -20,16 +21,30 @@ func InitSessionsDB(host, port, user, password, dbname, sslmode string) error {
 		host, user, password, dbname, port, sslmode)
 
 	var err error
-	Sessions, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	config := &gorm.Config{}
+
+	// Disable logging in test environment
+	if env.GO_ENV == constants.GO_ENV_TEST {
+		config.Logger = logger.Default.LogMode(logger.Silent)
+	}
+
+	Sessions, err = gorm.Open(postgres.Open(dsn), config)
 	if err != nil {
 		return fmt.Errorf("failed to connect to sessions database: %v", err)
+	}
+
+	// Only run auto-migrations in development environment
+	if env.GO_ENV == constants.GO_ENV_DEV || env.GO_ENV == constants.GO_ENV_DOCKER_DEV || env.GO_ENV == constants.GO_ENV_TEST {
+		if err := autoMigrateSessionsDB(); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
 // AutoMigrateSessionsDB runs migrations for the sessions database
-func AutoMigrateSessionsDB() error {
+func autoMigrateSessionsDB() error {
 	err := Sessions.AutoMigrate(
 		&models.Session{},
 	)
@@ -56,12 +71,5 @@ func init() {
 	)
 	if err != nil {
 		log.Fatal("Failed to initialize sessions database:", err)
-	}
-
-	// Only run auto-migrations in development environment
-	if env.GO_ENV == constants.GO_ENV_DEV || env.GO_ENV == constants.GO_ENV_DOCKER_DEV {
-		if err := AutoMigrateSessionsDB(); err != nil {
-			log.Fatal(err)
-		}
 	}
 }

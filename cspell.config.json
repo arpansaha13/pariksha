@@ -24,6 +24,7 @@
   "words": [
     "amqp",
     "arpansaha",
+    "bufconn",
     "csrftoken",
     "dbname",
     "dgrijalva",
@@ -47,6 +48,7 @@
     "signup",
     "sslmode",
     "stretchr",
+    "testcontainers",
     "varchar"
   ],
   "patterns": [
