@@ -18,7 +18,6 @@ import (
 
 	"pariksha/auth/internal/config/db"
 	"pariksha/auth/internal/config/env"
-	authModels "pariksha/auth/internal/models"
 	"pariksha/auth/internal/services"
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
@@ -31,7 +30,7 @@ type AuthServer struct {
 	proto.UnimplementedAuthServiceServer
 }
 
-func createSession(userID int) (*authModels.Session, error) {
+func createSession(userID int) (*models.Session, error) {
 	sessionKey := uuid.New()
 	sessionExpiresAt := time.Now().Add(time.Duration(env.SESSION_EXPIRES_IN_HOURS) * time.Hour)
 
@@ -50,7 +49,7 @@ func createSession(userID int) (*authModels.Session, error) {
 		return nil, status.Error(codes.Internal, "failed to generate csrf token")
 	}
 
-	session := &authModels.Session{
+	session := &models.Session{
 		Key:       sessionKey,
 		Token:     tokenString,
 		ExpiresAt: sessionExpiresAt,
@@ -381,7 +380,7 @@ func (s *AuthServer) Authenticate(ctx context.Context, req *proto.AuthenticateRe
 		return nil, status.Error(codes.InvalidArgument, "session key and csrf token are required")
 	}
 
-	var session authModels.Session
+	var session models.Session
 	if err := db.Sessions.Where("key = ?", req.SessionKey).Take(&session).Error; err != nil {
 		return nil, status.Error(codes.Unauthenticated, "invalid session")
 	}

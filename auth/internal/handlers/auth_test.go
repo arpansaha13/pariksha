@@ -25,7 +25,6 @@ import (
 
 	"pariksha/auth/internal/config/db"
 	"pariksha/auth/internal/config/env"
-	authModels "pariksha/auth/internal/models"
 	"pariksha/auth/internal/services"
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
@@ -663,7 +662,7 @@ func TestLoginWithPassword(t *testing.T) {
 				assert.NotEmpty(t, md.Get("expires-at"))
 
 				sessionKey := md.Get("session-key")[0]
-				var session authModels.Session
+				var session models.Session
 				err := db.Sessions.Where("key = ?", sessionKey).First(&session).Error
 				assert.NoError(t, err)
 				assert.NotEmpty(t, session.Token)

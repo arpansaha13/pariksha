@@ -65,7 +65,7 @@ services:
     build:
       context: .
       dockerfile: ./mail/Dockerfile
-    image: mail_worker
+    image: pariksha_mail_worker
     container_name: mail_worker
     env_file:
       - docker/env/mail.env
@@ -88,6 +88,34 @@ services:
           path: ./mail/go.mod
         - action: rebuild
           path: ./mail/go.sum
+
+  sessionsCron:
+    build:
+      context: .
+      dockerfile: ./cron/sessions/Dockerfile
+    image: pariksha_sessions_cron
+    container_name: sessions_cron
+    env_file:
+      - docker/env/cron-sessions.env
+    depends_on:
+      sessionsDb:
+        condition: service_healthy
+    networks:
+      - pariksha-network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./cron/sessions/internal
+          target: /app/cron/sessions/internal
+        - action: rebuild
+          path: ./cron/sessions/cmd
+          target: /app/cron/sessions/cmd
+        - action: rebuild
+          path: ./common
+        - action: rebuild
+          path: ./cron/sessions/go.mod
+        - action: rebuild
+          path: ./cron/sessions/go.sum
 
   rabbit:
     image: rabbitmq:3-management
