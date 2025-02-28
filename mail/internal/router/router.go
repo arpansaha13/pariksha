@@ -5,8 +5,8 @@ import (
 
 	rabbit "github.com/rabbitmq/amqp091-go"
 
-	"github.com/arpansaha13/common/pkg/constants"
-	"github.com/arpansaha13/mail/internal/handlers"
+	"pariksha/common/pkg/constants"
+	"pariksha/mail/internal/handlers"
 )
 
 func RouteMailRequest(d rabbit.Delivery) {

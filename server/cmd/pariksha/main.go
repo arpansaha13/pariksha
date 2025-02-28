@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/arpansaha13/pariksha/internal/config/db"
-	"github.com/arpansaha13/pariksha/internal/config/env"
-	"github.com/arpansaha13/pariksha/internal/router"
+	"pariksha/server/internal/config/db"
+	"pariksha/server/internal/config/env"
+	"pariksha/server/internal/router"
 )
 
 func main() {

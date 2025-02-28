@@ -1,9 +1,9 @@
-module github.com/arpansaha13/pariksha
+module pariksha/server
 
 go 1.23.4
 
 require (
-	github.com/arpansaha13/common v0.0.0-00010101000000-000000000000
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.8.1
@@ -12,6 +12,7 @@ require (
 	gopkg.in/go-playground/validator.v8 v8.18.2
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.25.12
+	pariksha/common v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -35,6 +36,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/arpansaha13/common => ../common
+replace pariksha/common => ../common
 
-replace github.com/arpansaha13/common/pkg/utils => ../common/pkg/utils
+replace pariksha/common/pkg/utils => ../common/pkg/utils

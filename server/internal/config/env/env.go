@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/arpansaha13/common/pkg/utils"
+	"pariksha/common/pkg/utils"
 )
 
 var (

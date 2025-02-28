@@ -6,10 +6,10 @@ import (
 
 	rabbit "github.com/rabbitmq/amqp091-go"
 
-	"github.com/arpansaha13/common/pkg/constants"
-	"github.com/arpansaha13/common/pkg/utils"
-	"github.com/arpansaha13/mail/internal/config/env"
-	"github.com/arpansaha13/mail/internal/router"
+	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/utils"
+	"pariksha/mail/internal/config/env"
+	"pariksha/mail/internal/router"
 )
 
 func main() {

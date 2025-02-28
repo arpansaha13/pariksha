@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/smtp"
 
-	"github.com/arpansaha13/common/pkg/types"
-	"github.com/arpansaha13/mail/internal/config/env"
+	"pariksha/common/pkg/types"
+	"pariksha/mail/internal/config/env"
 )
 
 func SendVerificationMail(body []byte) {

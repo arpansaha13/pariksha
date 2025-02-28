@@ -8,10 +8,10 @@ import (
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 
-	"github.com/arpansaha13/common/pkg/models"
-	"github.com/arpansaha13/pariksha/internal/config/db"
-	"github.com/arpansaha13/pariksha/internal/config/validate"
-	"github.com/arpansaha13/pariksha/internal/dtos"
+	"pariksha/common/pkg/models"
+	"pariksha/server/internal/config/db"
+	"pariksha/server/internal/config/validate"
+	"pariksha/server/internal/dtos"
 )
 
 func GetUser(w http.ResponseWriter, r *http.Request) {

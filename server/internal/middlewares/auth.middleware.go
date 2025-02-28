@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/arpansaha13/common/pkg/proto"
-	"github.com/arpansaha13/pariksha/internal/config/env"
-	"github.com/arpansaha13/pariksha/internal/services"
+	"pariksha/common/pkg/proto"
+	"pariksha/server/internal/config/env"
+	"pariksha/server/internal/services"
 )
 
 type userContextKey string

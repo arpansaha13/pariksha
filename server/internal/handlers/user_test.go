@@ -12,10 +12,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/arpansaha13/common/pkg/models"
-	"github.com/arpansaha13/pariksha/internal/config/db"
-	"github.com/arpansaha13/pariksha/internal/dtos"
-	testUtils "github.com/arpansaha13/pariksha/internal/utils/test"
+	"pariksha/common/pkg/models"
+	"pariksha/server/internal/config/db"
+	"pariksha/server/internal/dtos"
+	testUtils "pariksha/server/internal/utils/test"
 )
 
 func TestGetUser(t *testing.T) {

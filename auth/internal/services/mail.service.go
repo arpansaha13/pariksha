@@ -8,8 +8,8 @@ import (
 
 	rabbit "github.com/rabbitmq/amqp091-go"
 
-	"github.com/arpansaha13/common/pkg/constants"
-	"github.com/arpansaha13/common/pkg/types"
+	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/types"
 )
 
 type mailService struct{}

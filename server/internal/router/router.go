@@ -3,8 +3,8 @@ package router
 import (
 	"github.com/gorilla/mux"
 
-	"github.com/arpansaha13/pariksha/internal/handlers"
-	"github.com/arpansaha13/pariksha/internal/middlewares"
+	"pariksha/server/internal/handlers"
+	"pariksha/server/internal/middlewares"
 )
 
 func SetupRouter() *mux.Router {

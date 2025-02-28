@@ -7,12 +7,12 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/arpansaha13/common/pkg/proto"
+	"pariksha/common/pkg/proto"
 
-	"github.com/arpansaha13/auth/internal/config/db"
-	"github.com/arpansaha13/auth/internal/config/env"
-	"github.com/arpansaha13/auth/internal/handlers"
-	"github.com/arpansaha13/auth/internal/services"
+	"pariksha/auth/internal/config/db"
+	"pariksha/auth/internal/config/env"
+	"pariksha/auth/internal/handlers"
+	"pariksha/auth/internal/services"
 )
 
 func main() {

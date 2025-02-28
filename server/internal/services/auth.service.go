@@ -8,8 +8,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/arpansaha13/common/pkg/proto"
-	"github.com/arpansaha13/pariksha/internal/config/env"
+	"pariksha/common/pkg/proto"
+	"pariksha/server/internal/config/env"
 )
 
 var (

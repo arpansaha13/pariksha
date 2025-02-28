@@ -1,3 +1,3 @@
-module github.com/arpansaha13/common
+module pariksha/common
 
 go 1.23.4

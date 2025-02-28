@@ -11,9 +11,9 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	"github.com/arpansaha13/common/pkg/proto"
-	"github.com/arpansaha13/pariksha/internal/config/env"
-	"github.com/arpansaha13/pariksha/internal/services"
+	"pariksha/common/pkg/proto"
+	"pariksha/server/internal/config/env"
+	"pariksha/server/internal/services"
 )
 
 func setCookiesFromMetadata(w http.ResponseWriter, md metadata.MD) {

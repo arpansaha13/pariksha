@@ -23,13 +23,13 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/arpansaha13/auth/internal/config/db"
-	"github.com/arpansaha13/auth/internal/config/env"
-	authModels "github.com/arpansaha13/auth/internal/models"
-	"github.com/arpansaha13/auth/internal/services"
-	"github.com/arpansaha13/common/pkg/constants"
-	"github.com/arpansaha13/common/pkg/models"
-	"github.com/arpansaha13/common/pkg/proto"
+	"pariksha/auth/internal/config/db"
+	"pariksha/auth/internal/config/env"
+	authModels "pariksha/auth/internal/models"
+	"pariksha/auth/internal/services"
+	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/models"
+	"pariksha/common/pkg/proto"
 )
 
 const (

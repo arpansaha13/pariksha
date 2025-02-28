@@ -7,8 +7,8 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"github.com/arpansaha13/common/pkg/constants"
-	"github.com/arpansaha13/common/pkg/utils"
+	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/utils"
 )
 
 var (

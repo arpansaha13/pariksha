@@ -8,9 +8,9 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"github.com/arpansaha13/auth/internal/config/env"
-	"github.com/arpansaha13/auth/internal/models"
-	"github.com/arpansaha13/common/pkg/constants"
+	"pariksha/auth/internal/config/env"
+	"pariksha/auth/internal/models"
+	"pariksha/common/pkg/constants"
 )
 
 var Sessions *gorm.DB
