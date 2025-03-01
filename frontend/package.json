@@ -1,0 +1,49 @@
+{
+  "name": "pariksha",
+  "description": "A comprehensive online exam platform",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@8.5.1",
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "pretty": "prettier --write \"./src/**/*.{js,ts,vue,css}\"",
+    "unlighthouse": "unlighthouse"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "nuxt": "^3.15.4",
+    "pinia": "^3.0.1",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.1.0",
+    "@nuxt/fonts": "^0.0.1",
+    "@nuxt/image": "^1.9.0",
+    "@nuxt/test-utils": "^3.17.0",
+    "@nuxt/ui": "^2.21.0",
+    "@nuxtjs/html-validator": "^1.8.2",
+    "@nuxtjs/i18n": "^8.5.6",
+    "@pinia/nuxt": "^0.10.1",
+    "@vue/test-utils": "^2.4.6",
+    "@vueuse/nuxt": "^12.7.0",
+    "eslint": "^9.21.0",
+    "happy-dom": "^17.1.8",
+    "nuxt-headlessui": "^1.2.0",
+    "playwright-core": "^1.50.1",
+    "prettier": "^3.5.2",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "typescript": "^5.8.2",
+    "unlighthouse": "^0.15.0",
+    "vitest": "^1.6.1"
+  }
+}

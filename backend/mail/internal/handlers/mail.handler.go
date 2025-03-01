@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/smtp"
 
 	"pariksha/common/pkg/types"
 	"pariksha/mail/internal/config/env"
@@ -154,19 +153,21 @@ func SendResetPasswordMail(body []byte) {
 }
 
 func sendMail(to string, content string) error {
-	user := env.SMTP_USER
-	from := env.SMTP_FROM
-	password := env.SMTP_PASSWORD
-	smtpHost := env.SMTP_HOST
-	smtpPort := env.SMTP_PORT
+	// user := env.SMTP_USER
+	// from := env.SMTP_FROM
+	// password := env.SMTP_PASSWORD
+	// smtpHost := env.SMTP_HOST
+	// smtpPort := env.SMTP_PORT
 
-	auth := smtp.PlainAuth("", user, password, smtpHost)
+	log.Default().Println(content)
 
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{to}, []byte(content))
-	if err != nil {
-		fmt.Println("Failed to send email: ", err)
-		return err
-	}
+	// auth := smtp.PlainAuth("", user, password, smtpHost)
+
+	// err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{to}, []byte(content))
+	// if err != nil {
+	// 	fmt.Println("Failed to send email: ", err)
+	// 	return err
+	// }
 
 	return nil
 }
