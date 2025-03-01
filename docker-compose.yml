@@ -1,7 +1,7 @@
 services:
   server:
     build:
-      context: .
+      context: ./backend
       dockerfile: ./server/Dockerfile
     container_name: server
     env_file:
@@ -32,7 +32,7 @@ services:
 
   auth:
     build:
-      context: .
+      context: ./backend
       dockerfile: ./auth/Dockerfile
     container_name: auth_service
     env_file:
@@ -63,7 +63,7 @@ services:
 
   mail:
     build:
-      context: .
+      context: ./backend
       dockerfile: ./mail/Dockerfile
     image: pariksha_mail_worker
     container_name: mail_worker
@@ -91,7 +91,7 @@ services:
 
   sessionsCron:
     build:
-      context: .
+      context: ./backend
       dockerfile: ./cron/sessions/Dockerfile
     image: pariksha_sessions_cron
     container_name: sessions_cron
