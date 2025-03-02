@@ -10,6 +10,9 @@ import (
 func SetupRouter() *mux.Router {
 	r := mux.NewRouter()
 
+	// Apply CORS middleware to the entire router
+	r.Use(middlewares.CorsMiddleware)
+
 	authRouter := r.PathPrefix("/api/auth").Subrouter()
 	protectedRouter := r.PathPrefix("/api").Subrouter()
 
