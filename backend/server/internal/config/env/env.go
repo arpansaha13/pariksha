@@ -29,8 +29,7 @@ var (
 )
 
 var (
-	CLIENT_HOST string
-	CLIENT_PORT string
+	CLIENT_URL string
 )
 
 func init() {
@@ -42,8 +41,7 @@ func init() {
 		"DB_PASS",
 		"DB_NAME",
 		"DB_SSLMODE",
-		"CLIENT_HOST",
-		"CLIENT_PORT",
+		"CLIENT_URL",
 	}
 
 	for _, envVar := range requiredEnvVars {
@@ -67,6 +65,5 @@ func init() {
 	AUTH_SERVER_HOST = os.Getenv("AUTH_SERVER_HOST")
 	AUTH_SERVER_PORT = os.Getenv("AUTH_SERVER_PORT")
 
-	CLIENT_HOST = os.Getenv("CLIENT_HOST")
-	CLIENT_PORT = os.Getenv("CLIENT_PORT")
+	CLIENT_URL = os.Getenv("CLIENT_URL")
 }
