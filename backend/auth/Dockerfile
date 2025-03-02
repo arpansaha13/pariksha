@@ -1,4 +1,7 @@
-FROM golang:1.23-bookworm AS base
+FROM golang:1.23-alpine AS base
+
+# Add required build dependencies
+RUN apk add --no-cache gcc musl-dev
 
 WORKDIR /app/common
 

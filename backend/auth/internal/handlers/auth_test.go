@@ -61,7 +61,7 @@ func setupContainers() *testContainers {
 	// Start Postgres container
 	pgContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "postgres:15-alpine",
+			Image:        "postgres:15.10-alpine",
 			ExposedPorts: []string{"5432/tcp"},
 			Env: map[string]string{
 				"POSTGRES_USER":     env.DB_USER,
@@ -79,7 +79,7 @@ func setupContainers() *testContainers {
 	// Start Sessions DB container
 	sessionsDb, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "postgres:15-alpine",
+			Image:        "postgres:15.10-alpine",
 			ExposedPorts: []string{"5432/tcp"},
 			Env: map[string]string{
 				"POSTGRES_USER":     env.SESSIONS_DB_USER,

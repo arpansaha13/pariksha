@@ -1,4 +1,7 @@
-FROM golang:1.23-bookworm AS base
+FROM golang:1.23-alpine AS base
+
+# Add required build dependencies
+RUN apk add --no-cache gcc musl-dev
 
 WORKDIR /app/common
 
@@ -20,7 +23,9 @@ COPY server/go.mod server/go.sum ./
 COPY server/cmd/ ./cmd/
 COPY server/internal/ ./internal/
 
-RUN --mount=type=cache,target=/gomod-cache --mount=type=cache,target=/go-cache go build -o ./bin/pariksha ./cmd/pariksha/main.go
+RUN --mount=type=cache,target=/gomod-cache \
+	--mount=type=cache,target=/go-cache \
+	go build -o ./bin/pariksha ./cmd/pariksha/main.go
 
 EXPOSE 4000
 

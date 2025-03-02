@@ -3,6 +3,7 @@ services:
     build:
       context: ./backend
       dockerfile: ./server/Dockerfile
+    image: pariksha_server
     container_name: server
     env_file:
       - docker/env/server.env
@@ -32,6 +33,7 @@ services:
     build:
       context: ./backend
       dockerfile: ./auth/Dockerfile
+    image: pariksha_auth_service
     container_name: auth_service
     env_file:
       - docker/env/auth.env
@@ -110,7 +112,7 @@ services:
           path: ./backend/cron/sessions/go.sum
 
   rabbit:
-    image: rabbitmq:3-management
+    image: rabbitmq:3-management-alpine
     container_name: rabbit
     healthcheck:
       test: rabbitmq-diagnostics -q status
@@ -125,7 +127,7 @@ services:
       - pariksha-network
 
   db:
-    image: postgres:15.10
+    image: postgres:15.10-alpine
     restart: always
     container_name: db
     env_file:
@@ -148,7 +150,7 @@ services:
       - pariksha-network
 
   sessionsDb:
-    image: postgres:15.10
+    image: postgres:15.10-alpine
     restart: always
     container_name: sessions_db
     env_file:
