@@ -1,4 +1,4 @@
-export default defineNuxtRouteMiddleware((to, from) => {
+export default defineNuxtRouteMiddleware((_to, _from) => {
   // Add a hook that triggers when the page finishes loading
   useNuxtApp().hook('page:finish', () => {
     // Check if there is a scroll position saved in history.state

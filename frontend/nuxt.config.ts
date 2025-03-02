@@ -12,6 +12,13 @@ export default defineNuxtConfig({
     // '@nuxtjs/html-validator',
   ],
 
+  runtimeConfig: {
+    apiBaseUrl: '',
+    public: {
+      apiBaseUrl: '',
+    },
+  },
+
   srcDir: 'src/',
 
   app: {
@@ -21,10 +28,6 @@ export default defineNuxtConfig({
       },
       link: [{ rel: 'icon', type: 'image/png', href: '/favicon.ico' }],
     },
-  },
-
-  imports: {
-    dirs: ['composables', 'composables/api'],
   },
 
   css: ['assets/main.css'],
