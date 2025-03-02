@@ -7,6 +7,8 @@ services:
     container_name: server
     env_file:
       - docker/env/server.env
+    expose:
+      - "4000"
     ports:
       - 4000:4000
     depends_on:
@@ -116,8 +118,8 @@ services:
     container_name: rabbit
     healthcheck:
       test: rabbitmq-diagnostics -q status
-      interval: 10s
-      timeout: 50s
+      interval: 15s
+      timeout: 70s
       retries: 3
     volumes:
      - ./docker/data/rabbit/:/var/lib/rabbitmq/mnesia/
@@ -171,6 +173,38 @@ services:
       - ./docker/data/sessionsDb:/var/lib/postgresql/data
     networks:
       - pariksha-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ${FRONTEND_DOCKERFILE}
+    image: pariksha_frontend
+    container_name: frontend
+    env_file:
+      - docker/env/frontend.env
+    expose:
+      - "3000"
+    ports:
+      - 3000:3000
+    networks:
+      - pariksha-network
+    stdin_open: true
+    tty: true
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/src
+          target: /app/src
+        - action: sync
+          path: ./frontend/nuxt.config.ts
+          target: /app/nuxt.config.ts
+        - action: sync
+          path: ./frontend/tailwind.config.ts
+          target: /app/tailwind.config.ts
+        - action: rebuild
+          path: ./frontend/package.json
+        - action: rebuild
+          path: ./frontend/package-lock.json
 
 networks:
   pariksha-network:

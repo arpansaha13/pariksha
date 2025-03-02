@@ -8,7 +8,6 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
     '@nuxt/fonts',
     '@nuxt/test-utils/module',
-    '@nuxtjs/i18n',
     'nuxt-headlessui',
     // '@nuxtjs/html-validator',
   ],

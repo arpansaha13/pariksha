@@ -1,0 +1,11 @@
+node_modules
+.nuxt
+.output
+.nitro
+dist
+.cache
+.env
+npm-debug.log*
+.prettierrc
+.prettierignore
+eslint.config.mjs
