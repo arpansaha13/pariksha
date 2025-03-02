@@ -18,17 +18,15 @@ services:
     develop:
       watch:
         - action: rebuild
-          path: ./server/internal
-          target: /app/server/internal
+          path: ./backend/server/internal
         - action: rebuild
-          path: ./server/cmd
-          target: /app/server/cmd
+          path: ./backend/server/cmd
         - action: rebuild
-          path: ./common
+          path: ./backend/common
         - action: rebuild
-          path: ./server/go.mod
+          path: ./backend/server/go.mod
         - action: rebuild
-          path: ./server/go.sum
+          path: ./backend/server/go.sum
 
   auth:
     build:
@@ -49,17 +47,15 @@ services:
     develop:
       watch:
         - action: rebuild
-          path: ./auth/internal
-          target: /app/auth/internal
+          path: ./backend/auth/internal
         - action: rebuild
-          path: ./auth/cmd
-          target: /app/auth/cmd
+          path: ./backend/auth/cmd
         - action: rebuild
-          path: ./common
+          path: ./backend/common
         - action: rebuild
           path: ./auth/go.mod
         - action: rebuild
-          path: ./auth/go.sum
+          path: ./backend/auth/go.sum
 
   mail:
     build:
@@ -77,17 +73,15 @@ services:
     develop:
       watch:
         - action: rebuild
-          path: ./mail/internal
-          target: /app/mail/internal
+          path: ./backend/mail/internal
         - action: rebuild
-          path: ./mail/cmd
-          target: /app/mail/cmd
+          path: ./backend/mail/cmd
         - action: rebuild
-          path: ./common
+          path: ./backend/common
         - action: rebuild
-          path: ./mail/go.mod
+          path: ./backend/mail/go.mod
         - action: rebuild
-          path: ./mail/go.sum
+          path: ./backend/mail/go.sum
 
   sessionsCron:
     build:
@@ -105,17 +99,15 @@ services:
     develop:
       watch:
         - action: rebuild
-          path: ./cron/sessions/internal
-          target: /app/cron/sessions/internal
+          path: ./backend/cron/sessions/internal
         - action: rebuild
-          path: ./cron/sessions/cmd
-          target: /app/cron/sessions/cmd
+          path: ./backend/cron/sessions/cmd
         - action: rebuild
-          path: ./common
+          path: ./backend/common
         - action: rebuild
-          path: ./cron/sessions/go.mod
+          path: ./backend/cron/sessions/go.mod
         - action: rebuild
-          path: ./cron/sessions/go.sum
+          path: ./backend/cron/sessions/go.sum
 
   rabbit:
     image: rabbitmq:3-management
