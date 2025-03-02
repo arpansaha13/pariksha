@@ -65,6 +65,15 @@ func handleGRPCError(w http.ResponseWriter, err error) {
 	}
 }
 
+type AuthCheckResponse struct {
+	Valid bool `json:"valid"`
+}
+
+func CheckAuth(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(AuthCheckResponse{Valid: true})
+}
+
 func LoginWithPassword(w http.ResponseWriter, r *http.Request) {
 	var loginReq proto.LoginWithPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&loginReq); err != nil {
