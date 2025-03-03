@@ -1,14 +1,24 @@
 <template>
-  <div class="flex w-full max-w-md flex-col items-center">
+  <div class="flex w-full max-w-sm flex-col items-center gap-6">
     <div>
       <Logo class="mx-auto size-20" />
-      <h1 class="mb-6 mt-4 text-center text-2xl font-bold">
-        Login to your account
-      </h1>
+
+      <h1 class="mb-2 mt-4 text-center text-2xl font-bold">Welcome back!</h1>
+
+      <p class="text-center">
+        <span>Don't have an account?</span>
+        <ULink
+          to="/auth/signup"
+          class="text-primary-500 hover:text-primary-600 font-semibold"
+        >
+          Sign up
+        </ULink>
+        <span>.</span>
+      </p>
     </div>
 
-    <UCard class="mt-6 w-full">
-      <UForm :state="loginFormData" @submit="onSubmit">
+    <UCard class="w-full">
+      <UForm :state="loginFormData" @submit.prevent="onSubmit">
         <div class="space-y-4">
           <UFormGroup label="Email" name="email">
             <UInput
@@ -16,6 +26,7 @@
               type="email"
               placeholder="Enter your email"
               autocomplete="email"
+              required
             />
           </UFormGroup>
 
@@ -25,6 +36,7 @@
               type="password"
               placeholder="Enter your password"
               autocomplete="current-password"
+              required
             />
           </UFormGroup>
 
@@ -46,6 +58,8 @@ useHead({
   title: 'Login',
 })
 
+const toast = useToast()
+
 const loginFormData = useState(() => ({
   email: '',
   password: '',
@@ -53,21 +67,19 @@ const loginFormData = useState(() => ({
 
 const loading = useState(() => false)
 
-async function onSubmit(e: SubmitEvent) {
-  e.preventDefault()
-
+async function onSubmit() {
   try {
     loading.value = true
     await login(loginFormData.value)
-
-    // if (error.value) {
-    //   throw error.value
-    // }
-    // console.log(data)
-
     await navigateTo('/')
-  } catch (err) {
-    console.error('Login failed:', err)
+  } catch {
+    toast.add({
+      id: 'login_failed',
+      color: 'red',
+      title: 'Failed to login',
+      description: 'Invalid email or password.',
+      icon: 'i-heroicons-exclamation-circle',
+    })
   } finally {
     loading.value = false
   }
