@@ -30,6 +30,29 @@ type AuthServer struct {
 	proto.UnimplementedAuthServiceServer
 }
 
+func generateUniqueUsername(tx *gorm.DB, emailPrefix string) (string, error) {
+	maxRetries := 5
+	for i := 0; i < maxRetries; i++ {
+		randomHash, err := utils.GenerateAlphaNum(6)
+		if err != nil {
+			return "", err
+		}
+
+		username := emailPrefix + "_" + randomHash
+
+		var exists int64
+		if err := tx.Model(&models.User{}).Where("username = ?", username).Count(&exists).Error; err != nil {
+			return "", err
+		}
+
+		if exists == 0 {
+			return username, nil
+		}
+	}
+
+	return "", status.Error(codes.Internal, "failed to generate unique username after maximum retries")
+}
+
 func createSession(userID int) (*models.Session, error) {
 	sessionKey := uuid.New()
 	sessionExpiresAt := time.Now().Add(time.Duration(env.SESSION_EXPIRES_IN_HOURS) * time.Hour)
@@ -153,14 +176,20 @@ func (s *AuthServer) SignUp(ctx context.Context, req *proto.SignUpRequest) (*pro
 		// Create or update user
 		err := tx.Where("email = ?", req.Email).Take(&user).Error
 		if err == nil {
+			// Update password if user already exists
 			user.Password.String = string(hashedPassword)
 			if err := tx.Save(&user).Error; err != nil {
 				return err
 			}
 		} else if errors.Is(err, gorm.ErrRecordNotFound) {
+			username, err := generateUniqueUsername(tx, strings.Split(req.Email, "@")[0])
+			if err != nil {
+				return err
+			}
+
 			user = models.User{
 				Email:    req.Email,
-				Username: strings.Split(req.Email, "@")[0],
+				Username: username,
 				Password: sql.NullString{String: string(hashedPassword), Valid: true},
 				Verified: false,
 			}
