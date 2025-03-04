@@ -9,6 +9,7 @@ export default defineNuxtConfig({
     '@nuxt/fonts',
     '@nuxt/test-utils/module',
     'nuxt-headlessui',
+    'pinia-plugin-persistedstate/nuxt',
     // '@nuxtjs/html-validator',
   ],
 
