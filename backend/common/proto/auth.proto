@@ -42,11 +42,11 @@ service AuthService {
     // - INTERNAL (500): Failed to process signup
   }
 
-  rpc VerifySignup(VerificationRequest) returns (EmptyResponse) {
+  rpc VerifySignup(VerificationRequest) returns (UserResponse) {
     // Possible errors:
     // - INVALID_ARGUMENT (400): Invalid request body
     // - UNAUTHENTICATED (401): Invalid email or OTP
-    // - INTERNAL (500): Failed to verify user
+    // - INTERNAL (500): Failed to verify user or create session
   }
 
   // Password reset flow

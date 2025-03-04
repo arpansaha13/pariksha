@@ -124,14 +124,22 @@ func VerifySignup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var header metadata.MD
 	authService := services.GetAuthService()
-	_, err := authService.Client().VerifySignup(context.Background(), &verificationReq)
+	response, err := authService.Client().VerifySignup(
+		context.Background(),
+		&verificationReq,
+		grpc.Header(&header),
+	)
 	if err != nil {
 		handleGRPCError(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	setCookiesFromMetadata(w, header)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
 func LoginWithOtp(w http.ResponseWriter, r *http.Request) {

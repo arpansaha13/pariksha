@@ -229,28 +229,45 @@ func (s *AuthServer) SignUp(ctx context.Context, req *proto.SignUpRequest) (*pro
 	return &proto.EmptyResponse{}, nil
 }
 
-func (s *AuthServer) VerifySignup(ctx context.Context, req *proto.VerificationRequest) (*proto.EmptyResponse, error) {
+func (s *AuthServer) VerifySignup(ctx context.Context, req *proto.VerificationRequest) (*proto.UserResponse, error) {
 	if req.Email == "" || req.Otp == "" {
 		return nil, status.Error(codes.InvalidArgument, "email and OTP are required")
 	}
 
 	var otpEntry models.Otp
+	var user models.User
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("email = ? AND purpose = ?", req.Email, constants.OTP_PURPOSE_SIGNUP).Take(&otpEntry).Error; err != nil {
-			return status.Error(codes.NotFound, "invalid email")
+			return status.Error(codes.Unauthenticated, "invalid email")
 		}
 
 		if req.Otp != otpEntry.OTP || time.Now().After(otpEntry.OTPExpiresAt) {
-			return status.Error(codes.InvalidArgument, "invalid or expired OTP")
+			return status.Error(codes.Unauthenticated, "invalid or expired OTP")
 		}
 
-		if err := tx.Model(&models.User{}).Where("email = ?", req.Email).Update("verified", true).Error; err != nil {
+		if err := tx.Where("email = ?", req.Email).Take(&user).Error; err != nil {
+			return status.Error(codes.NotFound, "user not found")
+		}
+
+		if err := tx.Model(&user).Update("verified", true).Error; err != nil {
 			return status.Error(codes.Internal, "failed to verify user")
 		}
 
 		if err := tx.Delete(&otpEntry).Error; err != nil {
 			return status.Error(codes.Internal, "failed to delete OTP entry")
 		}
+
+		session, err := createSession(user.ID)
+		if err != nil {
+			return err
+		}
+
+		md := metadata.Pairs(
+			"session-key", session.Key.String(),
+			"csrf-token", session.CsrfToken,
+			"expires-at", session.ExpiresAt.Format(time.RFC3339),
+		)
+		grpc.SetHeader(ctx, md)
 
 		return nil
 	})
@@ -259,7 +276,13 @@ func (s *AuthServer) VerifySignup(ctx context.Context, req *proto.VerificationRe
 		return nil, err
 	}
 
-	return &proto.EmptyResponse{}, nil
+	return &proto.UserResponse{
+		Id:        int32(user.ID),
+		Username:  user.Username,
+		Email:     user.Email,
+		FirstName: user.FirstName.String,
+		LastName:  user.LastName.String,
+	}, nil
 }
 
 func (s *AuthServer) VerifyLoginOtp(ctx context.Context, req *proto.VerificationRequest) (*proto.UserResponse, error) {

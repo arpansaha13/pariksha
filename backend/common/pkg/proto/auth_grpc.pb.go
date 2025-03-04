@@ -40,7 +40,7 @@ type AuthServiceClient interface {
 	VerifyLoginOtp(ctx context.Context, in *VerificationRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	// Signup flow
 	SignUp(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	VerifySignup(ctx context.Context, in *VerificationRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	VerifySignup(ctx context.Context, in *VerificationRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	// Password reset flow
 	ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
@@ -96,9 +96,9 @@ func (c *authServiceClient) SignUp(ctx context.Context, in *SignUpRequest, opts 
 	return out, nil
 }
 
-func (c *authServiceClient) VerifySignup(ctx context.Context, in *VerificationRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *authServiceClient) VerifySignup(ctx context.Context, in *VerificationRequest, opts ...grpc.CallOption) (*UserResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(UserResponse)
 	err := c.cc.Invoke(ctx, AuthService_VerifySignup_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -147,7 +147,7 @@ type AuthServiceServer interface {
 	VerifyLoginOtp(context.Context, *VerificationRequest) (*UserResponse, error)
 	// Signup flow
 	SignUp(context.Context, *SignUpRequest) (*EmptyResponse, error)
-	VerifySignup(context.Context, *VerificationRequest) (*EmptyResponse, error)
+	VerifySignup(context.Context, *VerificationRequest) (*UserResponse, error)
 	// Password reset flow
 	ForgotPassword(context.Context, *ForgotPasswordRequest) (*EmptyResponse, error)
 	ResetPassword(context.Context, *ResetPasswordRequest) (*EmptyResponse, error)
@@ -175,7 +175,7 @@ func (UnimplementedAuthServiceServer) VerifyLoginOtp(context.Context, *Verificat
 func (UnimplementedAuthServiceServer) SignUp(context.Context, *SignUpRequest) (*EmptyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SignUp not implemented")
 }
-func (UnimplementedAuthServiceServer) VerifySignup(context.Context, *VerificationRequest) (*EmptyResponse, error) {
+func (UnimplementedAuthServiceServer) VerifySignup(context.Context, *VerificationRequest) (*UserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifySignup not implemented")
 }
 func (UnimplementedAuthServiceServer) ForgotPassword(context.Context, *ForgotPasswordRequest) (*EmptyResponse, error) {

@@ -347,7 +347,7 @@ func TestVerifySignup(t *testing.T) {
 		setup        func(t *testing.T)
 		req          *proto.VerificationRequest
 		expectedCode codes.Code
-		validateFunc func(t *testing.T)
+		validateFunc func(t *testing.T, resp *proto.UserResponse, md metadata.MD)
 	}{
 		{
 			name: "Successful verification",
@@ -360,12 +360,23 @@ func TestVerifySignup(t *testing.T) {
 				Otp:   validOTP,
 			},
 			expectedCode: codes.OK,
-			validateFunc: func(t *testing.T) {
+			validateFunc: func(t *testing.T, resp *proto.UserResponse, md metadata.MD) {
+				// Verify user response
+				assert.Equal(t, testUnverifiedEmail, resp.Email)
+				assert.NotEmpty(t, resp.Username)
+
+				// Verify user is now verified
 				var user models.User
 				err := db.DB.Where("email = ?", testUnverifiedEmail).First(&user).Error
 				assert.NoError(t, err)
 				assert.True(t, user.Verified)
 
+				// Verify session was created
+				assert.NotEmpty(t, md.Get("session-key"))
+				assert.NotEmpty(t, md.Get("csrf-token"))
+				assert.NotEmpty(t, md.Get("expires-at"))
+
+				// Verify OTP was deleted
 				var otp models.Otp
 				err = db.DB.Where("email = ?", testUnverifiedEmail).First(&otp).Error
 				assert.Error(t, err)
@@ -381,7 +392,7 @@ func TestVerifySignup(t *testing.T) {
 				Email: testUnverifiedEmail,
 				Otp:   validOTP,
 			},
-			expectedCode: codes.InvalidArgument,
+			expectedCode: codes.Unauthenticated,
 		},
 		{
 			name: "Invalid OTP",
@@ -393,7 +404,7 @@ func TestVerifySignup(t *testing.T) {
 				Email: testUnverifiedEmail,
 				Otp:   invalidOTP,
 			},
-			expectedCode: codes.InvalidArgument,
+			expectedCode: codes.Unauthenticated,
 		},
 		{
 			name: "Missing email",
@@ -420,8 +431,7 @@ func TestVerifySignup(t *testing.T) {
 		{
 			name: "Non-existent email",
 			setup: func(t *testing.T) {
-				createTestUser(t, testUnverifiedEmail, false)
-				createTestOTP(t, testUnverifiedEmail, constants.OTP_PURPOSE_SIGNUP, false)
+				createTestOTP(t, "nonexistent@example.com", constants.OTP_PURPOSE_SIGNUP, false)
 			},
 			req: &proto.VerificationRequest{
 				Email: "nonexistent@example.com",
@@ -437,7 +447,8 @@ func TestVerifySignup(t *testing.T) {
 				tt.setup(t)
 			}
 
-			resp, err := client.VerifySignup(context.Background(), tt.req)
+			var md metadata.MD
+			resp, err := client.VerifySignup(context.Background(), tt.req, grpc.Header(&md))
 
 			if tt.expectedCode != codes.OK {
 				st, ok := status.FromError(err)
@@ -448,7 +459,7 @@ func TestVerifySignup(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, resp)
 				if tt.validateFunc != nil {
-					tt.validateFunc(t)
+					tt.validateFunc(t, resp, md)
 				}
 			}
 
