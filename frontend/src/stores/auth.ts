@@ -13,7 +13,7 @@ export const useAuthStore = defineStore('auth', {
     },
   },
   persist: {
-    key: 'signUpEmail',
+    key: 'authStore',
     storage: piniaPluginPersistedstate.sessionStorage(),
   },
 })
