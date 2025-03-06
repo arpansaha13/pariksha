@@ -13,11 +13,17 @@ export default defineNuxtConfig({
     // '@nuxtjs/html-validator',
   ],
 
+  // https://github.com/nuxt/nuxt/issues/12003#issuecomment-1397230032
+  vite: {
+    server: {
+      hmr: {
+        path: 'hmr/',
+      },
+    },
+  },
+
   runtimeConfig: {
     apiBaseUrl: '',
-    public: {
-      apiBaseUrl: '',
-    },
   },
 
   srcDir: 'src/',

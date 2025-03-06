@@ -27,7 +27,7 @@ func setCookiesFromMetadata(w http.ResponseWriter, md metadata.MD) {
 		Expires:  expiresAt,
 		HttpOnly: true,
 		Secure:   true,
-		Path:     "/api/",
+		Path:     "/", // Token wont reach frontend server middlewares if path is not root
 		SameSite: http.SameSiteStrictMode,
 	})
 
@@ -37,7 +37,7 @@ func setCookiesFromMetadata(w http.ResponseWriter, md metadata.MD) {
 		Expires:  expiresAt,
 		HttpOnly: false,
 		Secure:   true,
-		Path:     "/api/",
+		Path:     "/", // JavaScript can read cookie only if current path matches cookie path
 		SameSite: http.SameSiteStrictMode,
 	})
 }

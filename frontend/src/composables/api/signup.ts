@@ -4,10 +4,7 @@ interface SignUpBody {
 }
 
 export function signUp(body: SignUpBody) {
-  const runtimeConfig = useRuntimeConfig()
-
-  return $fetch(runtimeConfig.public.apiBaseUrl + '/api/auth/signup', {
-    mode: 'cors',
+  return $fetch('/api/auth/signup', {
     method: 'POST',
     body,
   })

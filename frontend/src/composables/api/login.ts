@@ -4,10 +4,7 @@ interface LoginBody {
 }
 
 export function login(body: LoginBody) {
-  const runtimeConfig = useRuntimeConfig()
-
-  return $fetch(runtimeConfig.public.apiBaseUrl + '/api/auth/login', {
-    mode: 'cors',
+  return $fetch('/api/auth/login', {
     method: 'POST',
     body,
   })
