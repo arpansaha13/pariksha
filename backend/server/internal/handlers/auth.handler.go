@@ -225,7 +225,7 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 	authService := services.GetAuthService()
 	_, err := authService.Client().ResetPassword(context.Background(), &resetPasswordReq)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleGRPCError(w, err)
 		return
 	}
 

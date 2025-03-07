@@ -98,9 +98,8 @@ message ForgotPasswordRequest {
 
 message ResetPasswordRequest {
   string email = 1;
-  string old_password = 2;
-  string new_password = 3;
-  string otp = 4;
+  string new_password = 2;
+  string otp = 3;
 }
 
 message UserResponse {

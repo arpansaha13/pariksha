@@ -375,7 +375,7 @@ func (s *AuthServer) ForgotPassword(ctx context.Context, req *proto.ForgotPasswo
 }
 
 func (s *AuthServer) ResetPassword(ctx context.Context, req *proto.ResetPasswordRequest) (*proto.EmptyResponse, error) {
-	if req.Email == "" || req.OldPassword == "" || req.NewPassword == "" || req.Otp == "" {
+	if req.Email == "" || req.NewPassword == "" || req.Otp == "" {
 		return nil, status.Error(codes.InvalidArgument, "all fields are required")
 	}
 
@@ -396,10 +396,6 @@ func (s *AuthServer) ResetPassword(ctx context.Context, req *proto.ResetPassword
 
 	if !user.Verified {
 		return nil, status.Error(codes.PermissionDenied, "user not verified")
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password.String), []byte(req.OldPassword)); err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid old password")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
