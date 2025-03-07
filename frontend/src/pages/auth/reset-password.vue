@@ -105,10 +105,12 @@ const toast = useToast()
 const authStore = useAuthStore()
 const router = useRouter()
 
-// Redirect if email not set
-if (!authStore.forgotPassEmail) {
-  router.replace('/auth/forgot-password')
-}
+onBeforeMount(() => {
+  // Redirect if email not set
+  if (!authStore.forgotPassEmail) {
+    router.replace('/auth/forgot-password')
+  }
+})
 
 const resetPasswordFormData = useState<ResetPasswordFormData>(() => ({
   otp: '',
@@ -155,7 +157,7 @@ async function onSubmit() {
     }
 
     toast.add({
-      id: 'reset_password_failed',
+      id: ToastId.RESET_PASSWORD_FAILED,
       color: 'red',
       title: 'Failed to reset password',
       description: message,

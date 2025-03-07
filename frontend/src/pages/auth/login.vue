@@ -83,7 +83,7 @@ async function onSubmit() {
     await navigateTo('/')
   } catch {
     toast.add({
-      id: 'login_failed',
+      id: ToastId.LOGIN_FAILED,
       color: 'red',
       title: 'Failed to login',
       description: 'Invalid email or password.',

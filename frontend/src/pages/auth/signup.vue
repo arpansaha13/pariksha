@@ -138,7 +138,7 @@ async function onSubmit() {
     }
 
     toast.add({
-      id: 'signup_failed',
+      id: ToastId.SIGNUP_FAILED,
       color: 'red',
       title: 'Failed to create account',
       description: message,

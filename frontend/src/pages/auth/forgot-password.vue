@@ -79,7 +79,7 @@ async function onSubmit() {
     }
 
     toast.add({
-      id: 'forgot_password_failed',
+      id: ToastId.FORGOT_PASSWORD_FAILED,
       color: 'red',
       title: 'Failed to send OTP',
       description: message,

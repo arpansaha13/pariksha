@@ -51,6 +51,14 @@ useHead({
 
 const toast = useToast()
 const authStore = useAuthStore()
+const router = useRouter()
+
+onBeforeMount(() => {
+  // Redirect if email not set
+  if (!authStore.signUpEmail) {
+    router.replace('/auth/signup')
+  }
+})
 
 const verificationFormData = useState(() => ({
   email: '',
@@ -77,7 +85,7 @@ async function onSubmit() {
     }
 
     toast.add({
-      id: 'verify_signup_failed',
+      id: ToastId.VERIFY_SIGNUP_FAILED,
       color: 'red',
       title: 'Failed to verify email',
       description: message,
