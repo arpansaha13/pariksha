@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@iconify-json/twemoji':
+        specifier: ^1.2.2
+        version: 1.2.2
       '@nuxt/fonts':
         specifier: ^0.0.1
         version: 0.0.1(db0@0.2.4)(ioredis@5.5.0)(magicast@0.3.5)
@@ -818,6 +821,9 @@ packages:
 
   '@iconify-json/heroicons@1.2.2':
     resolution: {integrity: sha512-qoW4pXr5kTTL6juEjgTs83OJIwpePu7q1tdtKVEdj+i0zyyVHgg/dd9grsXJQnpTpBt6/VwNjrXBvFjRsKPENg==}
+
+  '@iconify-json/twemoji@1.2.2':
+    resolution: {integrity: sha512-ckWEY5KhIQgdFd9VGvfhecTtYUx3ihXycwlZcEws87LxuvIThMHNBCblrQQ5afhbGMfg21dF+z9F+ODMRDYHMg==}
 
   '@iconify/collections@1.0.522':
     resolution: {integrity: sha512-IPTFZ2rGZ5kIwsR913mukn68KIf6EZnls1HFZNWhyvWmaqBxYo5W0ejLxMaW6Ob5dIaTDa9+Ik5kYzQf9uO0Kg==}
@@ -6523,6 +6529,10 @@ snapshots:
   '@humanwhocodes/retry@0.4.2': {}
 
   '@iconify-json/heroicons@1.2.2':
+    dependencies:
+      '@iconify/types': 2.0.0
+
+  '@iconify-json/twemoji@1.2.2':
     dependencies:
       '@iconify/types': 2.0.0
 

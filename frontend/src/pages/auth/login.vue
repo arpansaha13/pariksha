@@ -11,9 +11,8 @@
           to="/auth/signup"
           class="text-primary-500 hover:text-primary-600 font-semibold"
         >
-          Sign up
+          Sign up<span class="font-normal text-black">.</span>
         </ULink>
-        <span>.</span>
       </p>
     </div>
 
@@ -31,13 +30,23 @@
           </UFormGroup>
 
           <UFormGroup label="Password" name="password">
-            <UInput
-              v-model="loginFormData.password"
-              type="password"
-              placeholder="Enter your password"
-              autocomplete="current-password"
-              required
-            />
+            <template #hint>
+              <ULink
+                to="/auth/forgot-password"
+                class="text-primary-500 hover:text-primary-600 font-medium"
+              >
+                Forgot password?
+              </ULink>
+            </template>
+            <template #default>
+              <UInput
+                v-model="loginFormData.password"
+                type="password"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                required
+              />
+            </template>
           </UFormGroup>
 
           <UButton type="submit" color="primary" block :loading="loading">
