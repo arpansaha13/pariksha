@@ -23,20 +23,29 @@
 
 <script setup lang="ts">
 const links = [
-  {
-    label: 'Home',
-    to: '/',
-    icon: 'i-heroicons-home',
-  },
-  {
-    label: 'Exams',
-    to: '/exams',
-    icon: 'i-heroicons-academic-cap',
-  },
-  {
-    label: 'Papers',
-    to: '/papers',
-    icon: 'i-heroicons-document-text',
-  },
+  [
+    {
+      label: 'Home',
+      to: '/',
+      icon: 'i-heroicons-home',
+    },
+    {
+      label: 'Exams',
+      to: '/exams',
+      icon: 'i-heroicons-academic-cap',
+    },
+    {
+      label: 'Papers',
+      to: '/papers',
+      icon: 'i-heroicons-document-text',
+    },
+  ],
+  [
+    {
+      label: 'Create new paper',
+      to: '/papers/new',
+      icon: 'i-heroicons-document-plus',
+    },
+  ],
 ]
 </script>

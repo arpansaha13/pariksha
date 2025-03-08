@@ -3,3 +3,5 @@ export { signUp } from './api/auth/signup'
 export { verifySignUpEmail } from './api/auth/verify-signup-email'
 export { forgotPassword } from './api/auth/forgot-password'
 export { resetPassword } from './api/auth/reset-password'
+
+export { createPaper } from './api/papers/create-paper'

@@ -5,3 +5,12 @@ export enum ToastId {
   FORGOT_PASSWORD_FAILED = 'forgot_password_failed',
   RESET_PASSWORD_FAILED = 'reset_password_failed',
 }
+
+export enum HeaderNames {
+  XCSRFToken = 'X-CSRFToken',
+}
+
+export enum CookieNames {
+  CSRF_TOKEN = 'csrftoken',
+  TOKEN = 'token',
+}
