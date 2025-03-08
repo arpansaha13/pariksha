@@ -91,33 +91,23 @@ func TestCreatePaper(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		paperDto       dtos.CreatePaperDto
 		expectedStatus int
 		validateFunc   func(t *testing.T, response dtos.PaperResponse)
 	}{
 		{
-			name: "Success",
-			paperDto: dtos.CreatePaperDto{
-				Title: "New Paper",
-			},
+			name:           "Success",
 			expectedStatus: http.StatusCreated,
 			validateFunc: func(t *testing.T, response dtos.PaperResponse) {
 				assert.NotZero(t, response.ID)
-				assert.Equal(t, "New Paper", response.Title)
+				assert.Equal(t, "Untitled Paper", response.Title)
 				assert.Equal(t, constants.PAPER_OWNERSHIP_TYPE_OWNER, response.PaperOwnership.Type)
 			},
-		},
-		{
-			name:           "Invalid request body",
-			paperDto:       dtos.CreatePaperDto{},
-			expectedStatus: http.StatusBadRequest,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			body, _ := json.Marshal(tt.paperDto)
-			req := httptest.NewRequest("POST", "/papers", bytes.NewBuffer(body))
+			req := httptest.NewRequest("POST", "/papers", nil)
 			req = req.WithContext(testUtils.SetUserContext(req.Context(), user.ID))
 			w := httptest.NewRecorder()
 

@@ -48,27 +48,13 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreatePaper(w http.ResponseWriter, r *http.Request) {
-	var paperDto dtos.CreatePaperDto
-	if err := json.NewDecoder(r.Body).Decode(&paperDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	errs := validate.Do.Struct(paperDto)
-	if errs != nil {
-		http.Error(w, "Invald request body", http.StatusBadRequest)
-		return
-	}
-
 	userID := r.Context().Value(middlewares.UserIDKey).(int)
 
 	var paper models.Paper
 	var paperOwnership models.PaperOwnership
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		paper = models.Paper{
-			Title: paperDto.Title,
-		}
+		paper = models.Paper{} // Will use database default for Title
 
 		if err := tx.Create(&paper).Error; err != nil {
 			return err

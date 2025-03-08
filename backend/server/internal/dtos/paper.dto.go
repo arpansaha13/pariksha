@@ -4,10 +4,6 @@ import (
 	"encoding/json"
 )
 
-type CreatePaperDto struct {
-	Title string `json:"title" validate:"required"`
-}
-
 type UpdatePaperDto struct {
 	Title string `json:"title"`
 }
