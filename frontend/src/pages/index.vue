@@ -1,3 +1,5 @@
 <template>
-  <div>hello</div>
+  <main>
+    <h1 class="text-3xl font-bold">Dashboard</h1>
+  </main>
 </template>
