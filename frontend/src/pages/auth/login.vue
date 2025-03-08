@@ -19,7 +19,7 @@
     <UCard class="w-full">
       <UForm :state="loginFormData" @submit.prevent="onSubmit">
         <div class="space-y-4">
-          <UFormGroup label="Email" name="email">
+          <UFormGroup label="Email" name="email" required>
             <UInput
               v-model="loginFormData.email"
               type="email"
@@ -29,7 +29,7 @@
             />
           </UFormGroup>
 
-          <UFormGroup label="Password" name="password">
+          <UFormGroup label="Password" name="password" required>
             <template #hint>
               <ULink
                 to="/auth/forgot-password"

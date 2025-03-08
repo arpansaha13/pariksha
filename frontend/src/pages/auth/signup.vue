@@ -129,7 +129,7 @@ async function onSubmit() {
     })
 
     authStore.setSignUpEmail(signupFormData.value.email)
-    navigateTo('/auth/verification')
+    await navigateTo('/auth/verification')
   } catch (err) {
     let message = 'Something went wrong.'
 

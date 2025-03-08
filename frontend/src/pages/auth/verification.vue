@@ -75,7 +75,7 @@ async function onSubmit() {
   try {
     loading.value = true
     await verifySignUpEmail(verificationFormData.value)
-    navigateTo('/')
+    await navigateTo('/')
   } catch (err) {
     const status = (err as Response).status
     let message = 'Something went wrong.'

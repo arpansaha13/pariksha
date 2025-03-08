@@ -69,7 +69,7 @@ async function onSubmit() {
     // Store email for reset password page
     authStore.setForgotPassEmail(forgotPasswordFormData.value.email)
 
-    navigateTo('/auth/reset-password')
+    await navigateTo('/auth/reset-password')
   } catch (err) {
     const status = (err as Response).status
     let message = 'Something went wrong.'
