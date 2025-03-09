@@ -24,13 +24,9 @@
           You can now log in to your account with your new password.
         </p>
 
-        <ULink
-          to="/auth/login"
-          replace
-          class="bg-primary-500 hover:bg-primary-600 disabled:bg-primary-500 aria-disabled:bg-primary-500 dark:bg-primary-400 dark:hover:bg-primary-500 dark:disabled:bg-primary-400 dark:aria-disabled:bg-primary-400 focus-visible:outline-primary-500 dark:focus-visible:outline-primary-400 mx-auto flex w-max flex-shrink-0 items-center gap-x-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-white shadow-sm focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-75 aria-disabled:cursor-not-allowed aria-disabled:opacity-75 dark:text-gray-900"
-        >
+        <UButton to="/auth/login" replace class="mx-auto flex w-max">
           Go to Login
-        </ULink>
+        </UButton>
       </template>
     </div>
 
