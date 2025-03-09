@@ -1,6 +1,7 @@
 /**
- * Adds the csrftoken to request headers.
- * If `import.meta.server = true`, then it will also append session-cookie to headers.
+ * - Adds the csrftoken to request headers.
+ * - Adds `credentials: 'include'`, if `import.meta.client = true`.
+ * - Adds session-cookie to headers, if `import.meta.server = true`.
  */
 
 export function getFetchOptions() {

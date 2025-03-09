@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen gap-6">
+  <UContainer class="flex h-screen gap-6">
     <div class="w-60 p-2">
       <div class="flex items-center gap-2 p-2">
         <Logo class="size-8" />
@@ -15,10 +15,10 @@
       />
     </div>
 
-    <div class="flex-grow px-2 py-4">
+    <div class="flex-grow py-4">
       <slot />
     </div>
-  </div>
+  </UContainer>
 </template>
 
 <script setup lang="ts">
