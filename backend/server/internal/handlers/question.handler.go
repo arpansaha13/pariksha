@@ -16,6 +16,28 @@ import (
 	"pariksha/server/internal/dtos"
 )
 
+func questionToResponse(question models.Question) dtos.QuestionResponse {
+	var category *dtos.QuestionCategoryResponse
+	if question.CategoryID != nil {
+		category = &dtos.QuestionCategoryResponse{
+			ID:    question.Category.ID,
+			Name:  question.Category.Name,
+			Order: question.Category.Order,
+		}
+	}
+
+	return dtos.QuestionResponse{
+		ID:            question.ID,
+		Question:      question.Question,
+		Category:      category,
+		Type:          question.Type,
+		Tags:          question.Tags,
+		PaperID:       question.PaperID,
+		MaxScore:      question.MaxScore,
+		CorrectAnswer: question.CorrectAnswer.String,
+	}
+}
+
 func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	paperID := vars["id"]
@@ -33,23 +55,17 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch questions for the paper
 	var questions []models.Question
-	if err := db.DB.Where("paper_id = ?", paperID).Find(&questions).Error; err != nil {
+	if err := db.DB.
+		Preload("Category").
+		Where("paper_id = ?", paperID).
+		Find(&questions).Error; err != nil {
 		http.Error(w, "Failed to retrieve questions", http.StatusInternalServerError)
 		return
 	}
 
 	var response []dtos.QuestionResponse
 	for _, question := range questions {
-		response = append(response, dtos.QuestionResponse{
-			ID:            question.ID,
-			Question:      question.Question,
-			Category:      question.Category.String,
-			Type:          question.Type,
-			Tags:          question.Tags,
-			PaperID:       question.PaperID,
-			MaxScore:      question.MaxScore,
-			CorrectAnswer: question.CorrectAnswer.String,
-		})
+		response = append(response, questionToResponse(question))
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -93,61 +109,87 @@ func CreatePaperQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var questions []models.Question
+	var response []dtos.QuestionResponse
 
-	for _, questionDto := range questionDtos {
-		// Unmarshal and validate the question JSON
-		questionData, err := unmarshalQuestion(questionDto)
+	err = db.DB.Transaction(func(tx *gorm.DB) error {
+		for _, questionDto := range questionDtos {
+			// Unmarshal and validate the question JSON
+			questionData, err := unmarshalQuestion(questionDto)
+			if err != nil {
+				return err
+			}
+
+			// Validate categories exist if specified
+			if questionDto.CategoryID != nil {
+				var category models.QuestionCategory
+				if err := tx.Where("id = ? AND paper_id = ?", *questionDto.CategoryID, paperID).
+					First(&category).Error; err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						return errors.New("category not found")
+					}
+					return err
+				}
+			}
+
+			// Increment the question count based on the question type
+			switch questionDto.Type {
+			case constants.QUESTION_TYPE_MCQ:
+				questionCounts.MCQ++
+			case constants.QUESTION_TYPE_SHORT:
+				questionCounts.Short++
+			case constants.QUESTION_TYPE_LONG:
+				questionCounts.Long++
+			}
+
+			// Create the question
+			question := models.Question{
+				PaperID:       questionDto.PaperID,
+				Question:      questionData,
+				CategoryID:    questionDto.CategoryID,
+				Type:          questionDto.Type,
+				Tags:          questionDto.Tags,
+				MaxScore:      questionDto.MaxScore,
+				CorrectAnswer: sql.NullString{String: questionDto.CorrectAnswer, Valid: questionDto.CorrectAnswer != ""},
+			}
+
+			if err := tx.Create(&question).Error; err != nil {
+				return err
+			}
+
+			// Preload the category for response
+			if question.CategoryID != nil {
+				if err := tx.Preload("Category").First(&question, question.ID).Error; err != nil {
+					return err
+				}
+			}
+
+			questions = append(questions, question)
+			response = append(response, questionToResponse(question))
+
+			// Update the paper's max score
+			paper.MaxScore += question.MaxScore
+		}
+
+		// Update the paper with the new question counts
+		paper.QuestionCounts, err = json.Marshal(questionCounts)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			return err
 		}
 
-		// Increment the question count based on the question type
-		switch questionDto.Type {
-		case constants.QUESTION_TYPE_MCQ:
-			questionCounts.MCQ++
-		case constants.QUESTION_TYPE_SHORT:
-			questionCounts.Short++
-		case constants.QUESTION_TYPE_LONG:
-			questionCounts.Long++
+		if err := tx.Save(&paper).Error; err != nil {
+			return err
 		}
 
-		// Create the question
-		question := models.Question{
-			PaperID:       questionDto.PaperID,
-			Question:      questionData,
-			Category:      sql.NullString{String: questionDto.Category, Valid: true},
-			Type:          questionDto.Type,
-			Tags:          questionDto.Tags,
-			MaxScore:      questionDto.MaxScore,
-			CorrectAnswer: sql.NullString{String: questionDto.CorrectAnswer, Valid: true},
-		}
+		return nil
+	})
 
-		questions = append(questions, question)
-
-		// Update the paper's max score
-		paper.MaxScore += question.MaxScore
-	}
-
-	// Bulk insert the questions
-	if err := db.DB.Create(&questions).Error; err != nil {
-		http.Error(w, "Failed to create questions", http.StatusInternalServerError)
-		return
-	}
-
-	// Update the paper with the new question counts
-	paper.QuestionCounts, err = json.Marshal(questionCounts)
 	if err != nil {
-		http.Error(w, "Failed to marshal question counts", http.StatusInternalServerError)
-		return
-	}
-
-	if err := db.DB.Save(&paper).Error; err != nil {
-		http.Error(w, "Failed to update paper", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
 }
 
 func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
@@ -160,80 +202,97 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	questionID := vars["id"]
 
-	var question models.Question
-	if err := db.DB.Take(&question, questionID).Error; err != nil {
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var question models.Question
+		if err := tx.Take(&question, questionID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				http.Error(w, "Question not found", http.StatusNotFound)
+				return err
+			}
+			return err
+		}
+
+		// Validate the paperId
+		var paper models.Paper
+		if err := tx.Take(&paper, question.PaperID).Error; err != nil {
+			return err
+		}
+
+		isUpdated := false
+
+		// Update the fields based on the provided data
+		if updateDto.Question != nil {
+			switch question.Type {
+			case constants.QUESTION_TYPE_MCQ:
+				var mcq models.MCQQuestion
+				if err := json.Unmarshal(updateDto.Question, &mcq); err != nil {
+					http.Error(w, "Invalid MCQ question format", http.StatusBadRequest)
+					return err
+				}
+				question.Question = updateDto.Question
+			case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
+				var general models.GeneralQuestion
+				if err := json.Unmarshal(updateDto.Question, &general); err != nil {
+					http.Error(w, "Invalid general question format", http.StatusBadRequest)
+					return err
+				}
+				question.Question = updateDto.Question
+			}
+			isUpdated = true
+		}
+
+		if updateDto.CategoryID != nil {
+			// Validate category exists
+			if *updateDto.CategoryID != 0 {
+				var category models.QuestionCategory
+				if err := tx.Where("id = ? AND paper_id = ?", *updateDto.CategoryID, question.PaperID).
+					First(&category).Error; err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						http.Error(w, "Category not found", http.StatusBadRequest)
+						return err
+					}
+					return err
+				}
+			}
+			question.CategoryID = updateDto.CategoryID
+			isUpdated = true
+		}
+
+		if updateDto.Tags != nil {
+			question.Tags = updateDto.Tags
+			isUpdated = true
+		}
+
+		if updateDto.CorrectAnswer != "" {
+			question.CorrectAnswer = sql.NullString{String: updateDto.CorrectAnswer, Valid: true}
+			isUpdated = true
+		}
+
+		if updateDto.MaxScore != 0 && updateDto.MaxScore != question.MaxScore {
+			paper.MaxScore = paper.MaxScore - question.MaxScore + updateDto.MaxScore
+			question.MaxScore = updateDto.MaxScore
+
+			if err := tx.Save(&paper).Error; err != nil {
+				return err
+			}
+			isUpdated = true
+		}
+
+		if isUpdated {
+			if err := tx.Save(&question).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			http.Error(w, "Question not found", http.StatusNotFound)
-		} else {
-			http.Error(w, "Failed to find question", http.StatusInternalServerError)
+			return
 		}
+		http.Error(w, "Failed to update question", http.StatusInternalServerError)
 		return
-	}
-
-	// Validate the paperId
-	var paper models.Paper
-	if err := db.DB.Take(&paper, question.PaperID).Error; err != nil {
-		http.Error(w, "Failed to find paper", http.StatusInternalServerError)
-		return
-	}
-
-	isUpdated := false
-
-	// Update the fields based on the provided data
-	if updateDto.Question != nil {
-		switch question.Type {
-		case constants.QUESTION_TYPE_MCQ:
-			var mcq models.MCQQuestion
-			if err := json.Unmarshal(updateDto.Question, &mcq); err != nil {
-				http.Error(w, "Invalid MCQ question format", http.StatusBadRequest)
-				return
-			}
-			question.Question = updateDto.Question
-		case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
-			var general models.GeneralQuestion
-			if err := json.Unmarshal(updateDto.Question, &general); err != nil {
-				http.Error(w, "Invalid general question format", http.StatusBadRequest)
-				return
-			}
-			question.Question = updateDto.Question
-		default:
-			http.Error(w, "Invalid question type", http.StatusBadRequest)
-			return
-		}
-		isUpdated = true
-	}
-
-	if updateDto.Tags != nil {
-		question.Tags = updateDto.Tags
-		isUpdated = true
-	}
-
-	if updateDto.CorrectAnswer != "" {
-		question.CorrectAnswer = sql.NullString{String: updateDto.CorrectAnswer, Valid: true}
-		isUpdated = true
-	}
-
-	if updateDto.Category != "" {
-		question.Category = sql.NullString{String: updateDto.Category, Valid: true}
-		isUpdated = true
-	}
-
-	if updateDto.MaxScore != 0 && updateDto.MaxScore != question.MaxScore {
-		paper.MaxScore = paper.MaxScore - question.MaxScore + updateDto.MaxScore
-		question.MaxScore = updateDto.MaxScore
-
-		if err := db.DB.Save(&paper).Error; err != nil {
-			http.Error(w, "Failed to update paper", http.StatusInternalServerError)
-			return
-		}
-		isUpdated = true
-	}
-
-	if isUpdated {
-		if err := db.DB.Save(&question).Error; err != nil {
-			http.Error(w, "Failed to update question", http.StatusInternalServerError)
-			return
-		}
 	}
 
 	w.WriteHeader(http.StatusOK)

@@ -12,13 +12,14 @@ type QuestionCount struct {
 }
 
 type Paper struct {
-	ID              int             `gorm:"primaryKey"`
-	Title           string          `gorm:"type:varchar(255);not null;default:'Untitled Paper'"`
-	MaxScore        int             `gorm:"default:0"`
-	DurationMinutes int             `gorm:"not null"`
-	Questions       []Question      `gorm:"foreignKey:PaperID"`
-	PaperOwnership  PaperOwnership  `gorm:"foreignKey:PaperID"`
-	QuestionCounts  json.RawMessage `gorm:"type:json;default:'{\"mcq\":0,\"short\":0,\"long\":0}'"`
+	ID              int                `gorm:"primaryKey"`
+	Title           string             `gorm:"type:varchar(255);not null;default:'Untitled Paper'"`
+	MaxScore        int                `gorm:"default:0"`
+	DurationMinutes int                `gorm:"not null"`
+	Questions       []Question         `gorm:"foreignKey:PaperID"`
+	Categories      []QuestionCategory `gorm:"foreignKey:PaperID"`
+	PaperOwnership  PaperOwnership     `gorm:"foreignKey:PaperID"`
+	QuestionCounts  json.RawMessage    `gorm:"type:json;default:'{\"mcq\":0,\"short\":0,\"long\":0}'"`
 }
 
 func (p *Paper) GetQuestionCounts() (QuestionCount, error) {

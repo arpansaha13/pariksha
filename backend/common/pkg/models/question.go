@@ -20,14 +20,15 @@ type GeneralQuestion struct {
 type Question struct {
 	ID            int             `gorm:"primaryKey"`
 	Question      json.RawMessage `gorm:"type:json;not null"`
-	Category      sql.NullString  `gorm:"type:varchar(255)"`
+	CategoryID    *int            `gorm:"default:null"`
 	Type          string          `gorm:"type:varchar(20);not null;check:type IN ('MCQ', 'SHORT', 'LONG')"`
 	Tags          json.RawMessage `gorm:"type:json;default:'[]'"`
 	PaperID       int
-	MaxScore      int            `gorm:"not null"`
-	CorrectAnswer sql.NullString `gorm:"type:text"`
-	Paper         Paper          `gorm:"foreignKey:PaperID"`
-	Answers       []Answer       `gorm:"foreignKey:QuestionID"`
+	MaxScore      int              `gorm:"not null"`
+	CorrectAnswer sql.NullString   `gorm:"type:text"`
+	Paper         Paper            `gorm:"foreignKey:PaperID"`
+	Category      QuestionCategory `gorm:"foreignKey:CategoryID"`
+	Answers       []Answer         `gorm:"foreignKey:QuestionID"`
 }
 
 // Unmarshal the raw JSON data into the appropriate struct based on the Type field
