@@ -32,6 +32,7 @@ func SetupRouter() *mux.Router {
 	// Paper Routes
 	protectedRouter.HandleFunc("/papers", handlers.GetUserPapers).Methods("GET", "OPTIONS")
 	protectedRouter.HandleFunc("/papers", handlers.CreatePaper).Methods("POST", "OPTIONS")
+	protectedRouter.HandleFunc("/papers/{id}", handlers.GetPaper).Methods("GET", "OPTIONS")
 	protectedRouter.HandleFunc("/papers/{id}", handlers.UpdatePaper).Methods("PATCH", "OPTIONS")
 	protectedRouter.HandleFunc("/papers/{id}/questions", handlers.GetPaperQuestions).Methods("GET", "OPTIONS")
 	protectedRouter.HandleFunc("/papers/{id}/questions", handlers.CreatePaperQuestions).Methods("POST", "OPTIONS")

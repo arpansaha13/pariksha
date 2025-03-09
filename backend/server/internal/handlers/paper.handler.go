@@ -19,10 +19,15 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int)
 
 	var papers []models.Paper
-	err := db.DB.Joins(
-		"INNER JOIN paper_ownerships ON paper_ownerships.paper_id = papers.id AND paper_ownerships.user_id = ?",
-		userID,
-	).Find(&papers).Error
+	err := db.DB.
+		Joins("INNER JOIN paper_ownerships ON paper_ownerships.paper_id = papers.id").
+		Where("paper_ownerships.user_id = ?", userID).
+		Preload("PaperOwnership", "user_id = ?", userID).
+		Preload("Categories", func(db *gorm.DB) *gorm.DB {
+			return db.Order("question_categories.order ASC")
+		}).
+		Find(&papers).Error
+
 	if err != nil {
 		http.Error(w, "Failed to retrieve papers", http.StatusInternalServerError)
 		return
@@ -30,11 +35,22 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 
 	var response []dtos.PaperResponse
 	for _, paper := range papers {
+		categories := make([]dtos.QuestionCategoryResponse, len(paper.Categories))
+		for i, category := range paper.Categories {
+			categories[i] = dtos.QuestionCategoryResponse{
+				ID:    category.ID,
+				Name:  category.Name,
+				Order: category.Order,
+			}
+		}
+
 		response = append(response, dtos.PaperResponse{
-			ID:             paper.ID,
-			Title:          paper.Title,
-			MaxScore:       paper.MaxScore,
-			QuestionCounts: paper.QuestionCounts,
+			ID:              paper.ID,
+			Title:           paper.Title,
+			MaxScore:        paper.MaxScore,
+			DurationMinutes: paper.DurationMinutes,
+			QuestionCounts:  paper.QuestionCounts,
+			Categories:      categories,
 			PaperOwnership: dtos.PaperOwnershipResponse{
 				ID:   paper.PaperOwnership.ID,
 				Path: paper.PaperOwnership.Path,
@@ -133,4 +149,56 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func GetPaper(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	paperID := vars["id"]
+	userID := r.Context().Value(middlewares.UserIDKey).(int)
+
+	var paper models.Paper
+	err := db.DB.Preload("PaperOwnership", "user_id = ?", userID).
+		Preload("Categories", func(db *gorm.DB) *gorm.DB {
+			return db.Order("question_categories.order ASC")
+		}).
+		First(&paper, paperID).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			http.Error(w, "Paper not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to retrieve paper", http.StatusInternalServerError)
+		return
+	}
+
+	// Check if user has access to this paper
+	if paper.PaperOwnership.ID == 0 {
+		http.Error(w, "Paper not found", http.StatusNotFound)
+		return
+	}
+
+	categories := make([]dtos.QuestionCategoryResponse, len(paper.Categories))
+	for i, category := range paper.Categories {
+		categories[i] = dtos.QuestionCategoryResponse{
+			ID:    category.ID,
+			Name:  category.Name,
+			Order: category.Order,
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(dtos.PaperResponse{
+		ID:              paper.ID,
+		Title:           paper.Title,
+		MaxScore:        paper.MaxScore,
+		DurationMinutes: paper.DurationMinutes,
+		QuestionCounts:  paper.QuestionCounts,
+		Categories:      categories,
+		PaperOwnership: dtos.PaperOwnershipResponse{
+			ID:   paper.PaperOwnership.ID,
+			Path: paper.PaperOwnership.Path,
+			Type: paper.PaperOwnership.Type,
+		},
+	})
 }
