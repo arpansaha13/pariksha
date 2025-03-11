@@ -20,6 +20,7 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
+    "@arpansaha13/utils": "^0.8.0",
     "@iconify-json/twemoji": "^1.2.2",
     "@nuxt/fonts": "^0.0.1",
     "@nuxt/image": "^1.9.0",

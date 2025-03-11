@@ -1,4 +1,4 @@
-import type { Paper } from '~/types/models'
+import type { Paper } from '~/types/paper'
 
 export async function createPaper() {
   const res = await $fetch<string>('/api/papers', {

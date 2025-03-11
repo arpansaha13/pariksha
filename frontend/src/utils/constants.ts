@@ -14,3 +14,12 @@ export enum CookieNames {
   CSRF_TOKEN = 'csrftoken',
   TOKEN = 'token',
 }
+
+export const AsyncDataKeys = {
+  PAPERS: 'PAPERS',
+  PAPERS_PAPER: (paperId: number) => `PAPERS_PAPER_${paperId}`,
+  PAPERS_PAPER_QUESTIONS: (paperId: number) =>
+    `PAPERS_PAPER_${paperId}_QUESTIONS`,
+  PAPERS_PAPER_CATEGORIES: (paperId: number) =>
+    `PAPERS_PAPER_${paperId}_CATEGORIES`,
+}

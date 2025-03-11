@@ -19,6 +19,30 @@
           <div>
             <h2 class="text-sm font-medium">{{ paper.title }}</h2>
           </div>
+          <div class="invisible space-x-1.5 group-hover:visible">
+            <UTooltip text="Open">
+              <UButton
+                :to="`/papers/${paper.id}`"
+                icon="i-heroicons-arrow-right-end-on-rectangle"
+                size="xs"
+                color="white"
+                square
+                variant="solid"
+                no-prefetch
+              />
+            </UTooltip>
+            <UTooltip text="Edit">
+              <UButton
+                :to="`/papers/${paper.id}/edit`"
+                icon="i-heroicons-pencil-square"
+                size="xs"
+                color="white"
+                square
+                variant="solid"
+                no-prefetch
+              />
+            </UTooltip>
+          </div>
         </li>
       </ul>
     </UCard>

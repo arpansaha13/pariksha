@@ -1,5 +1,4 @@
-import type { Paper } from '~/types/models'
-import { AsyncDataKeys } from './async-data-keys'
+import type { Paper } from '~/types'
 
 export function usePapers() {
   const fetchOptions = getFetchOptions()
