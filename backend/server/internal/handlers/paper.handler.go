@@ -23,9 +23,6 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 		Joins("INNER JOIN paper_ownerships ON paper_ownerships.paper_id = papers.id").
 		Where("paper_ownerships.user_id = ?", userID).
 		Preload("PaperOwnership", "user_id = ?", userID).
-		Preload("Categories", func(db *gorm.DB) *gorm.DB {
-			return db.Order("question_categories.order ASC")
-		}).
 		Find(&papers).Error
 
 	if err != nil {
@@ -35,22 +32,12 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 
 	var response []dtos.PaperResponse
 	for _, paper := range papers {
-		categories := make([]dtos.QuestionCategoryResponse, len(paper.Categories))
-		for i, category := range paper.Categories {
-			categories[i] = dtos.QuestionCategoryResponse{
-				ID:    category.ID,
-				Name:  category.Name,
-				Order: category.Order,
-			}
-		}
-
 		response = append(response, dtos.PaperResponse{
 			ID:              paper.ID,
 			Title:           paper.Title,
 			MaxScore:        paper.MaxScore,
 			DurationMinutes: paper.DurationMinutes,
 			QuestionCounts:  paper.QuestionCounts,
-			Categories:      categories,
 			PaperOwnership: dtos.PaperOwnershipResponse{
 				ID:   paper.PaperOwnership.ID,
 				Path: paper.PaperOwnership.Path,
@@ -157,11 +144,7 @@ func GetPaper(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int)
 
 	var paper models.Paper
-	err := db.DB.Preload("PaperOwnership", "user_id = ?", userID).
-		Preload("Categories", func(db *gorm.DB) *gorm.DB {
-			return db.Order("question_categories.order ASC")
-		}).
-		First(&paper, paperID).Error
+	err := db.DB.Preload("PaperOwnership", "user_id = ?", userID).Take(&paper, paperID).Error
 
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -178,15 +161,6 @@ func GetPaper(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	categories := make([]dtos.QuestionCategoryResponse, len(paper.Categories))
-	for i, category := range paper.Categories {
-		categories[i] = dtos.QuestionCategoryResponse{
-			ID:    category.ID,
-			Name:  category.Name,
-			Order: category.Order,
-		}
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(dtos.PaperResponse{
 		ID:              paper.ID,
@@ -194,7 +168,6 @@ func GetPaper(w http.ResponseWriter, r *http.Request) {
 		MaxScore:        paper.MaxScore,
 		DurationMinutes: paper.DurationMinutes,
 		QuestionCounts:  paper.QuestionCounts,
-		Categories:      categories,
 		PaperOwnership: dtos.PaperOwnershipResponse{
 			ID:   paper.PaperOwnership.ID,
 			Path: paper.PaperOwnership.Path,

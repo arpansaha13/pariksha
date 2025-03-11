@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
@@ -74,7 +75,12 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 
 func CreatePaperQuestions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	paperID := vars["id"]
+	paperID, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		http.Error(w, "Invalid request url", http.StatusBadRequest)
+		return
+	}
 
 	var questionDtos []dtos.CreateQuestionDto
 	if err := json.NewDecoder(r.Body).Decode(&questionDtos); err != nil {
@@ -143,7 +149,7 @@ func CreatePaperQuestions(w http.ResponseWriter, r *http.Request) {
 
 			// Create the question
 			question := models.Question{
-				PaperID:       questionDto.PaperID,
+				PaperID:       paperID,
 				Question:      questionData,
 				CategoryID:    questionDto.CategoryID,
 				Type:          questionDto.Type,

@@ -20,7 +20,6 @@ type QuestionResponse struct {
 }
 
 type CreateQuestionDto struct {
-	PaperID       int             `json:"paper_id" validate:"required"`
 	Question      json.RawMessage `json:"question" validate:"required"`
 	CategoryID    *int            `json:"category_id"`
 	Type          string          `json:"type" validate:"required"`
