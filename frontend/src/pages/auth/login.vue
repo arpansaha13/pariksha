@@ -3,7 +3,7 @@
     <div>
       <Logo class="mx-auto size-20" />
 
-      <h1 class="mb-2 mt-4 text-center text-2xl font-bold">Welcome back!</h1>
+      <h1 class="mt-4 mb-2 text-center text-2xl font-bold">Welcome back!</h1>
 
       <p class="text-center">
         <span>Don't have an account?</span>
@@ -19,17 +19,18 @@
     <UCard class="w-full">
       <UForm :state="loginFormData" @submit.prevent="onSubmit">
         <div class="space-y-4">
-          <UFormGroup label="Email" name="email" required>
+          <UFormField label="Email" name="email" required>
             <UInput
               v-model="loginFormData.email"
-              type="email"
-              placeholder="Enter your email"
-              autocomplete="email"
               required
+              type="email"
+              autocomplete="email"
+              placeholder="Enter your email"
+              class="w-full"
             />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup label="Password" name="password" required>
+          <UFormField label="Password" name="password" required>
             <template #hint>
               <ULink
                 to="/auth/forgot-password"
@@ -41,13 +42,14 @@
             <template #default>
               <UInput
                 v-model="loginFormData.password"
-                type="password"
-                placeholder="Enter your password"
-                autocomplete="current-password"
                 required
+                type="password"
+                autocomplete="current-password"
+                placeholder="Enter your password"
+                class="w-full"
               />
             </template>
-          </UFormGroup>
+          </UFormField>
 
           <UButton type="submit" color="primary" block :loading="loading">
             Login
@@ -84,7 +86,7 @@ async function onSubmit() {
   } catch {
     toast.add({
       id: ToastId.LOGIN_FAILED,
-      color: 'red',
+      color: 'error',
       title: 'Failed to login',
       description: 'Invalid email or password.',
       icon: 'i-heroicons-exclamation-circle',

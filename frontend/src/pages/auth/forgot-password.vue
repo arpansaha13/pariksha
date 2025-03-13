@@ -3,9 +3,9 @@
     <div>
       <Logo class="mx-auto size-20" />
 
-      <h1 class="mb-2 mt-4 text-center text-2xl font-bold">Forgot Password?</h1>
+      <h1 class="mt-4 mb-2 text-center text-2xl font-bold">Forgot Password?</h1>
 
-      <p class="mb-5 text-pretty text-center text-gray-700">
+      <p class="mb-5 text-center text-pretty text-gray-700">
         No worries! Just enter your email address, and we'll promptly send an
         OTP to your inbox to help you reset your password.
       </p>
@@ -24,15 +24,16 @@
     <UCard class="w-full">
       <UForm :state="forgotPasswordFormData" @submit.prevent="onSubmit">
         <div class="space-y-4">
-          <UFormGroup label="Email" name="email">
+          <UFormField label="Email" name="email">
             <UInput
               v-model="forgotPasswordFormData.email"
-              type="email"
-              placeholder="Enter your email"
-              autocomplete="email"
               required
+              type="email"
+              autocomplete="email"
+              placeholder="Enter your email"
+              class="w-full"
             />
-          </UFormGroup>
+          </UFormField>
 
           <UButton type="submit" color="primary" block :loading="loading">
             Send OTP
@@ -80,7 +81,7 @@ async function onSubmit() {
 
     toast.add({
       id: ToastId.FORGOT_PASSWORD_FAILED,
-      color: 'red',
+      color: 'error',
       title: 'Failed to send OTP',
       description: message,
       icon: 'i-heroicons-exclamation-circle',

@@ -6,16 +6,10 @@
         <p class="text-md font-bold">Pariksha</p>
       </div>
 
-      <UVerticalNavigation
-        class="mt-2"
-        :links="links"
-        :ui="{
-          padding: 'px-2.5 py-2',
-        }"
-      />
+      <UNavigationMenu class="mt-2" :items="links" orientation="vertical" />
     </div>
 
-    <div class="flex-grow py-4">
+    <div class="grow py-4">
       <slot />
     </div>
   </UContainer>

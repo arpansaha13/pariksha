@@ -3,7 +3,7 @@
     <div>
       <Logo class="mx-auto size-20" />
 
-      <h1 class="mb-2 mt-4 text-center text-2xl font-bold">
+      <h1 class="mt-4 mb-2 text-center text-2xl font-bold">
         Create your account
       </h1>
 
@@ -22,49 +22,53 @@
       <UForm
         :state="signupFormData"
         :validate="validate"
-        :validate-on="['submit']"
+        :validate-on="['blur']"
         @submit.prevent="onSubmit"
       >
         <div class="space-y-4">
-          <UFormGroup label="Email" name="email" required>
+          <UFormField label="Email" name="email" required>
             <UInput
               v-model="signupFormData.email"
-              type="email"
-              placeholder="Enter your email"
-              autocomplete="email"
               required
+              type="email"
+              autocomplete="email"
+              placeholder="Enter your email"
+              class="w-full"
             />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup label="Confirm email" name="confirmEmail" required>
+          <UFormField label="Confirm email" name="confirmEmail" required>
             <UInput
               v-model="signupFormData.confirmEmail"
-              type="email"
-              placeholder="Re-enter your email"
-              autocomplete="email"
               required
+              type="email"
+              autocomplete="email"
+              placeholder="Re-enter your email"
+              class="w-full"
             />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup label="Password" name="password" required>
+          <UFormField label="Password" name="password" required>
             <UInput
               v-model="signupFormData.password"
-              type="password"
-              placeholder="Enter your password"
-              autocomplete="current-password"
               required
+              type="password"
+              autocomplete="current-password"
+              placeholder="Enter your password"
+              class="w-full"
             />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup label="Confirm password" name="confirmPassword" required>
+          <UFormField label="Confirm password" name="confirmPassword" required>
             <UInput
               v-model="signupFormData.confirmPassword"
-              type="password"
-              placeholder="Re-enter your password"
-              autocomplete="current-password"
               required
+              type="password"
+              autocomplete="current-password"
+              placeholder="Re-enter your password"
+              class="w-full"
             />
-          </UFormGroup>
+          </UFormField>
 
           <UButton type="submit" color="primary" block :loading="loading">
             Create account
@@ -76,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import type { FormError } from '#ui/types'
+import type { FormError } from '@nuxt/ui'
 
 interface SignUpFormData {
   email: string
@@ -105,15 +109,15 @@ const signupFormData = useState<SignUpFormData>(() => ({
 
 const loading = useState(() => false)
 
-function validate(formState: Readonly<SignUpFormData>): FormError[] {
+function validate(formState: Partial<SignUpFormData>): FormError[] {
   const errors = []
 
   if (formState.email !== formState.confirmEmail) {
-    errors.push({ path: 'confirmEmail', message: 'Emails do not match' })
+    errors.push({ name: 'confirmEmail', message: 'Emails do not match' })
   }
 
   if (formState.password !== formState.confirmPassword) {
-    errors.push({ path: 'confirmPassword', message: 'Passwords do not match' })
+    errors.push({ name: 'confirmPassword', message: 'Passwords do not match' })
   }
 
   return errors
@@ -139,7 +143,7 @@ async function onSubmit() {
 
     toast.add({
       id: ToastId.SIGNUP_FAILED,
-      color: 'red',
+      color: 'error',
       title: 'Failed to create account',
       description: message,
       icon: 'i-heroicons-exclamation-circle',

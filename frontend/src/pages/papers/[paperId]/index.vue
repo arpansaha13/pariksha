@@ -1,9 +1,7 @@
 <template>
   <UContainer
     as="main"
-    :ui="{
-      base: 'py-4 h-full grid flex-grow grid-cols-3 gap-6 grid-rows-[auto,_1fr]',
-    }"
+    class="grid h-full grow grid-cols-3 grid-rows-[auto_1fr] gap-6 py-4"
   >
     <div v-if="paper" class="col-span-2 flex items-center gap-2">
       <Icon name="i-heroicons-document-text" size="2rem" />
@@ -17,10 +15,10 @@
         label="Start editing"
         icon="i-heroicons-pencil-square"
         size="xs"
-        color="white"
+        color="neutral"
         variant="ghost"
         no-prefetch
-        :ui="{ base: 'ml-auto' }"
+        class="ml-auto"
       />
 
       <UButton
@@ -28,7 +26,7 @@
         label="Back"
         icon="i-heroicons-arrow-uturn-left"
         size="xs"
-        color="white"
+        color="neutral"
         variant="ghost"
       />
     </div>
@@ -40,10 +38,16 @@
         v-if="categoryLinks !== null"
         class="flex items-center justify-between border-b border-gray-200 dark:border-gray-800"
       >
-        <UHorizontalNavigation :links="categoryLinks" />
+        <UNavigationMenu
+          :items="categoryLinks"
+          color="primary"
+          orientation="horizontal"
+          variant="link"
+          highlight
+        />
       </div>
 
-      <UCard v-if="question" :ui="{ base: 'flex-grow' }">
+      <UCard v-if="question" class="grow">
         <QuestionMcq
           v-if="question.type === QuestionType.MCQ"
           :question="question.question"
@@ -51,21 +55,21 @@
         <QuestionNonMcq v-else :question="question.question" />
       </UCard>
 
-      <UCard
-        :ui="{ body: { base: 'flex', padding: 'px-4 py-4 sm:px-6 sm:py-5' } }"
-      >
+      <UCard :ui="{ body: 'flex' }">
         <UButton
           v-if="prevQuestionId"
-          color="white"
           label="Previous"
+          color="neutral"
+          variant="outline"
           :to="{ query: { ...route.query, question: prevQuestionId } }"
         />
         <UButton
           v-if="nextQuestionId"
-          color="white"
           label="Next"
+          color="neutral"
+          variant="outline"
           :to="{ query: { ...route.query, question: nextQuestionId } }"
-          :ui="{ base: 'ml-auto' }"
+          class="ml-auto"
         />
       </UCard>
     </div>
@@ -78,13 +82,10 @@
           <li v-for="(q, i) of currentCategoryQuestions" :key="q.id">
             <UButton
               :to="{ query: { ...route.query, question: q.id } }"
-              :color="currentQuestionId === q.id ? 'primary' : 'white'"
-              :variant="currentQuestionId === q.id ? 'outline' : 'solid'"
+              :color="currentQuestionId === q.id ? 'primary' : 'neutral'"
+              :variant="currentQuestionId === q.id ? 'subtle' : 'outline'"
               size="lg"
-              :ui="{
-                base: 'size-10 flex items-center justify-center',
-                rounded: 'rounded-full',
-              }"
+              class="flex size-10 items-center justify-center rounded-full"
             >
               {{ i + 1 }}
             </UButton>
@@ -109,28 +110,30 @@ const { data: paper } = await usePaper(paperId)
 const { data: groupedQuestions } = await usePaperQuestions(paperId)
 const { data: sortedCategories } = await usePaperCategories(paperId)
 
-const lastVisitedQuestionForCategory = ref({})
+const lastVisitedQuestionForCategory = ref<Record<number, string>>({})
 
 watch(
   route,
   newRoute => {
     const query = newRoute.query
-    if (isNullOrUndefined(query)) return
-    lastVisitedQuestionForCategory.value[query.category] = query.question
+    if (isNullOrUndefined(query) || isNullOrUndefined(query.category)) return
+    const categoryId = parseInt(query.category as string)
+    lastVisitedQuestionForCategory.value[categoryId] = query.question as string
   },
   { immediate: true }
 )
 
 function getQuestionIdForCategoryId(categoryId: number) {
   const categoryQuestions = groupedQuestions.value?.[categoryId]
-  let questionId = lastVisitedQuestionForCategory.value[categoryId]
-  if (!questionId) questionId = categoryQuestions?.[0].id.toString()
+  if (isNullOrUndefined(categoryQuestions)) return
+  const questionId =
+    lastVisitedQuestionForCategory.value[categoryId] ?? categoryQuestions[0].id
   return questionId
 }
 
 // Add initial `category` and `question` queries, if missing
 if (!route.query.category && sortedCategories.value?.length) {
-  const categoryId = sortedCategories.value[0].id.toString()
+  const categoryId = sortedCategories.value[0].id
   const questionId = getQuestionIdForCategoryId(categoryId)
   const query = { category: categoryId, question: questionId }
   navigateTo({ query }, { replace: true })
@@ -172,7 +175,7 @@ const currentQuestionIdx = computed(() => {
 })
 
 const question = computed(() => {
-  if (!currentQuestionIdx.value === -1) return null
+  if (currentQuestionIdx.value === -1) return null
   return currentCategoryQuestions.value?.[currentQuestionIdx.value] ?? null
 })
 

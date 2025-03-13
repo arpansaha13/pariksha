@@ -5,9 +5,7 @@
     <UCard
       v-if="papers !== null"
       :ui="{
-        body: {
-          padding: 'p-0 sm:p-0',
-        },
+        body: 'p-0 sm:p-0',
       }"
     >
       <ul class="divide-y">
@@ -24,10 +22,10 @@
               <UButton
                 :to="`/papers/${paper.id}`"
                 icon="i-heroicons-arrow-right-end-on-rectangle"
-                size="xs"
-                color="white"
+                size="sm"
+                color="neutral"
                 square
-                variant="solid"
+                variant="outline"
                 no-prefetch
               />
             </UTooltip>
@@ -35,10 +33,10 @@
               <UButton
                 :to="`/papers/${paper.id}/edit`"
                 icon="i-heroicons-pencil-square"
-                size="xs"
-                color="white"
+                size="sm"
+                color="neutral"
                 square
-                variant="solid"
+                variant="outline"
                 no-prefetch
               />
             </UTooltip>

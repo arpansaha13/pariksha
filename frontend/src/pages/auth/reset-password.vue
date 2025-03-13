@@ -3,7 +3,7 @@
     <div>
       <Logo class="mx-auto size-20" />
 
-      <h1 class="mb-2 mt-4 text-center text-2xl font-bold">
+      <h1 class="mt-4 mb-2 text-center text-2xl font-bold">
         <span v-if="!isResetComplete">Reset Password</span>
         <template v-else>
           <span>Your password has been reset successfully!</span>
@@ -11,7 +11,7 @@
         </template>
       </h1>
 
-      <p v-if="!isResetComplete" class="text-pretty text-center text-gray-700">
+      <p v-if="!isResetComplete" class="text-center text-pretty text-gray-700">
         Please check your email
         <ClientOnly>
           <span class="font-medium">{{ authStore.forgotPassEmail }}</span>
@@ -20,7 +20,7 @@
       </p>
 
       <template v-else>
-        <p class="mb-4 text-pretty text-center text-gray-700">
+        <p class="mb-4 text-center text-pretty text-gray-700">
           You can now log in to your account with your new password.
         </p>
 
@@ -34,42 +34,45 @@
       <UForm
         :state="resetPasswordFormData"
         :validate="validate"
-        :validate-on="['submit']"
+        :validate-on="['blur']"
         @submit.prevent="onSubmit"
       >
         <div class="space-y-4">
-          <UFormGroup label="OTP" name="otp" required>
+          <UFormField label="OTP" name="otp" required>
             <UInput
               v-model="resetPasswordFormData.otp"
-              type="text"
-              inputmode="numeric"
-              autocomplete="off"
-              maxlength="6"
               required
+              type="text"
+              maxlength="6"
+              autocomplete="off"
+              inputmode="numeric"
+              class="w-full"
             />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup label="New Password" name="newPassword" required>
+          <UFormField label="New Password" name="newPassword" required>
             <UInput
               v-model="resetPasswordFormData.newPassword"
+              required
               type="password"
               autocomplete="new-password"
-              required
+              class="w-full"
             />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup
+          <UFormField
             label="Confirm New Password"
             name="confirmNewPassword"
             required
           >
             <UInput
               v-model="resetPasswordFormData.confirmNewPassword"
+              required
               type="password"
               autocomplete="new-password"
-              required
+              class="w-full"
             />
-          </UFormGroup>
+          </UFormField>
 
           <UButton type="submit" color="primary" block :loading="loading">
             Reset Password
@@ -81,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import type { FormError } from '#ui/types'
+import type { FormError } from '@nuxt/ui'
 
 interface ResetPasswordFormData {
   otp: string
@@ -117,7 +120,7 @@ const resetPasswordFormData = useState<ResetPasswordFormData>(() => ({
 const loading = useState(() => false)
 const isResetComplete = useState(() => false)
 
-function validate(formState: Readonly<ResetPasswordFormData>): FormError[] {
+function validate(formState: Partial<ResetPasswordFormData>): FormError[] {
   const errors = []
 
   if (formState.newPassword !== formState.confirmNewPassword) {
@@ -154,7 +157,7 @@ async function onSubmit() {
 
     toast.add({
       id: ToastId.RESET_PASSWORD_FAILED,
-      color: 'red',
+      color: 'error',
       title: 'Failed to reset password',
       description: message,
       icon: 'i-heroicons-exclamation-circle',

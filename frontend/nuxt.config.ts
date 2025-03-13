@@ -1,14 +1,12 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: [
+    '@nuxt/ui',
     '@vueuse/nuxt',
     '@pinia/nuxt',
-    '@nuxt/ui',
     '@nuxt/image',
     '@nuxt/eslint',
-    '@nuxt/fonts',
     '@nuxt/test-utils/module',
-    'nuxt-headlessui',
     'pinia-plugin-persistedstate/nuxt',
     // '@nuxtjs/html-validator',
   ],
@@ -37,25 +35,11 @@ export default defineNuxtConfig({
     },
   },
 
-  css: ['assets/main.css'],
-
-  ui: {
-    global: true,
-  },
+  css: ['~/assets/css/main.css'],
 
   image: {
     format: ['webp'],
     densities: [1, 2],
-  },
-
-  headlessui: {
-    prefix: 'Headless',
-  },
-
-  colorMode: {
-    preference: 'light',
-    classPrefix: '',
-    classSuffix: '',
   },
 
   // htmlValidator: {

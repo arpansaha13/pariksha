@@ -3,11 +3,11 @@
     <div>
       <Logo class="mx-auto size-20" />
 
-      <h1 class="mb-2 mt-4 text-center text-2xl font-bold">
+      <h1 class="mt-4 mb-2 text-center text-2xl font-bold">
         Verify your email
       </h1>
 
-      <p class="text-pretty text-center">
+      <p class="text-center text-pretty">
         Check your email
         <ClientOnly>
           <strong>{{ authStore.signUpEmail }}</strong>
@@ -20,16 +20,17 @@
     <UCard class="w-full">
       <UForm :state="verificationFormData" @submit.prevent="onSubmit">
         <div class="space-y-4">
-          <UFormGroup label="OTP" name="otp">
+          <UFormField label="OTP" name="otp">
             <UInput
               v-model="verificationFormData.otp"
-              type="text"
-              inputmode="numeric"
-              autocomplete="off"
-              maxlength="6"
               required
+              type="text"
+              maxlength="6"
+              autocomplete="off"
+              inputmode="numeric"
+              class="w-full"
             />
-          </UFormGroup>
+          </UFormField>
 
           <UButton type="submit" color="primary" block :loading="loading">
             Submit
@@ -86,7 +87,7 @@ async function onSubmit() {
 
     toast.add({
       id: ToastId.VERIFY_SIGNUP_FAILED,
-      color: 'red',
+      color: 'error',
       title: 'Failed to verify email',
       description: message,
       icon: 'i-heroicons-exclamation-circle',

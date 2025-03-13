@@ -1,5 +1,5 @@
 <template>
-  <button class="!outline-none" @click="toggleDark">
+  <button class="outline-hidden!" @click="toggleDark">
     <div class="dark:i-carbon:moon i-carbon:sun text-2xl" />
   </button>
 </template>

@@ -4,7 +4,7 @@
 
     <URadioGroup
       v-model="selected"
-      :options="options"
+      :items="options"
       :ui="{
         wrapper: 'ml-3',
         fieldset: 'space-y-1',
