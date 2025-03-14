@@ -1,6 +1,7 @@
 export async function createCategory(paperId: number): Promise<void> {
-  return $fetch(`/api/papers/${paperId}/categories`, {
+  await $fetch(`/api/papers/${paperId}/categories`, {
     method: 'POST',
     ...getFetchOptions(),
   })
+  await refreshNuxtData(AsyncDataKeys.PAPERS_PAPER_CATEGORIES(paperId))
 }

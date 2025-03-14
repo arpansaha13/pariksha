@@ -11,7 +11,7 @@ interface PaperQuestionCounts {
 
 export interface Paper {
   id: number
-  title: number
+  title: string
   maxScore: number
   questionCounts: PaperQuestionCounts
   paperOwnership: {

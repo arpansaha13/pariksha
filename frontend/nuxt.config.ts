@@ -2,6 +2,7 @@
 export default defineNuxtConfig({
   modules: [
     '@nuxt/ui',
+    'reka-ui/nuxt',
     '@vueuse/nuxt',
     '@pinia/nuxt',
     '@nuxt/image',

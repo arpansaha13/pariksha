@@ -5,4 +5,5 @@ export { forgotPassword } from './api/auth/forgot-password'
 export { resetPassword } from './api/auth/reset-password'
 
 export { createPaper } from './api/papers/create-paper'
+export { updatePaper } from './api/papers/update-paper'
 export { createCategory } from './api/papers/create-category'
