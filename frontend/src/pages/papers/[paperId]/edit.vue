@@ -38,15 +38,28 @@
     <div class="col-span-2 flex h-full flex-col gap-y-4">
       <div
         v-if="categoryLinks !== null"
-        class="flex items-center justify-between border-b border-gray-200 dark:border-gray-800"
+        class="flex items-center justify-between gap-x-2 border-b border-gray-200 dark:border-gray-800"
       >
-        <UNavigationMenu
-          :items="categoryLinks"
-          color="primary"
-          orientation="horizontal"
-          variant="link"
-          highlight
-        />
+        <!-- subtract button-width and gap -->
+        <ScrollAreaRoot class="max-w-[calc(100%-44px)]">
+          <ScrollAreaViewport>
+            <UNavigationMenu
+              :items="categoryLinks"
+              color="primary"
+              orientation="horizontal"
+              variant="link"
+              highlight
+            />
+          </ScrollAreaViewport>
+          <ScrollAreaScrollbar
+            class="flex touch-none bg-white p-0.5 transition-colors ease-out select-none data-[orientation=horizontal]:h-2 data-[orientation=horizontal]:flex-col"
+            orientation="horizontal"
+          >
+            <ScrollAreaThumb
+              class="relative flex-1 rounded-sm bg-gray-200 transition-colors before:absolute before:top-1/2 before:left-1/2 before:h-full before:w-full before:-translate-x-1/2 before:-translate-y-1/2 before:content-[''] hover:bg-gray-300"
+            />
+          </ScrollAreaScrollbar>
+        </ScrollAreaRoot>
 
         <UModal
           title="Manage categories"

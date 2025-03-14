@@ -14,7 +14,7 @@
         }"
         label="Start editing"
         icon="i-heroicons-pencil-square"
-        size="xs"
+        size="sm"
         color="neutral"
         variant="ghost"
         no-prefetch
@@ -25,7 +25,7 @@
         to="/papers"
         label="Back"
         icon="i-heroicons-arrow-uturn-left"
-        size="xs"
+        size="sm"
         color="neutral"
         variant="ghost"
       />
@@ -34,18 +34,28 @@
     <div />
 
     <div class="col-span-2 flex h-full flex-col gap-y-4">
-      <div
+      <ScrollAreaRoot
         v-if="categoryLinks !== null"
         class="flex items-center justify-between border-b border-gray-200 dark:border-gray-800"
       >
-        <UNavigationMenu
-          :items="categoryLinks"
-          color="primary"
+        <ScrollAreaViewport>
+          <UNavigationMenu
+            :items="categoryLinks"
+            color="primary"
+            orientation="horizontal"
+            variant="link"
+            highlight
+          />
+        </ScrollAreaViewport>
+        <ScrollAreaScrollbar
+          class="flex touch-none bg-white p-0.5 transition-colors ease-out select-none data-[orientation=horizontal]:h-2 data-[orientation=horizontal]:flex-col"
           orientation="horizontal"
-          variant="link"
-          highlight
-        />
-      </div>
+        >
+          <ScrollAreaThumb
+            class="relative flex-1 rounded-sm bg-gray-200 transition-colors before:absolute before:top-1/2 before:left-1/2 before:h-full before:w-full before:-translate-x-1/2 before:-translate-y-1/2 before:content-[''] hover:bg-gray-300"
+          />
+        </ScrollAreaScrollbar>
+      </ScrollAreaRoot>
 
       <UCard v-if="question" class="grow">
         <QuestionMcq
