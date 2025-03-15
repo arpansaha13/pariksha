@@ -98,12 +98,14 @@
                 :default-value="category.name"
                 class="grow"
                 placeholder=""
-                @submit="updatePaperTitle"
+                @submit="value => handleUpdateCategory(category, value)"
               >
                 <EditableArea
                   :class="[
-                    'border-b border-gray-200 px-2 py-2 text-sm transition-colors dark:border-gray-800',
-                    isEditing && 'border-primary-500',
+                    'px-2 py-2 text-sm transition-colors dark:border-gray-800',
+                    isEditing
+                      ? 'border-primary-500 border-b-2'
+                      : 'border-b border-gray-200',
                   ]"
                 >
                   <EditablePreview class="" />
@@ -292,6 +294,7 @@ const nextQuestionId = computed(() => {
 
 const editablePaperTitle = ref(paper.value!.title)
 function updatePaperTitle() {
+  editablePaperTitle.value.trim()
   if (!editablePaperTitle.value) {
     editablePaperTitle.value = 'Untitled Paper'
   }
@@ -335,5 +338,17 @@ async function doDeleteCategory(categoryId: number) {
   }
 
   await deleteCategory(categoryId, paperId)
+}
+
+async function handleUpdateCategory(
+  category: QuestionCategory,
+  newName: string | null | undefined
+) {
+  // If empty name, use default "Category {order}"
+  const name = newName?.trim() || `Category ${category.order}`
+
+  if (name !== category.name) {
+    await updateCategory(category.id, paperId, { name })
+  }
 }
 </script>

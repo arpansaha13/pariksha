@@ -4,11 +4,13 @@ interface UpdateCategoryBody {
 
 export async function updateCategory(
   categoryId: number,
+  paperId: number,
   body: UpdateCategoryBody
 ): Promise<void> {
-  return $fetch(`/api/categories/${categoryId}`, {
-    method: 'POST',
+  await $fetch(`/api/categories/${categoryId}`, {
+    method: 'PATCH',
     body,
     ...getFetchOptions(),
   })
+  await refreshNuxtData(AsyncDataKeys.PAPERS_PAPER_CATEGORIES(paperId))
 }
