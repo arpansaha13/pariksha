@@ -118,6 +118,9 @@
                 square
                 variant="soft"
                 class="invisible group-hover:visible"
+                loading-auto
+                :disabled="sortedCategories?.length === 1"
+                @click="handleDeleteCategory(category)"
               />
             </div>
           </template>
@@ -185,18 +188,21 @@
 
 <script setup lang="ts">
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import { QuestionType } from '~/types'
+import { ConfirmModal } from '#components'
+import { QuestionType, type QuestionCategory } from '~/types'
 
 definePageMeta({
   layout: 'cover',
 })
 
 const route = useRoute()
+const overlay = useOverlay()
 const paperId = parseInt(route.params.paperId as string)
 const { data: paper } = await usePaper(paperId)
 const { data: groupedQuestions } = await usePaperQuestions(paperId)
 const { data: sortedCategories } = await usePaperCategories(paperId)
 
+const confirmModal = overlay.create(ConfirmModal)
 const lastVisitedQuestionForCategory = ref<Record<number, string>>({})
 
 watch(
@@ -296,4 +302,38 @@ function updatePaperTitle() {
 watch(paper, newPaper => {
   editablePaperTitle.value = newPaper!.title
 })
+
+async function handleDeleteCategory(category: QuestionCategory) {
+  let shouldDelete = true
+
+  // If category has questions, then show a confirmation modal
+  const categoryQuestions = groupedQuestions.value![category.id]
+  if (categoryQuestions && categoryQuestions.length > 0) {
+    shouldDelete = await confirmModal.open({
+      title: 'Confirm category deletion',
+      description: `This category "${category.name}" has ${categoryQuestions.length} questions which will be deleted along with it.`,
+    })
+  }
+
+  if (shouldDelete) {
+    return doDeleteCategory(category.id)
+  }
+}
+async function doDeleteCategory(categoryId: number) {
+  // If deleting current category, switch to another category first
+  if (currentCategoryId.value === categoryId) {
+    // Find another category to switch to
+    const nextCategory = sortedCategories.value?.find(c => c.id !== categoryId)
+    if (nextCategory) {
+      await navigateTo({
+        query: {
+          category: nextCategory.id,
+          question: getQuestionIdForCategoryId(nextCategory.id),
+        },
+      })
+    }
+  }
+
+  await deleteCategory(categoryId, paperId)
+}
 </script>

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 
+	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/server/internal/config/db"
 	"pariksha/server/internal/config/validate"
@@ -169,6 +171,87 @@ func GetPaperCategories(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func DeleteCategory(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	categoryID := vars["id"]
+
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		// Get category to verify it exists
+		var category models.QuestionCategory
+		if err := tx.Take(&category, categoryID).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				http.Error(w, "Category not found", http.StatusNotFound)
+				return err
+			}
+			return err
+		}
+
+		// Get paper to update question counts
+		var paper models.Paper
+		if err := tx.First(&paper, category.PaperID).Error; err != nil {
+			return err
+		}
+
+		// Get questions in this category
+		var questions []models.Question
+		if err := tx.Where("category_id = ?", categoryID).Find(&questions).Error; err != nil {
+			return err
+		}
+
+		// Update paper's question counts
+		var questionCounts models.QuestionCount
+		if err := json.Unmarshal(paper.QuestionCounts, &questionCounts); err != nil {
+			return err
+		}
+
+		// Decrement counts based on questions being deleted
+		for _, q := range questions {
+			switch q.Type {
+			case constants.QUESTION_TYPE_MCQ:
+				questionCounts.MCQ--
+			case constants.QUESTION_TYPE_SHORT:
+				questionCounts.Short--
+			case constants.QUESTION_TYPE_LONG:
+				questionCounts.Long--
+			}
+			paper.MaxScore -= q.MaxScore
+		}
+
+		// Update paper with new counts
+		newCounts, err := json.Marshal(questionCounts)
+		if err != nil {
+			return err
+		}
+		paper.QuestionCounts = newCounts
+
+		if err := tx.Save(&paper).Error; err != nil {
+			return err
+		}
+
+		// Delete all questions in this category
+		if err := tx.Where("category_id = ?", categoryID).Delete(&models.Question{}).Error; err != nil {
+			return err
+		}
+
+		// Delete the category
+		if err := tx.Delete(&category).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return
+		}
+		http.Error(w, "Failed to delete category", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func mustAtoi(s string) int {
