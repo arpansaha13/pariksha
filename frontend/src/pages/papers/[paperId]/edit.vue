@@ -93,12 +93,12 @@
 
               <EditableRoot
                 v-slot="{ isEditing }"
+                v-model="categoryNames[category.id]"
                 activation-mode="focus"
                 submit-mode="both"
-                :default-value="category.name"
                 class="grow"
                 placeholder=""
-                @submit="value => handleUpdateCategory(category, value)"
+                @submit="() => handleUpdateCategory(category)"
               >
                 <EditableArea
                   :class="[
@@ -340,15 +340,26 @@ async function doDeleteCategory(categoryId: number) {
   await deleteCategory(categoryId, paperId)
 }
 
-async function handleUpdateCategory(
-  category: QuestionCategory,
-  newName: string | null | undefined
-) {
+const categoryNames = ref<Record<number, string>>({})
+async function handleUpdateCategory(category: QuestionCategory) {
+  categoryNames.value[category.id].trim()
+
   // If empty name, use default "Category {order}"
-  const name = newName?.trim() || `Category ${category.order}`
+  const name = categoryNames.value[category.id] || `Category ${category.order}`
 
   if (name !== category.name) {
     await updateCategory(category.id, paperId, { name })
   }
 }
+watch(
+  sortedCategories,
+  newCategories => {
+    if (!newCategories) return
+
+    newCategories.forEach(category => {
+      categoryNames.value[category.id] = category.name
+    })
+  },
+  { immediate: true }
+)
 </script>
