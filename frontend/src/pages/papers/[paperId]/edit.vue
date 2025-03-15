@@ -67,6 +67,7 @@
           :ui="{
             body: 'space-y-2',
           }"
+          @after:leave="handleReorder"
         >
           <UTooltip text="Manage categories">
             <UButton
@@ -79,52 +80,66 @@
           </UTooltip>
 
           <template #body>
-            <div
-              v-for="category of sortedCategories"
-              :key="category.id"
-              class="group flex items-center gap-2"
-            >
-              <div class="flex size-4">
-                <Icon
-                  name="i-heroicons-bars-2"
-                  class="m-auto cursor-grab text-gray-400 transition-colors active:cursor-grabbing"
-                />
-              </div>
-
-              <EditableRoot
-                v-slot="{ isEditing }"
-                v-model="categoryNames[category.id]"
-                activation-mode="focus"
-                submit-mode="both"
-                class="grow"
-                placeholder=""
-                @submit="() => handleUpdateCategory(category)"
+            <ul>
+              <Draggable
+                v-model="editableCategoriesCopy"
+                item-key="id"
+                group="category-editable"
+                handle=".draggable-handle"
+                ghost-class="draggable-ghost"
+                drag-class="draggable-hold"
+                :animation="250"
+                @start="dragging = true"
+                @end="dragging = false"
               >
-                <EditableArea
-                  :class="[
-                    'px-2 py-2 text-sm transition-colors dark:border-gray-800',
-                    isEditing
-                      ? 'border-primary-500 border-b-2'
-                      : 'border-b border-gray-200',
-                  ]"
-                >
-                  <EditablePreview class="" />
-                  <EditableInput class="outline-none" />
-                </EditableArea>
-              </EditableRoot>
+                <template #item="{ element: category }">
+                  <li class="group flex items-center gap-2 rounded-sm">
+                    <div class="draggable-handle flex size-5 cursor-grab">
+                      <Icon
+                        name="i-heroicons-bars-2"
+                        class="m-auto text-gray-400 transition-colors"
+                      />
+                    </div>
 
-              <UButton
-                icon="i-heroicons-trash"
-                size="sm"
-                color="error"
-                square
-                variant="soft"
-                class="invisible group-hover:visible"
-                loading-auto
-                :disabled="sortedCategories?.length === 1"
-                @click="handleDeleteCategory(category)"
-              />
-            </div>
+                    <EditableRoot
+                      v-slot="{ isEditing }"
+                      v-model="categoryNames[category.id]"
+                      activation-mode="focus"
+                      submit-mode="both"
+                      class="grow"
+                      placeholder=""
+                      @submit="() => handleUpdateCategory(category)"
+                    >
+                      <EditableArea
+                        :class="[
+                          'px-2 py-2 text-sm transition-colors dark:border-gray-800',
+                          isEditing
+                            ? 'border-primary-500 border-b-2'
+                            : 'border-b border-gray-200',
+                        ]"
+                      >
+                        <EditablePreview class="" />
+                        <EditableInput class="outline-none" />
+                      </EditableArea>
+                    </EditableRoot>
+
+                    <div v-show="!dragging">
+                      <UButton
+                        icon="i-heroicons-trash"
+                        size="sm"
+                        color="error"
+                        square
+                        variant="soft"
+                        class="invisible group-hover:visible"
+                        loading-auto
+                        :disabled="sortedCategories?.length === 1"
+                        @click="handleDeleteCategory(category)"
+                      />
+                    </div>
+                  </li>
+                </template>
+              </Draggable>
+            </ul>
           </template>
 
           <template #footer>
@@ -189,6 +204,7 @@
 </template>
 
 <script setup lang="ts">
+import Draggable from 'vuedraggable'
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import { ConfirmModal } from '#components'
 import { QuestionType, type QuestionCategory } from '~/types'
@@ -204,8 +220,19 @@ const { data: paper } = await usePaper(paperId)
 const { data: groupedQuestions } = await usePaperQuestions(paperId)
 const { data: sortedCategories } = await usePaperCategories(paperId)
 
-const confirmModal = overlay.create(ConfirmModal)
+const dragging = ref(false)
+const editableCategoriesCopy = ref<QuestionCategory[]>([])
 const lastVisitedQuestionForCategory = ref<Record<number, string>>({})
+
+const confirmModal = overlay.create(ConfirmModal)
+
+watch(
+  sortedCategories,
+  val => {
+    if (val) editableCategoriesCopy.value = [...val]
+  },
+  { deep: true, immediate: true }
+)
 
 watch(
   route,
@@ -362,4 +389,38 @@ watch(
   },
   { immediate: true }
 )
+
+/**
+ * `reorder-categories` api is fired after the modal closes, so that all reorders can be batched.
+ * Because individual reorders cause inconsistencies during rollback (in case of error).
+ */
+function handleReorder() {
+  let isReordered = false
+
+  // Check if the order was changed
+  for (let i = 0; i < sortedCategories.value!.length; i++) {
+    if (sortedCategories.value![i].id !== editableCategoriesCopy.value[i].id) {
+      isReordered = true
+      break
+    }
+  }
+
+  if (isReordered) {
+    reorderCategories(
+      paperId,
+      editableCategoriesCopy.value.map(cat => cat.id)
+    )
+  }
+}
 </script>
+
+<style scoped>
+@reference "~/assets/css/main.css";
+
+.draggable-ghost {
+  @apply bg-gray-200;
+}
+.draggable-hold {
+  @apply cursor-grabbing opacity-0;
+}
+</style>

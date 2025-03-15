@@ -119,7 +119,7 @@ func ReorderCategories(w http.ResponseWriter, r *http.Request) {
 		// Verify all categories belong to the paper
 		var count int64
 		err := tx.Model(&models.QuestionCategory{}).
-			Where("paper_id = ? AND id IN ?", paperID, getIDs(reorderDto.Categories)).
+			Where("paper_id = ? AND id IN ?", paperID, reorderDto.Categories).
 			Count(&count).Error
 		if err != nil {
 			return err
@@ -130,11 +130,11 @@ func ReorderCategories(w http.ResponseWriter, r *http.Request) {
 			return nil
 		}
 
-		// Update orders
-		for _, category := range reorderDto.Categories {
+		// Update orders based on array position
+		for i, categoryID := range reorderDto.Categories {
 			if err := tx.Model(&models.QuestionCategory{}).
-				Where("id = ?", category.ID).
-				Update("order", category.Order).Error; err != nil {
+				Where("id = ?", categoryID).
+				Update("order", i+1).Error; err != nil {
 				return err
 			}
 		}

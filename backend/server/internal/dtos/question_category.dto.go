@@ -5,7 +5,7 @@ type UpdateCategoryDto struct {
 }
 
 type ReorderCategoryDto struct {
-	Categories []CategoryOrderDto `json:"categories" validate:"required,dive"`
+	Categories []int `json:"categories" validate:"required,min=1"`
 }
 
 type CategoryOrderDto struct {

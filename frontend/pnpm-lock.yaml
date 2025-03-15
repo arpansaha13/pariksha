@@ -28,7 +28,7 @@ importers:
         version: 1.9.0(db0@0.3.1)(ioredis@5.6.0)(magicast@0.3.5)
       '@nuxt/ui':
         specifier: ^3.0.0
-        version: 3.0.0(@babel/parser@7.26.9)(axios@1.8.1)(change-case@5.4.4)(db0@0.3.1)(embla-carousel@8.5.2)(ioredis@5.6.0)(magicast@0.3.5)(typescript@5.8.2)(vite@6.2.1(@types/node@22.13.8)(jiti@2.4.2)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
+        version: 3.0.0(@babel/parser@7.26.9)(axios@1.8.1)(change-case@5.4.4)(db0@0.3.1)(embla-carousel@8.5.2)(ioredis@5.6.0)(magicast@0.3.5)(sortablejs@1.14.0)(typescript@5.8.2)(vite@6.2.1(@types/node@22.13.8)(jiti@2.4.2)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
       '@nuxtjs/html-validator':
         specifier: ^1.8.2
         version: 1.8.2(magicast@0.3.5)(vitest@3.0.8(@types/node@22.13.8)(happy-dom@17.3.0)(jiti@2.4.2)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
@@ -36,8 +36,8 @@ importers:
         specifier: ^0.10.1
         version: 0.10.1(magicast@0.3.5)(pinia@3.0.1(typescript@5.8.2)(vue@3.5.13(typescript@5.8.2)))
       '@vueuse/nuxt':
-        specifier: ^12.7.0
-        version: 12.7.0(magicast@0.3.5)(nuxt@3.16.0(@parcel/watcher@2.5.1)(@types/node@22.13.8)(db0@0.3.1)(eslint@9.21.0(jiti@2.4.2))(ioredis@5.6.0)(lightningcss@1.29.2)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.35.0)(terser@5.39.0)(tsx@4.19.3)(typescript@5.8.2)(vite@6.2.1(@types/node@22.13.8)(jiti@2.4.2)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))(yaml@2.7.0))(typescript@5.8.2)
+        specifier: ^13.0.0
+        version: 13.0.0(magicast@0.3.5)(nuxt@3.16.0(@parcel/watcher@2.5.1)(@types/node@22.13.8)(db0@0.3.1)(eslint@9.21.0(jiti@2.4.2))(ioredis@5.6.0)(lightningcss@1.29.2)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.35.0)(terser@5.39.0)(tsx@4.19.3)(typescript@5.8.2)(vite@6.2.1(@types/node@22.13.8)(jiti@2.4.2)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))(yaml@2.7.0))(vue@3.5.13(typescript@5.8.2))
       nuxt:
         specifier: ^3.16.0
         version: 3.16.0(@parcel/watcher@2.5.1)(@types/node@22.13.8)(db0@0.3.1)(eslint@9.21.0(jiti@2.4.2))(ioredis@5.6.0)(lightningcss@1.29.2)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.35.0)(terser@5.39.0)(tsx@4.19.3)(typescript@5.8.2)(vite@6.2.1(@types/node@22.13.8)(jiti@2.4.2)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))(yaml@2.7.0)
@@ -62,6 +62,9 @@ importers:
       vue-router:
         specifier: ^4.5.0
         version: 4.5.0(vue@3.5.13(typescript@5.8.2))
+      vuedraggable:
+        specifier: ^4.1.0
+        version: 4.1.0(vue@3.5.13(typescript@5.8.2))
     devDependencies:
       '@nuxt/eslint':
         specifier: ^1.1.0
@@ -1758,10 +1761,11 @@ packages:
   '@vueuse/metadata@13.0.0':
     resolution: {integrity: sha512-TRNksqmvtvqsuHf7bbgH9OSXEV2b6+M3BSN4LR5oxWKykOFT9gV78+C2/0++Pq9KCp9KQ1OQDPvGlWNQpOb2Mw==}
 
-  '@vueuse/nuxt@12.7.0':
-    resolution: {integrity: sha512-JG1yjJifcIZkFr+X1VmfNsdNZyHia/wXcpUHqVI2gwax5+bgmUlybqh9nStNGbX9NLUuPvPNNq043es5DlSJKg==}
+  '@vueuse/nuxt@13.0.0':
+    resolution: {integrity: sha512-tVb57PW0aUGMHwvzp4uH2mo8ut3D/3c7DA936E4ValhQq2VMZMCMxaKGz1nE8etFC7p18fVypyzpe8o6CBAYFw==}
     peerDependencies:
-      nuxt: ^3.0.0
+      nuxt: ^3.0.0 || ^4.0.0-0
+      vue: ^3.5.0
 
   '@vueuse/shared@10.11.1':
     resolution: {integrity: sha512-LHpC8711VFZlDaYUXEBbFBCQ7GS3dVU9mjOhhMhXP6txTV4EhYQg/KGnQuvt/sPAtoUKq7VVUnL6mVtFoL42sA==}
@@ -4793,6 +4797,9 @@ packages:
     resolution: {integrity: sha512-D3YaD0aRxR3mEcqnidIs7ReYJFVzWdd6fXJYUM8ixcQcJRGTka/b3saV0KflYhyVJXKhb947GndU35SxYNResQ==}
     engines: {node: '>= 10.0.0', npm: '>= 3.0.0'}
 
+  sortablejs@1.14.0:
+    resolution: {integrity: sha512-pBXvQCs5/33fdN1/39pPL0NZF20LeRbLQ5jtnheIPN9JQAaufGjKdWduZn4U7wCtVuzKhmRkI0DFYHYRbB2H1w==}
+
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
@@ -5531,6 +5538,11 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
+
+  vuedraggable@4.1.0:
+    resolution: {integrity: sha512-FU5HCWBmsf20GpP3eudURW3WdWTKIbEIQxh9/8GE806hydR9qZqRRxRE3RjqX7PkuLuMQG/A7n3cfj9rCEchww==}
+    peerDependencies:
+      vue: ^3.0.1
 
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
@@ -6674,7 +6686,7 @@ snapshots:
       - typescript
       - yaml
 
-  '@nuxt/ui@3.0.0(@babel/parser@7.26.9)(axios@1.8.1)(change-case@5.4.4)(db0@0.3.1)(embla-carousel@8.5.2)(ioredis@5.6.0)(magicast@0.3.5)(typescript@5.8.2)(vite@6.2.1(@types/node@22.13.8)(jiti@2.4.2)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))':
+  '@nuxt/ui@3.0.0(@babel/parser@7.26.9)(axios@1.8.1)(change-case@5.4.4)(db0@0.3.1)(embla-carousel@8.5.2)(ioredis@5.6.0)(magicast@0.3.5)(sortablejs@1.14.0)(typescript@5.8.2)(vite@6.2.1(@types/node@22.13.8)(jiti@2.4.2)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))':
     dependencies:
       '@iconify/vue': 4.3.0(vue@3.5.13(typescript@5.8.2))
       '@internationalized/date': 3.7.0
@@ -6689,7 +6701,7 @@ snapshots:
       '@tanstack/vue-table': 8.21.2(vue@3.5.13(typescript@5.8.2))
       '@unhead/vue': 2.0.0-rc.12(vue@3.5.13(typescript@5.8.2))
       '@vueuse/core': 13.0.0(vue@3.5.13(typescript@5.8.2))
-      '@vueuse/integrations': 13.0.0(axios@1.8.1)(change-case@5.4.4)(fuse.js@7.1.0)(vue@3.5.13(typescript@5.8.2))
+      '@vueuse/integrations': 13.0.0(axios@1.8.1)(change-case@5.4.4)(fuse.js@7.1.0)(sortablejs@1.14.0)(vue@3.5.13(typescript@5.8.2))
       colortranslator: 4.1.0
       consola: 3.4.0
       defu: 6.1.4
@@ -7933,7 +7945,7 @@ snapshots:
       '@vueuse/shared': 13.0.0(vue@3.5.13(typescript@5.8.2))
       vue: 3.5.13(typescript@5.8.2)
 
-  '@vueuse/integrations@13.0.0(axios@1.8.1)(change-case@5.4.4)(fuse.js@7.1.0)(vue@3.5.13(typescript@5.8.2))':
+  '@vueuse/integrations@13.0.0(axios@1.8.1)(change-case@5.4.4)(fuse.js@7.1.0)(sortablejs@1.14.0)(vue@3.5.13(typescript@5.8.2))':
     dependencies:
       '@vueuse/core': 13.0.0(vue@3.5.13(typescript@5.8.2))
       '@vueuse/shared': 13.0.0(vue@3.5.13(typescript@5.8.2))
@@ -7942,6 +7954,7 @@ snapshots:
       axios: 1.8.1
       change-case: 5.4.4
       fuse.js: 7.1.0
+      sortablejs: 1.14.0
 
   '@vueuse/metadata@10.11.1': {}
 
@@ -7949,17 +7962,16 @@ snapshots:
 
   '@vueuse/metadata@13.0.0': {}
 
-  '@vueuse/nuxt@12.7.0(magicast@0.3.5)(nuxt@3.16.0(@parcel/watcher@2.5.1)(@types/node@22.13.8)(db0@0.3.1)(eslint@9.21.0(jiti@2.4.2))(ioredis@5.6.0)(lightningcss@1.29.2)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.35.0)(terser@5.39.0)(tsx@4.19.3)(typescript@5.8.2)(vite@6.2.1(@types/node@22.13.8)(jiti@2.4.2)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))(yaml@2.7.0))(typescript@5.8.2)':
+  '@vueuse/nuxt@13.0.0(magicast@0.3.5)(nuxt@3.16.0(@parcel/watcher@2.5.1)(@types/node@22.13.8)(db0@0.3.1)(eslint@9.21.0(jiti@2.4.2))(ioredis@5.6.0)(lightningcss@1.29.2)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.35.0)(terser@5.39.0)(tsx@4.19.3)(typescript@5.8.2)(vite@6.2.1(@types/node@22.13.8)(jiti@2.4.2)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))(yaml@2.7.0))(vue@3.5.13(typescript@5.8.2))':
     dependencies:
       '@nuxt/kit': 3.16.0(magicast@0.3.5)
-      '@vueuse/core': 12.7.0(typescript@5.8.2)
-      '@vueuse/metadata': 12.7.0
+      '@vueuse/core': 13.0.0(vue@3.5.13(typescript@5.8.2))
+      '@vueuse/metadata': 13.0.0
       local-pkg: 1.1.1
       nuxt: 3.16.0(@parcel/watcher@2.5.1)(@types/node@22.13.8)(db0@0.3.1)(eslint@9.21.0(jiti@2.4.2))(ioredis@5.6.0)(lightningcss@1.29.2)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.35.0)(terser@5.39.0)(tsx@4.19.3)(typescript@5.8.2)(vite@6.2.1(@types/node@22.13.8)(jiti@2.4.2)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))(yaml@2.7.0)
       vue: 3.5.13(typescript@5.8.2)
     transitivePeerDependencies:
       - magicast
-      - typescript
 
   '@vueuse/shared@10.11.1(vue@3.5.13(typescript@5.8.2))':
     dependencies:
@@ -11400,6 +11412,8 @@ snapshots:
       ip-address: 9.0.5
       smart-buffer: 4.2.0
 
+  sortablejs@1.14.0: {}
+
   source-map-js@1.2.1: {}
 
   source-map-support@0.5.21:
@@ -12190,6 +12204,11 @@ snapshots:
       '@vue/shared': 3.5.13
     optionalDependencies:
       typescript: 5.8.2
+
+  vuedraggable@4.1.0(vue@3.5.13(typescript@5.8.2)):
+    dependencies:
+      sortablejs: 1.14.0
+      vue: 3.5.13(typescript@5.8.2)
 
   webidl-conversions@3.0.1: {}
 
