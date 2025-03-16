@@ -1,7 +1,7 @@
 <template>
   <UContainer
     as="main"
-    class="grid h-full grow grid-cols-3 grid-rows-[auto_1fr] gap-6 py-4"
+    class="grid h-full grow grid-cols-3 grid-rows-[auto_1fr] gap-x-6 gap-y-4 py-4"
   >
     <div v-if="paper" class="col-span-2 flex items-center gap-2">
       <Icon name="i-heroicons-document-text" size="2rem" />
@@ -37,7 +37,7 @@
 
     <div class="col-span-2 flex h-full flex-col gap-y-4">
       <div
-        v-if="categoryLinks !== null"
+        v-if="!isNullOrUndefined(categoryLinks)"
         class="flex items-center justify-between gap-x-2 border-b border-gray-200 dark:border-gray-800"
       >
         <!-- subtract button-width and gap -->
@@ -154,30 +154,18 @@
         </UModal>
       </div>
 
-      <UCard v-if="question" class="grow">
+      <UCard class="grow">
+        <QuestionCreationForm
+          v-if="currentQuestionId === QuestionId.ADD"
+          ref="createQuestionForm"
+          v-model:form-data="createQuestionFormState"
+          @submit="handleQuestionSubmit"
+        />
         <QuestionMcq
-          v-if="question.type === QuestionType.MCQ"
+          v-else-if="question && question.type === QuestionType.MCQ"
           :question="question.question"
         />
-        <QuestionNonMcq v-else :question="question.question" />
-      </UCard>
-
-      <UCard :ui="{ body: 'flex' }">
-        <UButton
-          v-if="prevQuestionId"
-          label="Previous"
-          color="neutral"
-          variant="outline"
-          :to="{ query: { ...route.query, question: prevQuestionId } }"
-        />
-        <UButton
-          v-if="nextQuestionId"
-          label="Next"
-          color="neutral"
-          variant="outline"
-          :to="{ query: { ...route.query, question: nextQuestionId } }"
-          class="ml-auto"
-        />
+        <QuestionNonMcq v-else-if="question" :question="question.question" />
       </UCard>
     </div>
 
@@ -197,21 +185,78 @@
               {{ i + 1 }}
             </UButton>
           </li>
+          <li>
+            <UTooltip text="Add question">
+              <UButton
+                :to="{ query: { ...route.query, question: QuestionId.ADD } }"
+                icon="i-heroicons-plus"
+                :color="
+                  currentQuestionId === QuestionId.ADD ? 'primary' : 'neutral'
+                "
+                :variant="
+                  currentQuestionId === QuestionId.ADD ? 'subtle' : 'outline'
+                "
+                size="lg"
+                class="flex size-10 items-center justify-center rounded-full"
+              />
+            </UTooltip>
+          </li>
         </ul>
       </UCard>
     </div>
+
+    <UCard :ui="{ root: 'col-span-2', body: 'flex justify-between' }">
+      <div>
+        <UButton
+          v-if="prevQuestionId"
+          label="Previous"
+          color="neutral"
+          variant="outline"
+          :to="{ query: { ...route.query, question: prevQuestionId } }"
+        />
+      </div>
+      <div class="space-x-1.5">
+        <UButton
+          v-if="currentQuestionId === QuestionId.ADD"
+          label="Add question"
+          color="primary"
+          variant="solid"
+          @click="createQuestionFormRef?.submit()"
+        />
+        <UButton
+          v-if="!isNullOrUndefined(nextQuestionId)"
+          label="Next"
+          color="neutral"
+          variant="outline"
+          :to="{ query: { ...route.query, question: nextQuestionId } }"
+        />
+      </div>
+    </UCard>
   </UContainer>
 </template>
 
 <script setup lang="ts">
 import Draggable from 'vuedraggable'
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import { ConfirmModal } from '#components'
+import type { ComponentExposed } from 'vue-component-type-helpers'
+import { ConfirmModal, QuestionCreationForm } from '#components'
 import { QuestionType, type QuestionCategory } from '~/types'
 
 definePageMeta({
   layout: 'cover',
 })
+
+enum QuestionIdx {
+  NON_EXISTENT = -1,
+
+  /** Special case for add question */
+  ADD = -2,
+}
+
+enum QuestionId {
+  /** Special case for add question */
+  ADD = 0,
+}
 
 const route = useRoute()
 const overlay = useOverlay()
@@ -247,7 +292,7 @@ watch(
 
 function getQuestionIdForCategoryId(categoryId: number) {
   const categoryQuestions = groupedQuestions.value?.[categoryId]
-  if (isNullOrUndefined(categoryQuestions)) return
+  if (isNullOrUndefined(categoryQuestions)) return QuestionId.ADD
   const questionId =
     lastVisitedQuestionForCategory.value[categoryId] ?? categoryQuestions[0].id
   return questionId
@@ -290,32 +335,45 @@ const currentQuestionId = computed(() => {
 })
 
 const currentQuestionIdx = computed(() => {
-  if (!currentCategoryQuestions.value || !currentQuestionId.value) return -1
-  return currentCategoryQuestions.value.findIndex(
-    q => q.id === currentQuestionId.value
+  if (!currentQuestionId.value) return QuestionIdx.NON_EXISTENT
+  if (currentQuestionId.value === QuestionId.ADD) return QuestionIdx.ADD
+  return (
+    currentCategoryQuestions.value?.findIndex(
+      q => q.id === currentQuestionId.value
+    ) ?? QuestionIdx.NON_EXISTENT
   )
 })
 
 const question = computed(() => {
-  if (currentQuestionIdx.value === -1) return null
+  if (currentQuestionId.value === QuestionId.ADD) return null
+  if (currentQuestionIdx.value < 0) return null
   return currentCategoryQuestions.value?.[currentQuestionIdx.value] ?? null
 })
 
 const prevQuestionId = computed(() => {
-  if (!currentCategoryQuestions.value || currentQuestionIdx.value <= 0)
-    return null
+  if (!currentCategoryQuestions.value) return null
+
+  // If on add question page, show last question as prev
+  if (currentQuestionId.value === QuestionId.ADD) {
+    return currentCategoryQuestions.value.at(-1)?.id
+  }
+
+  if (currentQuestionIdx.value <= 0) return null
   return currentCategoryQuestions.value[currentQuestionIdx.value - 1].id
 })
 
 const nextQuestionId = computed(() => {
-  if (
-    !currentCategoryQuestions.value ||
-    currentQuestionIdx.value === -1 ||
-    currentQuestionIdx.value >= currentCategoryQuestions.value.length - 1
-  ) {
-    return null
+  if (!currentCategoryQuestions.value) return null
+
+  // If on add question page, there is no next
+  if (currentQuestionId.value === QuestionId.ADD) return null
+
+  // If on last question, show add question as next
+  if (currentQuestionIdx.value === currentCategoryQuestions.value.length - 1) {
+    return QuestionId.ADD
   }
 
+  if (currentQuestionIdx.value === QuestionIdx.NON_EXISTENT) return null
   return currentCategoryQuestions.value[currentQuestionIdx.value + 1].id
 })
 
@@ -412,10 +470,60 @@ function handleReorder() {
     )
   }
 }
+
+const createQuestionFormRef =
+  useTemplateRef<ComponentExposed<typeof QuestionCreationForm>>(
+    'createQuestionForm'
+  )
+const createQuestionFormState = reactive({
+  type: '' as QuestionType,
+  category_id: 0,
+  question: {
+    statement: '',
+    options: ['', ''],
+  },
+  max_score: 0,
+  tags: [],
+  correct_answer: undefined,
+})
+async function handleQuestionSubmit() {
+  const payload = {
+    type: createQuestionFormState.type,
+    category_id: currentCategoryId.value,
+    question: {
+      statement: createQuestionFormState.question.statement,
+    },
+    max_score: createQuestionFormState.max_score,
+    tags: [],
+  } as Parameters<typeof createQuestion>[1]
+
+  if (payload.type === QuestionType.MCQ) {
+    payload.question.options = createQuestionFormState.question.options
+  }
+
+  if (createQuestionFormState.correct_answer) {
+    payload.correct_answer = createQuestionFormState.correct_answer
+  }
+
+  try {
+    await createQuestion(paperId, payload)
+
+    // Navigate to the newly created question
+    // We'll use getCurrentCategory questions since it will be refreshed by createQuestion
+    const latestQuestion = currentCategoryQuestions.value.at(-1)
+    if (latestQuestion) {
+      navigateTo({
+        query: { ...route.query, question: latestQuestion.id },
+      })
+    }
+  } catch (error) {
+    console.error('Failed to create question:', error)
+  }
+}
 </script>
 
 <style scoped>
-@reference "~/assets/css/main.css";
+@reference "../../../assets/css/main.css";
 
 .draggable-ghost {
   @apply bg-gray-200;
