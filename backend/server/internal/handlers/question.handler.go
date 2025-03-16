@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
@@ -82,18 +83,15 @@ func CreatePaperQuestions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var questionDtos []dtos.CreateQuestionDto
-	if err := json.NewDecoder(r.Body).Decode(&questionDtos); err != nil {
+	var questionDto dtos.CreateQuestionDto
+	if err := json.NewDecoder(r.Body).Decode(&questionDto); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	for _, questionDto := range questionDtos {
-		errs := validate.Do.Struct(questionDto)
-		if errs != nil {
-			http.Error(w, "Invald request body", http.StatusBadRequest)
-			return
-		}
+	if err := validate.Do.Struct(questionDto); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
 	}
 
 	// Validate the paperId
@@ -102,10 +100,9 @@ func CreatePaperQuestions(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			http.Error(w, "Paper not found", http.StatusNotFound)
 			return
-		} else {
-			http.Error(w, "Failed to find paper", http.StatusInternalServerError)
-			return
 		}
+		http.Error(w, "Failed to find paper", http.StatusInternalServerError)
+		return
 	}
 
 	questionCounts, err := paper.GetQuestionCounts()
@@ -114,67 +111,66 @@ func CreatePaperQuestions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var questions []models.Question
-	var response []dtos.QuestionResponse
+	var response dtos.QuestionResponse
 
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		for _, questionDto := range questionDtos {
-			// Unmarshal and validate the question JSON
-			questionData, err := unmarshalQuestion(questionDto)
-			if err != nil {
-				return err
-			}
-
-			// Validate categories exist if specified
-			if questionDto.CategoryID != nil {
-				var category models.QuestionCategory
-				if err := tx.Where("id = ? AND paper_id = ?", *questionDto.CategoryID, paperID).
-					First(&category).Error; err != nil {
-					if errors.Is(err, gorm.ErrRecordNotFound) {
-						return errors.New("category not found")
-					}
-					return err
-				}
-			}
-
-			// Increment the question count based on the question type
-			switch questionDto.Type {
-			case constants.QUESTION_TYPE_MCQ:
-				questionCounts.MCQ++
-			case constants.QUESTION_TYPE_SHORT:
-				questionCounts.Short++
-			case constants.QUESTION_TYPE_LONG:
-				questionCounts.Long++
-			}
-
-			// Create the question
-			question := models.Question{
-				PaperID:       paperID,
-				Question:      questionData,
-				CategoryID:    questionDto.CategoryID,
-				Type:          questionDto.Type,
-				Tags:          questionDto.Tags,
-				MaxScore:      questionDto.MaxScore,
-				CorrectAnswer: sql.NullString{String: questionDto.CorrectAnswer, Valid: questionDto.CorrectAnswer != ""},
-			}
-
-			if err := tx.Create(&question).Error; err != nil {
-				return err
-			}
-
-			// Preload the category for response
-			if question.CategoryID != nil {
-				if err := tx.Preload("Category").First(&question, question.ID).Error; err != nil {
-					return err
-				}
-			}
-
-			questions = append(questions, question)
-			response = append(response, questionToResponse(question))
-
-			// Update the paper's max score
-			paper.MaxScore += question.MaxScore
+		questionData, err := unmarshalQuestion(questionDto)
+		if err != nil {
+			return err
 		}
+
+		if err := validateQuestion(questionData, questionDto.Type); err != nil {
+			return err
+		}
+
+		// Validate categories exist if specified
+		if questionDto.CategoryID != nil {
+			var category models.QuestionCategory
+			if err := tx.Where("id = ? AND paper_id = ?", *questionDto.CategoryID, paperID).
+				Take(&category).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return errors.New("category not found")
+				}
+				return err
+			}
+		}
+
+		// Increment the question count based on the question type
+		switch questionDto.Type {
+		case constants.QUESTION_TYPE_MCQ:
+			questionCounts.MCQ++
+		case constants.QUESTION_TYPE_SHORT:
+			questionCounts.Short++
+		case constants.QUESTION_TYPE_LONG:
+			questionCounts.Long++
+		}
+
+		// Create the question
+		question := models.Question{
+			PaperID:       paperID,
+			Question:      questionDto.Question,
+			CategoryID:    questionDto.CategoryID,
+			Type:          questionDto.Type,
+			Tags:          questionDto.Tags,
+			MaxScore:      questionDto.MaxScore,
+			CorrectAnswer: sql.NullString{String: questionDto.CorrectAnswer, Valid: questionDto.CorrectAnswer != ""},
+		}
+
+		if err := tx.Create(&question).Error; err != nil {
+			return err
+		}
+
+		// Preload the category for response
+		if question.CategoryID != nil {
+			if err := tx.Preload("Category").First(&question, question.ID).Error; err != nil {
+				return err
+			}
+		}
+
+		response = questionToResponse(question)
+
+		// Update the paper's max score
+		paper.MaxScore += question.MaxScore
 
 		// Update the paper with the new question counts
 		paper.QuestionCounts, err = json.Marshal(questionCounts)
@@ -372,25 +368,49 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func unmarshalQuestion(questionDto dtos.CreateQuestionDto) (json.RawMessage, error) {
-	var questionData json.RawMessage
-
+func unmarshalQuestion(questionDto dtos.CreateQuestionDto) (interface{}, error) {
 	switch questionDto.Type {
 	case constants.QUESTION_TYPE_MCQ:
 		var mcq models.MCQQuestion
 		if err := json.Unmarshal(questionDto.Question, &mcq); err != nil {
 			return nil, errors.New("invalid MCQ question format")
 		}
-		questionData = questionDto.Question
+		return mcq, nil
+
 	case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
 		var general models.GeneralQuestion
 		if err := json.Unmarshal(questionDto.Question, &general); err != nil {
 			return nil, errors.New("invalid general question format")
 		}
-		questionData = questionDto.Question
+		return general, nil
+
 	default:
 		return nil, errors.New("invalid question type")
 	}
+}
 
-	return questionData, nil
+func validateQuestion(question interface{}, questionType string) error {
+	switch questionType {
+	case constants.QUESTION_TYPE_MCQ:
+		mcq := question.(models.MCQQuestion)
+
+		if strings.TrimSpace(mcq.Statement) == "" {
+			return errors.New("question statement cannot be empty")
+		}
+		if len(mcq.Options) < 2 {
+			return errors.New("MCQ questions must have at least 2 options")
+		}
+		if len(mcq.Options) > 5 {
+			return errors.New("MCQ questions cannot have more than 5 options")
+		}
+
+	case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
+		general := question.(models.GeneralQuestion)
+
+		if strings.TrimSpace(general.Statement) == "" {
+			return errors.New("question statement cannot be empty")
+		}
+	}
+
+	return nil
 }
