@@ -1,238 +1,231 @@
 <template>
-  <UContainer
-    as="main"
-    class="grid h-full grow grid-cols-3 grid-rows-[auto_1fr] gap-x-6 gap-y-4 py-4"
+  <div v-if="paper" class="col-span-2 flex items-center gap-2">
+    <Icon name="i-heroicons-document-text" size="2rem" />
+
+    <EditableRoot
+      v-model="editablePaperTitle"
+      name="paper-title"
+      activation-mode="focus"
+      submit-mode="both"
+      placeholder=""
+      @submit="updatePaperTitle"
+    >
+      <EditableArea
+        class="rounded-sm px-1 text-xl focus-within:outline hover:outline"
+      >
+        <EditablePreview as="h1" class="font-semibold" />
+        <EditableInput class="font-semibold outline-none" />
+      </EditableArea>
+    </EditableRoot>
+
+    <UButton
+      to="/papers"
+      label="Back"
+      icon="i-heroicons-arrow-uturn-left"
+      size="sm"
+      color="neutral"
+      variant="ghost"
+      class="ml-auto"
+    />
+  </div>
+
+  <div
+    v-if="!isNullOrUndefined(categoryLinks)"
+    class="col-span-2 flex items-center justify-between gap-x-2 border-b border-gray-200 dark:border-gray-800"
   >
-    <div v-if="paper" class="col-span-2 flex items-center gap-2">
-      <Icon name="i-heroicons-document-text" size="2rem" />
-
-      <EditableRoot
-        v-model="editablePaperTitle"
-        name="paper-title"
-        activation-mode="focus"
-        submit-mode="both"
-        placeholder=""
-        @submit="updatePaperTitle"
+    <!-- subtract button-width and gap -->
+    <ScrollAreaRoot class="max-w-[calc(100%-44px)]">
+      <ScrollAreaViewport>
+        <UNavigationMenu
+          :items="categoryLinks"
+          color="primary"
+          orientation="horizontal"
+          variant="link"
+          highlight
+        />
+      </ScrollAreaViewport>
+      <ScrollAreaScrollbar
+        class="flex touch-none bg-white p-0.5 transition-colors ease-out select-none data-[orientation=horizontal]:h-2 data-[orientation=horizontal]:flex-col"
+        orientation="horizontal"
       >
-        <EditableArea
-          class="rounded-sm px-1 text-xl focus-within:outline hover:outline"
-        >
-          <EditablePreview as="h1" class="font-semibold" />
-          <EditableInput class="font-semibold outline-none" />
-        </EditableArea>
-      </EditableRoot>
+        <ScrollAreaThumb
+          class="relative flex-1 rounded-sm bg-gray-200 transition-colors before:absolute before:top-1/2 before:left-1/2 before:h-full before:w-full before:-translate-x-1/2 before:-translate-y-1/2 before:content-[''] hover:bg-gray-300"
+        />
+      </ScrollAreaScrollbar>
+    </ScrollAreaRoot>
 
-      <UButton
-        to="/papers"
-        label="Back"
-        icon="i-heroicons-arrow-uturn-left"
-        size="sm"
-        color="neutral"
-        variant="ghost"
-        class="ml-auto"
-      />
-    </div>
+    <UModal
+      title="Manage categories"
+      description="Add, edit, remove, or reorder your categories"
+      :ui="{
+        body: 'space-y-2',
+      }"
+      @after:leave="handleReorder"
+    >
+      <UTooltip text="Manage categories">
+        <UButton
+          icon="i-heroicons-adjustments-vertical"
+          size="sm"
+          color="neutral"
+          square
+          variant="outline"
+        />
+      </UTooltip>
 
-    <div />
-
-    <div class="col-span-2 flex h-full flex-col gap-y-4">
-      <div
-        v-if="!isNullOrUndefined(categoryLinks)"
-        class="flex items-center justify-between gap-x-2 border-b border-gray-200 dark:border-gray-800"
-      >
-        <!-- subtract button-width and gap -->
-        <ScrollAreaRoot class="max-w-[calc(100%-44px)]">
-          <ScrollAreaViewport>
-            <UNavigationMenu
-              :items="categoryLinks"
-              color="primary"
-              orientation="horizontal"
-              variant="link"
-              highlight
-            />
-          </ScrollAreaViewport>
-          <ScrollAreaScrollbar
-            class="flex touch-none bg-white p-0.5 transition-colors ease-out select-none data-[orientation=horizontal]:h-2 data-[orientation=horizontal]:flex-col"
-            orientation="horizontal"
+      <template #body>
+        <ul>
+          <Draggable
+            v-model="editableCategoriesCopy"
+            item-key="id"
+            group="category-editable"
+            handle=".draggable-handle"
+            ghost-class="draggable-ghost"
+            drag-class="draggable-hold"
+            :animation="250"
+            @start="dragging = true"
+            @end="dragging = false"
           >
-            <ScrollAreaThumb
-              class="relative flex-1 rounded-sm bg-gray-200 transition-colors before:absolute before:top-1/2 before:left-1/2 before:h-full before:w-full before:-translate-x-1/2 before:-translate-y-1/2 before:content-[''] hover:bg-gray-300"
-            />
-          </ScrollAreaScrollbar>
-        </ScrollAreaRoot>
+            <template #item="{ element: category }">
+              <li class="group flex items-center gap-2 rounded-sm">
+                <div class="draggable-handle flex size-5 cursor-grab">
+                  <Icon
+                    name="i-heroicons-bars-2"
+                    class="m-auto text-gray-400 transition-colors"
+                  />
+                </div>
 
-        <UModal
-          title="Manage categories"
-          description="Add, edit, remove, or reorder your categories"
-          :ui="{
-            body: 'space-y-2',
-          }"
-          @after:leave="handleReorder"
-        >
-          <UTooltip text="Manage categories">
-            <UButton
-              icon="i-heroicons-adjustments-vertical"
-              size="sm"
-              color="neutral"
-              square
-              variant="outline"
-            />
-          </UTooltip>
+                <EditableRoot
+                  v-slot="{ isEditing }"
+                  v-model="categoryNames[category.id]"
+                  activation-mode="focus"
+                  submit-mode="both"
+                  class="grow"
+                  placeholder=""
+                  @submit="() => handleUpdateCategory(category)"
+                >
+                  <EditableArea
+                    :class="[
+                      'px-2 py-2 text-sm transition-colors dark:border-gray-800',
+                      isEditing
+                        ? 'border-primary-500 border-b-2'
+                        : 'border-b border-gray-200',
+                    ]"
+                  >
+                    <EditablePreview class="" />
+                    <EditableInput class="outline-none" />
+                  </EditableArea>
+                </EditableRoot>
 
-          <template #body>
-            <ul>
-              <Draggable
-                v-model="editableCategoriesCopy"
-                item-key="id"
-                group="category-editable"
-                handle=".draggable-handle"
-                ghost-class="draggable-ghost"
-                drag-class="draggable-hold"
-                :animation="250"
-                @start="dragging = true"
-                @end="dragging = false"
-              >
-                <template #item="{ element: category }">
-                  <li class="group flex items-center gap-2 rounded-sm">
-                    <div class="draggable-handle flex size-5 cursor-grab">
-                      <Icon
-                        name="i-heroicons-bars-2"
-                        class="m-auto text-gray-400 transition-colors"
-                      />
-                    </div>
+                <div v-show="!dragging">
+                  <UButton
+                    icon="i-heroicons-trash"
+                    size="sm"
+                    color="error"
+                    square
+                    variant="soft"
+                    class="invisible group-hover:visible"
+                    loading-auto
+                    :disabled="sortedCategories?.length === 1"
+                    @click="handleDeleteCategory(category)"
+                  />
+                </div>
+              </li>
+            </template>
+          </Draggable>
+        </ul>
+      </template>
 
-                    <EditableRoot
-                      v-slot="{ isEditing }"
-                      v-model="categoryNames[category.id]"
-                      activation-mode="focus"
-                      submit-mode="both"
-                      class="grow"
-                      placeholder=""
-                      @submit="() => handleUpdateCategory(category)"
-                    >
-                      <EditableArea
-                        :class="[
-                          'px-2 py-2 text-sm transition-colors dark:border-gray-800',
-                          isEditing
-                            ? 'border-primary-500 border-b-2'
-                            : 'border-b border-gray-200',
-                        ]"
-                      >
-                        <EditablePreview class="" />
-                        <EditableInput class="outline-none" />
-                      </EditableArea>
-                    </EditableRoot>
-
-                    <div v-show="!dragging">
-                      <UButton
-                        icon="i-heroicons-trash"
-                        size="sm"
-                        color="error"
-                        square
-                        variant="soft"
-                        class="invisible group-hover:visible"
-                        loading-auto
-                        :disabled="sortedCategories?.length === 1"
-                        @click="handleDeleteCategory(category)"
-                      />
-                    </div>
-                  </li>
-                </template>
-              </Draggable>
-            </ul>
-          </template>
-
-          <template #footer>
-            <UButton
-              label="Add category"
-              color="primary"
-              variant="soft"
-              loading-auto
-              @click="createCategory(paperId)"
-            />
-          </template>
-        </UModal>
-      </div>
-
-      <UCard class="grow">
-        <QuestionCreationForm
-          v-if="currentQuestionId === QuestionId.ADD"
-          ref="createQuestionForm"
-          v-model:form-data="createQuestionFormState"
-          @submit="handleQuestionSubmit"
+      <template #footer>
+        <UButton
+          label="Add category"
+          color="primary"
+          variant="soft"
+          loading-auto
+          @click="createCategory(paperId)"
         />
-        <QuestionMcq
-          v-else-if="question && question.type === QuestionType.MCQ"
-          :question="question.question"
-        />
-        <QuestionNonMcq v-else-if="question" :question="question.question" />
-      </UCard>
-    </div>
+      </template>
+    </UModal>
+  </div>
 
-    <div>
-      <h2 class="mb-4 text-lg font-semibold">Question Pallet</h2>
+  <div class="col-start-3 row-span-2 row-start-2">
+    <h2 class="mb-4 text-lg font-semibold">Question Pallet</h2>
 
-      <UCard v-if="currentCategoryQuestions">
-        <ul class="flex flex-wrap gap-4">
-          <li v-for="(q, i) of currentCategoryQuestions" :key="q.id">
+    <UCard v-if="currentCategoryQuestions">
+      <ul class="flex flex-wrap gap-4">
+        <li v-for="(q, i) of currentCategoryQuestions" :key="q.id">
+          <UButton
+            :to="{ query: { ...route.query, question: q.id } }"
+            :color="currentQuestionId === q.id ? 'primary' : 'neutral'"
+            :variant="currentQuestionId === q.id ? 'subtle' : 'outline'"
+            size="lg"
+            class="flex size-10 items-center justify-center rounded-full"
+          >
+            {{ i + 1 }}
+          </UButton>
+        </li>
+        <li>
+          <UTooltip text="Add question">
             <UButton
-              :to="{ query: { ...route.query, question: q.id } }"
-              :color="currentQuestionId === q.id ? 'primary' : 'neutral'"
-              :variant="currentQuestionId === q.id ? 'subtle' : 'outline'"
+              :to="{ query: { ...route.query, question: QuestionId.ADD } }"
+              icon="i-heroicons-plus"
+              :color="
+                currentQuestionId === QuestionId.ADD ? 'primary' : 'neutral'
+              "
+              :variant="
+                currentQuestionId === QuestionId.ADD ? 'subtle' : 'outline'
+              "
               size="lg"
               class="flex size-10 items-center justify-center rounded-full"
-            >
-              {{ i + 1 }}
-            </UButton>
-          </li>
-          <li>
-            <UTooltip text="Add question">
-              <UButton
-                :to="{ query: { ...route.query, question: QuestionId.ADD } }"
-                icon="i-heroicons-plus"
-                :color="
-                  currentQuestionId === QuestionId.ADD ? 'primary' : 'neutral'
-                "
-                :variant="
-                  currentQuestionId === QuestionId.ADD ? 'subtle' : 'outline'
-                "
-                size="lg"
-                class="flex size-10 items-center justify-center rounded-full"
-              />
-            </UTooltip>
-          </li>
-        </ul>
-      </UCard>
-    </div>
-
-    <UCard :ui="{ root: 'col-span-2', body: 'flex justify-between' }">
-      <div>
-        <UButton
-          v-if="prevQuestionId"
-          label="Previous"
-          color="neutral"
-          variant="outline"
-          :to="{ query: { ...route.query, question: prevQuestionId } }"
-        />
-      </div>
-      <div class="space-x-1.5">
-        <UButton
-          v-if="currentQuestionId === QuestionId.ADD"
-          label="Add question"
-          color="primary"
-          variant="solid"
-          @click="createQuestionFormRef?.submit()"
-        />
-        <UButton
-          v-if="!isNullOrUndefined(nextQuestionId)"
-          label="Next"
-          color="neutral"
-          variant="outline"
-          :to="{ query: { ...route.query, question: nextQuestionId } }"
-        />
-      </div>
+            />
+          </UTooltip>
+        </li>
+      </ul>
     </UCard>
-  </UContainer>
+  </div>
+
+  <UCard
+    :ui="{ root: 'col-span-2 overflow-hidden', body: 'h-full overflow-auto' }"
+  >
+    <QuestionCreationForm
+      v-if="currentQuestionId === QuestionId.ADD"
+      ref="createQuestionForm"
+      v-model:form-data="createQuestionFormState"
+      @submit="handleQuestionSubmit"
+    />
+    <QuestionMcq
+      v-else-if="question && question.type === QuestionType.MCQ"
+      :question="question.question"
+    />
+    <QuestionNonMcq v-else-if="question" :question="question.question" />
+  </UCard>
+
+  <UCard :ui="{ root: 'col-span-2', body: 'flex justify-between' }">
+    <div>
+      <UButton
+        v-if="prevQuestionId"
+        label="Previous"
+        color="neutral"
+        variant="outline"
+        :to="{ query: { ...route.query, question: prevQuestionId } }"
+      />
+    </div>
+    <div class="space-x-1.5">
+      <UButton
+        v-if="currentQuestionId === QuestionId.ADD"
+        label="Add question"
+        color="primary"
+        variant="solid"
+        @click="createQuestionFormRef?.submit()"
+      />
+      <UButton
+        v-if="!isNullOrUndefined(nextQuestionId)"
+        label="Next"
+        color="neutral"
+        variant="outline"
+        :to="{ query: { ...route.query, question: nextQuestionId } }"
+      />
+    </div>
+  </UCard>
 </template>
 
 <script setup lang="ts">
@@ -243,7 +236,7 @@ import { ConfirmModal, QuestionCreationForm } from '#components'
 import { QuestionType, type QuestionCategory } from '~/types'
 
 definePageMeta({
-  layout: 'cover',
+  layout: 'paper',
 })
 
 enum QuestionIdx {
