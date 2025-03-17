@@ -29,6 +29,7 @@ type CreateQuestionDto struct {
 }
 
 type UpdateQuestionDto struct {
+	Type          string          `json:"type,omitempty"`
 	Question      json.RawMessage `json:"question,omitempty"`
 	CategoryID    *int            `json:"category_id"`
 	MaxScore      int             `json:"max_score,omitempty"`

@@ -74,7 +74,7 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func CreatePaperQuestions(w http.ResponseWriter, r *http.Request) {
+func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	paperID, err := strconv.Atoi(vars["id"])
 
@@ -220,35 +220,77 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
+		questionCounts, err := paper.GetQuestionCounts()
+		if err != nil {
+			return err
+		}
+
 		isUpdated := false
 
-		// Update the fields based on the provided data
-		if updateDto.Question != nil {
-			switch question.Type {
-			case constants.QUESTION_TYPE_MCQ:
-				var mcq models.MCQQuestion
-				if err := json.Unmarshal(updateDto.Question, &mcq); err != nil {
-					http.Error(w, "Invalid MCQ question format", http.StatusBadRequest)
-					return err
-				}
-				question.Question = updateDto.Question
-			case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
-				var general models.GeneralQuestion
-				if err := json.Unmarshal(updateDto.Question, &general); err != nil {
-					http.Error(w, "Invalid general question format", http.StatusBadRequest)
-					return err
-				}
-				question.Question = updateDto.Question
+		// Handle type update first as it affects question validation
+		if updateDto.Type != "" && updateDto.Type != question.Type {
+			// Must provide new question data when changing type
+			if updateDto.Question == nil {
+				http.Error(w, "Question data required when changing question type", http.StatusBadRequest)
+				return errors.New("question data required when changing type")
 			}
+
+			// Validate new type
+			switch updateDto.Type {
+			case constants.QUESTION_TYPE_MCQ, constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
+				// Update question counts
+				switch question.Type {
+				case constants.QUESTION_TYPE_MCQ:
+					questionCounts.MCQ--
+				case constants.QUESTION_TYPE_SHORT:
+					questionCounts.Short--
+				case constants.QUESTION_TYPE_LONG:
+					questionCounts.Long--
+				}
+
+				switch updateDto.Type {
+				case constants.QUESTION_TYPE_MCQ:
+					questionCounts.MCQ++
+				case constants.QUESTION_TYPE_SHORT:
+					questionCounts.Short++
+				case constants.QUESTION_TYPE_LONG:
+					questionCounts.Long++
+				}
+
+				question.Type = updateDto.Type
+				isUpdated = true
+			default:
+				http.Error(w, "Invalid question type", http.StatusBadRequest)
+				return errors.New("invalid question type")
+			}
+		}
+
+		// Update question data
+		if updateDto.Question != nil {
+			// Unmarshal and validate based on current type (which might have just been updated)
+			questionData, err := unmarshalQuestion(dtos.CreateQuestionDto{
+				Question: updateDto.Question,
+				Type:     question.Type,
+			})
+			if err != nil {
+				return err
+			}
+
+			if err := validateQuestion(questionData, question.Type); err != nil {
+				return err
+			}
+
+			question.Question = updateDto.Question
 			isUpdated = true
 		}
 
+		// Update the fields based on the provided data
 		if updateDto.CategoryID != nil {
 			// Validate category exists
 			if *updateDto.CategoryID != 0 {
 				var category models.QuestionCategory
 				if err := tx.Where("id = ? AND paper_id = ?", *updateDto.CategoryID, question.PaperID).
-					First(&category).Error; err != nil {
+					Take(&category).Error; err != nil {
 					if errors.Is(err, gorm.ErrRecordNotFound) {
 						http.Error(w, "Category not found", http.StatusBadRequest)
 						return err
@@ -270,18 +312,33 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 			isUpdated = true
 		}
 
+		isPaperUpdated := false
+
 		if updateDto.MaxScore != 0 && updateDto.MaxScore != question.MaxScore {
 			paper.MaxScore = paper.MaxScore - question.MaxScore + updateDto.MaxScore
 			question.MaxScore = updateDto.MaxScore
 
-			if err := tx.Save(&paper).Error; err != nil {
-				return err
-			}
+			isPaperUpdated = true
 			isUpdated = true
 		}
 
 		if isUpdated {
+			// Update question counts if type was changed
+			if updateDto.Type != "" && updateDto.Type != question.Type {
+				paper.QuestionCounts, err = json.Marshal(questionCounts)
+				if err != nil {
+					return err
+				}
+				isPaperUpdated = true
+			}
+
 			if err := tx.Save(&question).Error; err != nil {
+				return err
+			}
+		}
+
+		if isPaperUpdated {
+			if err := tx.Save(&paper).Error; err != nil {
 				return err
 			}
 		}
