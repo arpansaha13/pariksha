@@ -187,9 +187,13 @@
     :ui="{ root: 'col-span-2 overflow-hidden', body: 'h-full overflow-auto' }"
   >
     <QuestionCreationForm
-      v-if="currentQuestionId === QuestionId.ADD"
+      v-if="
+        currentQuestionId === QuestionId.ADD &&
+        currentCategoryId &&
+        createQuestionFormStates[currentCategoryId]
+      "
       ref="createQuestionForm"
-      v-model:form-data="createQuestionFormState"
+      v-model:form-data="createQuestionFormStates[currentCategoryId]"
       @submit="handleQuestionSubmit"
     />
     <QuestionMcq
@@ -239,7 +243,7 @@ definePageMeta({
   layout: 'paper',
 })
 
-enum QuestionIdx {
+enum QuestionIndex {
   NON_EXISTENT = -1,
 
   /** Special case for add question */
@@ -272,16 +276,12 @@ watch(
   { deep: true, immediate: true }
 )
 
-watch(
-  route,
-  newRoute => {
-    const query = newRoute.query
-    if (isNullOrUndefined(query) || isNullOrUndefined(query.category)) return
-    const categoryId = parseInt(query.category as string)
-    lastVisitedQuestionForCategory.value[categoryId] = query.question as string
-  },
-  { immediate: true }
-)
+watchImmediate(route, newRoute => {
+  const query = newRoute.query
+  if (isNullOrUndefined(query) || isNullOrUndefined(query.category)) return
+  const categoryId = parseInt(query.category as string)
+  lastVisitedQuestionForCategory.value[categoryId] = query.question as string
+})
 
 function getQuestionIdForCategoryId(categoryId: number) {
   const categoryQuestions = groupedQuestions.value?.[categoryId]
@@ -328,12 +328,12 @@ const currentQuestionId = computed(() => {
 })
 
 const currentQuestionIdx = computed(() => {
-  if (!currentQuestionId.value) return QuestionIdx.NON_EXISTENT
-  if (currentQuestionId.value === QuestionId.ADD) return QuestionIdx.ADD
+  if (!currentQuestionId.value) return QuestionIndex.NON_EXISTENT
+  if (currentQuestionId.value === QuestionId.ADD) return QuestionIndex.ADD
   return (
     currentCategoryQuestions.value?.findIndex(
       q => q.id === currentQuestionId.value
-    ) ?? QuestionIdx.NON_EXISTENT
+    ) ?? QuestionIndex.NON_EXISTENT
   )
 })
 
@@ -366,7 +366,7 @@ const nextQuestionId = computed(() => {
     return QuestionId.ADD
   }
 
-  if (currentQuestionIdx.value === QuestionIdx.NON_EXISTENT) return null
+  if (currentQuestionIdx.value === QuestionIndex.NON_EXISTENT) return null
   return currentCategoryQuestions.value[currentQuestionIdx.value + 1].id
 })
 
@@ -429,17 +429,13 @@ async function handleUpdateCategory(category: QuestionCategory) {
     await updateCategory(category.id, paperId, { name })
   }
 }
-watch(
-  sortedCategories,
-  newCategories => {
-    if (!newCategories) return
+watchImmediate(sortedCategories, newCategories => {
+  if (!newCategories) return
 
-    newCategories.forEach(category => {
-      categoryNames.value[category.id] = category.name
-    })
-  },
-  { immediate: true }
-)
+  newCategories.forEach(category => {
+    categoryNames.value[category.id] = category.name
+  })
+})
 
 /**
  * `reorder-categories` api is fired after the modal closes, so that all reorders can be batched.
@@ -468,9 +464,9 @@ const createQuestionFormRef =
   useTemplateRef<ComponentExposed<typeof QuestionCreationForm>>(
     'createQuestionForm'
   )
-const createQuestionFormState = reactive({
+
+const defaultCreateQuestionFormState = {
   type: '' as QuestionType,
-  category_id: 0,
   question: {
     statement: '',
     options: ['', ''],
@@ -478,37 +474,60 @@ const createQuestionFormState = reactive({
   max_score: 0,
   tags: [],
   correct_answer: undefined,
+}
+
+const createQuestionFormStates = reactive<
+  Record<number, typeof defaultCreateQuestionFormState>
+>({})
+
+watchImmediate(currentCategoryId, categoryId => {
+  if (categoryId && isNullOrUndefined(createQuestionFormStates[categoryId])) {
+    createQuestionFormStates[categoryId] = structuredClone(
+      defaultCreateQuestionFormState
+    )
+  }
 })
+
 async function handleQuestionSubmit() {
+  if (isNullOrUndefined(currentCategoryId.value)) return
+
+  const formState = createQuestionFormStates[currentCategoryId.value]
+  if (isNullOrUndefined(formState)) return
+
   const payload = {
-    type: createQuestionFormState.type,
+    type: formState.type,
     category_id: currentCategoryId.value,
     question: {
-      statement: createQuestionFormState.question.statement,
+      statement: formState.question.statement,
     },
-    max_score: createQuestionFormState.max_score,
+    max_score: formState.max_score,
     tags: [],
   } as Parameters<typeof createQuestion>[1]
 
   if (payload.type === QuestionType.MCQ) {
-    payload.question.options = createQuestionFormState.question.options
+    payload.question.options = formState.question.options
   }
 
-  if (createQuestionFormState.correct_answer) {
-    payload.correct_answer = createQuestionFormState.correct_answer
+  if (formState.correct_answer) {
+    payload.correct_answer = formState.correct_answer
   }
 
   try {
     await createQuestion(paperId, payload)
 
     // Navigate to the newly created question
-    // We'll use getCurrentCategory questions since it will be refreshed by createQuestion
+    // currentCategoryQuestions will be refreshed by createQuestion
     const latestQuestion = currentCategoryQuestions.value.at(-1)
     if (latestQuestion) {
       navigateTo({
         query: { ...route.query, question: latestQuestion.id },
       })
     }
+
+    // Reset formState after submission
+    createQuestionFormStates[currentCategoryId.value] = structuredClone(
+      defaultCreateQuestionFormState
+    )
   } catch (error) {
     console.error('Failed to create question:', error)
   }

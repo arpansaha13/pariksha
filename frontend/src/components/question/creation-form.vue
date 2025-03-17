@@ -1,6 +1,5 @@
 <template>
   <UForm
-    ref="form"
     :state="formState"
     class="flex flex-col gap-y-5"
     :validate="validate"
@@ -112,7 +111,6 @@ import { QuestionType } from '~/types'
 
 interface CreateQuestionFormState {
   type: QuestionType | undefined
-  category_id: number
   question: {
     statement: string
     options: string[]

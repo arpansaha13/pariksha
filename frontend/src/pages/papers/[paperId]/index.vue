@@ -115,16 +115,12 @@ const { data: sortedCategories } = await usePaperCategories(paperId)
 
 const lastVisitedQuestionForCategory = ref<Record<number, string>>({})
 
-watch(
-  route,
-  newRoute => {
-    const query = newRoute.query
-    if (isNullOrUndefined(query) || isNullOrUndefined(query.category)) return
-    const categoryId = parseInt(query.category as string)
-    lastVisitedQuestionForCategory.value[categoryId] = query.question as string
-  },
-  { immediate: true }
-)
+watchImmediate(route, newRoute => {
+  const query = newRoute.query
+  if (isNullOrUndefined(query) || isNullOrUndefined(query.category)) return
+  const categoryId = parseInt(query.category as string)
+  lastVisitedQuestionForCategory.value[categoryId] = query.question as string
+})
 
 function getQuestionIdForCategoryId(categoryId: number) {
   const categoryQuestions = groupedQuestions.value?.[categoryId]
