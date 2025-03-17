@@ -25,6 +25,10 @@ export default defineNuxtConfig({
     apiBaseUrl: '',
   },
 
+  ui: {
+    colorMode: false,
+  },
+
   srcDir: 'src/',
 
   app: {
