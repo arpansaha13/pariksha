@@ -26,7 +26,9 @@ export interface QuestionMcq {
 
 export interface QuestionShort {
   id: number
-  question: Record<string, unknown>
+  question: {
+    statement: string
+  }
   category?: QuestionCategory
   type: QuestionType.SHORT
   tags: string[]
@@ -37,7 +39,9 @@ export interface QuestionShort {
 
 export interface QuestionLong {
   id: number
-  question: Record<string, unknown>
+  question: {
+    statement: string
+  }
   category?: QuestionCategory
   type: QuestionType.LONG
   tags: string[]
@@ -47,21 +51,3 @@ export interface QuestionLong {
 }
 
 export type Question = QuestionMcq | QuestionShort | QuestionLong
-
-// export interface CreateQuestionBody {
-//   paper_id: number
-//   question: Record<string, any>
-//   category_id?: number | null
-//   type: 'MCQ' | 'SHORT' | 'LONG'
-//   tags: string[]
-//   max_score: number
-//   correct_answer?: string
-// }
-
-// export interface UpdateQuestionBody {
-//   question?: Record<string, any>
-//   category_id?: number | null
-//   max_score?: number
-//   tags?: string[]
-//   correct_answer?: string
-// }

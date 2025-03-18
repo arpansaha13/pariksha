@@ -13,3 +13,4 @@ export { deleteCategory } from './api/papers/delete-category'
 export { reorderCategories } from './api/papers/reorder-categories'
 
 export { createQuestion } from './api/papers/create-question'
+export { updateQuestion } from './api/papers/update-question'

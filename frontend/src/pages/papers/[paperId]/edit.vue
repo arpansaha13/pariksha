@@ -194,7 +194,13 @@
       "
       ref="createQuestionForm"
       v-model:form-data="createQuestionFormStates[currentCategoryId]"
-      @submit="handleQuestionSubmit"
+      @submit="onCreateQuestionSubmit"
+    />
+    <QuestionCreationForm
+      v-if="currentQuestionId && editQuestionFormStates[currentQuestionId]"
+      ref="editQuestionForm"
+      v-model:form-data="editQuestionFormStates[currentQuestionId]"
+      @submit="onEditQuestionSubmit"
     />
     <QuestionMcq
       v-else-if="question && question.type === QuestionType.MCQ"
@@ -213,7 +219,7 @@
         :to="{ query: { ...route.query, question: prevQuestionId } }"
       />
     </div>
-    <div class="space-x-1.5">
+    <div class="space-x-2">
       <UButton
         v-if="currentQuestionId === QuestionId.ADD"
         label="Add question"
@@ -221,6 +227,30 @@
         variant="solid"
         @click="createQuestionFormRef?.submit()"
       />
+      <UButton
+        v-else-if="
+          currentQuestionId &&
+          isNullOrUndefined(editQuestionFormStates[currentQuestionId])
+        "
+        label="Edit question"
+        color="primary"
+        variant="subtle"
+        @click="startQuestionEdit"
+      />
+      <template v-else-if="currentQuestionId">
+        <UButton
+          label="Save"
+          color="primary"
+          variant="solid"
+          @click="editQuestionFormRef?.submit()"
+        />
+        <UButton
+          label="Cancel"
+          color="neutral"
+          variant="outline"
+          @click="cancelQuestionEdit"
+        />
+      </template>
       <UButton
         v-if="!isNullOrUndefined(nextQuestionId)"
         label="Next"
@@ -460,11 +490,6 @@ function handleReorder() {
   }
 }
 
-const createQuestionFormRef =
-  useTemplateRef<ComponentExposed<typeof QuestionCreationForm>>(
-    'createQuestionForm'
-  )
-
 const defaultCreateQuestionFormState = {
   type: '' as QuestionType,
   question: {
@@ -472,28 +497,13 @@ const defaultCreateQuestionFormState = {
     options: ['', ''],
   },
   max_score: 0,
-  tags: [],
-  correct_answer: undefined,
+  tags: [] as string[],
+  correct_answer: '' as string | undefined,
 }
 
-const createQuestionFormStates = reactive<
-  Record<number, typeof defaultCreateQuestionFormState>
->({})
+type QuestionFormState = typeof defaultCreateQuestionFormState
 
-watchImmediate(currentCategoryId, categoryId => {
-  if (categoryId && isNullOrUndefined(createQuestionFormStates[categoryId])) {
-    createQuestionFormStates[categoryId] = structuredClone(
-      defaultCreateQuestionFormState
-    )
-  }
-})
-
-async function handleQuestionSubmit() {
-  if (isNullOrUndefined(currentCategoryId.value)) return
-
-  const formState = createQuestionFormStates[currentCategoryId.value]
-  if (isNullOrUndefined(formState)) return
-
+function createQuestionRequestBody(formState: QuestionFormState) {
   const payload = {
     type: formState.type,
     category_id: currentCategoryId.value,
@@ -511,6 +521,31 @@ async function handleQuestionSubmit() {
   if (formState.correct_answer) {
     payload.correct_answer = formState.correct_answer
   }
+
+  return payload
+}
+
+const createQuestionFormRef =
+  useTemplateRef<ComponentExposed<typeof QuestionCreationForm>>(
+    'createQuestionForm'
+  )
+const createQuestionFormStates = reactive<Record<number, QuestionFormState>>({})
+
+watchImmediate(currentCategoryId, categoryId => {
+  if (categoryId && isNullOrUndefined(createQuestionFormStates[categoryId])) {
+    createQuestionFormStates[categoryId] = structuredClone(
+      defaultCreateQuestionFormState
+    )
+  }
+})
+
+async function onCreateQuestionSubmit() {
+  if (isNullOrUndefined(currentCategoryId.value)) return
+
+  const formState = createQuestionFormStates[currentCategoryId.value]
+  if (isNullOrUndefined(formState)) return
+
+  const payload = createQuestionRequestBody(formState)
 
   try {
     await createQuestion(paperId, payload)
@@ -530,6 +565,66 @@ async function handleQuestionSubmit() {
     )
   } catch (error) {
     console.error('Failed to create question:', error)
+  }
+}
+
+const editQuestionFormRef =
+  useTemplateRef<ComponentExposed<typeof QuestionCreationForm>>(
+    'editQuestionForm'
+  )
+const editQuestionFormStates = reactive<
+  Record<number, QuestionFormState | null>
+>({})
+
+function startQuestionEdit() {
+  if (!question.value || !currentQuestionId.value) return
+  if (currentQuestionId.value === QuestionId.ADD) return
+
+  // Create form state for editing if it doesn't exist
+  if (isNullOrUndefined(editQuestionFormStates[currentQuestionId.value])) {
+    editQuestionFormStates[currentQuestionId.value] = {
+      type: question.value.type,
+      question: {
+        statement: '',
+        options: ['', ''],
+      },
+      max_score: question.value.max_score,
+      tags: question.value.tags ?? [],
+      correct_answer: question.value.correct_answer ?? undefined,
+    }
+
+    // Parse and populate question data based on type
+    if (question.value.type === QuestionType.MCQ) {
+      const mcqQuestion = question.value.question
+      editQuestionFormStates[currentQuestionId.value]!.question = {
+        ...mcqQuestion,
+      }
+    } else {
+      const generalQuestion = question.value.question
+      editQuestionFormStates[currentQuestionId.value]!.question.statement =
+        generalQuestion.statement
+    }
+  }
+}
+
+function cancelQuestionEdit() {
+  if (!currentQuestionId.value) return
+  editQuestionFormStates[currentQuestionId.value] = null
+}
+
+async function onEditQuestionSubmit() {
+  if (!currentQuestionId.value) return
+  if (currentQuestionId.value === QuestionId.ADD) return
+
+  const formState = editQuestionFormStates[currentQuestionId.value]!
+  const payload = createQuestionRequestBody(formState)
+
+  try {
+    await updateQuestion(currentQuestionId.value, paperId, payload)
+    // Clear edit form state after successful update
+    editQuestionFormStates[currentQuestionId.value] = null
+  } catch (error) {
+    console.error('Failed to update question:', error)
   }
 }
 </script>

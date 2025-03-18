@@ -2,8 +2,6 @@
   <UForm
     :state="formState"
     class="flex flex-col gap-y-5"
-    :validate="validate"
-    :validate-on="['blur']"
     @submit.prevent="onSubmit"
   >
     <UFormField label="Type" description="Choose the type of question" required>
@@ -106,7 +104,6 @@
 </template>
 
 <script setup lang="ts">
-import type { FormError } from '@nuxt/ui'
 import { QuestionType } from '~/types'
 
 interface CreateQuestionFormState {
@@ -130,11 +127,6 @@ const submitButtonRef = useTemplateRef('submitButton')
 defineExpose({
   submit: () => submitButtonRef.value?.click(),
 })
-
-function validate(): FormError[] {
-  console.log('validating')
-  return []
-}
 
 const emit = defineEmits<{
   submit: [form: CreateQuestionFormState]
