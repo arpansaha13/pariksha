@@ -9,7 +9,7 @@ export interface CreateMcqQuestionBody {
   }
   max_score: number
   tags: string[]
-  correct_answer?: string
+  correct_answer: string | null | undefined
 }
 
 export interface CreateGeneralQuestionBody {
@@ -20,7 +20,7 @@ export interface CreateGeneralQuestionBody {
   }
   max_score: number
   tags: string[]
-  correct_answer?: string
+  correct_answer: string | null | undefined
 }
 
 type CreateQuestionBody = CreateMcqQuestionBody | CreateGeneralQuestionBody

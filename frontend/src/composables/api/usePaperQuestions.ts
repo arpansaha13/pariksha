@@ -1,17 +1,24 @@
-import type { Question } from '~/types'
+import type { QuestionMinimal } from '~/types'
 
 export function usePaperQuestions(paperId: number) {
   const fetchOptions = getFetchOptions()
 
   return useAsyncData(
     AsyncDataKeys.PAPERS_PAPER_QUESTIONS(paperId),
-    () => $fetch<Question[]>(`/api/papers/${paperId}/questions`, fetchOptions),
+    () =>
+      $fetch<QuestionMinimal[]>(
+        `/api/papers/${paperId}/questions`,
+        fetchOptions
+      ),
     {
       transform: questions => {
-        const byCategory = {} as Record<number | 'uncategorized', Question[]>
+        const byCategory = {} as Record<
+          number | 'uncategorized',
+          QuestionMinimal[]
+        >
 
         for (const question of questions) {
-          const categoryId = question.category?.id ?? 'uncategorized'
+          const categoryId = question.category_id ?? 'uncategorized'
           if (!byCategory[categoryId]) {
             byCategory[categoryId] = []
           }

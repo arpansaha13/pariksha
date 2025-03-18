@@ -173,10 +173,7 @@ const currentQuestionIdx = computed(() => {
   )
 })
 
-const question = computed(() => {
-  if (currentQuestionIdx.value === -1) return null
-  return currentCategoryQuestions.value?.[currentQuestionIdx.value] ?? null
-})
+const { data: question } = await useQuestion(currentQuestionId)
 
 const prevQuestionId = computed(() => {
   if (!currentCategoryQuestions.value || currentQuestionIdx.value <= 0)

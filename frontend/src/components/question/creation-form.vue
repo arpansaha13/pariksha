@@ -104,17 +104,15 @@
 </template>
 
 <script setup lang="ts">
-import { QuestionType } from '~/types'
+import { type Question, QuestionType } from '~/types'
 
-interface CreateQuestionFormState {
-  type: QuestionType | undefined
+interface CreateQuestionFormState
+  extends Pick<Question, 'max_score' | 'tags' | 'correct_answer'> {
+  type: QuestionType
   question: {
     statement: string
     options: string[]
   }
-  max_score: number
-  tags: string[]
-  correct_answer: string | undefined
 }
 
 const formState = defineModel<CreateQuestionFormState>('form-data', {

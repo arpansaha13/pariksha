@@ -19,6 +19,12 @@ type QuestionResponse struct {
 	CorrectAnswer string                    `json:"correct_answer"`
 }
 
+type QuestionMinimalResponse struct {
+	ID         int  `json:"id"`
+	CategoryID *int `json:"category_id"`
+	PaperID    int  `json:"paper_id"`
+}
+
 type CreateQuestionDto struct {
 	Question      json.RawMessage `json:"question" validate:"required"`
 	CategoryID    *int            `json:"category_id"`

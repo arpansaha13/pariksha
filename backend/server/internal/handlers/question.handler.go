@@ -55,19 +55,23 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch questions for the paper
+	// Fetch only needed fields from questions
 	var questions []models.Question
 	if err := db.DB.
-		Preload("Category").
+		Select("id, category_id, paper_id").
 		Where("paper_id = ?", paperID).
 		Find(&questions).Error; err != nil {
 		http.Error(w, "Failed to retrieve questions", http.StatusInternalServerError)
 		return
 	}
 
-	var response []dtos.QuestionResponse
-	for _, question := range questions {
-		response = append(response, questionToResponse(question))
+	response := make([]dtos.QuestionMinimalResponse, len(questions))
+	for i, question := range questions {
+		response[i] = dtos.QuestionMinimalResponse{
+			ID:         question.ID,
+			CategoryID: question.CategoryID,
+			PaperID:    question.PaperID,
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

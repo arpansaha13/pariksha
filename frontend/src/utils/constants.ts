@@ -22,4 +22,6 @@ export const AsyncDataKeys = {
     `PAPERS_PAPER_${paperId}_QUESTIONS`,
   PAPERS_PAPER_CATEGORIES: (paperId: number) =>
     `PAPERS_PAPER_${paperId}_CATEGORIES`,
+
+  QUESTION: (questionId: number | null) => `QUESTION_${questionId}`,
 }

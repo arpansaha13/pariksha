@@ -1,3 +1,8 @@
+export enum QuestionId {
+  /** Special case for add question */
+  ADD = 0,
+}
+
 export enum QuestionType {
   MCQ = 'MCQ',
   SHORT = 'SHORT',
@@ -8,6 +13,12 @@ export interface QuestionCategory {
   id: number
   name: string
   order: number
+}
+
+export interface QuestionMinimal {
+  id: number
+  category_id: number
+  paper_id: number
 }
 
 export interface QuestionMcq {
@@ -21,7 +32,7 @@ export interface QuestionMcq {
   tags: string[]
   paper_id: number
   max_score: number
-  correct_answer?: string
+  correct_answer: string | null | undefined
 }
 
 export interface QuestionShort {
@@ -34,7 +45,7 @@ export interface QuestionShort {
   tags: string[]
   paper_id: number
   max_score: number
-  correct_answer?: string
+  correct_answer: string | null | undefined
 }
 
 export interface QuestionLong {
@@ -47,7 +58,7 @@ export interface QuestionLong {
   tags: string[]
   paper_id: number
   max_score: number
-  correct_answer?: string
+  correct_answer: string | null | undefined
 }
 
 export type Question = QuestionMcq | QuestionShort | QuestionLong

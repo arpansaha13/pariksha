@@ -199,7 +199,7 @@
     <QuestionCreationForm
       v-if="currentQuestionId && editQuestionFormStates[currentQuestionId]"
       ref="editQuestionForm"
-      v-model:form-data="editQuestionFormStates[currentQuestionId]"
+      v-model:form-data="editQuestionFormStates[currentQuestionId]!"
       @submit="onEditQuestionSubmit"
     />
     <QuestionMcq
@@ -267,7 +267,7 @@ import Draggable from 'vuedraggable'
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import { ConfirmModal, QuestionCreationForm } from '#components'
-import { QuestionType, type QuestionCategory } from '~/types'
+import { QuestionId, QuestionType, type QuestionCategory } from '~/types'
 
 definePageMeta({
   layout: 'paper',
@@ -278,11 +278,6 @@ enum QuestionIndex {
 
   /** Special case for add question */
   ADD = -2,
-}
-
-enum QuestionId {
-  /** Special case for add question */
-  ADD = 0,
 }
 
 const route = useRoute()
@@ -322,7 +317,10 @@ function getQuestionIdForCategoryId(categoryId: number) {
 }
 
 // Add initial `category` and `question` queries, if missing
-if (!route.query.category && sortedCategories.value?.length) {
+if (
+  (!route.query.category || !route.query.question) &&
+  sortedCategories.value?.length
+) {
   const categoryId = sortedCategories.value[0].id
   const questionId = getQuestionIdForCategoryId(categoryId)
   const query = { category: categoryId, question: questionId }
@@ -367,11 +365,7 @@ const currentQuestionIdx = computed(() => {
   )
 })
 
-const question = computed(() => {
-  if (currentQuestionId.value === QuestionId.ADD) return null
-  if (currentQuestionIdx.value < 0) return null
-  return currentCategoryQuestions.value?.[currentQuestionIdx.value] ?? null
-})
+const { data: question } = await useQuestion(currentQuestionId)
 
 const prevQuestionId = computed(() => {
   if (!currentCategoryQuestions.value) return null
@@ -498,7 +492,7 @@ const defaultCreateQuestionFormState = {
   },
   max_score: 0,
   tags: [] as string[],
-  correct_answer: '' as string | undefined,
+  correct_answer: '' as string | null | undefined,
 }
 
 type QuestionFormState = typeof defaultCreateQuestionFormState
@@ -512,14 +506,11 @@ function createQuestionRequestBody(formState: QuestionFormState) {
     },
     max_score: formState.max_score,
     tags: [],
+    correct_answer: formState.correct_answer,
   } as Parameters<typeof createQuestion>[1]
 
   if (payload.type === QuestionType.MCQ) {
     payload.question.options = formState.question.options
-  }
-
-  if (formState.correct_answer) {
-    payload.correct_answer = formState.correct_answer
   }
 
   return payload
