@@ -74,6 +74,27 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func GetQuestion(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	questionID := vars["id"]
+
+	var question models.Question
+	if err := db.DB.Preload("Category").Take(&question, questionID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			http.Error(w, "Question not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Failed to find question", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Convert to response DTO
+	response := questionToResponse(question)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	paperID, err := strconv.Atoi(vars["id"])
