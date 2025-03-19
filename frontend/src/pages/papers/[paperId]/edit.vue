@@ -42,7 +42,18 @@
           orientation="horizontal"
           variant="link"
           highlight
-        />
+        >
+          <template #item="{ item }">
+            <UChip
+              :show="!!unsavedCount[item.to.query.category]"
+              :ui="{
+                base: '-top-1 -right-1.5',
+              }"
+            >
+              <span class="truncate">{{ item.label }}</span>
+            </UChip>
+          </template>
+        </UNavigationMenu>
       </ScrollAreaViewport>
       <ScrollAreaScrollbar
         class="flex touch-none bg-white p-0.5 transition-colors ease-out select-none data-[orientation=horizontal]:h-2 data-[orientation=horizontal]:flex-col"
@@ -153,15 +164,17 @@
     <UCard v-if="currentCategoryQuestions">
       <ul class="flex flex-wrap gap-4">
         <li v-for="(q, i) of currentCategoryQuestions" :key="q.id">
-          <UButton
-            :to="{ query: { ...route.query, question: q.id } }"
-            :color="currentQuestionId === q.id ? 'primary' : 'neutral'"
-            :variant="currentQuestionId === q.id ? 'subtle' : 'outline'"
-            size="lg"
-            class="flex size-10 items-center justify-center rounded-full"
-          >
-            {{ i + 1 }}
-          </UButton>
+          <UChip :show="!isNullOrUndefined(editQuestionFormStates[q.id])" inset>
+            <UButton
+              :to="{ query: { ...route.query, question: q.id } }"
+              :color="currentQuestionId === q.id ? 'primary' : 'neutral'"
+              :variant="currentQuestionId === q.id ? 'subtle' : 'outline'"
+              size="lg"
+              class="flex size-10 items-center justify-center rounded-full"
+            >
+              {{ i + 1 }}
+            </UButton>
+          </UChip>
         </li>
         <li>
           <UTooltip text="Add question">
@@ -526,6 +539,26 @@ function createQuestionRequestBody(formState: QuestionFormState) {
   return payload
 }
 
+// ___________UNSAVED COUNT FOR CHIPS ON CATEGORY LINKS___________
+
+const unsavedCount = ref<Record<number, number>>({})
+
+function incUnsavedCount(categoryId: number) {
+  if (!unsavedCount.value[categoryId]) {
+    unsavedCount.value[categoryId] = 1
+  } else {
+    unsavedCount.value[categoryId]++
+  }
+}
+
+function decUnsavedCount(categoryId: number) {
+  if (!unsavedCount.value[categoryId]) {
+    unsavedCount.value[categoryId] = 0
+  } else {
+    unsavedCount.value[categoryId]--
+  }
+}
+
 // ________________________CREATE QUESTION________________________
 const createQuestionFormRef =
   useTemplateRef<ComponentExposed<typeof QuestionCreationForm>>(
@@ -608,12 +641,15 @@ function startQuestionEdit() {
       editQuestionFormStates[currentQuestionId.value]!.question.statement =
         generalQuestion.statement
     }
+
+    if (question.value.category) incUnsavedCount(question.value.category.id)
   }
 }
 
 function cancelQuestionEdit() {
   if (!currentQuestionId.value) return
   editQuestionFormStates[currentQuestionId.value] = null
+  decUnsavedCount(currentCategoryId.value!)
 }
 
 async function onEditQuestionSubmit() {
@@ -627,6 +663,7 @@ async function onEditQuestionSubmit() {
     await updateQuestion(currentQuestionId.value, paperId, payload)
     // Clear edit form state after successful update
     editQuestionFormStates[currentQuestionId.value] = null
+    decUnsavedCount(currentCategoryId.value!)
   } catch (error) {
     console.error('Failed to update question:', error)
   }
@@ -669,6 +706,7 @@ watch(question, (_, oldQuestion) => {
   // If previous question was in edit mode but not dirty, cancel its edit
   if (formState && !isEditFormStateDirty(oldQuestion, formState)) {
     editQuestionFormStates[oldQuestion.id] = null
+    if (oldQuestion.category) decUnsavedCount(oldQuestion.category.id)
   }
 })
 </script>
