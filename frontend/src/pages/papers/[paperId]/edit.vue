@@ -592,7 +592,7 @@ function startQuestionEdit() {
         options: ['', ''],
       },
       max_score: question.value.max_score,
-      tags: question.value.tags ?? [],
+      tags: [...question.value.tags],
       correct_answer: question.value.correct_answer ?? undefined,
     }
 
@@ -600,7 +600,8 @@ function startQuestionEdit() {
     if (question.value.type === QuestionType.MCQ) {
       const mcqQuestion = question.value.question
       editQuestionFormStates[currentQuestionId.value]!.question = {
-        ...mcqQuestion,
+        statement: mcqQuestion.statement,
+        options: [...mcqQuestion.options], // Store new array reference
       }
     } else {
       const generalQuestion = question.value.question
