@@ -267,7 +267,12 @@ import Draggable from 'vuedraggable'
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import { ConfirmModal, QuestionCreationForm } from '#components'
-import { QuestionId, QuestionType, type QuestionCategory } from '~/types'
+import {
+  type Question,
+  QuestionId,
+  QuestionType,
+  type QuestionCategory,
+} from '~/types'
 
 definePageMeta({
   layout: 'paper',
@@ -394,6 +399,7 @@ const nextQuestionId = computed(() => {
   return currentCategoryQuestions.value[currentQuestionIdx.value + 1].id
 })
 
+// ________________________EDIT PAPER TITLE_________________________
 const editablePaperTitle = ref(paper.value!.title)
 function updatePaperTitle() {
   editablePaperTitle.value.trim()
@@ -408,6 +414,7 @@ watch(paper, newPaper => {
   editablePaperTitle.value = newPaper!.title
 })
 
+// ________________________DELETE CATEGORY_________________________
 async function handleDeleteCategory(category: QuestionCategory) {
   let shouldDelete = true
 
@@ -442,6 +449,7 @@ async function doDeleteCategory(categoryId: number) {
   await deleteCategory(categoryId, paperId)
 }
 
+// ________________________UPDATE CATEGORY_________________________
 const categoryNames = ref<Record<number, string>>({})
 async function handleUpdateCategory(category: QuestionCategory) {
   categoryNames.value[category.id].trim()
@@ -461,6 +469,7 @@ watchImmediate(sortedCategories, newCategories => {
   })
 })
 
+// _______________________REORDER CATEGORY________________________
 /**
  * `reorder-categories` api is fired after the modal closes, so that all reorders can be batched.
  * Because individual reorders cause inconsistencies during rollback (in case of error).
@@ -484,6 +493,7 @@ function handleReorder() {
   }
 }
 
+// ________________CREATE/EDIT QUESTION PREREQUISITES_______________
 const defaultCreateQuestionFormState = {
   type: '' as QuestionType,
   question: {
@@ -516,6 +526,7 @@ function createQuestionRequestBody(formState: QuestionFormState) {
   return payload
 }
 
+// ________________________CREATE QUESTION________________________
 const createQuestionFormRef =
   useTemplateRef<ComponentExposed<typeof QuestionCreationForm>>(
     'createQuestionForm'
@@ -559,6 +570,7 @@ async function onCreateQuestionSubmit() {
   }
 }
 
+// ________________________EDIT QUESTION__________________________
 const editQuestionFormRef =
   useTemplateRef<ComponentExposed<typeof QuestionCreationForm>>(
     'editQuestionForm'
@@ -618,6 +630,45 @@ async function onEditQuestionSubmit() {
     console.error('Failed to update question:', error)
   }
 }
+
+// ___________________AUTO-CANCEL QUESTION EDIT MODE_______________
+function isEditFormStateDirty(
+  oldQuestion: Question,
+  formState: QuestionFormState
+): boolean {
+  if (!oldQuestion || !formState) return false
+
+  if (
+    formState.max_score !== oldQuestion.max_score ||
+    formState.correct_answer !== (oldQuestion.correct_answer ?? undefined) ||
+    !arrayEquals(formState.tags, oldQuestion.tags ?? [])
+  ) {
+    return true
+  }
+
+  // Check question data based on type
+  if (oldQuestion.type === QuestionType.MCQ) {
+    const mcqQuestion = oldQuestion.question
+    return (
+      formState.question.statement !== mcqQuestion.statement ||
+      !arrayEquals(formState.question.options, mcqQuestion.options)
+    )
+  } else {
+    const generalQuestion = oldQuestion.question
+    return formState.question.statement !== generalQuestion.statement
+  }
+}
+
+watch(question, (_, oldQuestion) => {
+  if (!oldQuestion) return
+
+  const formState = editQuestionFormStates[oldQuestion.id]
+
+  // If previous question was in edit mode but not dirty, cancel its edit
+  if (formState && !isEditFormStateDirty(oldQuestion, formState)) {
+    editQuestionFormStates[oldQuestion.id] = null
+  }
+})
 </script>
 
 <style scoped>
