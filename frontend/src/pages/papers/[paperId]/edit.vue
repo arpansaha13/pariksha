@@ -640,6 +640,7 @@ function isEditFormStateDirty(
   if (!oldQuestion || !formState) return false
 
   if (
+    formState.type !== oldQuestion.type ||
     formState.max_score !== oldQuestion.max_score ||
     formState.correct_answer !== (oldQuestion.correct_answer ?? undefined) ||
     !arrayEquals(formState.tags, oldQuestion.tags ?? [])
