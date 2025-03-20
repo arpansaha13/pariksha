@@ -226,11 +226,11 @@
   <UCard :ui="{ root: 'col-span-2', body: 'flex justify-between' }">
     <div>
       <UButton
-        v-if="prevQuestionId"
+        v-if="questionNavigation.prev"
         label="Previous"
         color="neutral"
         variant="outline"
-        :to="{ query: { ...route.query, question: prevQuestionId } }"
+        :to="{ query: { ...route.query, question: questionNavigation.prev } }"
       />
     </div>
     <div class="space-x-2">
@@ -266,11 +266,11 @@
         />
       </template>
       <UButton
-        v-if="!isNullOrUndefined(nextQuestionId)"
+        v-if="!isNullOrUndefined(questionNavigation.next)"
         label="Next"
         color="neutral"
         variant="outline"
-        :to="{ query: { ...route.query, question: nextQuestionId } }"
+        :to="{ query: { ...route.query, question: questionNavigation.next } }"
       />
     </div>
   </UCard>
@@ -386,31 +386,44 @@ const currentQuestionIdx = computed(() => {
 
 const { data: question } = await useQuestion(currentQuestionId)
 
-const prevQuestionId = computed(() => {
-  if (!currentCategoryQuestions.value) return null
+const questionNavigation = computed(() => {
+  if (!currentCategoryQuestions.value) {
+    return { prev: null, next: null }
+  }
 
-  // If on add question page, show last question as prev
+  // If on add question page
   if (currentQuestionId.value === QuestionId.ADD) {
-    return currentCategoryQuestions.value.at(-1)?.id
+    return {
+      prev: currentCategoryQuestions.value.at(-1)?.id, // show last question as prev
+      next: null, // there is no next
+    }
   }
 
-  if (currentQuestionIdx.value <= 0) return null
-  return currentCategoryQuestions.value[currentQuestionIdx.value - 1].id
-})
+  // Non-existent question check should be after QuestionId.ADD
+  if (currentQuestionIdx.value < 0) {
+    return { prev: null, next: null }
+  }
 
-const nextQuestionId = computed(() => {
-  if (!currentCategoryQuestions.value) return null
+  // First question
+  if (currentQuestionIdx.value === 0) {
+    return {
+      prev: null,
+      next: currentCategoryQuestions.value[1].id,
+    }
+  }
 
-  // If on add question page, there is no next
-  if (currentQuestionId.value === QuestionId.ADD) return null
-
-  // If on last question, show add question as next
+  // Last question
   if (currentQuestionIdx.value === currentCategoryQuestions.value.length - 1) {
-    return QuestionId.ADD
+    return {
+      prev: currentCategoryQuestions.value.at(-2)?.id,
+      next: QuestionId.ADD, // show add question as next
+    }
   }
 
-  if (currentQuestionIdx.value === QuestionIndex.NON_EXISTENT) return null
-  return currentCategoryQuestions.value[currentQuestionIdx.value + 1].id
+  return {
+    prev: currentCategoryQuestions.value[currentQuestionIdx.value - 1].id,
+    next: currentCategoryQuestions.value[currentQuestionIdx.value + 1].id,
+  }
 })
 
 // ________________________EDIT PAPER TITLE_________________________
