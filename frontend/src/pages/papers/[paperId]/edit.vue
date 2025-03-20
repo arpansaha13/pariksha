@@ -200,7 +200,7 @@
   <UCard
     :ui="{ root: 'col-span-2 overflow-hidden', body: 'h-full overflow-auto' }"
   >
-    <QuestionCreationForm
+    <QuestionForm
       v-if="
         currentQuestionId === QuestionId.ADD &&
         currentCategoryId &&
@@ -210,7 +210,7 @@
       v-model:form-data="createQuestionFormStates[currentCategoryId]"
       @submit="onCreateQuestionSubmit"
     />
-    <QuestionCreationForm
+    <QuestionForm
       v-if="currentQuestionId && editQuestionFormStates[currentQuestionId]"
       ref="editQuestionForm"
       v-model:form-data="editQuestionFormStates[currentQuestionId]!"
@@ -280,7 +280,7 @@
 import Draggable from 'vuedraggable'
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { ComponentExposed } from 'vue-component-type-helpers'
-import { ConfirmModal, QuestionCreationForm } from '#components'
+import { ConfirmModal, QuestionForm } from '#components'
 import {
   type Question,
   QuestionId,
@@ -575,9 +575,7 @@ function decUnsavedCount(categoryId: number) {
 
 // ________________________CREATE QUESTION________________________
 const createQuestionFormRef =
-  useTemplateRef<ComponentExposed<typeof QuestionCreationForm>>(
-    'createQuestionForm'
-  )
+  useTemplateRef<ComponentExposed<typeof QuestionForm>>('createQuestionForm')
 const createQuestionFormStates = reactive<Record<number, QuestionFormState>>({})
 
 watchImmediate(currentCategoryId, categoryId => {
@@ -619,9 +617,7 @@ async function onCreateQuestionSubmit() {
 
 // ________________________EDIT QUESTION__________________________
 const editQuestionFormRef =
-  useTemplateRef<ComponentExposed<typeof QuestionCreationForm>>(
-    'editQuestionForm'
-  )
+  useTemplateRef<ComponentExposed<typeof QuestionForm>>('editQuestionForm')
 const editQuestionFormStates = reactive<
   Record<number, QuestionFormState | null>
 >({})
