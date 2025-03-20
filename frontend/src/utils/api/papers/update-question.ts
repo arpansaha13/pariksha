@@ -65,9 +65,9 @@ export async function updateQuestion(
     requestBody.tags = newData.tags
   }
 
-  if (newData.category_id !== (previousQuestion.category?.id ?? null)) {
-    requestBody.category_id = newData.category_id
-  }
+  // if (newData.category_id !== previousQuestion.category.id) {
+  //   requestBody.category_id = newData.category_id
+  // }
 
   if (
     (newData.correct_answer ?? null) !==
@@ -91,7 +91,7 @@ export async function updateQuestion(
       ...getFetchOptions(),
     })
 
-    // Refresh both questions and paper data since max_score or question_counts might change
+    // Refresh both question and paper since max_score or question_counts might change
     await Promise.all([
       refreshNuxtData(AsyncDataKeys.QUESTION(questionId)),
       refreshNuxtData(AsyncDataKeys.PAPERS_PAPER(paperId)),

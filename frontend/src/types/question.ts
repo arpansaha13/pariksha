@@ -27,7 +27,7 @@ export interface QuestionMcq {
     statement: string
     options: string[]
   }
-  category?: QuestionCategory
+  category: QuestionCategory
   type: QuestionType.MCQ
   tags: string[]
   paper_id: number
@@ -40,7 +40,7 @@ export interface QuestionShort {
   question: {
     statement: string
   }
-  category?: QuestionCategory
+  category: QuestionCategory
   type: QuestionType.SHORT
   tags: string[]
   paper_id: number
@@ -53,7 +53,7 @@ export interface QuestionLong {
   question: {
     statement: string
   }
-  category?: QuestionCategory
+  category: QuestionCategory
   type: QuestionType.LONG
   tags: string[]
   paper_id: number

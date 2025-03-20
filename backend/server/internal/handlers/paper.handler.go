@@ -73,6 +73,16 @@ func CreatePaper(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
+		defaultCategory := models.QuestionCategory{
+			PaperID: paper.ID,
+			Name:    "Category 1",
+			Order:   1,
+		}
+
+		if err := tx.Create(&defaultCategory).Error; err != nil {
+			return err
+		}
+
 		return nil
 	})
 

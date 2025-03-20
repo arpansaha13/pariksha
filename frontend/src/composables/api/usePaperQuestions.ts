@@ -12,13 +12,10 @@ export function usePaperQuestions(paperId: number) {
       ),
     {
       transform: questions => {
-        const byCategory = {} as Record<
-          number | 'uncategorized',
-          QuestionMinimal[]
-        >
+        const byCategory = {} as Record<number, QuestionMinimal[]>
 
         for (const question of questions) {
-          const categoryId = question.category_id ?? 'uncategorized'
+          const categoryId = question.category_id
           if (!byCategory[categoryId]) {
             byCategory[categoryId] = []
           }
@@ -32,6 +29,6 @@ export function usePaperQuestions(paperId: number) {
 
   // Not working in server-side
   // transform: questions => {
-  //   return Object.groupBy(questions, q => q.category?.id ?? 'uncategorized')
+  //   return Object.groupBy(questions, q => q.category.id)
   // },
 }

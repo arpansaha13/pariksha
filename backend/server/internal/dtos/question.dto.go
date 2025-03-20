@@ -20,14 +20,14 @@ type QuestionResponse struct {
 }
 
 type QuestionMinimalResponse struct {
-	ID         int  `json:"id"`
-	CategoryID *int `json:"category_id"`
-	PaperID    int  `json:"paper_id"`
+	ID         int `json:"id"`
+	CategoryID int `json:"category_id"`
+	PaperID    int `json:"paper_id"`
 }
 
 type CreateQuestionDto struct {
 	Question      json.RawMessage `json:"question" validate:"required"`
-	CategoryID    *int            `json:"category_id"`
+	CategoryID    int             `json:"category_id" validate:"required"`
 	Type          string          `json:"type" validate:"required"`
 	Tags          json.RawMessage `json:"tags,omitempty" validate:"required"`
 	MaxScore      int             `json:"max_score" validate:"required"`
@@ -37,7 +37,7 @@ type CreateQuestionDto struct {
 type UpdateQuestionDto struct {
 	Type          string          `json:"type,omitempty"`
 	Question      json.RawMessage `json:"question,omitempty"`
-	CategoryID    *int            `json:"category_id"`
+	CategoryID    int             `json:"category_id,omitempty"`
 	MaxScore      int             `json:"max_score,omitempty"`
 	Tags          json.RawMessage `json:"tags,omitempty"`
 	CorrectAnswer string          `json:"correct_answer,omitempty"`

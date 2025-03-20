@@ -2,7 +2,7 @@ import type { Question, QuestionType } from '~/types'
 
 export interface CreateMcqQuestionBody {
   type: QuestionType.MCQ
-  category_id: number | null
+  category_id: number
   question: {
     statement: string
     options: string[]
@@ -14,7 +14,7 @@ export interface CreateMcqQuestionBody {
 
 export interface CreateGeneralQuestionBody {
   type: QuestionType.SHORT | QuestionType.LONG
-  category_id: number | null
+  category_id: number
   question: {
     statement: string
   }

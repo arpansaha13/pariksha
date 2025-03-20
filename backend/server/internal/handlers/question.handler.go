@@ -19,19 +19,16 @@ import (
 )
 
 func questionToResponse(question models.Question) dtos.QuestionResponse {
-	var category *dtos.QuestionCategoryResponse
-	if question.CategoryID != nil {
-		category = &dtos.QuestionCategoryResponse{
-			ID:    question.Category.ID,
-			Name:  question.Category.Name,
-			Order: question.Category.Order,
-		}
+	category := dtos.QuestionCategoryResponse{
+		ID:    question.Category.ID,
+		Name:  question.Category.Name,
+		Order: question.Category.Order,
 	}
 
 	return dtos.QuestionResponse{
 		ID:            question.ID,
 		Question:      question.Question,
-		Category:      category,
+		Category:      &category,
 		Type:          question.Type,
 		Tags:          question.Tags,
 		PaperID:       question.PaperID,
@@ -148,16 +145,14 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		// Validate categories exist if specified
-		if questionDto.CategoryID != nil {
-			var category models.QuestionCategory
-			if err := tx.Where("id = ? AND paper_id = ?", *questionDto.CategoryID, paperID).
-				Take(&category).Error; err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
-					return errors.New("category not found")
-				}
-				return err
+		// Validate category exists
+		var category models.QuestionCategory
+		if err := tx.Where("id = ? AND paper_id = ?", questionDto.CategoryID, paperID).
+			Take(&category).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("category not found")
 			}
+			return err
 		}
 
 		// Increment the question count based on the question type
@@ -185,11 +180,8 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		// Preload the category for response
-		if question.CategoryID != nil {
-			if err := tx.Preload("Category").First(&question, question.ID).Error; err != nil {
-				return err
-			}
+		if err := tx.Preload("Category").Take(&question, question.ID).Error; err != nil {
+			return err
 		}
 
 		response = questionToResponse(question)
@@ -310,18 +302,15 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Update the fields based on the provided data
-		if updateDto.CategoryID != nil {
-			// Validate category exists
-			if *updateDto.CategoryID != 0 {
-				var category models.QuestionCategory
-				if err := tx.Where("id = ? AND paper_id = ?", *updateDto.CategoryID, question.PaperID).
-					Take(&category).Error; err != nil {
-					if errors.Is(err, gorm.ErrRecordNotFound) {
-						http.Error(w, "Category not found", http.StatusBadRequest)
-						return err
-					}
+		if updateDto.CategoryID != 0 {
+			var category models.QuestionCategory
+			if err := tx.Where("id = ? AND paper_id = ?", updateDto.CategoryID, question.PaperID).
+				Take(&category).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					http.Error(w, "Category not found", http.StatusBadRequest)
 					return err
 				}
+				return err
 			}
 			question.CategoryID = updateDto.CategoryID
 			isUpdated = true
