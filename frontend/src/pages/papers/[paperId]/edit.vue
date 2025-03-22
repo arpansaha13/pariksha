@@ -85,66 +85,69 @@
       </UTooltip>
 
       <template #body>
-        <ul>
-          <Draggable
-            v-model="editableCategoriesCopy"
-            item-key="id"
-            group="category-editable"
-            handle=".draggable-handle"
-            ghost-class="draggable-ghost"
-            drag-class="draggable-hold"
-            :animation="250"
-            @start="dragging = true"
-            @end="dragging = false"
-          >
-            <template #item="{ element: category }">
-              <li class="group flex items-center gap-2 rounded-sm">
-                <div class="draggable-handle flex size-5 cursor-grab">
-                  <Icon
-                    name="i-heroicons-bars-2"
-                    class="m-auto text-gray-400 transition-colors"
-                  />
-                </div>
+        <Draggable
+          v-model="categoriesCopyForReorder"
+          tag="ol"
+          item-key="id"
+          group="category-editable"
+          handle=".draggable-handle"
+          ghost-class="draggable-ghost"
+          drag-class="draggable-hold"
+          :animation="250"
+          @start="dragging = true"
+          @end="dragging = false"
+        >
+          <template #item="{ element: category }">
+            <li
+              :key="category.id"
+              class="group flex items-center gap-2 rounded-sm"
+            >
+              <!-- //NOSONAR gives error because this is a comment node and counts as multiple nodes inside template -->
+              <div class="draggable-handle flex size-5 cursor-grab">
+                <Icon
+                  name="i-heroicons-bars-2"
+                  class="m-auto text-gray-400 transition-colors"
+                />
+              </div>
 
-                <EditableRoot
-                  v-slot="{ isEditing }"
-                  v-model="categoryNames[category.id]"
-                  activation-mode="focus"
-                  submit-mode="both"
-                  class="grow"
-                  placeholder=""
-                  @submit="() => handleUpdateCategory(category)"
+              <EditableRoot
+                v-slot="{ isEditing }"
+                v-model="categoryNames[category.id]"
+                activation-mode="focus"
+                submit-mode="both"
+                class="grow"
+                placeholder=""
+                @submit="() => handleUpdateCategory(category)"
+              >
+                <EditableArea
+                  :class="[
+                    'px-2 py-2 text-sm transition-colors dark:border-gray-800',
+                    isEditing
+                      ? 'border-primary-500 border-b-2'
+                      : 'border-b border-gray-200',
+                  ]"
                 >
-                  <EditableArea
-                    :class="[
-                      'px-2 py-2 text-sm transition-colors dark:border-gray-800',
-                      isEditing
-                        ? 'border-primary-500 border-b-2'
-                        : 'border-b border-gray-200',
-                    ]"
-                  >
-                    <EditablePreview class="" />
-                    <EditableInput class="outline-none" />
-                  </EditableArea>
-                </EditableRoot>
+                  <EditablePreview />
+                  <EditableInput class="outline-none" />
+                </EditableArea>
+              </EditableRoot>
 
-                <div v-show="!dragging">
-                  <UButton
-                    icon="i-heroicons-trash"
-                    size="sm"
-                    color="error"
-                    square
-                    variant="soft"
-                    class="invisible group-hover:visible"
-                    loading-auto
-                    :disabled="sortedCategories?.length === 1"
-                    @click="handleDeleteCategory(category)"
-                  />
-                </div>
-              </li>
-            </template>
-          </Draggable>
-        </ul>
+              <div v-show="!dragging">
+                <UButton
+                  icon="i-heroicons-trash"
+                  size="sm"
+                  color="error"
+                  square
+                  variant="soft"
+                  class="invisible group-hover:visible"
+                  loading-auto
+                  :disabled="sortedCategories?.length === 1"
+                  @click="handleDeleteCategory(category)"
+                />
+              </div>
+            </li>
+          </template>
+        </Draggable>
       </template>
 
       <template #footer>
@@ -169,59 +172,71 @@
       <h2 class="text-lg font-semibold">Question Pallet</h2>
     </template>
 
-    <ol
-      v-if="currentCategoryQuestions"
-      class="divide-y divide-neutral-200 py-2"
-    >
-      <li
-        v-for="(q, i) of currentCategoryQuestions"
-        :key="q.id"
-        :class="[
-          currentQuestionId === q.id
-            ? 'bg-(--ui-primary)/10 hover:bg-(--ui-primary)/15 disabled:bg-(--ui-primary)/10 aria-disabled:bg-(--ui-primary)/10'
-            : 'bg-(--ui-bg) hover:bg-(--ui-bg-elevated) disabled:bg-(--ui-bg) aria-disabled:bg-(--ui-bg)',
-        ]"
+    <div>
+      <Draggable
+        v-model="categoryQuestionsCopyForReorder"
+        tag="ol"
+        item-key="id"
+        group="question-editable"
+        handle=".draggable-handle"
+        class="divide-y divide-neutral-200 py-2 transition-colors"
+        ghost-class="draggable-ghost"
+        drag-class="draggable-hold"
+        :animation="250"
+        @start="dragging = true"
+        @end="onQuestionsReorderEnd"
       >
-        <UChip
-          :show="!isNullOrUndefined(editQuestionFormStates[q.id])"
-          inset
-          position="top-left"
-          :ui="{ root: 'flex gap-2 px-2', base: 'top-1 left-1' }"
-        >
-          <div class="draggable-handle flex size-6 shrink-0 cursor-grab">
-            <Icon
-              name="i-heroicons-bars-2"
-              class="m-auto text-gray-400 transition-colors"
-            />
-          </div>
-
-          <ULink
-            :to="{ query: { ...route.query, question: q.id } }"
-            raw
-            exact-query
-            class="block grow py-2.5 text-sm"
-            active-class="text-(--ui-primary)"
-            inactive-class="text-(--ui-text)"
+        <template #item="{ element: q }">
+          <li
+            :key="q.id"
+            :class="[
+              currentQuestionId === q.id
+                ? 'bg-(--ui-primary)/10 hover:bg-(--ui-primary)/15 disabled:bg-(--ui-primary)/10 aria-disabled:bg-(--ui-primary)/10'
+                : 'bg-(--ui-bg) hover:bg-(--ui-bg-elevated) disabled:bg-(--ui-bg) aria-disabled:bg-(--ui-bg)',
+            ]"
           >
-            <span class="line-clamp-2">
-              {{ i + 1 }}. {{ q.question.statement }}
-            </span>
-          </ULink>
+            <!-- //NOSONAR gives error because this is a comment node and counts as multiple nodes inside template -->
+            <UChip
+              :show="!isNullOrUndefined(editQuestionFormStates[q.id])"
+              inset
+              position="top-left"
+              :ui="{ root: 'flex gap-2 px-2', base: 'top-1 left-1' }"
+            >
+              <div class="draggable-handle flex size-6 shrink-0 cursor-grab">
+                <Icon
+                  name="i-heroicons-bars-2"
+                  class="m-auto text-gray-400 transition-colors"
+                />
+              </div>
 
-          <div v-show="!dragging" class="shrink-0">
-            <UButton
-              icon="i-heroicons-trash"
-              size="sm"
-              color="error"
-              square
-              variant="ghost"
-              loading-auto
-              @click="handleDeleteQuestion(q.id)"
-            />
-          </div>
-        </UChip>
-      </li>
-    </ol>
+              <ULink
+                :to="{ query: { ...route.query, question: q.id } }"
+                raw
+                exact-query
+                class="block grow py-2.5 text-sm"
+                active-class="text-(--ui-primary)"
+                inactive-class="text-(--ui-text)"
+              >
+                <span class="line-clamp-2">
+                  {{ q.question.statement }}
+                </span>
+              </ULink>
+
+              <UButton
+                icon="i-heroicons-trash"
+                size="sm"
+                color="error"
+                square
+                variant="ghost"
+                loading-auto
+                class="shrink-0"
+                @click="handleDeleteQuestion(q.id)"
+              />
+            </UChip>
+          </li>
+        </template>
+      </Draggable>
+    </div>
 
     <template #footer>
       <UButton
@@ -323,6 +338,7 @@ import {
   QuestionId,
   QuestionType,
   type QuestionCategory,
+  type QuestionMinimal,
 } from '~/types'
 
 definePageMeta({
@@ -344,17 +360,18 @@ const { data: groupedQuestions } = await usePaperQuestions(paperId)
 const { data: sortedCategories } = await usePaperCategories(paperId)
 
 const dragging = ref(false)
-const editableCategoriesCopy = ref<QuestionCategory[]>([])
+const categoriesCopyForReorder = shallowRef<QuestionCategory[]>([])
+const categoryQuestionsCopyForReorder = shallowRef<QuestionMinimal[]>([])
 const lastVisitedQuestionForCategory = ref<Record<number, string>>({})
 
 const confirmModal = overlay.create(ConfirmModal)
 
-watch(
+watchImmediate(
   sortedCategories,
   val => {
-    if (val) editableCategoriesCopy.value = [...val]
+    if (val) categoriesCopyForReorder.value = [...val]
   },
-  { deep: true, immediate: true }
+  { deep: true }
 )
 
 watchImmediate(route, newRoute => {
@@ -406,6 +423,14 @@ const currentCategoryQuestions = computed(() => {
   if (!groupedQuestions.value || !currentCategoryId.value) return []
   return groupedQuestions.value[currentCategoryId.value] ?? []
 })
+
+watchImmediate(
+  currentCategoryQuestions,
+  val => {
+    if (val) categoryQuestionsCopyForReorder.value = [...val]
+  },
+  { deep: true }
+)
 
 const currentQuestionId = computed(() => {
   return route.query.question ? parseInt(route.query.question as string) : null
@@ -544,7 +569,9 @@ function handleReorder() {
 
   // Check if the order was changed
   for (let i = 0; i < sortedCategories.value!.length; i++) {
-    if (sortedCategories.value![i].id !== editableCategoriesCopy.value[i].id) {
+    if (
+      sortedCategories.value![i].id !== categoriesCopyForReorder.value[i].id
+    ) {
       isReordered = true
       break
     }
@@ -553,7 +580,34 @@ function handleReorder() {
   if (isReordered) {
     reorderCategories(
       paperId,
-      editableCategoriesCopy.value.map(cat => cat.id)
+      categoriesCopyForReorder.value.map(cat => cat.id)
+    )
+  }
+}
+
+// _______________________REORDER QUESTIONS________________________
+function onQuestionsReorderEnd() {
+  dragging.value = false
+
+  if (!currentCategoryId.value) return
+  let isReordered = false
+
+  // Check if the order was changed
+  for (let i = 0; i < currentCategoryQuestions.value.length; i++) {
+    if (
+      currentCategoryQuestions.value[i].id !==
+      categoryQuestionsCopyForReorder.value[i].id
+    ) {
+      isReordered = true
+      break
+    }
+  }
+
+  if (isReordered) {
+    reorderQuestions(
+      paperId,
+      currentCategoryId.value,
+      categoryQuestionsCopyForReorder.value.map(q => q.id)
     )
   }
 }

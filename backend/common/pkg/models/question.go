@@ -21,6 +21,7 @@ type Question struct {
 	ID            int             `gorm:"primaryKey"`
 	Question      json.RawMessage `gorm:"type:json;not null"`
 	CategoryID    int             `gorm:"not null"`
+	Order         int             `gorm:"not null"` // Add this field
 	Type          string          `gorm:"type:varchar(20);not null;check:type IN ('MCQ', 'SHORT', 'LONG')"`
 	Tags          json.RawMessage `gorm:"type:json;default:'[]'"`
 	PaperID       int

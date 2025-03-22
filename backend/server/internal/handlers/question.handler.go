@@ -53,9 +53,10 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch only needed fields from questions
+	// Note: "order" is a reserved keyword. So it needs quotes.
 	var questions []models.Question
 	if err := db.DB.
-		Select("id, category_id, paper_id, question").
+		Select("id, category_id, paper_id, question, \"order\"").
 		Where("paper_id = ?", paperID).
 		Find(&questions).Error; err != nil {
 		http.Error(w, "Failed to retrieve questions", http.StatusInternalServerError)
@@ -68,6 +69,7 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 			ID:         question.ID,
 			CategoryID: question.CategoryID,
 			PaperID:    question.PaperID,
+			Order:      question.Order,
 			Question:   question.Question,
 		}
 	}
@@ -166,11 +168,22 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 			questionCounts.Long++
 		}
 
-		// Create the question
+		// Get max order for this category
+		var maxOrder struct{ MaxOrder int }
+		err = tx.Model(&models.Question{}).
+			Where("category_id = ?", questionDto.CategoryID).
+			Select("COALESCE(MAX(\"order\"), 0) as max_order").
+			Scan(&maxOrder).Error
+		if err != nil {
+			return err
+		}
+
+		// Create the question with new order
 		question := models.Question{
 			PaperID:       paperID,
 			Question:      questionDto.Question,
 			CategoryID:    questionDto.CategoryID,
+			Order:         maxOrder.MaxOrder + 1, // Set the order
 			Type:          questionDto.Type,
 			Tags:          questionDto.Tags,
 			MaxScore:      questionDto.MaxScore,
@@ -485,4 +498,54 @@ func validateQuestion(question interface{}, questionType string) error {
 	}
 
 	return nil
+}
+
+func ReorderQuestions(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	categoryID := vars["category_id"]
+
+	var reorderDto dtos.ReorderQuestionsDto
+	if err := json.NewDecoder(r.Body).Decode(&reorderDto); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := validate.Do.Struct(reorderDto); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		// Verify all questions belong to the category
+		var count int64
+		err := tx.Model(&models.Question{}).
+			Where("category_id = ? AND id IN ?", categoryID, reorderDto.Questions).
+			Count(&count).Error
+		if err != nil {
+			return err
+		}
+
+		if int(count) != len(reorderDto.Questions) {
+			http.Error(w, "Invalid question IDs", http.StatusBadRequest)
+			return errors.New("invalid question IDs")
+		}
+
+		// Update orders based on array position
+		for i, questionID := range reorderDto.Questions {
+			if err := tx.Model(&models.Question{}).
+				Where("id = ?", questionID).
+				Update("order", i+1).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		http.Error(w, "Failed to reorder questions", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

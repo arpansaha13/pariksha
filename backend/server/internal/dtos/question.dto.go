@@ -23,6 +23,7 @@ type QuestionMinimalResponse struct {
 	ID         int             `json:"id"`
 	CategoryID int             `json:"category_id"`
 	PaperID    int             `json:"paper_id"`
+	Order      int             `json:"order"` // Add this field
 	Question   json.RawMessage `json:"question"`
 }
 
@@ -42,4 +43,8 @@ type UpdateQuestionDto struct {
 	MaxScore      int             `json:"max_score,omitempty"`
 	Tags          json.RawMessage `json:"tags,omitempty"`
 	CorrectAnswer string          `json:"correct_answer,omitempty"`
+}
+
+type ReorderQuestionsDto struct {
+	Questions []int `json:"questions" validate:"required,min=1"`
 }
