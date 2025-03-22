@@ -216,7 +216,7 @@
               square
               variant="ghost"
               loading-auto
-              :disabled="currentCategoryQuestions.length === 1"
+              @click="handleDeleteQuestion(q.id)"
             />
           </div>
         </UChip>
@@ -227,7 +227,7 @@
       <UButton
         :to="{ query: { ...route.query, question: QuestionId.ADD } }"
         icon="i-heroicons-plus"
-        label="Add question"
+        label="New question"
         :color="currentQuestionId === QuestionId.ADD ? 'primary' : 'neutral'"
         :variant="currentQuestionId === QuestionId.ADD ? 'subtle' : 'outline'"
       />
@@ -431,7 +431,7 @@ const questionNavigation = computed(() => {
   // If on add question page
   if (currentQuestionId.value === QuestionId.ADD) {
     return {
-      prev: currentCategoryQuestions.value.at(-1)?.id, // show last question as prev
+      prev: currentCategoryQuestions.value.at(-1)?.id ?? null, // show last question as prev
       next: null, // there is no next
     }
   }
@@ -445,14 +445,14 @@ const questionNavigation = computed(() => {
   if (currentQuestionIdx.value === 0) {
     return {
       prev: null,
-      next: currentCategoryQuestions.value[1].id,
+      next: currentCategoryQuestions.value[1]?.id ?? QuestionId.ADD,
     }
   }
 
   // Last question
   if (currentQuestionIdx.value === currentCategoryQuestions.value.length - 1) {
     return {
-      prev: currentCategoryQuestions.value.at(-2)?.id,
+      prev: currentCategoryQuestions.value.at(-2)?.id ?? null,
       next: QuestionId.ADD, // show add question as next
     }
   }
@@ -488,6 +488,7 @@ async function handleDeleteCategory(category: QuestionCategory) {
     shouldDelete = await confirmModal.open({
       title: 'Confirm category deletion',
       description: `This category "${category.name}" has ${categoryQuestions.length} questions which will be deleted along with it.`,
+      confirmLabel: 'Delete category',
     })
   }
 
@@ -756,6 +757,35 @@ watch(question, (_, oldQuestion) => {
     decUnsavedCount(oldQuestion.category.id)
   }
 })
+
+// ________________________DELETE QUESTION________________________
+async function handleDeleteQuestion(questionId: number) {
+  if (!currentCategoryId.value) return
+
+  const shouldDelete = await confirmModal.open({
+    title: 'Confirm question deletion',
+    description:
+      'Are you sure you want to delete this question? This action cannot be undone.',
+    confirmLabel: 'Delete question',
+  })
+
+  if (!shouldDelete) return
+
+  // If deleting current question, switch to another one first
+  if (currentQuestionId.value === questionId) {
+    await navigateTo({
+      query: {
+        ...route.query,
+        question:
+          questionNavigation.value.prev ??
+          questionNavigation.value.next ??
+          QuestionId.ADD,
+      },
+    })
+  }
+
+  await deleteQuestion(questionId, paperId, currentCategoryId.value)
+}
 </script>
 
 <style scoped>

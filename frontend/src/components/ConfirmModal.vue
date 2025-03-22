@@ -6,7 +6,7 @@
   >
     <template #footer>
       <UButton
-        label="Confirm deletion"
+        :label="confirmLabel"
         color="error"
         variant="solid"
         loading-auto
@@ -31,6 +31,10 @@ defineProps({
   description: {
     type: String,
     required: true,
+  },
+  confirmLabel: {
+    type: String,
+    default: 'Confirm',
   },
 })
 defineEmits<{
