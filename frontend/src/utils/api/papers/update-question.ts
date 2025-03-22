@@ -1,4 +1,5 @@
-import { QuestionType, type Question } from '~/types'
+import { isNullOrUndefined } from '@arpansaha13/utils'
+import { QuestionType, type Question, type QuestionMinimal } from '~/types'
 
 export interface UpdateMcqQuestionBody
   extends Pick<Question, 'max_score' | 'tags' | 'correct_answer'> {
@@ -29,11 +30,85 @@ export async function updateQuestion(
   const { data: question } = useNuxtData<Question>(
     AsyncDataKeys.QUESTION(questionId)
   )
+  const { data: groupedQuestions } = useNuxtData<
+    Record<number, QuestionMinimal[]>
+  >(AsyncDataKeys.PAPERS_PAPER_QUESTIONS(paperId))
 
-  const previousQuestion: Readonly<Question> = question.value!
+  const previousQuestion = question.value!
+  const requestBody = getRequestBody(previousQuestion, newData)
+
+  // If no changes, return early
+  if (Object.keys(requestBody).length === 0) return
+
+  // Store minimal data for rollback
+  const rollbackData = {
+    id: questionId,
+    categoryId: previousQuestion.category.id,
+    question: previousQuestion.question,
+  }
+
+  // Optimistically update the full question
+  question.value = {
+    ...question.value!,
+    ...newData,
+  }
+
+  // Update the particular question in paperQuestions
+  const categoryQuestions = groupedQuestions.value![rollbackData.categoryId]
+  const minimalQuestion = categoryQuestions?.find(q => q.id === questionId)
+  if (minimalQuestion && requestBody.question) {
+    minimalQuestion.question = requestBody.question
+  }
+
+  try {
+    await $fetch(`/api/questions/${questionId}`, {
+      method: 'PATCH',
+      body: requestBody,
+      ...getFetchOptions(),
+    })
+
+    const refreshPromises = [
+      refreshNuxtData(AsyncDataKeys.QUESTION(questionId)),
+    ]
+
+    const isMaxScoreUpdated =
+      !isNullOrUndefined(requestBody.max_score) &&
+      requestBody.max_score !== previousQuestion.max_score
+    const isTypeUpdated =
+      !isNullOrUndefined(requestBody.type) &&
+      requestBody.type !== previousQuestion.type
+
+    // Refresh paper data if max_score or type changed
+    if (isMaxScoreUpdated || isTypeUpdated) {
+      refreshPromises.push(refreshNuxtData(AsyncDataKeys.PAPERS_PAPER(paperId)))
+    }
+
+    await Promise.all(refreshPromises)
+  } catch {
+    // The active question may change during the fetch
+    // Rollback question only if IDs match
+    if (question.value?.id === previousQuestion.id) {
+      question.value = previousQuestion
+    }
+
+    // Rollback the question in paperQuestions
+    const minimalQuestion = groupedQuestions.value![
+      rollbackData.categoryId
+    ]?.find(q => q.id === rollbackData.id)
+    if (minimalQuestion) {
+      minimalQuestion.question = rollbackData.question
+    }
+  }
+}
+
+/** Only include fields that are updated */
+
+function getRequestBody(
+  previousQuestion: Readonly<Question>,
+  newData: UpdateQuestionBody
+) {
   const requestBody: Partial<UpdateQuestionBody> = {}
 
-  // Check each field for changes
   if (newData.type !== previousQuestion.type) {
     requestBody.type = newData.type
     // Must include question data when type changes
@@ -76,27 +151,5 @@ export async function updateQuestion(
     requestBody.correct_answer = newData.correct_answer
   }
 
-  // If no changes, return early
-  if (Object.keys(requestBody).length === 0) return
-
-  question.value = {
-    ...question.value!,
-    ...newData,
-  }
-
-  try {
-    await $fetch(`/api/questions/${questionId}`, {
-      method: 'PATCH',
-      body: requestBody,
-      ...getFetchOptions(),
-    })
-
-    // Refresh both question and paper since max_score or question_counts might change
-    await Promise.all([
-      refreshNuxtData(AsyncDataKeys.QUESTION(questionId)),
-      refreshNuxtData(AsyncDataKeys.PAPERS_PAPER(paperId)),
-    ])
-  } catch {
-    question.value = previousQuestion
-  }
+  return requestBody
 }
