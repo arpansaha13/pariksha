@@ -20,9 +20,10 @@ type QuestionResponse struct {
 }
 
 type QuestionMinimalResponse struct {
-	ID         int `json:"id"`
-	CategoryID int `json:"category_id"`
-	PaperID    int `json:"paper_id"`
+	ID         int             `json:"id"`
+	CategoryID int             `json:"category_id"`
+	PaperID    int             `json:"paper_id"`
+	Question   json.RawMessage `json:"question"`
 }
 
 type CreateQuestionDto struct {

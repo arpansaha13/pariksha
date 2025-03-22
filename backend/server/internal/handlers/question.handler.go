@@ -55,7 +55,7 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 	// Fetch only needed fields from questions
 	var questions []models.Question
 	if err := db.DB.
-		Select("id, category_id, paper_id").
+		Select("id, category_id, paper_id, question").
 		Where("paper_id = ?", paperID).
 		Find(&questions).Error; err != nil {
 		http.Error(w, "Failed to retrieve questions", http.StatusInternalServerError)
@@ -68,6 +68,7 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 			ID:         question.ID,
 			CategoryID: question.CategoryID,
 			PaperID:    question.PaperID,
+			Question:   question.Question,
 		}
 	}
 

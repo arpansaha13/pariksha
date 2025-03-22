@@ -15,12 +15,6 @@ export interface QuestionCategory {
   order: number
 }
 
-export interface QuestionMinimal {
-  id: number
-  category_id: number
-  paper_id: number
-}
-
 export interface QuestionMcq {
   id: number
   question: {
@@ -62,3 +56,10 @@ export interface QuestionLong {
 }
 
 export type Question = QuestionMcq | QuestionShort | QuestionLong
+
+export interface QuestionMinimal {
+  id: number
+  category_id: number
+  paper_id: number
+  question: Question['question']
+}

@@ -159,43 +159,80 @@
     </UModal>
   </div>
 
-  <div class="col-start-3 row-span-2 row-start-2">
-    <h2 class="mb-4 text-lg font-semibold">Question Pallet</h2>
+  <UCard
+    :ui="{
+      root: 'col-start-3 row-span-2 row-start-2 overflow-hidden flex flex-col',
+      body: 'overflow-auto grow p-0 sm:p-0',
+    }"
+  >
+    <template #header>
+      <h2 class="text-lg font-semibold">Question Pallet</h2>
+    </template>
 
-    <UCard v-if="currentCategoryQuestions">
-      <ul class="flex flex-wrap gap-4">
-        <li v-for="(q, i) of currentCategoryQuestions" :key="q.id">
-          <UChip :show="!isNullOrUndefined(editQuestionFormStates[q.id])" inset>
-            <UButton
-              :to="{ query: { ...route.query, question: q.id } }"
-              :color="currentQuestionId === q.id ? 'primary' : 'neutral'"
-              :variant="currentQuestionId === q.id ? 'subtle' : 'outline'"
-              size="lg"
-              class="flex size-10 items-center justify-center rounded-full"
-            >
-              {{ i + 1 }}
-            </UButton>
-          </UChip>
-        </li>
-        <li>
-          <UTooltip text="Add question">
-            <UButton
-              :to="{ query: { ...route.query, question: QuestionId.ADD } }"
-              icon="i-heroicons-plus"
-              :color="
-                currentQuestionId === QuestionId.ADD ? 'primary' : 'neutral'
-              "
-              :variant="
-                currentQuestionId === QuestionId.ADD ? 'subtle' : 'outline'
-              "
-              size="lg"
-              class="flex size-10 items-center justify-center rounded-full"
+    <ol
+      v-if="currentCategoryQuestions"
+      class="divide-y divide-neutral-200 py-2"
+    >
+      <li
+        v-for="(q, i) of currentCategoryQuestions"
+        :key="q.id"
+        :class="[
+          currentQuestionId === q.id
+            ? 'bg-(--ui-primary)/10 hover:bg-(--ui-primary)/15 disabled:bg-(--ui-primary)/10 aria-disabled:bg-(--ui-primary)/10'
+            : 'bg-(--ui-bg) hover:bg-(--ui-bg-elevated) disabled:bg-(--ui-bg) aria-disabled:bg-(--ui-bg)',
+        ]"
+      >
+        <UChip
+          :show="!isNullOrUndefined(editQuestionFormStates[q.id])"
+          inset
+          position="top-left"
+          :ui="{ root: 'flex gap-2 px-2', base: 'top-1 left-1' }"
+        >
+          <div class="draggable-handle flex size-6 shrink-0 cursor-grab">
+            <Icon
+              name="i-heroicons-bars-2"
+              class="m-auto text-gray-400 transition-colors"
             />
-          </UTooltip>
-        </li>
-      </ul>
-    </UCard>
-  </div>
+          </div>
+
+          <ULink
+            :to="{ query: { ...route.query, question: q.id } }"
+            raw
+            exact-query
+            class="block grow py-2.5 text-sm"
+            active-class="text-(--ui-primary)"
+            inactive-class="text-(--ui-text)"
+          >
+            <span class="line-clamp-2">
+              {{ i + 1 }}. {{ q.question.statement }}
+            </span>
+          </ULink>
+
+          <div v-show="!dragging" class="shrink-0">
+            <UButton
+              icon="i-heroicons-trash"
+              size="sm"
+              color="error"
+              square
+              variant="ghost"
+              loading-auto
+              :disabled="currentCategoryQuestions.length === 1"
+            />
+          </div>
+        </UChip>
+      </li>
+    </ol>
+
+    <template #footer>
+      <UButton
+        :to="{ query: { ...route.query, question: QuestionId.ADD } }"
+        icon="i-heroicons-plus"
+        label="Add question"
+        :color="currentQuestionId === QuestionId.ADD ? 'primary' : 'neutral'"
+        :variant="currentQuestionId === QuestionId.ADD ? 'subtle' : 'outline'"
+      />
+    </template>
+  </UCard>
 
   <UCard
     :ui="{ root: 'col-span-2 overflow-hidden', body: 'h-full overflow-auto' }"
