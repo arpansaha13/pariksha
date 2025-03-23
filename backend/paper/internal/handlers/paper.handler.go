@@ -32,8 +32,8 @@ func getUserID(ctx context.Context) (int32, error) {
 	}
 
 	userID, err := strconv.Atoi(userIDs[0])
-	if err != nil {
-		return 0, status.Error(codes.Internal, "invalid user id")
+	if err != nil || userID == 0 {
+		return 0, status.Error(codes.InvalidArgument, "invalid user id")
 	}
 
 	return int32(userID), nil
@@ -129,6 +129,7 @@ func (s *PaperServer) CreatePaper(ctx context.Context, _ *proto.Empty) (*proto.P
 		return nil, status.Error(codes.Internal, "failed to create paper")
 	}
 
+	paper.PaperOwnership = paperOwnership // For creating response object in `paperToProto`
 	return paperToProto(paper), nil
 }
 

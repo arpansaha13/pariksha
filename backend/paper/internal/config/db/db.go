@@ -36,9 +36,9 @@ func InitDB(host, port, user, password, dbname, sslmode string) error {
 	return nil
 }
 
-// AutoMigrateDB runs migrations for the main database
 func autoMigrateDB() error {
 	err := DB.AutoMigrate(
+		&models.User{},
 		&models.Paper{},
 		&models.PaperOwnership{},
 		&models.Question{},
