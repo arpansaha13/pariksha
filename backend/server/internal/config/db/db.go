@@ -8,6 +8,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	"pariksha/common/pkg/config"
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/server/internal/config/env"
@@ -25,7 +26,7 @@ func init() {
 		os.Getenv("DB_SSLMODE"))
 
 	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	DB, err = gorm.Open(postgres.Open(dsn), config.ConfigureLogger(env.GO_ENV))
 
 	if err != nil {
 		log.Fatal(err)

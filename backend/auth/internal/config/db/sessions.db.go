@@ -6,9 +6,9 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 
 	"pariksha/auth/internal/config/env"
+	"pariksha/common/pkg/config"
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 )
@@ -21,14 +21,8 @@ func InitSessionsDB(host, port, user, password, dbname, sslmode string) error {
 		host, user, password, dbname, port, sslmode)
 
 	var err error
-	config := &gorm.Config{}
+	Sessions, err = gorm.Open(postgres.Open(dsn), config.ConfigureLogger(env.GO_ENV))
 
-	// Disable logging in test environment
-	if env.GO_ENV == constants.GO_ENV_TEST {
-		config.Logger = logger.Default.LogMode(logger.Silent)
-	}
-
-	Sessions, err = gorm.Open(postgres.Open(dsn), config)
 	if err != nil {
 		return fmt.Errorf("failed to connect to sessions database: %v", err)
 	}
