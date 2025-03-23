@@ -1,0 +1,168 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "/proto";
+
+service PaperService {
+  // Paper operations
+  rpc GetUserPapers(Empty) returns (PaperList) {}
+  rpc GetPaper(PaperRequest) returns (PaperResponse) {}
+  rpc CreatePaper(Empty) returns (PaperResponse) {}
+  rpc UpdatePaper(UpdatePaperRequest) returns (Empty) {}
+
+  // Question operations
+  rpc GetPaperQuestions(PaperRequest) returns (QuestionList) {}
+  rpc GetQuestion(QuestionRequest) returns (QuestionResponse) {}
+  rpc CreateQuestion(CreateQuestionRequest) returns (QuestionResponse) {}
+  rpc UpdateQuestion(UpdateQuestionRequest) returns (Empty) {}
+  rpc DeleteQuestion(QuestionRequest) returns (Empty) {}
+  rpc ReorderQuestions(ReorderQuestionsRequest) returns (Empty) {}
+
+  // Category operations
+  rpc GetPaperCategories(PaperRequest) returns (CategoryList) {}
+  rpc CreateCategory(CreateCategoryRequest) returns (CategoryResponse) {}
+  rpc UpdateCategory(UpdateCategoryRequest) returns (Empty) {}
+  rpc DeleteCategory(CategoryRequest) returns (Empty) {}
+  rpc ReorderCategories(ReorderCategoriesRequest) returns (Empty) {}
+}
+
+message Empty {}
+
+// Paper messages
+message PaperRequest {
+  int32 paper_id = 1;
+}
+
+message PaperResponse {
+  int32 id = 1;
+  string title = 2;
+  int32 max_score = 3;
+  int32 duration_minutes = 4;
+  QuestionCount question_counts = 5;
+  PaperOwnership ownership = 6;
+}
+
+message PaperList {
+  repeated PaperResponse papers = 1;
+}
+
+message UpdatePaperRequest {
+  int32 paper_id = 1;
+  string title = 2;
+}
+
+message QuestionCount {
+  int32 mcq = 1;
+  int32 short = 2;
+  int32 long = 3;
+}
+
+message PaperOwnership {
+  int32 id = 1;
+  string path = 2;
+  string type = 3;
+}
+
+// Question messages
+message QuestionRequest {
+  int32 question_id = 1;
+}
+
+message QuestionResponse {
+  int32 id = 1;
+  oneof question {
+    McqQuestion mcq = 2;
+    GeneralQuestion general = 3;
+  }
+  CategoryResponse category = 4;
+  string type = 5;
+  repeated string tags = 6;
+  int32 paper_id = 7;
+  int32 max_score = 8;
+  optional string correct_answer = 9;
+}
+
+message QuestionList {
+  repeated QuestionMinimal questions = 1;
+}
+
+message QuestionMinimal {
+  int32 id = 1;
+  int32 category_id = 2;
+  int32 paper_id = 3;
+  int32 order = 4;
+  oneof question {
+    McqQuestion mcq = 5;
+    GeneralQuestion general = 6;
+  }
+}
+
+message McqQuestion {
+  string statement = 1;
+  repeated string options = 2;
+}
+
+message GeneralQuestion {
+  string statement = 1;
+}
+
+message CreateQuestionRequest {
+  int32 paper_id = 1;
+  oneof question {
+    McqQuestion mcq = 2;
+    GeneralQuestion general = 3;
+  }
+  int32 category_id = 4;
+  string type = 5;
+  repeated string tags = 6;
+  int32 max_score = 7;
+  optional string correct_answer = 8;
+}
+
+message UpdateQuestionRequest {
+  int32 question_id = 1;
+  optional string type = 2;
+  oneof question {
+    McqQuestion mcq = 3;
+    GeneralQuestion general = 4;
+  }
+  optional int32 category_id = 5;
+  optional int32 max_score = 6;
+  repeated string tags = 7;
+  optional string correct_answer = 8;
+}
+
+message ReorderQuestionsRequest {
+  int32 category_id = 1;
+  repeated int32 question_ids = 2;
+}
+
+// Category messages
+message CategoryRequest {
+  int32 category_id = 1;
+}
+
+message CategoryResponse {
+  int32 id = 1;
+  string name = 2;
+  int32 order = 3;
+}
+
+message CategoryList {
+  repeated CategoryResponse categories = 1;
+}
+
+message CreateCategoryRequest {
+  int32 paper_id = 1;
+}
+
+message UpdateCategoryRequest {
+  int32 category_id = 1;
+  string name = 2;
+}
+
+message ReorderCategoriesRequest {
+  int32 paper_id = 1;
+  repeated int32 category_ids = 2;
+}

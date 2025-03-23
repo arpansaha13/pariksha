@@ -1,0 +1,201 @@
+package handlers
+
+import (
+	"context"
+	"encoding/json"
+	"strconv"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+	"gorm.io/gorm"
+
+	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/models"
+	"pariksha/common/pkg/proto"
+	"pariksha/paper/internal/config/db"
+)
+
+type PaperServer struct {
+	proto.UnimplementedPaperServiceServer
+}
+
+func getUserID(ctx context.Context) (int32, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return 0, status.Error(codes.Unauthenticated, "missing metadata")
+	}
+
+	userIDs := md.Get("user_id")
+	if len(userIDs) == 0 {
+		return 0, status.Error(codes.Unauthenticated, "missing user id")
+	}
+
+	userID, err := strconv.Atoi(userIDs[0])
+	if err != nil {
+		return 0, status.Error(codes.Internal, "invalid user id")
+	}
+
+	return int32(userID), nil
+}
+
+// Helper function to convert Paper model to proto response
+func paperToProto(paper models.Paper) *proto.PaperResponse {
+	var questionCounts proto.QuestionCount
+	json.Unmarshal(paper.QuestionCounts, &questionCounts)
+
+	return &proto.PaperResponse{
+		Id:              int32(paper.ID),
+		Title:           paper.Title,
+		MaxScore:        int32(paper.MaxScore),
+		DurationMinutes: int32(paper.DurationMinutes),
+		QuestionCounts:  &questionCounts,
+		Ownership: &proto.PaperOwnership{
+			Id:   int32(paper.PaperOwnership.ID),
+			Path: paper.PaperOwnership.Path,
+			Type: paper.PaperOwnership.Type,
+		},
+	}
+}
+
+func (s *PaperServer) GetUserPapers(ctx context.Context, _ *proto.Empty) (*proto.PaperList, error) {
+	userID, err := getUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var papers []models.Paper
+	err = db.DB.
+		Joins("INNER JOIN paper_ownerships ON paper_ownerships.paper_id = papers.id").
+		Where("paper_ownerships.user_id = ?", userID).
+		Preload("PaperOwnership", "user_id = ?", userID).
+		Find(&papers).Error
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to retrieve papers")
+	}
+
+	response := &proto.PaperList{
+		Papers: make([]*proto.PaperResponse, len(papers)),
+	}
+
+	for i, paper := range papers {
+		response.Papers[i] = paperToProto(paper)
+	}
+
+	return response, nil
+}
+
+func (s *PaperServer) CreatePaper(ctx context.Context, _ *proto.Empty) (*proto.PaperResponse, error) {
+	userID, err := getUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var paper models.Paper
+	var paperOwnership models.PaperOwnership
+
+	err = db.DB.Transaction(func(tx *gorm.DB) error {
+		paper = models.Paper{} // Will use database default for Title
+
+		if err := tx.Create(&paper).Error; err != nil {
+			return err
+		}
+
+		paperOwnership = models.PaperOwnership{
+			UserID:  int(userID),
+			PaperID: paper.ID,
+			Type:    constants.PAPER_OWNERSHIP_TYPE_OWNER,
+		}
+
+		if err := tx.Create(&paperOwnership).Error; err != nil {
+			return err
+		}
+
+		// Create default category for questions in this paper
+		defaultCategory := models.QuestionCategory{
+			PaperID: paper.ID,
+			Name:    "Category 1",
+			Order:   1,
+		}
+		if err := tx.Create(&defaultCategory).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to create paper")
+	}
+
+	return paperToProto(paper), nil
+}
+
+func (s *PaperServer) GetPaper(ctx context.Context, req *proto.PaperRequest) (*proto.PaperResponse, error) {
+	userID, err := getUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var paper models.Paper
+	err = db.DB.Preload("PaperOwnership", "user_id = ?", userID).
+		Take(&paper, req.PaperId).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.NotFound, "paper not found")
+		}
+		return nil, status.Error(codes.Internal, "failed to retrieve paper")
+	}
+
+	// Check if user has access to this paper
+	if paper.PaperOwnership.ID == 0 {
+		return nil, status.Error(codes.NotFound, "paper not found")
+	}
+
+	return paperToProto(paper), nil
+}
+
+func (s *PaperServer) UpdatePaper(ctx context.Context, req *proto.UpdatePaperRequest) (*proto.Empty, error) {
+	userID, err := getUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var paper models.Paper
+	err = db.DB.Preload("PaperOwnership", "user_id = ?", userID).
+		Take(&paper, req.PaperId).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.NotFound, "paper not found")
+		}
+		return nil, status.Error(codes.Internal, "failed to find paper")
+	}
+
+	// Check if user has access to this paper
+	if paper.PaperOwnership.ID == 0 {
+		return nil, status.Error(codes.NotFound, "paper not found")
+	}
+
+	// Check if user is owner
+	if paper.PaperOwnership.Type != constants.PAPER_OWNERSHIP_TYPE_OWNER {
+		return nil, status.Error(codes.PermissionDenied, "only owner can update paper")
+	}
+
+	isUpdated := false
+
+	if req.Title != "" {
+		paper.Title = req.Title
+		isUpdated = true
+	}
+
+	if isUpdated {
+		if err := db.DB.Save(&paper).Error; err != nil {
+			return nil, status.Error(codes.Internal, "failed to update paper")
+		}
+	}
+
+	return &proto.Empty{}, nil
+}

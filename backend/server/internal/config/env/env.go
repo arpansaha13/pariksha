@@ -29,6 +29,11 @@ var (
 )
 
 var (
+	PAPER_SERVER_HOST string
+	PAPER_SERVER_PORT string
+)
+
+var (
 	CLIENT_URL string
 )
 
@@ -42,6 +47,10 @@ func init() {
 		"DB_NAME",
 		"DB_SSLMODE",
 		"CLIENT_URL",
+		"AUTH_SERVER_HOST",
+		"AUTH_SERVER_PORT",
+		"PAPER_SERVER_HOST",
+		"PAPER_SERVER_PORT",
 	}
 
 	for _, envVar := range requiredEnvVars {
@@ -64,6 +73,9 @@ func init() {
 
 	AUTH_SERVER_HOST = os.Getenv("AUTH_SERVER_HOST")
 	AUTH_SERVER_PORT = os.Getenv("AUTH_SERVER_PORT")
+
+	PAPER_SERVER_HOST = os.Getenv("PAPER_SERVER_HOST")
+	PAPER_SERVER_PORT = os.Getenv("PAPER_SERVER_PORT")
 
 	CLIENT_URL = os.Getenv("CLIENT_URL")
 }
