@@ -42,20 +42,12 @@ const (
 )
 
 var (
-	lis        *bufconn.Listener
-	ctx        context.Context
-	containers *testContainers
-	client     proto.AuthServiceClient
+	lis    *bufconn.Listener
+	ctx    context.Context
+	client proto.AuthServiceClient
 )
 
-type testContainers struct {
-	postgres   testcontainers.Container
-	sessionsDb testcontainers.Container
-	rabbitmq   testcontainers.Container
-	cleanup    func()
-}
-
-func setupContainers() *testContainers {
+func setupContainers() func() {
 	ctx = context.Background()
 
 	// Start Postgres container
@@ -68,7 +60,10 @@ func setupContainers() *testContainers {
 				"POSTGRES_PASSWORD": env.DB_PASS,
 				"POSTGRES_DB":       env.DB_NAME,
 			},
-			WaitingFor: wait.ForLog("database system is ready to accept connections"),
+			WaitingFor: wait.ForAll(
+				wait.ForLog("database system is ready to accept connections"),
+				wait.ForExposedPort(),
+			),
 		},
 		Started: true,
 	})
@@ -86,7 +81,10 @@ func setupContainers() *testContainers {
 				"POSTGRES_PASSWORD": env.SESSIONS_DB_PASS,
 				"POSTGRES_DB":       env.SESSIONS_DB_NAME,
 			},
-			WaitingFor: wait.ForLog("database system is ready to accept connections"),
+			WaitingFor: wait.ForAll(
+				wait.ForLog("database system is ready to accept connections"),
+				wait.ForExposedPort(),
+			),
 		},
 		Started: true,
 	})
@@ -107,14 +105,17 @@ func setupContainers() *testContainers {
 		log.Fatalf("Failed to setup container: %v", err)
 	}
 
-	// Get mapped ports
+	// Get mapped host and ports
+	pgHost, _ := pgContainer.Host(ctx)
 	pgPort, _ := pgContainer.MappedPort(ctx, "5432")
+	sessionsHost, _ := sessionsDb.Host(ctx)
 	sessionsPort, _ := sessionsDb.MappedPort(ctx, "5432")
+	rabbitHost, _ := sessionsDb.Host(ctx)
 	rabbitPort, _ := rabbitmq.MappedPort(ctx, "5672")
 
 	// Initialize connections with container
 	err = db.InitDB(
-		"localhost",
+		pgHost,
 		pgPort.Port(),
 		env.DB_USER,
 		env.DB_PASS,
@@ -126,7 +127,7 @@ func setupContainers() *testContainers {
 	}
 
 	err = db.InitSessionsDB(
-		"localhost",
+		sessionsHost,
 		sessionsPort.Port(),
 		env.SESSIONS_DB_USER,
 		env.SESSIONS_DB_PASS,
@@ -137,7 +138,7 @@ func setupContainers() *testContainers {
 		log.Fatalf("Failed to initialize Sessions DB: %v", err)
 	}
 
-	err = services.InitRabbitMQ("localhost", rabbitPort.Port())
+	err = services.InitRabbitMQ(rabbitHost, rabbitPort.Port())
 	if err != nil {
 		log.Fatalf("Failed to initialize RabbitMQ: %v", err)
 	}
@@ -149,12 +150,7 @@ func setupContainers() *testContainers {
 		rabbitmq.Terminate(ctx)
 	}
 
-	return &testContainers{
-		postgres:   pgContainer,
-		sessionsDb: sessionsDb,
-		rabbitmq:   rabbitmq,
-		cleanup:    cleanup,
-	}
+	return cleanup
 }
 
 func clearTables(t *testing.T) {
@@ -225,21 +221,23 @@ func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 }
 
 func TestMain(m *testing.M) {
-	containers = setupContainers()
+	cleanup := setupContainers()
 
-	// Setup gRPC server and client
+	// Setup gRPC server
 	srv, conn := setupGrpcServer()
 	defer func() {
 		conn.Close()
 		srv.Stop()
 	}()
+
+	// Setup gRPC client
 	client = proto.NewAuthServiceClient(conn)
 
 	// Run tests
 	code := m.Run()
 
 	// Cleanup
-	containers.cleanup()
+	cleanup()
 	os.Exit(code)
 }
 
@@ -564,7 +562,6 @@ func TestResetPassword(t *testing.T) {
 			},
 			req: &proto.ResetPasswordRequest{
 				Email:       testVerifiedEmail,
-				OldPassword: "testPass123",
 				NewPassword: "newPass123",
 				Otp:         validOTP,
 			},
@@ -589,7 +586,6 @@ func TestResetPassword(t *testing.T) {
 			},
 			req: &proto.ResetPasswordRequest{
 				Email:       testVerifiedEmail,
-				OldPassword: "testPass123",
 				NewPassword: "newPass123",
 				Otp:         validOTP,
 			},
@@ -603,7 +599,6 @@ func TestResetPassword(t *testing.T) {
 			},
 			req: &proto.ResetPasswordRequest{
 				Email:       testUnverifiedEmail,
-				OldPassword: "testPass123",
 				NewPassword: "newPass123",
 				Otp:         validOTP,
 			},
