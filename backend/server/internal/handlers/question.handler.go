@@ -1,112 +1,117 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gorilla/mux"
-	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
-	"pariksha/server/internal/config/db"
+	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
+	"pariksha/server/internal/middlewares"
+	"pariksha/server/internal/services"
 )
-
-func questionToResponse(question models.Question) dtos.QuestionResponse {
-	category := dtos.QuestionCategoryResponse{
-		ID:    question.Category.ID,
-		Name:  question.Category.Name,
-		Order: question.Category.Order,
-	}
-
-	return dtos.QuestionResponse{
-		ID:            question.ID,
-		Question:      question.Question,
-		Category:      &category,
-		Type:          question.Type,
-		Tags:          question.Tags,
-		PaperID:       question.PaperID,
-		MaxScore:      question.MaxScore,
-		CorrectAnswer: question.CorrectAnswer.String,
-	}
-}
 
 func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	paperID := vars["id"]
+	paperID, _ := strconv.Atoi(vars["id"])
+	userID := r.Context().Value(middlewares.UserIDKey).(int)
 
-	// Validate the paperId
-	var paper models.Paper
-	if err := db.DB.Take(&paper, paperID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			http.Error(w, "Paper not found", http.StatusNotFound)
-		} else {
-			http.Error(w, "Failed to find paper", http.StatusInternalServerError)
+	paperService := services.GetPaperService()
+	ctx := paperService.CreateMetadata(userID)
+
+	response, err := paperService.Client().GetPaperQuestions(ctx, &proto.PaperRequest{
+		PaperId: int32(paperID),
+	})
+
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	// Convert proto response to HTTP response
+	httpResponse := make([]dtos.QuestionMinimalResponse, len(response.Questions))
+	for i, q := range response.Questions {
+		var questionData json.RawMessage
+		switch q := q.Question.(type) {
+		case *proto.QuestionMinimal_Mcq:
+			data, _ := json.Marshal(q.Mcq)
+			questionData = data
+		case *proto.QuestionMinimal_General:
+			data, _ := json.Marshal(q.General)
+			questionData = data
 		}
-		return
-	}
 
-	// Fetch only needed fields from questions
-	// Note: "order" is a reserved keyword. So it needs quotes.
-	var questions []models.Question
-	if err := db.DB.
-		Select("id, category_id, paper_id, question, \"order\"").
-		Where("paper_id = ?", paperID).
-		Find(&questions).Error; err != nil {
-		http.Error(w, "Failed to retrieve questions", http.StatusInternalServerError)
-		return
-	}
-
-	response := make([]dtos.QuestionMinimalResponse, len(questions))
-	for i, question := range questions {
-		response[i] = dtos.QuestionMinimalResponse{
-			ID:         question.ID,
-			CategoryID: question.CategoryID,
-			PaperID:    question.PaperID,
-			Order:      question.Order,
-			Question:   question.Question,
+		httpResponse[i] = dtos.QuestionMinimalResponse{
+			ID:         int(q.Id),
+			CategoryID: int(q.CategoryId),
+			PaperID:    int(q.PaperId),
+			Order:      int(q.Order),
+			Question:   questionData,
 		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(httpResponse)
 }
 
 func GetQuestion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	questionID := vars["id"]
+	questionID, _ := strconv.Atoi(vars["id"])
+	userID := r.Context().Value(middlewares.UserIDKey).(int)
 
-	var question models.Question
-	if err := db.DB.Preload("Category").Take(&question, questionID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			http.Error(w, "Question not found", http.StatusNotFound)
-		} else {
-			http.Error(w, "Failed to find question", http.StatusInternalServerError)
-		}
+	paperService := services.GetPaperService()
+	ctx := paperService.CreateMetadata(userID)
+
+	response, err := paperService.Client().GetQuestion(ctx, &proto.QuestionRequest{
+		QuestionId: int32(questionID),
+	})
+
+	if err != nil {
+		handleGRPCError(w, err)
 		return
 	}
 
-	// Convert to response DTO
-	response := questionToResponse(question)
+	// Convert proto response to HTTP response
+	var questionData json.RawMessage
+	switch q := response.Question.(type) {
+	case *proto.QuestionResponse_Mcq:
+		data, _ := json.Marshal(q.Mcq)
+		questionData = data
+	case *proto.QuestionResponse_General:
+		data, _ := json.Marshal(q.General)
+		questionData = data
+	}
+
+	tags, _ := json.Marshal(response.Tags)
+
+	httpResponse := dtos.QuestionResponse{
+		ID:       int(response.Id),
+		Question: questionData,
+		Category: &dtos.QuestionCategoryResponse{
+			ID:    int(response.Category.Id),
+			Name:  response.Category.Name,
+			Order: int(response.Category.Order),
+		},
+		Type:          response.Type,
+		Tags:          tags,
+		PaperID:       int(response.PaperId),
+		MaxScore:      int(response.MaxScore),
+		CorrectAnswer: *response.CorrectAnswer,
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(httpResponse)
 }
 
 func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	paperID, err := strconv.Atoi(vars["id"])
-
-	if err != nil {
-		http.Error(w, "Invalid request url", http.StatusBadRequest)
-		return
-	}
+	paperID, _ := strconv.Atoi(vars["id"])
+	userID := r.Context().Value(middlewares.UserIDKey).(int)
 
 	var questionDto dtos.CreateQuestionDto
 	if err := json.NewDecoder(r.Body).Decode(&questionDto); err != nil {
@@ -119,266 +124,139 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate the paperId
-	var paper models.Paper
-	if err := db.DB.Take(&paper, paperID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			http.Error(w, "Paper not found", http.StatusNotFound)
+	paperService := services.GetPaperService()
+	ctx := paperService.CreateMetadata(userID)
+
+	var tags []string
+	if err := json.Unmarshal(questionDto.Tags, &tags); err != nil {
+		http.Error(w, "Invalid tags data", http.StatusBadRequest)
+		return
+	}
+
+	requestObj := proto.CreateQuestionRequest{
+		PaperId:       int32(paperID),
+		Question:      nil,
+		CategoryId:    int32(questionDto.CategoryID),
+		Type:          questionDto.Type,
+		Tags:          tags,
+		MaxScore:      int32(questionDto.MaxScore),
+		CorrectAnswer: &questionDto.CorrectAnswer,
+	}
+
+	switch questionDto.Type {
+	case constants.QUESTION_TYPE_MCQ:
+		var mcq models.MCQQuestion
+		if err := json.Unmarshal(questionDto.Question, &mcq); err != nil {
+			http.Error(w, "Invalid question data", http.StatusBadRequest)
 			return
 		}
-		http.Error(w, "Failed to find paper", http.StatusInternalServerError)
-		return
+		requestObj.Question = &proto.CreateQuestionRequest_Mcq{
+			Mcq: &proto.McqQuestion{
+				Statement: mcq.Statement,
+				Options:   mcq.Options,
+			},
+		}
+	default:
+		var general models.GeneralQuestion
+		if err := json.Unmarshal(questionDto.Question, &general); err != nil {
+			http.Error(w, "Invalid question data", http.StatusBadRequest)
+			return
+		}
+		requestObj.Question = &proto.CreateQuestionRequest_General{
+			General: &proto.GeneralQuestion{
+				Statement: general.Statement,
+			},
+		}
 	}
 
-	questionCounts, err := paper.GetQuestionCounts()
-	if err != nil {
-		http.Error(w, "Failed to parse question counts", http.StatusInternalServerError)
-		return
-	}
-
-	var response dtos.QuestionResponse
-
-	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		questionData, err := unmarshalQuestion(questionDto)
-		if err != nil {
-			return err
-		}
-
-		if err := validateQuestion(questionData, questionDto.Type); err != nil {
-			return err
-		}
-
-		// Validate category exists
-		var category models.QuestionCategory
-		if err := tx.Where("id = ? AND paper_id = ?", questionDto.CategoryID, paperID).
-			Take(&category).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return errors.New("category not found")
-			}
-			return err
-		}
-
-		// Increment the question count based on the question type
-		switch questionDto.Type {
-		case constants.QUESTION_TYPE_MCQ:
-			questionCounts.MCQ++
-		case constants.QUESTION_TYPE_SHORT:
-			questionCounts.Short++
-		case constants.QUESTION_TYPE_LONG:
-			questionCounts.Long++
-		}
-
-		// Get max order for this category
-		var maxOrder struct{ MaxOrder int }
-		err = tx.Model(&models.Question{}).
-			Where("category_id = ?", questionDto.CategoryID).
-			Select("COALESCE(MAX(\"order\"), 0) as max_order").
-			Scan(&maxOrder).Error
-		if err != nil {
-			return err
-		}
-
-		// Create the question with new order
-		question := models.Question{
-			PaperID:       paperID,
-			Question:      questionDto.Question,
-			CategoryID:    questionDto.CategoryID,
-			Order:         maxOrder.MaxOrder + 1, // Set the order
-			Type:          questionDto.Type,
-			Tags:          questionDto.Tags,
-			MaxScore:      questionDto.MaxScore,
-			CorrectAnswer: sql.NullString{String: questionDto.CorrectAnswer, Valid: questionDto.CorrectAnswer != ""},
-		}
-
-		if err := tx.Create(&question).Error; err != nil {
-			return err
-		}
-
-		if err := tx.Preload("Category").Take(&question, question.ID).Error; err != nil {
-			return err
-		}
-
-		response = questionToResponse(question)
-
-		// Update the paper's max score
-		paper.MaxScore += question.MaxScore
-
-		// Update the paper with the new question counts
-		paper.QuestionCounts, err = json.Marshal(questionCounts)
-		if err != nil {
-			return err
-		}
-
-		if err := tx.Save(&paper).Error; err != nil {
-			return err
-		}
-
-		return nil
-	})
+	response, err := paperService.Client().CreateQuestion(ctx, &requestObj)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleGRPCError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(protoQuestionToResponse(response))
 }
 
 func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	questionID, _ := strconv.Atoi(vars["id"])
+	userID := r.Context().Value(middlewares.UserIDKey).(int)
+
 	var updateDto dtos.UpdateQuestionDto
 	if err := json.NewDecoder(r.Body).Decode(&updateDto); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	vars := mux.Vars(r)
-	questionID := vars["id"]
+	paperService := services.GetPaperService()
+	ctx := paperService.CreateMetadata(userID)
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		var question models.Question
-		if err := tx.Take(&question, questionID).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				http.Error(w, "Question not found", http.StatusNotFound)
-				return err
+	request := &proto.UpdateQuestionRequest{
+		QuestionId: int32(questionID),
+	}
+
+	// Set optional fields only if they are provided
+	if updateDto.Type != "" {
+		request.Type = &updateDto.Type
+	}
+
+	if updateDto.Question != nil {
+		switch updateDto.Type {
+		case constants.QUESTION_TYPE_MCQ:
+			var mcq models.MCQQuestion
+			if err := json.Unmarshal(updateDto.Question, &mcq); err != nil {
+				http.Error(w, "Invalid question data", http.StatusBadRequest)
+				return
 			}
-			return err
-		}
-
-		// Validate the paperId
-		var paper models.Paper
-		if err := tx.Take(&paper, question.PaperID).Error; err != nil {
-			return err
-		}
-
-		questionCounts, err := paper.GetQuestionCounts()
-		if err != nil {
-			return err
-		}
-
-		isUpdated := false
-
-		// Handle type update first as it affects question validation
-		if updateDto.Type != "" && updateDto.Type != question.Type {
-			// Must provide new question data when changing type
-			if updateDto.Question == nil {
-				http.Error(w, "Question data required when changing question type", http.StatusBadRequest)
-				return errors.New("question data required when changing type")
+			request.Question = &proto.UpdateQuestionRequest_Mcq{
+				Mcq: &proto.McqQuestion{
+					Statement: mcq.Statement,
+					Options:   mcq.Options,
+				},
 			}
-
-			// Validate new type
-			switch updateDto.Type {
-			case constants.QUESTION_TYPE_MCQ, constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
-				// Update question counts
-				switch question.Type {
-				case constants.QUESTION_TYPE_MCQ:
-					questionCounts.MCQ--
-				case constants.QUESTION_TYPE_SHORT:
-					questionCounts.Short--
-				case constants.QUESTION_TYPE_LONG:
-					questionCounts.Long--
-				}
-
-				switch updateDto.Type {
-				case constants.QUESTION_TYPE_MCQ:
-					questionCounts.MCQ++
-				case constants.QUESTION_TYPE_SHORT:
-					questionCounts.Short++
-				case constants.QUESTION_TYPE_LONG:
-					questionCounts.Long++
-				}
-
-				question.Type = updateDto.Type
-				isUpdated = true
-			default:
-				http.Error(w, "Invalid question type", http.StatusBadRequest)
-				return errors.New("invalid question type")
+		default:
+			var general models.GeneralQuestion
+			if err := json.Unmarshal(updateDto.Question, &general); err != nil {
+				http.Error(w, "Invalid question data", http.StatusBadRequest)
+				return
+			}
+			request.Question = &proto.UpdateQuestionRequest_General{
+				General: &proto.GeneralQuestion{
+					Statement: general.Statement,
+				},
 			}
 		}
+	}
 
-		// Update question data
-		if updateDto.Question != nil {
-			// Unmarshal and validate based on current type (which might have just been updated)
-			questionData, err := unmarshalQuestion(dtos.CreateQuestionDto{
-				Question: updateDto.Question,
-				Type:     question.Type,
-			})
-			if err != nil {
-				return err
-			}
+	if updateDto.CategoryID != 0 {
+		categoryId := int32(updateDto.CategoryID)
+		request.CategoryId = &categoryId
+	}
 
-			if err := validateQuestion(questionData, question.Type); err != nil {
-				return err
-			}
+	if updateDto.MaxScore != 0 {
+		maxScore := int32(updateDto.MaxScore)
+		request.MaxScore = &maxScore
+	}
 
-			question.Question = updateDto.Question
-			isUpdated = true
-		}
-
-		// Update the fields based on the provided data
-		if updateDto.CategoryID != 0 {
-			var category models.QuestionCategory
-			if err := tx.Where("id = ? AND paper_id = ?", updateDto.CategoryID, question.PaperID).
-				Take(&category).Error; err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
-					http.Error(w, "Category not found", http.StatusBadRequest)
-					return err
-				}
-				return err
-			}
-			question.CategoryID = updateDto.CategoryID
-			isUpdated = true
-		}
-
-		if updateDto.Tags != nil {
-			question.Tags = updateDto.Tags
-			isUpdated = true
-		}
-
-		if updateDto.CorrectAnswer != "" {
-			question.CorrectAnswer = sql.NullString{String: updateDto.CorrectAnswer, Valid: true}
-			isUpdated = true
-		}
-
-		isPaperUpdated := false
-
-		if updateDto.MaxScore != 0 && updateDto.MaxScore != question.MaxScore {
-			paper.MaxScore = paper.MaxScore - question.MaxScore + updateDto.MaxScore
-			question.MaxScore = updateDto.MaxScore
-
-			isPaperUpdated = true
-			isUpdated = true
-		}
-
-		if isUpdated {
-			// Update question counts if type was changed
-			if updateDto.Type != "" && updateDto.Type != question.Type {
-				paper.QuestionCounts, err = json.Marshal(questionCounts)
-				if err != nil {
-					return err
-				}
-				isPaperUpdated = true
-			}
-
-			if err := tx.Save(&question).Error; err != nil {
-				return err
-			}
-		}
-
-		if isPaperUpdated {
-			if err := tx.Save(&paper).Error; err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+	if updateDto.Tags != nil {
+		var tags []string
+		if err := json.Unmarshal(updateDto.Tags, &tags); err != nil {
+			http.Error(w, "Invalid tags data", http.StatusBadRequest)
 			return
 		}
-		http.Error(w, "Failed to update question", http.StatusInternalServerError)
+		request.Tags = tags
+	}
+
+	if updateDto.CorrectAnswer != "" {
+		request.CorrectAnswer = &updateDto.CorrectAnswer
+	}
+
+	_, err := paperService.Client().UpdateQuestion(ctx, request)
+	if err != nil {
+		handleGRPCError(w, err)
 		return
 	}
 
@@ -387,122 +265,28 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 
 func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	questionID := vars["id"]
+	questionID, _ := strconv.Atoi(vars["id"])
+	userID := r.Context().Value(middlewares.UserIDKey).(int)
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		var question models.Question
-		if err := tx.Take(&question, questionID).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				http.Error(w, "Question not found", http.StatusNotFound)
-			} else {
-				http.Error(w, "Failed to find question", http.StatusInternalServerError)
-			}
-			return err
-		}
+	paperService := services.GetPaperService()
+	ctx := paperService.CreateMetadata(userID)
 
-		// Validate the paperId
-		var paper models.Paper
-		if err := tx.Take(&paper, question.PaperID).Error; err != nil {
-			http.Error(w, "Failed to find paper", http.StatusInternalServerError)
-			return err
-		}
-
-		questionCounts, err := paper.GetQuestionCounts()
-		if err != nil {
-			http.Error(w, "Failed to parse question counts", http.StatusInternalServerError)
-			return err
-		}
-
-		// Decrement the question count based on the question type
-		switch question.Type {
-		case constants.QUESTION_TYPE_MCQ:
-			questionCounts.MCQ--
-		case constants.QUESTION_TYPE_SHORT:
-			questionCounts.Short--
-		case constants.QUESTION_TYPE_LONG:
-			questionCounts.Long--
-		}
-
-		// Update the paper's max score
-		paper.MaxScore -= question.MaxScore
-
-		// Delete the question
-		if err := tx.Delete(&question).Error; err != nil {
-			http.Error(w, "Failed to delete question", http.StatusInternalServerError)
-			return err
-		}
-
-		// Update the paper with the new question counts
-		paper.QuestionCounts, err = json.Marshal(questionCounts)
-		if err != nil {
-			http.Error(w, "Failed to marshal question counts", http.StatusInternalServerError)
-			return err
-		}
-		if err := tx.Save(&paper).Error; err != nil {
-			http.Error(w, "Failed to update paper question counts", http.StatusInternalServerError)
-			return err
-		}
-
-		return nil
+	_, err := paperService.Client().DeleteQuestion(ctx, &proto.QuestionRequest{
+		QuestionId: int32(questionID),
 	})
 
 	if err != nil {
+		handleGRPCError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func unmarshalQuestion(questionDto dtos.CreateQuestionDto) (interface{}, error) {
-	switch questionDto.Type {
-	case constants.QUESTION_TYPE_MCQ:
-		var mcq models.MCQQuestion
-		if err := json.Unmarshal(questionDto.Question, &mcq); err != nil {
-			return nil, errors.New("invalid MCQ question format")
-		}
-		return mcq, nil
-
-	case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
-		var general models.GeneralQuestion
-		if err := json.Unmarshal(questionDto.Question, &general); err != nil {
-			return nil, errors.New("invalid general question format")
-		}
-		return general, nil
-
-	default:
-		return nil, errors.New("invalid question type")
-	}
-}
-
-func validateQuestion(question interface{}, questionType string) error {
-	switch questionType {
-	case constants.QUESTION_TYPE_MCQ:
-		mcq := question.(models.MCQQuestion)
-
-		if strings.TrimSpace(mcq.Statement) == "" {
-			return errors.New("question statement cannot be empty")
-		}
-		if len(mcq.Options) < 2 {
-			return errors.New("MCQ questions must have at least 2 options")
-		}
-		if len(mcq.Options) > 5 {
-			return errors.New("MCQ questions cannot have more than 5 options")
-		}
-
-	case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
-		general := question.(models.GeneralQuestion)
-
-		if strings.TrimSpace(general.Statement) == "" {
-			return errors.New("question statement cannot be empty")
-		}
-	}
-
-	return nil
-}
-
 func ReorderQuestions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	categoryID := vars["category_id"]
+	categoryID, _ := strconv.Atoi(vars["category_id"])
+	userID := r.Context().Value(middlewares.UserIDKey).(int)
 
 	var reorderDto dtos.ReorderQuestionsDto
 	if err := json.NewDecoder(r.Body).Decode(&reorderDto); err != nil {
@@ -515,37 +299,55 @@ func ReorderQuestions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		// Verify all questions belong to the category
-		var count int64
-		err := tx.Model(&models.Question{}).
-			Where("category_id = ? AND id IN ?", categoryID, reorderDto.Questions).
-			Count(&count).Error
-		if err != nil {
-			return err
-		}
+	paperService := services.GetPaperService()
+	ctx := paperService.CreateMetadata(userID)
 
-		if int(count) != len(reorderDto.Questions) {
-			http.Error(w, "Invalid question IDs", http.StatusBadRequest)
-			return errors.New("invalid question IDs")
-		}
+	questionIDs := make([]int32, len(reorderDto.Questions))
+	for i, id := range reorderDto.Questions {
+		questionIDs[i] = int32(id)
+	}
 
-		// Update orders based on array position
-		for i, questionID := range reorderDto.Questions {
-			if err := tx.Model(&models.Question{}).
-				Where("id = ?", questionID).
-				Update("order", i+1).Error; err != nil {
-				return err
-			}
-		}
-
-		return nil
+	_, err := paperService.Client().ReorderQuestions(ctx, &proto.ReorderQuestionsRequest{
+		CategoryId:  int32(categoryID),
+		QuestionIds: questionIDs,
 	})
 
 	if err != nil {
-		http.Error(w, "Failed to reorder questions", http.StatusInternalServerError)
+		handleGRPCError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func protoQuestionToResponse(resp *proto.QuestionResponse) dtos.QuestionResponse {
+	tags, _ := json.Marshal(resp.Tags)
+
+	response := dtos.QuestionResponse{
+		ID:            int(resp.Id),
+		Type:          resp.Type,
+		Tags:          tags,
+		PaperID:       int(resp.PaperId),
+		MaxScore:      int(resp.MaxScore),
+		CorrectAnswer: resp.GetCorrectAnswer(),
+	}
+
+	switch q := resp.Question.(type) {
+	case *proto.QuestionResponse_Mcq:
+		data, _ := json.Marshal(q.Mcq)
+		response.Question = data
+	case *proto.QuestionResponse_General:
+		data, _ := json.Marshal(q.General)
+		response.Question = data
+	}
+
+	if resp.Category != nil {
+		response.Category = &dtos.QuestionCategoryResponse{
+			ID:    int(resp.Category.Id),
+			Name:  resp.Category.Name,
+			Order: int(resp.Category.Order),
+		}
+	}
+
+	return response
 }

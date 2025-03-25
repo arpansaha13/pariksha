@@ -15,6 +15,9 @@ export function useQuestion(questionId: ComputedRef<number | null>) {
         fetchOptions
       )
 
+      // If there are no tags, backend returns null
+      if (isNullOrUndefined(data.tags)) data.tags = []
+
       // A new key is not created in Nuxt Cache/Payload by itself when watched value changes
       payload.data[AsyncDataKeys.QUESTION(questionId.value)] = data
       return data
