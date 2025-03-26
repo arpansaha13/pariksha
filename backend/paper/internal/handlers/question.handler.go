@@ -23,17 +23,20 @@ func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperReq
 	}
 
 	// Verify paper access
-	var paper models.Paper
-	err = db.DB.Preload("PaperOwnership", "user_id = ?", userID).
-		Take(&paper, req.PaperId).Error
+	var exists bool
+	err = db.DB.
+		Raw(`SELECT EXISTS (
+			SELECT 1 FROM papers p
+			INNER JOIN paper_ownerships po ON po.paper_id = p.id
+			WHERE p.id = ? AND po.user_id = ?
+		)`, req.PaperId, userID).
+		Scan(&exists).Error
+
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, status.Error(codes.NotFound, "paper not found")
-		}
-		return nil, status.Error(codes.Internal, "failed to find paper")
+		return nil, status.Error(codes.Internal, "failed to check paper access")
 	}
 
-	if paper.PaperOwnership.ID == 0 {
+	if !exists {
 		return nil, status.Error(codes.NotFound, "paper not found")
 	}
 
