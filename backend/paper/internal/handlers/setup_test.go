@@ -24,8 +24,9 @@ import (
 )
 
 const (
-	bufSize = 1024 * 1024
-	userID  = 1
+	bufSize                         = 1024 * 1024
+	userID                          = 1
+	defaultPaperCategoryName string = "Category 1"
 )
 
 var (
@@ -139,7 +140,7 @@ func createTestPaper(t *testing.T, userID int) models.Paper {
 
 	category := models.QuestionCategory{
 		PaperID: paper.ID,
-		Name:    "Category 1",
+		Name:    defaultPaperCategoryName,
 		Order:   1,
 	}
 	err = db.DB.Create(&category).Error
