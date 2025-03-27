@@ -294,13 +294,14 @@ func TestDeleteCategory(t *testing.T) {
 		validate     func(t *testing.T, categoryID int)
 	}{
 		{
-			name: "Success - Delete category",
+			name: "Success - Delete category when multiple exist",
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, int(userID))
+				// createTestPaper already creates one category
 				category := models.QuestionCategory{
 					PaperID: paper.ID,
 					Name:    "Test Category",
-					Order:   1,
+					Order:   2,
 				}
 				require.NoError(t, db.DB.Create(&category).Error)
 				return &category
@@ -314,13 +315,29 @@ func TestDeleteCategory(t *testing.T) {
 			},
 		},
 		{
+			name: "Fail - Cannot delete last category",
+			setup: func(t *testing.T) *models.QuestionCategory {
+				paper := createTestPaper(t, int(userID))
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				return &category
+			},
+			userID:       userID,
+			expectedCode: codes.FailedPrecondition,
+			validate: func(t *testing.T, categoryID int) {
+				var category models.QuestionCategory
+				err := db.DB.First(&category, categoryID).Error
+				assert.NoError(t, err)
+			},
+		},
+		{
 			name: "Not paper owner",
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, 2) // Different user
 				category := models.QuestionCategory{
 					PaperID: paper.ID,
 					Name:    "Test Category",
-					Order:   1,
+					Order:   2,
 				}
 				require.NoError(t, db.DB.Create(&category).Error)
 				return &category

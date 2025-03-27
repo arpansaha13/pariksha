@@ -183,6 +183,19 @@ func (s *PaperServer) DeleteCategory(ctx context.Context, req *proto.CategoryReq
 			return transactionErr
 		}
 
+		// Check if there is only one category
+		var categoryCount int64
+		if err := tx.Model(&models.QuestionCategory{}).
+			Where("paper_id = ?", category.PaperID).
+			Count(&categoryCount).Error; err != nil {
+			return err
+		}
+
+		if categoryCount <= 1 {
+			transactionErr = status.Error(codes.FailedPrecondition, "cannot delete the last category")
+			return transactionErr
+		}
+
 		// Get paper to update question counts
 		var paper models.Paper
 		if err := tx.First(&paper, category.PaperID).Error; err != nil {
