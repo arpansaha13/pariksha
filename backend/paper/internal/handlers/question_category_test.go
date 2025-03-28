@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"database/sql"
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -8,6 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/db"
@@ -31,12 +34,12 @@ func TestGetPaperCategories(t *testing.T) {
 				categories := []models.QuestionCategory{
 					defaultCategory,
 					{
-						PaperID: paper.ID,
+						PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						Name:    "Category 2",
 						Order:   2,
 					},
 					{
-						PaperID: paper.ID,
+						PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						Name:    "Category 3",
 						Order:   3,
 					},
@@ -162,11 +165,67 @@ func TestUpdateCategory(t *testing.T) {
 		validate     func(t *testing.T, category *models.QuestionCategory)
 	}{
 		{
+			name: "Success - Update unlocked category",
+			setup: func(t *testing.T) *models.QuestionCategory {
+				paper := createTestPaper(t, int(userID))
+				category := models.QuestionCategory{
+					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+					Name:    "Original Name",
+					Order:   1,
+					Locked:  false,
+				}
+				require.NoError(t, db.DB.Create(&category).Error)
+				return &category
+			},
+			userID:       userID,
+			newName:      "Updated Name",
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, category *models.QuestionCategory) {
+				var updated models.QuestionCategory
+				require.NoError(t, db.DB.First(&updated, category.ID).Error)
+				assert.Equal(t, "Updated Name", updated.Name)
+				assert.Equal(t, category.ID, updated.ID) // Same record was updated
+			},
+		},
+		{
+			name: "Success - Update locked category creates new record",
+			setup: func(t *testing.T) *models.QuestionCategory {
+				paper := createTestPaper(t, int(userID))
+				category := models.QuestionCategory{
+					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+					Name:    "Original Name",
+					Order:   1,
+					Locked:  true,
+				}
+				require.NoError(t, db.DB.Create(&category).Error)
+				return &category
+			},
+			userID:       userID,
+			newName:      "Updated Name",
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, category *models.QuestionCategory) {
+				// Original category should be unlinked
+				var original models.QuestionCategory
+				require.NoError(t, db.DB.First(&original, category.ID).Error)
+				assert.Equal(t, "Original Name", original.Name)
+				assert.True(t, original.Locked)
+				assert.Zero(t, original.PaperID) // Unlinked
+
+				// New category should be created
+				var newCategory models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ? AND name = ?", category.PaperID, "Updated Name").First(&newCategory).Error)
+				assert.NotEqual(t, category.ID, newCategory.ID) // Different record
+				assert.Equal(t, "Updated Name", newCategory.Name)
+				assert.Equal(t, category.Order, newCategory.Order)
+				assert.False(t, newCategory.Locked)
+			},
+		},
+		{
 			name: "Success - Update category",
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, int(userID))
 				category := models.QuestionCategory{
-					PaperID: paper.ID,
+					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 					Name:    "Original Name",
 					Order:   1,
 				}
@@ -187,7 +246,7 @@ func TestUpdateCategory(t *testing.T) {
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, 2) // Different user
 				category := models.QuestionCategory{
-					PaperID: paper.ID,
+					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 					Name:    "Original Name",
 					Order:   1,
 				}
@@ -238,7 +297,7 @@ func TestReorderCategories(t *testing.T) {
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&defaultCategory).Error)
 
 				additionalCategory := models.QuestionCategory{
-					PaperID: paper.ID,
+					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 					Name:    "Category 2",
 					Order:   2,
 				}
@@ -299,7 +358,7 @@ func TestDeleteCategory(t *testing.T) {
 				paper := createTestPaper(t, int(userID))
 				// createTestPaper already creates one category
 				category := models.QuestionCategory{
-					PaperID: paper.ID,
+					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 					Name:    "Test Category",
 					Order:   2,
 				}
@@ -335,7 +394,7 @@ func TestDeleteCategory(t *testing.T) {
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, 2) // Different user
 				category := models.QuestionCategory{
-					PaperID: paper.ID,
+					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 					Name:    "Test Category",
 					Order:   2,
 				}
@@ -344,6 +403,114 @@ func TestDeleteCategory(t *testing.T) {
 			},
 			userID:       userID,
 			expectedCode: codes.PermissionDenied,
+		},
+		{
+			name: "Success - Delete locked category unlinks it",
+			setup: func(t *testing.T) *models.QuestionCategory {
+				paper := createTestPaper(t, int(userID))
+				// Default category from createTestPaper
+				var defaultCategory models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&defaultCategory).Error)
+
+				// Create locked category
+				category := models.QuestionCategory{
+					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+					Name:    "Test Category",
+					Order:   2,
+					Locked:  true,
+				}
+				require.NoError(t, db.DB.Create(&category).Error)
+
+				// Add a locked question to this category
+				question := models.Question{
+					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+					CategoryID: category.ID,
+					Type:       constants.QUESTION_TYPE_MCQ,
+					Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
+					MaxScore:   5,
+					Locked:     true,
+				}
+				require.NoError(t, db.DB.Create(&question).Error)
+
+				return &category
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, categoryID int) {
+				// Verify category still exists but is unlinked
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.First(&category, categoryID).Error)
+				assert.True(t, category.Locked)
+				assert.Zero(t, category.PaperID) // Should be unlinked
+
+				// Verify question is also unlinked but not deleted
+				var question models.Question
+				require.NoError(t, db.DB.Where("category_id = ?", categoryID).First(&question).Error)
+				assert.True(t, question.Locked)
+				assert.False(t, question.PaperID.Valid) // Should be unlinked
+			},
+		},
+		{
+			name: "Success - Delete category with mix of locked and unlocked questions",
+			setup: func(t *testing.T) *models.QuestionCategory {
+				paper := createTestPaper(t, int(userID))
+				// Default category from createTestPaper
+				var defaultCategory models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&defaultCategory).Error)
+
+				// Create category
+				// Note: A locked category may have both locked and unlocked questions.
+				// But an unlocked category can only have unlocked questions.
+				category := models.QuestionCategory{
+					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+					Name:    "Test Category",
+					Order:   2,
+					Locked:  true,
+				}
+				require.NoError(t, db.DB.Create(&category).Error)
+
+				// Add locked and unlocked questions
+				questions := []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"Locked MCQ","options":["A","B"]}`),
+						MaxScore:   5,
+						Locked:     true,
+					},
+					{
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"Unlocked MCQ","options":["A","B"]}`),
+						MaxScore:   5,
+						Locked:     false,
+					},
+				}
+				require.NoError(t, db.DB.Create(&questions).Error)
+
+				return &category
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, categoryID int) {
+				// Verify category still exists but is unlinked
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.First(&category, categoryID).Error)
+				assert.True(t, category.Locked)
+				assert.Zero(t, category.PaperID) // Should be unlinked
+
+				// Verify locked question is unlinked but exists
+				var lockedQuestion models.Question
+				require.NoError(t, db.DB.Where("category_id = ? AND locked = true", categoryID).First(&lockedQuestion).Error)
+				assert.Zero(t, lockedQuestion.PaperID) // Should be unlinked
+
+				// Verify unlocked question is deleted
+				var unlockedQuestion models.Question
+				err := db.DB.Where("category_id = ? AND locked = false", categoryID).First(&unlockedQuestion).Error
+				assert.Error(t, err) // Should be deleted
+			},
 		},
 	}
 

@@ -22,22 +22,17 @@ func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperReq
 		return nil, err
 	}
 
-	// Verify paper access
 	var exists bool
-	err = db.DB.
-		Raw(`SELECT EXISTS (
-			SELECT 1 FROM papers p
-			INNER JOIN paper_ownerships po ON po.paper_id = p.id
-			WHERE p.id = ? AND po.user_id = ?
-		)`, req.PaperId, userID).
-		Scan(&exists).Error
-
+	err = db.DB.Raw(`SELECT EXISTS (SELECT 1 FROM papers p WHERE p.id = ?)`, req.PaperId).Scan(&exists).Error
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to check paper access")
+		return nil, status.Error(codes.Internal, "failed to find paper")
 	}
-
 	if !exists {
 		return nil, status.Error(codes.NotFound, "paper not found")
+	}
+
+	if err := verifyPaperAccess(nil, int(req.PaperId), userID, ""); err != nil {
+		return nil, err
 	}
 
 	var questions []models.Question
@@ -53,7 +48,7 @@ func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperReq
 		response.Questions[i] = &proto.QuestionMinimal{
 			Id:         int32(question.ID),
 			CategoryId: int32(question.CategoryID),
-			PaperId:    int32(question.PaperID),
+			PaperId:    int32(question.PaperID.Int64),
 			Order:      int32(question.Order),
 			Question:   nil,
 		}
@@ -93,11 +88,7 @@ func (s *PaperServer) GetQuestion(ctx context.Context, req *proto.QuestionReques
 	}
 
 	var question models.Question
-	err = db.DB.Preload("Category").
-		Preload("Paper").
-		Preload("Paper.PaperOwnership", "user_id = ?", userID).
-		Take(&question, req.QuestionId).Error
-
+	err = db.DB.Preload("Category").Take(&question, req.QuestionId).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, status.Error(codes.NotFound, "question not found")
@@ -105,9 +96,8 @@ func (s *PaperServer) GetQuestion(ctx context.Context, req *proto.QuestionReques
 		return nil, status.Error(codes.Internal, "failed to find question")
 	}
 
-	// Verify access
-	if question.Paper.PaperOwnership.ID == 0 {
-		return nil, status.Error(codes.NotFound, "question not found")
+	if err := verifyPaperAccess(nil, question.PaperID, userID, ""); err != nil {
+		return nil, err
 	}
 
 	return questionToProto(question, true)
@@ -170,7 +160,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		}
 
 		question = models.Question{
-			PaperID:    int(req.PaperId),
+			PaperID:    sql.NullInt64{Int64: int64(req.PaperId), Valid: true},
 			CategoryID: int(req.CategoryId),
 			Order:      maxOrder.MaxOrder + 1,
 			Question:   questionData,
@@ -198,8 +188,12 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 			return err
 		}
 
-		// Update question counts
-		return updateQuestionCounts(tx, paper.ID, req.Type, 1)
+		newCounts, err := updateQuestionCounts(paper.QuestionCounts, req.Type, 1)
+		if err != nil {
+			return err
+		}
+
+		return tx.Model(&paper).Update("question_counts", newCounts).Error
 	})
 
 	if err != nil {
@@ -217,8 +211,7 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
 		var question models.Question
-		err := tx.Preload("Paper.PaperOwnership", "user_id = ?", userID).
-			Take(&question, req.QuestionId).Error
+		err := tx.Preload("Paper").Take(&question, req.QuestionId).Error
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return status.Error(codes.NotFound, "question not found")
@@ -226,101 +219,49 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 			return err
 		}
 
-		if question.Paper.PaperOwnership.ID == 0 ||
-			question.Paper.PaperOwnership.Type != constants.PAPER_OWNERSHIP_TYPE_OWNER {
-			return status.Error(codes.PermissionDenied, "only owner can update questions")
+		if err := verifyPaperAccess(tx, question.PaperID, userID, constants.PAPER_OWNERSHIP_TYPE_OWNER); err != nil {
+			return err
 		}
 
-		isUpdated := false
 		oldType := question.Type
 		oldMaxScore := question.MaxScore
 
-		if req.Type != nil && req.GetType() != question.Type {
-			question.Type = req.GetType()
-			isUpdated = true
-		}
+		if question.Locked {
+			newQuestion := question // Copy original values
+			newQuestion.ID = 0      // Clear ID for new record
+			newQuestion.Locked = false
 
-		if req.Question != nil {
-			questionType := question.Type
-			if req.Type != nil {
-				questionType = req.GetType()
-			}
-
-			switch q := req.Question.(type) {
-			case *proto.UpdateQuestionRequest_Mcq:
-				if err := validateQuestionData(questionType, q.Mcq); err != nil {
-					return err
-				}
-			case *proto.UpdateQuestionRequest_General:
-				if err := validateQuestionData(questionType, q.General); err != nil {
-					return err
-				}
-			default:
-				return status.Error(codes.InvalidArgument, "invalid question type")
-			}
-
-			var questionData json.RawMessage
-			switch q := req.Question.(type) {
-			case *proto.UpdateQuestionRequest_Mcq:
-				questionData, _ = json.Marshal(q.Mcq)
-			case *proto.UpdateQuestionRequest_General:
-				questionData, _ = json.Marshal(q.General)
-			}
-			question.Question = questionData
-			isUpdated = true
-		}
-
-		if req.CategoryId != nil {
-			question.CategoryID = int(req.GetCategoryId())
-			isUpdated = true
-		}
-
-		if req.MaxScore != nil {
-			question.MaxScore = int(req.GetMaxScore())
-			isUpdated = true
-		}
-
-		if len(req.Tags) > 0 {
-			tags, _ := json.Marshal(req.Tags)
-			question.Tags = tags
-			isUpdated = true
-		}
-
-		if req.CorrectAnswer != nil {
-			question.CorrectAnswer = sql.NullString{
-				String: req.GetCorrectAnswer(),
-				Valid:  true,
-			}
-			isUpdated = true
-		}
-
-		if isUpdated {
-			if err := tx.Save(&question).Error; err != nil {
+			updatedQuestion, err := applyQuestionUpdates(newQuestion, req)
+			if err != nil {
 				return err
 			}
 
-			// Update paper max score if changed
-			if req.MaxScore != nil {
-				scoreDiff := question.MaxScore - oldMaxScore
-				if err := tx.Model(&question.Paper).
-					UpdateColumn("max_score", gorm.Expr("max_score + ?", scoreDiff)).
-					Error; err != nil {
-					return err
-				}
+			// Create new question with updated values
+			if err := tx.Create(&updatedQuestion).Error; err != nil {
+				return err
 			}
 
-			// Update question counts if type changed
-			if req.Type != nil && req.GetType() != oldType {
-				if err := updateQuestionCounts(tx, question.PaperID, oldType, -1); err != nil {
-					return err
-				}
-				if err := updateQuestionCounts(tx, question.PaperID, question.Type, 1); err != nil {
-					return err
-				}
+			// Unlink old question from paper
+			if err := tx.Model(models.Question{}).
+				Where("id = ?", question.ID).
+				Update("paper_id", sql.NullInt64{}).Error; err != nil {
+				return err
 			}
+
+			return updatePaperStats(tx, question.Paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
 		}
 
-		return nil
+		// Apply updates to existing question
+		updatedQuestion, err := applyQuestionUpdates(question, req)
+		if err != nil {
+			return err
+		}
+
+		if err := tx.Save(&updatedQuestion).Error; err != nil {
+			return err
+		}
+
+		return updatePaperStats(tx, updatedQuestion.Paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
 	})
 
 	if err != nil {
@@ -338,8 +279,7 @@ func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionReq
 
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
 		var question models.Question
-		err := tx.Preload("Paper.PaperOwnership", "user_id = ?", userID).
-			Take(&question, req.QuestionId).Error
+		err := tx.Preload("Paper").Take(&question, req.QuestionId).Error
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return status.Error(codes.NotFound, "question not found")
@@ -347,9 +287,8 @@ func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionReq
 			return err
 		}
 
-		if question.Paper.PaperOwnership.ID == 0 ||
-			question.Paper.PaperOwnership.Type != constants.PAPER_OWNERSHIP_TYPE_OWNER {
-			return status.Error(codes.PermissionDenied, "only owner can delete questions")
+		if err := verifyPaperAccess(tx, question.PaperID, userID, constants.PAPER_OWNERSHIP_TYPE_OWNER); err != nil {
+			return err
 		}
 
 		// Update paper max score
@@ -359,14 +298,26 @@ func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionReq
 			return err
 		}
 
-		// Update question counts
-		if err := updateQuestionCounts(tx, question.PaperID, question.Type, -1); err != nil {
+		newCounts, err := updateQuestionCounts(question.Paper.QuestionCounts, question.Type, -1)
+		if err != nil {
 			return err
 		}
 
-		// Delete question
-		if err := tx.Delete(&question).Error; err != nil {
+		if err := tx.Model(&question.Paper).Update("question_counts", newCounts).Error; err != nil {
 			return err
+		}
+
+		// If question is locked, just unlink it from the paper
+		if question.Locked {
+			if err := tx.Model(models.Question{}).
+				Where("id = ?", question.ID).
+				Update("paper_id", sql.NullInt64{}).Error; err != nil {
+				return err
+			}
+		} else {
+			if err := tx.Delete(&question).Error; err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -447,7 +398,7 @@ func questionToProto(question models.Question, includeCategory bool) (*proto.Que
 		Category:      category,
 		Type:          question.Type,
 		Tags:          tags,
-		PaperId:       int32(question.PaperID),
+		PaperId:       int32(question.PaperID.Int64),
 		MaxScore:      int32(question.MaxScore),
 		CorrectAnswer: &question.CorrectAnswer.String,
 	}
@@ -480,19 +431,10 @@ func questionToProto(question models.Question, includeCategory bool) (*proto.Que
 }
 
 // Helper function to update question counts
-func updateQuestionCounts(tx *gorm.DB, paperID int, questionType string, delta int) error {
-	var paper models.Paper
-	if err := tx.Take(&paper, paperID).Error; err != nil {
-		return err
-	}
-
-	var counts struct {
-		MCQ   int `json:"mcq"`
-		Short int `json:"short"`
-		Long  int `json:"long"`
-	}
-	if err := json.Unmarshal(paper.QuestionCounts, &counts); err != nil {
-		return err
+func updateQuestionCounts(rawCounts json.RawMessage, questionType string, delta int) (json.RawMessage, error) {
+	var counts models.QuestionCount
+	if err := json.Unmarshal(rawCounts, &counts); err != nil {
+		return nil, err
 	}
 
 	switch questionType {
@@ -506,10 +448,10 @@ func updateQuestionCounts(tx *gorm.DB, paperID int, questionType string, delta i
 
 	newCounts, err := json.Marshal(counts)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return tx.Model(&paper).Update("question_counts", newCounts).Error
+	return newCounts, nil
 }
 
 func validateQuestionData(questionType string, question interface{}) error {
@@ -538,6 +480,83 @@ func validateQuestionData(questionType string, question interface{}) error {
 
 		if strings.TrimSpace(general.Statement) == "" {
 			return status.Error(codes.InvalidArgument, "question statement cannot be empty")
+		}
+	}
+
+	return nil
+}
+
+// Helper function to apply updates to a question
+func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionRequest) (models.Question, error) {
+	if req.Type != nil {
+		question.Type = req.GetType()
+	}
+
+	if req.Question != nil {
+		questionType := question.Type
+		switch q := req.Question.(type) {
+		case *proto.UpdateQuestionRequest_Mcq:
+			if err := validateQuestionData(questionType, q.Mcq); err != nil {
+				return question, err
+			}
+			questionData, _ := json.Marshal(q.Mcq)
+			question.Question = questionData
+		case *proto.UpdateQuestionRequest_General:
+			if err := validateQuestionData(questionType, q.General); err != nil {
+				return question, err
+			}
+			questionData, _ := json.Marshal(q.General)
+			question.Question = questionData
+		}
+	}
+
+	if req.CategoryId != nil {
+		question.CategoryID = int(req.GetCategoryId())
+	}
+
+	if req.MaxScore != nil {
+		question.MaxScore = int(req.GetMaxScore())
+	}
+
+	if len(req.Tags) > 0 {
+		tags, _ := json.Marshal(req.Tags)
+		question.Tags = tags
+	}
+
+	if req.CorrectAnswer != nil {
+		question.CorrectAnswer = sql.NullString{
+			String: req.GetCorrectAnswer(),
+			Valid:  true,
+		}
+	}
+
+	return question, nil
+}
+
+// Helper function to update paper stats when question type or max score changes
+func updatePaperStats(tx *gorm.DB, paper models.Paper, oldType, newType string, oldScore, newScore int) error {
+	if oldScore != newScore {
+		scoreDiff := newScore - oldScore
+		if err := tx.Model(&paper).
+			UpdateColumn("max_score", gorm.Expr("max_score + ?", scoreDiff)).
+			Error; err != nil {
+			return err
+		}
+	}
+
+	if oldType != newType {
+		newCounts, err := updateQuestionCounts(paper.QuestionCounts, oldType, -1)
+		if err != nil {
+			return err
+		}
+
+		newCounts, err = updateQuestionCounts(newCounts, newType, 1)
+		if err != nil {
+			return err
+		}
+
+		if err := tx.Model(&paper).Update("question_counts", newCounts).Error; err != nil {
+			return err
 		}
 	}
 

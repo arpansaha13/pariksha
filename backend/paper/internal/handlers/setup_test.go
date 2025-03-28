@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"net"
 	"os"
@@ -139,7 +140,7 @@ func createTestPaper(t *testing.T, userID int) models.Paper {
 	require.NoError(t, err)
 
 	category := models.QuestionCategory{
-		PaperID: paper.ID,
+		PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 		Name:    defaultPaperCategoryName,
 		Order:   1,
 	}

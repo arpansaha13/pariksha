@@ -46,6 +46,7 @@ Table questions {
   paper_id integer [note: 'Which paper the question belongs to']
   max_score integer [note: 'Maximum score that can be awarded on this question']
   correct_answer text [note: 'A sample of the correct answer. In case of MCQs, it can be used to auto-evaluate.']
+  locked boolean [not null, default: false, note: 'Indicates if the question is used in an exam and is locked for editing']
 }
 
 Table exam_participants {
@@ -79,6 +80,14 @@ Table unverified_users {
   otp_expires_at timestamp
   email varchar
   password varchar
+}
+
+Table question_categories {
+  id integer [primary key]
+  paper_id integer [note: 'Which paper this category belongs to']
+  name varchar
+  order integer [note: 'Used to maintain the order of categories']
+  locked boolean [not null, default: false, note: 'Indicates if the category is used in an exam and is locked for editing']
 }
 
 Ref: exams.created_by > users.id // One user can create many exams

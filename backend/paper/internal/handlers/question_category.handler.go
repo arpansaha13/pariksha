@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 
@@ -21,22 +22,8 @@ func (s *PaperServer) GetPaperCategories(ctx context.Context, req *proto.PaperRe
 		return nil, err
 	}
 
-	// Verify paper access
-	var exists bool
-	err = db.DB.
-		Raw(`SELECT EXISTS (
-			SELECT 1 FROM papers p
-			INNER JOIN paper_ownerships po ON po.paper_id = p.id
-			WHERE p.id = ? AND po.user_id = ?
-		)`, req.PaperId, userID).
-		Scan(&exists).Error
-
-	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to check paper access")
-	}
-
-	if !exists {
-		return nil, status.Error(codes.PermissionDenied, "no access to paper")
+	if err := verifyPaperAccess(nil, int(req.PaperId), userID, ""); err != nil {
+		return nil, err
 	}
 
 	var categories []models.QuestionCategory
@@ -107,7 +94,7 @@ func (s *PaperServer) CreateCategory(ctx context.Context, req *proto.CreateCateg
 		}
 
 		category = models.QuestionCategory{
-			PaperID: int(req.PaperId),
+			PaperID: sql.NullInt64{Int64: int64(req.PaperId), Valid: true},
 			Name:    fmt.Sprintf("Category %d", count+1),
 			Order:   maxOrder.MaxOrder + 1,
 		}
@@ -136,9 +123,7 @@ func (s *PaperServer) UpdateCategory(ctx context.Context, req *proto.UpdateCateg
 	}
 
 	var category models.QuestionCategory
-	err = db.DB.Preload("Paper.PaperOwnership", "user_id = ?", userID).
-		Take(&category, req.CategoryId).Error
-
+	err = db.DB.Take(&category, req.CategoryId).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, status.Error(codes.NotFound, "category not found")
@@ -146,13 +131,45 @@ func (s *PaperServer) UpdateCategory(ctx context.Context, req *proto.UpdateCateg
 		return nil, status.Error(codes.Internal, "failed to find category")
 	}
 
-	if category.Paper.PaperOwnership.ID == 0 || category.Paper.PaperOwnership.Type != constants.PAPER_OWNERSHIP_TYPE_OWNER {
-		return nil, status.Error(codes.PermissionDenied, "only owner can update categories")
-	}
+	err = db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := verifyPaperAccess(tx, category.PaperID, userID, constants.PAPER_OWNERSHIP_TYPE_OWNER); err != nil {
+			return err
+		}
 
-	category.Name = req.Name
-	if err := db.DB.Save(&category).Error; err != nil {
-		return nil, status.Error(codes.Internal, "failed to update category")
+		// If category is locked, create a new row with updates
+		if category.Locked {
+			newCategory := models.QuestionCategory{
+				PaperID: category.PaperID,
+				Name:    req.Name, // Use the updated name directly
+				Order:   category.Order,
+				Locked:  false,
+			}
+
+			if err := tx.Create(&newCategory).Error; err != nil {
+				return err
+			}
+
+			// Unlink old category from paper
+			if err := tx.Model(models.QuestionCategory{}).
+				Where("id = ?", category.ID).
+				Update("paper_id", sql.NullInt64{}).Error; err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		// Apply updates to existing category
+		category.Name = req.Name
+		if err := tx.Save(&category).Error; err != nil {
+			return status.Error(codes.Internal, "failed to update category")
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	return &proto.Empty{}, nil
@@ -167,20 +184,17 @@ func (s *PaperServer) DeleteCategory(ctx context.Context, req *proto.CategoryReq
 	var transactionErr error
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
 		var category models.QuestionCategory
-		err := tx.Preload("Paper.PaperOwnership", "user_id = ?", userID).
-			Take(&category, req.CategoryId).Error
-
+		err = tx.Take(&category, req.CategoryId).Error
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
-				transactionErr = status.Error(codes.NotFound, "category not found")
-				return transactionErr
+				return status.Error(codes.NotFound, "category not found")
 			}
-			return err
+			return status.Error(codes.Internal, "failed to find category")
 		}
 
-		if category.Paper.PaperOwnership.ID == 0 || category.Paper.PaperOwnership.Type != constants.PAPER_OWNERSHIP_TYPE_OWNER {
-			transactionErr = status.Error(codes.PermissionDenied, "only owner can delete categories")
-			return transactionErr
+		if err := verifyPaperAccess(tx, category.PaperID, userID, constants.PAPER_OWNERSHIP_TYPE_OWNER); err != nil {
+			transactionErr = err
+			return err
 		}
 
 		// Check if there is only one category
@@ -202,7 +216,7 @@ func (s *PaperServer) DeleteCategory(ctx context.Context, req *proto.CategoryReq
 			return err
 		}
 
-		// Get questions in this category
+		// Get both locked and non-locked questions in this category
 		var questions []models.Question
 		if err := tx.Where("category_id = ?", req.CategoryId).Find(&questions).Error; err != nil {
 			return err
@@ -236,12 +250,32 @@ func (s *PaperServer) DeleteCategory(ctx context.Context, req *proto.CategoryReq
 			return err
 		}
 
-		if err := tx.Where("category_id = ?", req.CategoryId).Delete(&models.Question{}).Error; err != nil {
+		// Handle locked and non-locked questions differently
+		// Delete non-locked questions
+		if err := tx.Where("category_id = ? AND locked = false", req.CategoryId).
+			Delete(&models.Question{}).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Delete(&category).Error; err != nil {
+		// Unlink locked questions from the paper
+		if err := tx.Model(&models.Question{}).
+			Where("category_id = ? AND locked = true", req.CategoryId).
+			Update("paper_id", nil).Error; err != nil {
 			return err
+		}
+
+		// If category is locked, just unlink it from the paper
+		if category.Locked {
+			if err := tx.Model(models.QuestionCategory{}).
+				Where("id = ?", category.ID).
+				Update("paper_id", sql.NullInt64{}).Error; err != nil {
+				return err
+			}
+		} else {
+			// Delete the category if not locked
+			if err := tx.Delete(&category).Error; err != nil {
+				return err
+			}
 		}
 
 		return nil

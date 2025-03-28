@@ -55,6 +55,7 @@ func TestGetUserPapers(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
 			if tt.setup != nil {
 				tt.setup(t)
 			}
@@ -70,8 +71,6 @@ func TestGetUserPapers(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, resp)
 			tt.validate(t, resp)
-
-			clearTables(t)
 		})
 	}
 }
@@ -110,6 +109,7 @@ func TestCreatePaper(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
 			if tt.setup != nil {
 				tt.setup(t)
 			}
@@ -125,8 +125,6 @@ func TestCreatePaper(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, resp)
 			tt.validate(t, resp)
-
-			clearTables(t)
 		})
 	}
 }
@@ -178,6 +176,7 @@ func TestUpdatePaper(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
 			paper := tt.setup(t)
 
 			ctx := createContextWithUserID(tt.userID)
@@ -195,8 +194,6 @@ func TestUpdatePaper(t *testing.T) {
 			if tt.validate != nil {
 				tt.validate(t, paper)
 			}
-
-			clearTables(t)
 		})
 	}
 }
@@ -262,7 +259,7 @@ func TestGetPaper(t *testing.T) {
 				return &paper
 			},
 			userID:       userID,
-			expectedCode: codes.NotFound,
+			expectedCode: codes.PermissionDenied,
 		},
 		{
 			name: "Invalid user ID",

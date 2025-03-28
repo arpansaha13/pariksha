@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"strconv"
 
@@ -37,6 +38,53 @@ func getUserID(ctx context.Context) (int32, error) {
 	}
 
 	return int32(userID), nil
+}
+
+// Helper function to verify paper access
+func verifyPaperAccess(tx *gorm.DB, paperID interface{}, userID int32, ownershipType string) error {
+	if tx == nil {
+		tx = db.DB
+	}
+
+	var actualPaperID int
+	switch v := paperID.(type) {
+	case sql.NullInt64:
+		if !v.Valid {
+			return status.Error(codes.InvalidArgument, "invalid paper id")
+		}
+		actualPaperID = int(v.Int64)
+	case int:
+		actualPaperID = v
+	default:
+		return status.Error(codes.InvalidArgument, "invalid paper id type")
+	}
+
+	var condition string
+	var args []any
+
+	args = append(args, actualPaperID, userID)
+	condition = "po.paper_id = ? AND po.user_id = ?"
+
+	if ownershipType != "" {
+		condition += " AND po.type = ?"
+		args = append(args, ownershipType)
+	}
+
+	var exists bool
+	err := tx.Raw(`SELECT EXISTS (
+			SELECT 1 FROM paper_ownerships po
+			WHERE `+condition+`)`, args...).
+		Scan(&exists).Error
+
+	if err != nil {
+		return status.Error(codes.Internal, "failed to check paper access")
+	}
+
+	if !exists {
+		return status.Error(codes.PermissionDenied, "no permission to perform this action")
+	}
+
+	return nil
 }
 
 // Helper function to convert Paper model to proto response
@@ -114,7 +162,7 @@ func (s *PaperServer) CreatePaper(ctx context.Context, _ *proto.Empty) (*proto.P
 
 		// Create default category for questions in this paper
 		defaultCategory := models.QuestionCategory{
-			PaperID: paper.ID,
+			PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 			Name:    "Category 1",
 			Order:   1,
 		}
@@ -140,9 +188,7 @@ func (s *PaperServer) GetPaper(ctx context.Context, req *proto.PaperRequest) (*p
 	}
 
 	var paper models.Paper
-	err = db.DB.Preload("PaperOwnership", "user_id = ?", userID).
-		Take(&paper, req.PaperId).Error
-
+	err = db.DB.Preload("PaperOwnership").Take(&paper, req.PaperId).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, status.Error(codes.NotFound, "paper not found")
@@ -150,9 +196,8 @@ func (s *PaperServer) GetPaper(ctx context.Context, req *proto.PaperRequest) (*p
 		return nil, status.Error(codes.Internal, "failed to retrieve paper")
 	}
 
-	// Check if user has access to this paper
-	if paper.PaperOwnership.ID == 0 {
-		return nil, status.Error(codes.NotFound, "paper not found")
+	if err := verifyPaperAccess(nil, paper.ID, userID, ""); err != nil {
+		return nil, err
 	}
 
 	return paperToProto(paper), nil
@@ -165,9 +210,7 @@ func (s *PaperServer) UpdatePaper(ctx context.Context, req *proto.UpdatePaperReq
 	}
 
 	var paper models.Paper
-	err = db.DB.Preload("PaperOwnership", "user_id = ?", userID).
-		Take(&paper, req.PaperId).Error
-
+	err = db.DB.Take(&paper, req.PaperId).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, status.Error(codes.NotFound, "paper not found")
@@ -175,14 +218,8 @@ func (s *PaperServer) UpdatePaper(ctx context.Context, req *proto.UpdatePaperReq
 		return nil, status.Error(codes.Internal, "failed to find paper")
 	}
 
-	// Check if user has access to this paper
-	if paper.PaperOwnership.ID == 0 {
-		return nil, status.Error(codes.NotFound, "paper not found")
-	}
-
-	// Check if user is owner
-	if paper.PaperOwnership.Type != constants.PAPER_OWNERSHIP_TYPE_OWNER {
-		return nil, status.Error(codes.PermissionDenied, "only owner can update paper")
+	if err := verifyPaperAccess(nil, paper.ID, userID, constants.PAPER_OWNERSHIP_TYPE_OWNER); err != nil {
+		return nil, err
 	}
 
 	isUpdated := false

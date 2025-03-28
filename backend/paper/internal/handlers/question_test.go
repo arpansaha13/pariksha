@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"database/sql"
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
@@ -27,16 +28,12 @@ func TestGetPaperQuestions(t *testing.T) {
 			name: "Success - Get questions for paper",
 			setup: func(t *testing.T) (*models.Paper, []models.Question) {
 				paper := createTestPaper(t, int(userID))
-				category := models.QuestionCategory{
-					PaperID: paper.ID,
-					Name:    "Test Category",
-					Order:   1,
-				}
-				require.NoError(t, db.DB.Create(&category).Error)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
 				questions := []models.Question{
 					{
-						PaperID:    paper.ID,
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Order:      1,
 						Type:       constants.QUESTION_TYPE_MCQ,
@@ -44,7 +41,7 @@ func TestGetPaperQuestions(t *testing.T) {
 						MaxScore:   5,
 					},
 					{
-						PaperID:    paper.ID,
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Order:      2,
 						Type:       constants.QUESTION_TYPE_SHORT,
@@ -78,7 +75,7 @@ func TestGetPaperQuestions(t *testing.T) {
 				return &paper, nil
 			},
 			userID:       userID,
-			expectedCode: codes.NotFound,
+			expectedCode: codes.PermissionDenied,
 		},
 	}
 
@@ -117,12 +114,8 @@ func TestCreateQuestion(t *testing.T) {
 			name: "Success - Create MCQ question",
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
 				paper := createTestPaper(t, int(userID))
-				category := models.QuestionCategory{
-					PaperID: paper.ID,
-					Name:    "Test Category",
-					Order:   1,
-				}
-				require.NoError(t, db.DB.Create(&category).Error)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 				return &paper, &category
 			},
 			userID: userID,
@@ -183,15 +176,11 @@ func TestUpdateQuestion(t *testing.T) {
 			name: "Success - Update question",
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
 				paper := createTestPaper(t, int(userID))
-				category := models.QuestionCategory{
-					PaperID: paper.ID,
-					Name:    "Test Category",
-					Order:   1,
-				}
-				require.NoError(t, db.DB.Create(&category).Error)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
 				question := models.Question{
-					PaperID:    paper.ID,
+					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 					CategoryID: category.ID,
 					Order:      1,
 					Type:       constants.QUESTION_TYPE_MCQ,
@@ -221,6 +210,55 @@ func TestUpdateQuestion(t *testing.T) {
 				assert.Equal(t, "Updated MCQ", mcq.Statement)
 				assert.Equal(t, []string{"X", "Y", "Z"}, mcq.Options)
 				assert.Equal(t, 10, updated.MaxScore)
+			},
+		},
+		{
+			name: "Success - Update locked question creates new copy",
+			setup: func(t *testing.T) (*models.Paper, *models.Question) {
+				paper := createTestPaper(t, int(userID))
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				question := models.Question{
+					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+					CategoryID: category.ID,
+					Order:      1,
+					Type:       constants.QUESTION_TYPE_MCQ,
+					Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
+					MaxScore:   5,
+					Locked:     true,
+				}
+				require.NoError(t, db.DB.Create(&question).Error)
+				return &paper, &question
+			},
+			request: &proto.UpdateQuestionRequest{
+				Question: &proto.UpdateQuestionRequest_Mcq{
+					Mcq: &proto.McqQuestion{
+						Statement: "Updated MCQ",
+						Options:   []string{"X", "Y", "Z"},
+					},
+				},
+				MaxScore: &maxScore,
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, question *models.Question) {
+				// Original question should be unlinked
+				var original models.Question
+				require.NoError(t, db.DB.First(&original, question.ID).Error)
+				assert.True(t, original.Locked)
+				assert.Zero(t, original.PaperID) // Unlinked
+
+				// New question should be created
+				var newQuestion models.Question
+				require.NoError(t, db.DB.Where("paper_id = ?", question.PaperID).First(&newQuestion).Error)
+				assert.NotEqual(t, question.ID, newQuestion.ID)
+				var mcq models.MCQQuestion
+				require.NoError(t, json.Unmarshal(newQuestion.Question, &mcq))
+				assert.Equal(t, "Updated MCQ", mcq.Statement)
+				assert.Equal(t, []string{"X", "Y", "Z"}, mcq.Options)
+				assert.Equal(t, 10, newQuestion.MaxScore)
+				assert.False(t, newQuestion.Locked)
 			},
 		},
 		// Add more test cases for other scenarios
@@ -258,15 +296,11 @@ func TestDeleteQuestion(t *testing.T) {
 			name: "Success - Delete question",
 			setup: func(t *testing.T) *models.Question {
 				paper := createTestPaper(t, int(userID))
-				category := models.QuestionCategory{
-					PaperID: paper.ID,
-					Name:    "Test Category",
-					Order:   1,
-				}
-				require.NoError(t, db.DB.Create(&category).Error)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
 				question := models.Question{
-					PaperID:    paper.ID,
+					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 					CategoryID: category.ID,
 					Order:      1,
 					Type:       constants.QUESTION_TYPE_MCQ,
@@ -282,6 +316,34 @@ func TestDeleteQuestion(t *testing.T) {
 				var question models.Question
 				err := db.DB.First(&question, questionID).Error
 				assert.Error(t, err) // Question should not exist
+			},
+		},
+		{
+			name: "Success - Delete locked question unlinks it",
+			setup: func(t *testing.T) *models.Question {
+				paper := createTestPaper(t, int(userID))
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				question := models.Question{
+					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+					CategoryID: category.ID,
+					Order:      1,
+					Type:       constants.QUESTION_TYPE_MCQ,
+					Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
+					MaxScore:   5,
+					Locked:     true,
+				}
+				require.NoError(t, db.DB.Create(&question).Error)
+				return &question
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, questionID int) {
+				var question models.Question
+				require.NoError(t, db.DB.First(&question, questionID).Error)
+				assert.True(t, question.Locked)
+				assert.Zero(t, question.PaperID) // Should be unlinked
 			},
 		},
 		// Add more test cases for other scenarios
@@ -319,23 +381,19 @@ func TestReorderQuestions(t *testing.T) {
 			name: "Success - Reorder questions",
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory, []models.Question) {
 				paper := createTestPaper(t, int(userID))
-				category := models.QuestionCategory{
-					PaperID: paper.ID,
-					Name:    "Test Category",
-					Order:   1,
-				}
-				require.NoError(t, db.DB.Create(&category).Error)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
 				questions := []models.Question{
 					{
-						PaperID:    paper.ID,
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Order:      1,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Q1"}`),
 					},
 					{
-						PaperID:    paper.ID,
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Order:      2,
 						Type:       constants.QUESTION_TYPE_MCQ,

@@ -24,9 +24,10 @@ type Question struct {
 	Order         int             `gorm:"not null"` // Add this field
 	Type          string          `gorm:"type:varchar(20);not null;check:type IN ('MCQ', 'SHORT', 'LONG')"`
 	Tags          json.RawMessage `gorm:"type:json;default:'[]'"`
-	PaperID       int
+	PaperID       sql.NullInt64
 	MaxScore      int              `gorm:"not null"`
 	CorrectAnswer sql.NullString   `gorm:"type:text"`
+	Locked        bool             `gorm:"not null;default:false"`
 	Paper         Paper            `gorm:"foreignKey:PaperID"`
 	Category      QuestionCategory `gorm:"foreignKey:CategoryID"`
 	Answers       []Answer         `gorm:"foreignKey:QuestionID"`
