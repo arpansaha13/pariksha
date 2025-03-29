@@ -3,11 +3,8 @@ package handlers
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
-	"strconv"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 
@@ -19,91 +16,6 @@ import (
 
 type PaperServer struct {
 	proto.UnimplementedPaperServiceServer
-}
-
-func getUserID(ctx context.Context) (int32, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return 0, status.Error(codes.Unauthenticated, "missing metadata")
-	}
-
-	userIDs := md.Get("user_id")
-	if len(userIDs) == 0 {
-		return 0, status.Error(codes.Unauthenticated, "missing user id")
-	}
-
-	userID, err := strconv.Atoi(userIDs[0])
-	if err != nil || userID == 0 {
-		return 0, status.Error(codes.InvalidArgument, "invalid user id")
-	}
-
-	return int32(userID), nil
-}
-
-// Helper function to verify paper access
-func verifyPaperAccess(tx *gorm.DB, paperID interface{}, userID int32, ownershipType string) error {
-	if tx == nil {
-		tx = db.DB
-	}
-
-	var actualPaperID int
-	switch v := paperID.(type) {
-	case sql.NullInt64:
-		if !v.Valid {
-			return status.Error(codes.InvalidArgument, "invalid paper id")
-		}
-		actualPaperID = int(v.Int64)
-	case int:
-		actualPaperID = v
-	default:
-		return status.Error(codes.InvalidArgument, "invalid paper id type")
-	}
-
-	var condition string
-	var args []any
-
-	args = append(args, actualPaperID, userID)
-	condition = "po.paper_id = ? AND po.user_id = ?"
-
-	if ownershipType != "" {
-		condition += " AND po.type = ?"
-		args = append(args, ownershipType)
-	}
-
-	var exists bool
-	err := tx.Raw(`SELECT EXISTS (
-			SELECT 1 FROM paper_ownerships po
-			WHERE `+condition+`)`, args...).
-		Scan(&exists).Error
-
-	if err != nil {
-		return status.Error(codes.Internal, "failed to check paper access")
-	}
-
-	if !exists {
-		return status.Error(codes.PermissionDenied, "no permission to perform this action")
-	}
-
-	return nil
-}
-
-// Helper function to convert Paper model to proto response
-func paperToProto(paper models.Paper) *proto.PaperResponse {
-	var questionCounts proto.QuestionCount
-	json.Unmarshal(paper.QuestionCounts, &questionCounts)
-
-	return &proto.PaperResponse{
-		Id:              int32(paper.ID),
-		Title:           paper.Title,
-		MaxScore:        int32(paper.MaxScore),
-		DurationMinutes: int32(paper.DurationMinutes),
-		QuestionCounts:  &questionCounts,
-		Ownership: &proto.PaperOwnership{
-			Id:   int32(paper.PaperOwnership.ID),
-			Path: paper.PaperOwnership.Path,
-			Type: paper.PaperOwnership.Type,
-		},
-	}
 }
 
 func (s *PaperServer) GetUserPapers(ctx context.Context, _ *proto.Empty) (*proto.PaperList, error) {
