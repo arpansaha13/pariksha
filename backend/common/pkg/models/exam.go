@@ -24,7 +24,6 @@ type Exam struct {
 	PaperID            int
 	ParticipantCounts  json.RawMessage   `gorm:"type:json;default:'{\"unattended\":0,\"invited\":0,\"started\":0,\"ended\":0}'"`
 	User               User              `gorm:"foreignKey:CreatedBy"`
-	Paper              Paper             `gorm:"foreignKey:PaperID"`
 	Participants       []ExamParticipant `gorm:"foreignKey:ExamID"`
 }
 

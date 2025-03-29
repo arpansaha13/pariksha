@@ -43,9 +43,6 @@ func autoMigrateDB() error {
 		&models.Exam{},
 		&models.Answer{},
 		&models.ExamParticipant{},
-		&models.Paper{},
-		&models.PaperOwnership{},
-		&models.Question{},
 		&models.Otp{},
 	)
 	if err != nil {

@@ -70,7 +70,7 @@ services:
     env_file:
       - docker/env/paper.env
     depends_on:
-      db:
+      papersDb:
         condition: service_healthy
     networks:
       - pariksha-network
@@ -197,6 +197,29 @@ services:
       - 6010:5432 # needed for pgAdmin
     volumes:
       - ./docker/data/sessionsDb:/var/lib/postgresql/data
+    networks:
+      - pariksha-network
+
+  papersDb:
+    image: postgres:15.10-alpine
+    restart: always
+    container_name: papers_db
+    env_file:
+      - docker/env/papersDb.env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB_PAPERS}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_PAPERS}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    expose:
+      - "5432"
+    ports:
+      - 6020:5432 # needed for pgAdmin
+    volumes:
+      - ./docker/data/papersDb:/var/lib/postgresql/data
     networks:
       - pariksha-network
 

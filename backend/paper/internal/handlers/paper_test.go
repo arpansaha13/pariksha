@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc/status"
 
 	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/models"
 )
 
 func TestGetUserPapers(t *testing.T) {

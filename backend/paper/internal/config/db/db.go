@@ -9,8 +9,8 @@ import (
 
 	"pariksha/common/pkg/config"
 	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/models"
 	"pariksha/paper/internal/config/env"
+	"pariksha/paper/internal/models"
 )
 
 var DB *gorm.DB
@@ -38,7 +38,6 @@ func InitDB(host, port, user, password, dbname, sslmode string) error {
 
 func autoMigrateDB() error {
 	err := DB.AutoMigrate(
-		&models.User{},
 		&models.Paper{},
 		&models.PaperOwnership{},
 		&models.Question{},

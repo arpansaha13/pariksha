@@ -11,7 +11,6 @@ type Answer struct {
 	Comments          sql.NullString  `gorm:"type:text"`
 	Evaluated         bool            `gorm:"default:false;not null"`
 	ExamParticipant   ExamParticipant `gorm:"foreignKey:ExamParticipantID"`
-	Question          Question        `gorm:"foreignKey:QuestionID"`
 }
 
 func (Answer) TableName() string {

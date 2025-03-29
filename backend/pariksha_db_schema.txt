@@ -1,13 +1,13 @@
 Table users {
   id integer [primary key]
-  username varchar
-  email varchar
-  password varchar
-  first_name varchar
-  last_name varchar
-  is_guest boolean [note: 'Used for guest user']
-  created_at timestamp
-  updated_at timestamp
+  username varchar(255) [not null, unique]
+  email varchar(255) [not null, unique]
+  password varchar(255) [null]
+  first_name varchar(255) [null]
+  last_name varchar(255) [null]
+  verified boolean [not null, default: false]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
 }
 
 Table exams {
@@ -23,29 +23,30 @@ Table exams {
 
 Table papers {
   id integer [primary key]
-  title varchar
-  max_score integer [note: 'Maximum score that can be awarded in this paper - Sum of individual scores of each question']
-  duration_minutes integer
-  questions_count json [note: 'Count of each question type']
+  title varchar(255) [not null, default: 'Untitled Paper']
+  max_score integer [not null, default: 0, note: 'Maximum score that can be awarded in this paper - Sum of individual scores of each question']
+  duration_minutes integer [not null]
+  question_counts json [not null, default: '{"mcq":0,"short":0,"long":0}', note: 'Count of each question type']
 }
 
 Table paper_ownerships {
   id integer [primary key]
-  user_id integer [note: 'Which user owns this paper, or is shared this paper with']
-  paper_id integer [note: 'Which paper is owned or shared']
-  path text [note: 'Used to show folder structure. At which folder this user has stored the paper.']
-  type varchar [note: 'Can be OWNER or SHARED']
+  user_id integer [not null]
+  paper_id integer [not null]
+  path text [null]
+  type varchar(10) [not null, note: 'Can be OWNER or SHARED']
 }
 
 Table questions {
   id integer [primary key]
-  question json
-  category varchar [note: 'Used to group multiple questions']
-  type varchar [note: 'MCQ, Short-answer, Long-answer, etc.']
-  tags json [default: '[]', note: 'Tags may or may not be shown on screen based on conditions']
-  paper_id integer [note: 'Which paper the question belongs to']
-  max_score integer [note: 'Maximum score that can be awarded on this question']
-  correct_answer text [note: 'A sample of the correct answer. In case of MCQs, it can be used to auto-evaluate.']
+  question json [not null]
+  category_id integer [not null, note: 'Used to group multiple questions']
+  order integer [not null]
+  type varchar(20) [not null, note: 'MCQ, Short-answer, Long-answer']
+  tags json [not null, default: '[]']
+  paper_id integer [null]
+  max_score integer [not null]
+  correct_answer text [null]
   locked boolean [not null, default: false, note: 'Indicates if the question is used in an exam and is locked for editing']
 }
 
@@ -70,32 +71,35 @@ Table answers {
 
 Table sessions {
   key uuid [primary key]
-  token text
-  expires_at timestamp
-}
-
-Table unverified_users {
-  hash varchar [primary key]
-  otp varchar(6)
-  otp_expires_at timestamp
-  email varchar
-  password varchar
+  token varchar(255) [not null]
+  expires_at timestamp [not null]
+  csrf_token varchar(32) [not null]
 }
 
 Table question_categories {
   id integer [primary key]
-  paper_id integer [note: 'Which paper this category belongs to']
-  name varchar
-  order integer [note: 'Used to maintain the order of categories']
+  paper_id integer [null]
+  name varchar(255) [not null]
+  order integer [not null, note: 'Used to maintain the order of categories']
   locked boolean [not null, default: false, note: 'Indicates if the category is used in an exam and is locked for editing']
 }
 
-Ref: exams.created_by > users.id // One user can create many exams
-Ref: paper_ownerships.user_id > users.id // Which user owns or shares this paper
+Table otps {
+  email varchar(255) [primary key]
+  otp varchar(6) [not null]
+  otp_expires_at timestamp [not null]
+  purpose integer [not null]
+}
+
+// Ref: exams.created_by > users.id // One user can create many exams
+// Ref: paper_ownerships.user_id > users.id // Which user owns or shares this paper
 Ref: paper_ownerships.paper_id > papers.id // Which paper is owned or shared
 Ref: questions.paper_id > papers.id // One exam can have many questions
-Ref: exams.paper_id > papers.id // Many exams can be created using a single paper
+Ref: questions.category_id > question_categories.id // One category can have many questions
+Ref: question_categories.paper_id > papers.id // One paper can have many categories
+
+// Ref: exams.paper_id > papers.id // Many exams can be created using a single paper
 Ref: exam_participants.exam_id > exams.id // One exam can have many participants
 Ref: exam_participants.user_id > users.id // Which users can take this exam
 Ref: answers.exam_participant_id > exam_participants.id // One participant can have many answers
-Ref: answers.question_id > questions.id // One question can have many answers
+// Ref: answers.question_id > questions.id // One question can have many answers

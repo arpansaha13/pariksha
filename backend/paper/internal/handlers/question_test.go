@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"testing"
 
@@ -9,11 +10,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"database/sql"
 	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/models"
 )
 
 func TestGetPaperQuestions(t *testing.T) {

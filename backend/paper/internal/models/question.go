@@ -25,12 +25,12 @@ type Question struct {
 	Type          string          `gorm:"type:varchar(20);not null;check:type IN ('MCQ', 'SHORT', 'LONG')"`
 	Tags          json.RawMessage `gorm:"type:json;default:'[]'"`
 	PaperID       sql.NullInt64
-	MaxScore      int              `gorm:"not null"`
-	CorrectAnswer sql.NullString   `gorm:"type:text"`
-	Locked        bool             `gorm:"not null;default:false"`
-	Paper         Paper            `gorm:"foreignKey:PaperID"`
-	Category      QuestionCategory `gorm:"foreignKey:CategoryID"`
-	Answers       []Answer         `gorm:"foreignKey:QuestionID"`
+	MaxScore      int            `gorm:"not null"`
+	CorrectAnswer sql.NullString `gorm:"type:text"`
+	// Indicates if the question is used in an exam and is locked for editing
+	Locked   bool             `gorm:"not null;default:false"`
+	Paper    Paper            `gorm:"foreignKey:PaperID"`
+	Category QuestionCategory `gorm:"foreignKey:CategoryID"`
 }
 
 // Unmarshal the raw JSON data into the appropriate struct based on the Type field

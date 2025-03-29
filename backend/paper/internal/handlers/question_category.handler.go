@@ -11,9 +11,9 @@ import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/models"
 )
 
 func (s *PaperServer) GetPaperCategories(ctx context.Context, req *proto.PaperRequest) (*proto.CategoryList, error) {

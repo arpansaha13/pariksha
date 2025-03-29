@@ -4,10 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/models"
-	"pariksha/common/pkg/proto"
-	"pariksha/paper/internal/config/db"
 	"strconv"
 	"strings"
 
@@ -15,6 +11,11 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
+
+	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/proto"
+	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/models"
 )
 
 func getUserID(ctx context.Context) (int32, error) {

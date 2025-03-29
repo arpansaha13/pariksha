@@ -18,10 +18,10 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 
 	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/config/env"
+	"pariksha/paper/internal/models"
 )
 
 const (
@@ -31,10 +31,9 @@ const (
 )
 
 var (
-	lis       *bufconn.Listener
-	ctx       context.Context
-	client    proto.PaperServiceClient
-	testUsers map[int]models.User
+	lis    *bufconn.Listener
+	ctx    context.Context
+	client proto.PaperServiceClient
 )
 
 func setupContainer() func() {
@@ -80,31 +79,6 @@ func setupContainer() func() {
 
 	return func() {
 		pgContainer.Terminate(ctx)
-	}
-}
-
-func createTestUsers(t *testing.T) {
-	testUsers = make(map[int]models.User)
-
-	users := []models.User{
-		{
-			ID:       1,
-			Username: "testuser1",
-			Email:    "test1@example.com",
-			Verified: true,
-		},
-		{
-			ID:       2,
-			Username: "testuser2",
-			Email:    "test2@example.com",
-			Verified: true,
-		},
-	}
-
-	for _, user := range users {
-		err := db.DB.Create(&user).Error
-		require.NoError(t, err)
-		testUsers[user.ID] = user
 	}
 }
 
@@ -172,7 +146,7 @@ func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 		}
 	}()
 
-	conn, err := grpc.NewClient(
+	conn, err := grpc.Dial(
 		"passthrough://bufnet",
 		grpc.WithContextDialer(bufDialer),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -195,13 +169,7 @@ func TestMain(m *testing.M) {
 
 	client = proto.NewPaperServiceClient(conn)
 
-	createTestUsers(&testing.T{})
-
 	code := m.Run()
-
-	if err := db.DB.Exec("TRUNCATE TABLE users CASCADE").Error; err != nil {
-		log.Printf("Failed to cleanup users: %v", err)
-	}
 
 	cleanup()
 	os.Exit(code)
