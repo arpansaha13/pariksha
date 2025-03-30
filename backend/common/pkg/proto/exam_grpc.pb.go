@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.1
-// source: common/proto/exam.proto
+// source: exam.proto
 
 package proto
 
@@ -579,5 +579,5 @@ var ExamService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "common/proto/exam.proto",
+	Metadata: "exam.proto",
 }

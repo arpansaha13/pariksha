@@ -5,6 +5,7 @@ package proto;
 option go_package = "/proto";
 
 import "google/protobuf/timestamp.proto";
+import "common.proto";
 
 service ExamService {
   // Exam operations
@@ -26,8 +27,6 @@ service ExamService {
   rpc GetParticipantAnswers(ParticipantRequest) returns (AnswerList) {}
   rpc UpdateAnswerForEvaluation(UpdateAnswerRequest) returns (Empty) {}
 }
-
-message Empty {}
 
 // Exam messages
 message ExamRequest {

@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.1
-// source: common/proto/auth.proto
+// source: auth.proto
 
 package proto
 
@@ -36,14 +36,14 @@ type AuthServiceClient interface {
 	// Login with password
 	LoginWithPassword(ctx context.Context, in *LoginWithPasswordRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	// Login with OTP flow
-	InitiateLoginWithOtp(ctx context.Context, in *LoginWithOtpRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	InitiateLoginWithOtp(ctx context.Context, in *LoginWithOtpRequest, opts ...grpc.CallOption) (*Empty, error)
 	VerifyLoginOtp(ctx context.Context, in *VerificationRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	// Signup flow
-	SignUp(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	SignUp(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*Empty, error)
 	VerifySignup(ctx context.Context, in *VerificationRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	// Password reset flow
-	ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*Empty, error)
+	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*Empty, error)
 	// Authenticate session
 	Authenticate(ctx context.Context, in *AuthenticateRequest, opts ...grpc.CallOption) (*AuthenticateResponse, error)
 }
@@ -66,9 +66,9 @@ func (c *authServiceClient) LoginWithPassword(ctx context.Context, in *LoginWith
 	return out, nil
 }
 
-func (c *authServiceClient) InitiateLoginWithOtp(ctx context.Context, in *LoginWithOtpRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *authServiceClient) InitiateLoginWithOtp(ctx context.Context, in *LoginWithOtpRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, AuthService_InitiateLoginWithOtp_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -86,9 +86,9 @@ func (c *authServiceClient) VerifyLoginOtp(ctx context.Context, in *Verification
 	return out, nil
 }
 
-func (c *authServiceClient) SignUp(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *authServiceClient) SignUp(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, AuthService_SignUp_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -106,9 +106,9 @@ func (c *authServiceClient) VerifySignup(ctx context.Context, in *VerificationRe
 	return out, nil
 }
 
-func (c *authServiceClient) ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *authServiceClient) ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, AuthService_ForgotPassword_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -116,9 +116,9 @@ func (c *authServiceClient) ForgotPassword(ctx context.Context, in *ForgotPasswo
 	return out, nil
 }
 
-func (c *authServiceClient) ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *authServiceClient) ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, AuthService_ResetPassword_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -143,14 +143,14 @@ type AuthServiceServer interface {
 	// Login with password
 	LoginWithPassword(context.Context, *LoginWithPasswordRequest) (*UserResponse, error)
 	// Login with OTP flow
-	InitiateLoginWithOtp(context.Context, *LoginWithOtpRequest) (*EmptyResponse, error)
+	InitiateLoginWithOtp(context.Context, *LoginWithOtpRequest) (*Empty, error)
 	VerifyLoginOtp(context.Context, *VerificationRequest) (*UserResponse, error)
 	// Signup flow
-	SignUp(context.Context, *SignUpRequest) (*EmptyResponse, error)
+	SignUp(context.Context, *SignUpRequest) (*Empty, error)
 	VerifySignup(context.Context, *VerificationRequest) (*UserResponse, error)
 	// Password reset flow
-	ForgotPassword(context.Context, *ForgotPasswordRequest) (*EmptyResponse, error)
-	ResetPassword(context.Context, *ResetPasswordRequest) (*EmptyResponse, error)
+	ForgotPassword(context.Context, *ForgotPasswordRequest) (*Empty, error)
+	ResetPassword(context.Context, *ResetPasswordRequest) (*Empty, error)
 	// Authenticate session
 	Authenticate(context.Context, *AuthenticateRequest) (*AuthenticateResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
@@ -166,22 +166,22 @@ type UnimplementedAuthServiceServer struct{}
 func (UnimplementedAuthServiceServer) LoginWithPassword(context.Context, *LoginWithPasswordRequest) (*UserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginWithPassword not implemented")
 }
-func (UnimplementedAuthServiceServer) InitiateLoginWithOtp(context.Context, *LoginWithOtpRequest) (*EmptyResponse, error) {
+func (UnimplementedAuthServiceServer) InitiateLoginWithOtp(context.Context, *LoginWithOtpRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InitiateLoginWithOtp not implemented")
 }
 func (UnimplementedAuthServiceServer) VerifyLoginOtp(context.Context, *VerificationRequest) (*UserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyLoginOtp not implemented")
 }
-func (UnimplementedAuthServiceServer) SignUp(context.Context, *SignUpRequest) (*EmptyResponse, error) {
+func (UnimplementedAuthServiceServer) SignUp(context.Context, *SignUpRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SignUp not implemented")
 }
 func (UnimplementedAuthServiceServer) VerifySignup(context.Context, *VerificationRequest) (*UserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifySignup not implemented")
 }
-func (UnimplementedAuthServiceServer) ForgotPassword(context.Context, *ForgotPasswordRequest) (*EmptyResponse, error) {
+func (UnimplementedAuthServiceServer) ForgotPassword(context.Context, *ForgotPasswordRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ForgotPassword not implemented")
 }
-func (UnimplementedAuthServiceServer) ResetPassword(context.Context, *ResetPasswordRequest) (*EmptyResponse, error) {
+func (UnimplementedAuthServiceServer) ResetPassword(context.Context, *ResetPasswordRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResetPassword not implemented")
 }
 func (UnimplementedAuthServiceServer) Authenticate(context.Context, *AuthenticateRequest) (*AuthenticateResponse, error) {
@@ -393,5 +393,5 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "common/proto/auth.proto",
+	Metadata: "auth.proto",
 }

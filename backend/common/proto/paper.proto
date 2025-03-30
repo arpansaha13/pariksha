@@ -4,6 +4,8 @@ package proto;
 
 option go_package = "/proto";
 
+import "common.proto";
+
 service PaperService {
   // Paper operations
   rpc GetUserPapers(Empty) returns (PaperList) {}
@@ -26,8 +28,6 @@ service PaperService {
   rpc DeleteCategory(CategoryRequest) returns (Empty) {}
   rpc ReorderCategories(ReorderCategoriesRequest) returns (Empty) {}
 }
-
-message Empty {}
 
 // Paper messages
 message PaperRequest {

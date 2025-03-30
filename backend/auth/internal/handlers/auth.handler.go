@@ -122,7 +122,7 @@ func (s *AuthServer) LoginWithPassword(ctx context.Context, req *proto.LoginWith
 	}, nil
 }
 
-func (s *AuthServer) InitiateLoginWithOtp(ctx context.Context, req *proto.LoginWithOtpRequest) (*proto.EmptyResponse, error) {
+func (s *AuthServer) InitiateLoginWithOtp(ctx context.Context, req *proto.LoginWithOtpRequest) (*proto.Empty, error) {
 	if req.Email == "" {
 		return nil, status.Error(codes.InvalidArgument, "email is required")
 	}
@@ -154,10 +154,10 @@ func (s *AuthServer) InitiateLoginWithOtp(ctx context.Context, req *proto.LoginW
 		ExpiresInMinutes: otpExpiresInMinutes,
 	})
 
-	return &proto.EmptyResponse{}, nil
+	return &proto.Empty{}, nil
 }
 
-func (s *AuthServer) SignUp(ctx context.Context, req *proto.SignUpRequest) (*proto.EmptyResponse, error) {
+func (s *AuthServer) SignUp(ctx context.Context, req *proto.SignUpRequest) (*proto.Empty, error) {
 	if req.Email == "" || req.Password == "" {
 		return nil, status.Error(codes.InvalidArgument, "email and password are required")
 	}
@@ -226,7 +226,7 @@ func (s *AuthServer) SignUp(ctx context.Context, req *proto.SignUpRequest) (*pro
 		return nil, status.Error(codes.Internal, "failed to process signup")
 	}
 
-	return &proto.EmptyResponse{}, nil
+	return &proto.Empty{}, nil
 }
 
 func (s *AuthServer) VerifySignup(ctx context.Context, req *proto.VerificationRequest) (*proto.UserResponse, error) {
@@ -341,7 +341,7 @@ func (s *AuthServer) VerifyLoginOtp(ctx context.Context, req *proto.Verification
 	}, nil
 }
 
-func (s *AuthServer) ForgotPassword(ctx context.Context, req *proto.ForgotPasswordRequest) (*proto.EmptyResponse, error) {
+func (s *AuthServer) ForgotPassword(ctx context.Context, req *proto.ForgotPasswordRequest) (*proto.Empty, error) {
 	if req.Email == "" {
 		return nil, status.Error(codes.InvalidArgument, "email is required")
 	}
@@ -371,10 +371,10 @@ func (s *AuthServer) ForgotPassword(ctx context.Context, req *proto.ForgotPasswo
 		ExpiresInMinutes: env.OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD,
 	})
 
-	return &proto.EmptyResponse{}, nil
+	return &proto.Empty{}, nil
 }
 
-func (s *AuthServer) ResetPassword(ctx context.Context, req *proto.ResetPasswordRequest) (*proto.EmptyResponse, error) {
+func (s *AuthServer) ResetPassword(ctx context.Context, req *proto.ResetPasswordRequest) (*proto.Empty, error) {
 	if req.Email == "" || req.NewPassword == "" || req.Otp == "" {
 		return nil, status.Error(codes.InvalidArgument, "all fields are required")
 	}
@@ -420,7 +420,7 @@ func (s *AuthServer) ResetPassword(ctx context.Context, req *proto.ResetPassword
 		return nil, status.Error(codes.Internal, "failed to reset password")
 	}
 
-	return &proto.EmptyResponse{}, nil
+	return &proto.Empty{}, nil
 }
 
 func (s *AuthServer) Authenticate(ctx context.Context, req *proto.AuthenticateRequest) (*proto.AuthenticateResponse, error) {
