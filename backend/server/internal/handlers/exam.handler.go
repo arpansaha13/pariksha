@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -14,10 +13,12 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
+	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/config/db"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
+	"pariksha/server/internal/services"
 )
 
 func GetUserExams(w http.ResponseWriter, r *http.Request) {
@@ -56,17 +57,22 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 
 	errs := validate.Do.Struct(examDto)
 	if errs != nil {
-		http.Error(w, "Invald request body", http.StatusBadRequest)
-		return
-	}
-
-	var paper models.Paper
-	if err := db.DB.Take(&paper, examDto.PaperID).Error; err != nil {
-		http.Error(w, "Paper not found", http.StatusNotFound)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	paperService := services.GetPaperService()
+	ctx := paperService.CreateMetadata(userID)
+
+	// Verify paper exists
+	_, err := paperService.Client().GetPaper(ctx, &proto.PaperRequest{
+		PaperId: int32(examDto.PaperID),
+	})
+	if err != nil {
+		http.Error(w, "Paper not found", http.StatusNotFound)
+		return
+	}
 
 	exam := models.Exam{
 		Title:              examDto.Title,
@@ -209,28 +215,34 @@ func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var participants []models.ExamParticipant
-	if err := db.DB.Preload("User").Where("exam_id = ?", examID).Find(&participants).Error; err != nil {
+	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	examService := services.GetExamService()
+	ctx := examService.CreateMetadata(userID)
+
+	participants, err := examService.Client().GetExamParticipants(ctx, &proto.ExamRequest{
+		ExamId: int32(examID),
+	})
+	if err != nil {
 		http.Error(w, "Failed to fetch participants", http.StatusInternalServerError)
 		return
 	}
 
-	response := make([]dtos.ExamParticipantResponse, len(participants))
-	for i, p := range participants {
+	response := make([]dtos.ExamParticipantResponse, len(participants.Participants))
+	for i, p := range participants.Participants {
 		response[i] = dtos.ExamParticipantResponse{
-			ID:           p.ID,
-			UserID:       p.UserID,
-			FirstName:    p.User.FirstName.String,
-			LastName:     p.User.LastName.String,
-			Email:        p.User.Email,
-			Status:       p.Status,
-			ScoreAwarded: p.ScoreAwarded,
+			ID:           int(p.Id),
+			UserID:       int(p.UserId),
+			FirstName:    p.FirstName,
+			LastName:     p.LastName,
+			Email:        p.Email,
+			Status:       int(p.Status),
+			ScoreAwarded: int(p.ScoreAwarded),
 		}
-		if p.StartedAt.Valid {
-			response[i].StartedAt = p.StartedAt.Time
+		if p.StartedAt != nil {
+			response[i].StartedAt = p.StartedAt.AsTime()
 		}
-		if p.EndedAt.Valid {
-			response[i].EndedAt = p.EndedAt.Time
+		if p.EndedAt != nil {
+			response[i].EndedAt = p.EndedAt.AsTime()
 		}
 	}
 
@@ -252,171 +264,51 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var exam models.Exam
-	if err := db.DB.Take(&exam, examID).Error; err != nil {
-		http.Error(w, "Failed to find exam", http.StatusNotFound)
-		return
-	}
-
-	if exam.Type == constants.EXAM_TYPE_OPEN {
-		http.Error(w, "Participants cannot be added in OPEN exams.", http.StatusBadRequest)
-		return
-	}
-
-	for _, participantDto := range participantsDto {
-		if participantDto.UserID == 0 && participantDto.Email == "" {
-			// Either user_id or email must be provided
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
-			return
+	participants := make([]*proto.AddParticipant, len(participantsDto))
+	for i, p := range participantsDto {
+		participants[i] = &proto.AddParticipant{
+			UserId:    int32(p.UserID),
+			Email:     p.Email,
+			FirstName: p.FirstName,
+			LastName:  p.LastName,
 		}
 	}
 
-	// Get current counts
-	counts, err := exam.GetParticipantCounts()
+	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	examService := services.GetExamService()
+	ctx := examService.CreateMetadata(userID)
+
+	response, err := examService.Client().AddExamParticipants(ctx, &proto.AddParticipantsRequest{
+		ExamId:       int32(examID),
+		Participants: participants,
+	})
 	if err != nil {
-		http.Error(w, "Failed to get participant counts", http.StatusInternalServerError)
+		http.Error(w, "Failed to add participants", http.StatusInternalServerError)
 		return
-	}
-
-	var examParticipants []models.ExamParticipant
-	addedCount := 0
-	omittedCount := 0
-	maxLimitReached := false
-
-	for _, participantDto := range participantsDto {
-		currTotalParticipants := counts.Invited + counts.Started + counts.Ended
-		if currTotalParticipants == exam.MaxCandidatesCount {
-			maxLimitReached = true
-			omittedCount++
-			continue
-		}
-
-		var userID int
-
-		if participantDto.UserID != 0 {
-			userID = participantDto.UserID
-		} else {
-			// Create an unverified user
-			username := strings.Split(participantDto.Email, "@")[0]
-			user := models.User{
-				Email:    participantDto.Email,
-				Username: username,
-			}
-
-			if participantDto.FirstName != "" {
-				user.FirstName = sql.NullString{String: participantDto.FirstName, Valid: true}
-			}
-
-			if participantDto.LastName != "" {
-				user.LastName = sql.NullString{String: participantDto.LastName, Valid: true}
-			}
-
-			if err := db.DB.Create(&user).Error; err != nil {
-				http.Error(w, "Failed to create user", http.StatusInternalServerError)
-				return
-			}
-			userID = user.ID
-		}
-
-		// Add the participant to the exam
-		participant := models.ExamParticipant{
-			ExamID: examID,
-			UserID: userID,
-		}
-
-		examParticipants = append(examParticipants, participant)
-		counts.Invited++
-		addedCount++
-	}
-
-	if len(examParticipants) > 0 {
-		if err := db.DB.Create(&examParticipants).Error; err != nil {
-			http.Error(w, "Failed to add participants", http.StatusInternalServerError)
-			return
-		}
-
-		exam.ParticipantCounts, err = json.Marshal(counts)
-		if err != nil {
-			http.Error(w, "Failed to marshal counts", http.StatusInternalServerError)
-			return
-		}
-
-		// Save exam with updated counts
-		if err := db.DB.Save(&exam).Error; err != nil {
-			http.Error(w, "Failed to update exam", http.StatusInternalServerError)
-			return
-		}
-	}
-
-	response := dtos.AddExamParticipantResponse{
-		AddedCount:   addedCount,
-		OmittedCount: omittedCount,
-	}
-
-	if maxLimitReached {
-		response.MaxLimitReason = "Maximum participant limit reached for the exam"
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(dtos.AddExamParticipantResponse{
+		AddedCount:     int(response.AddedCount),
+		OmittedCount:   int(response.OmittedCount),
+		MaxLimitReason: response.GetMaxLimitReason(),
+	})
 }
 
 func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	examID := vars["examId"]
-	participantID := vars["participantId"]
+	examID, _ := strconv.Atoi(vars["examId"])
+	participantID, _ := strconv.Atoi(vars["participantId"])
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		var exam models.Exam
-		if err := db.DB.Take(&exam, examID).Error; err != nil {
-			http.Error(w, "Failed to find exam", http.StatusNotFound)
-			return err
-		}
+	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	examService := services.GetExamService()
+	ctx := examService.CreateMetadata(userID)
 
-		if exam.StartsAt.Before(time.Now()) {
-			http.Error(w, "Cannot remove participant after exam has started", http.StatusBadRequest)
-			return errors.New("cannot remove participant after exam has started")
-		}
-
-		counts, err := exam.GetParticipantCounts()
-		if err != nil {
-			http.Error(w, "Failed to get participant counts", http.StatusInternalServerError)
-			return err
-		}
-
-		var participant models.ExamParticipant
-		if err := db.DB.Take(&participant, participantID).Error; err != nil {
-			http.Error(w, "Participant not found", http.StatusNotFound)
-			return err
-		}
-
-		// Decrement count based on participant's status
-		switch participant.Status {
-		case constants.PARTICIPANT_STATUS_INVITED:
-			counts.Invited--
-		case constants.PARTICIPANT_STATUS_STARTED:
-			counts.Started--
-		case constants.PARTICIPANT_STATUS_ENDED:
-			counts.Ended--
-		case constants.PARTICIPANT_STATUS_UNATTENDED:
-			counts.Unattended--
-		}
-
-		if exam.ParticipantCounts, err = json.Marshal(counts); err != nil {
-			http.Error(w, "Failed to marshal counts", http.StatusInternalServerError)
-			return err
-		}
-
-		if err := tx.Save(&exam).Error; err != nil {
-			return err
-		}
-		if err := tx.Delete(&participant).Error; err != nil {
-			return err
-		}
-		return nil
+	_, err := examService.Client().RemoveExamParticipant(ctx, &proto.RemoveParticipantRequest{
+		ExamId:        int32(examID),
+		ParticipantId: int32(participantID),
 	})
-
 	if err != nil {
 		http.Error(w, "Failed to remove participant", http.StatusInternalServerError)
 		return
@@ -447,11 +339,21 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	paperService := services.GetPaperService()
 
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
 		var exam models.Exam
-		if err := tx.Preload("Paper").Take(&exam, examID).Error; err != nil {
+		if err := tx.Take(&exam, examID).Error; err != nil {
 			http.Error(w, "Exam not found", http.StatusNotFound)
+			return err
+		}
+
+		ctx := paperService.CreateMetadata(userID)
+		paper, err := paperService.Client().GetPaper(ctx, &proto.PaperRequest{
+			PaperId: int32(exam.PaperID),
+		})
+		if err != nil {
+			http.Error(w, "Failed to get paper details", http.StatusInternalServerError)
 			return err
 		}
 
@@ -504,7 +406,7 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		scheduledEndTime := now.Add(time.Duration(exam.Paper.DurationMinutes) * time.Minute)
+		scheduledEndTime := now.Add(time.Duration(paper.DurationMinutes) * time.Minute)
 
 		// Update participant status and times
 		participant.Status = constants.PARTICIPANT_STATUS_STARTED
