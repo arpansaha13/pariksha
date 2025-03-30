@@ -11,6 +11,7 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/structs"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/models"
 )
@@ -54,7 +55,7 @@ func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperReq
 
 		switch question.Type {
 		case constants.QUESTION_TYPE_MCQ:
-			var mcq models.MCQQuestion
+			var mcq structs.MCQQuestion
 			if err := json.Unmarshal(question.Question, &mcq); err != nil {
 				return nil, status.Error(codes.Internal, "invalid question data")
 			}
@@ -65,7 +66,7 @@ func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperReq
 				},
 			}
 		default:
-			var general models.GeneralQuestion
+			var general structs.GeneralQuestion
 			if err := json.Unmarshal(question.Question, &general); err != nil {
 				return nil, status.Error(codes.Internal, "invalid question data")
 			}

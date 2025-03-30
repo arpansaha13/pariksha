@@ -12,6 +12,7 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/structs"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/models"
 )
@@ -205,7 +206,7 @@ func TestUpdateQuestion(t *testing.T) {
 				var updated models.Question
 				require.NoError(t, db.DB.First(&updated, question.ID).Error)
 
-				var mcq models.MCQQuestion
+				var mcq structs.MCQQuestion
 				require.NoError(t, json.Unmarshal(updated.Question, &mcq))
 				assert.Equal(t, "Updated MCQ", mcq.Statement)
 				assert.Equal(t, []string{"X", "Y", "Z"}, mcq.Options)
@@ -253,7 +254,7 @@ func TestUpdateQuestion(t *testing.T) {
 				var newQuestion models.Question
 				require.NoError(t, db.DB.Where("paper_id = ?", question.PaperID).First(&newQuestion).Error)
 				assert.NotEqual(t, question.ID, newQuestion.ID)
-				var mcq models.MCQQuestion
+				var mcq structs.MCQQuestion
 				require.NoError(t, json.Unmarshal(newQuestion.Question, &mcq))
 				assert.Equal(t, "Updated MCQ", mcq.Statement)
 				assert.Equal(t, []string{"X", "Y", "Z"}, mcq.Options)

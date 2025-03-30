@@ -14,6 +14,7 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/structs"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/models"
 )
@@ -86,7 +87,7 @@ func questionToProto(question models.Question, includeCategory bool) (*proto.Que
 
 	switch questionType {
 	case constants.QUESTION_TYPE_MCQ:
-		var mcq models.MCQQuestion
+		var mcq structs.MCQQuestion
 		if err := json.Unmarshal(question.Question, &mcq); err != nil {
 			return nil, status.Error(codes.Internal, "invalid question data")
 		}
@@ -97,7 +98,7 @@ func questionToProto(question models.Question, includeCategory bool) (*proto.Que
 			},
 		}
 	case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
-		var general models.GeneralQuestion
+		var general structs.GeneralQuestion
 		if err := json.Unmarshal(question.Question, &general); err != nil {
 			return nil, status.Error(codes.Internal, "invalid question data")
 		}

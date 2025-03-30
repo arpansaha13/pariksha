@@ -8,8 +8,8 @@ import (
 	"github.com/gorilla/mux"
 
 	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/structs"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
@@ -145,7 +145,7 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 
 	switch questionDto.Type {
 	case constants.QUESTION_TYPE_MCQ:
-		var mcq models.MCQQuestion
+		var mcq structs.MCQQuestion
 		if err := json.Unmarshal(questionDto.Question, &mcq); err != nil {
 			http.Error(w, "Invalid question data", http.StatusBadRequest)
 			return
@@ -157,7 +157,7 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 	default:
-		var general models.GeneralQuestion
+		var general structs.GeneralQuestion
 		if err := json.Unmarshal(questionDto.Question, &general); err != nil {
 			http.Error(w, "Invalid question data", http.StatusBadRequest)
 			return
@@ -206,7 +206,7 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	if updateDto.Question != nil {
 		switch updateDto.Type {
 		case constants.QUESTION_TYPE_MCQ:
-			var mcq models.MCQQuestion
+			var mcq structs.MCQQuestion
 			if err := json.Unmarshal(updateDto.Question, &mcq); err != nil {
 				http.Error(w, "Invalid question data", http.StatusBadRequest)
 				return
@@ -218,7 +218,7 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 				},
 			}
 		default:
-			var general models.GeneralQuestion
+			var general structs.GeneralQuestion
 			if err := json.Unmarshal(updateDto.Question, &general); err != nil {
 				http.Error(w, "Invalid question data", http.StatusBadRequest)
 				return
