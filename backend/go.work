@@ -8,6 +8,8 @@ use ./auth
 
 use ./paper
 
+use ./exam
+
 use ./server
 
 use ./cron/sessions

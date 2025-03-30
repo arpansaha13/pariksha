@@ -1,0 +1,169 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "/proto";
+
+import "google/protobuf/timestamp.proto";
+
+service ExamService {
+  // Exam operations
+  rpc GetUserExams(Empty) returns (ExamList) {}
+  rpc CreateExam(CreateExamRequest) returns (ExamResponse) {}
+  rpc UpdateExam(UpdateExamRequest) returns (ExamResponse) {}
+  rpc GetExam(ExamRequest) returns (ExamResponse) {}
+
+  // Participant operations
+  rpc GetExamParticipants(ExamRequest) returns (ParticipantList) {}
+  rpc AddExamParticipants(AddParticipantsRequest) returns (AddParticipantsResponse) {}
+  rpc RemoveExamParticipant(RemoveParticipantRequest) returns (Empty) {}
+  rpc StartExam(StartExamRequest) returns (Empty) {}
+  rpc EndExam(EndExamRequest) returns (Empty) {}
+  rpc MarkAsEvaluated(ParticipantRequest) returns (EvaluationStatusResponse) {}
+
+  // Answer operations
+  rpc UpsertAnswers(UpsertAnswersRequest) returns (UpsertAnswersResponse) {}
+  rpc GetParticipantAnswers(ParticipantRequest) returns (AnswerList) {}
+  rpc UpdateAnswerForEvaluation(UpdateAnswerRequest) returns (Empty) {}
+}
+
+message Empty {}
+
+// Exam messages
+message ExamRequest {
+  int32 exam_id = 1;
+}
+
+message CreateExamRequest {
+  string title = 1;
+  google.protobuf.Timestamp starts_at = 2;
+  google.protobuf.Timestamp ends_at = 3;
+  int32 max_candidates_count = 4;
+  string type = 5;
+  int32 paper_id = 6;
+}
+
+message UpdateExamRequest {
+  int32 exam_id = 1;
+  optional string title = 2;
+  optional google.protobuf.Timestamp starts_at = 3;
+  optional google.protobuf.Timestamp ends_at = 4;
+  optional int32 max_candidates_count = 5;
+  optional string type = 6;
+}
+
+message ExamResponse {
+  int32 id = 1;
+  string title = 2;
+  google.protobuf.Timestamp starts_at = 3;
+  google.protobuf.Timestamp ends_at = 4;
+  int32 created_by = 5;
+  string type = 6;
+  int32 max_candidates_count = 7;
+  int32 paper_id = 8;
+  ParticipantCount participant_counts = 9;
+}
+
+message ExamList {
+  repeated ExamResponse exams = 1;
+}
+
+message ParticipantCount {
+  int32 unattended = 1;
+  int32 invited = 2;
+  int32 started = 3;
+  int32 ended = 4;
+}
+
+// Participant messages
+message ParticipantRequest {
+  int32 participant_id = 1;
+}
+
+message ParticipantResponse {
+  int32 id = 1;
+  int32 user_id = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string email = 5;
+  int32 status = 6;
+  int32 score_awarded = 7;
+  optional google.protobuf.Timestamp started_at = 8;
+  optional google.protobuf.Timestamp ended_at = 9;
+}
+
+message ParticipantList {
+  repeated ParticipantResponse participants = 1;
+}
+
+message AddParticipant {
+  int32 user_id = 1;
+  string email = 2;
+  string first_name = 3;
+  string last_name = 4;
+}
+
+message AddParticipantsRequest {
+  int32 exam_id = 1;
+  repeated AddParticipant participants = 2;
+}
+
+message AddParticipantsResponse {
+  int32 added_count = 1;
+  int32 omitted_count = 2;
+  optional string max_limit_reason = 3;
+}
+
+message RemoveParticipantRequest {
+  int32 exam_id = 1;
+  int32 participant_id = 2;
+}
+
+message StartExamRequest {
+  int32 exam_id = 1;
+}
+
+message EndExamRequest {
+  int32 exam_id = 1;
+}
+
+message EvaluationStatusResponse {
+  int64 unevaluated_count = 1;
+}
+
+// Answer messages
+message Answer {
+  string answer = 1;
+  google.protobuf.Timestamp submitted_at = 2;
+  int32 question_id = 3;
+}
+
+message UpsertAnswersRequest {
+  int32 exam_id = 1;
+  repeated Answer answers = 2;
+}
+
+message UpsertAnswersResponse {
+  int32 total_count = 1;
+  int32 skipped_count = 2;
+}
+
+message AnswerResponse {
+  int32 id = 1;
+  int32 exam_participant_id = 2;
+  int32 question_id = 3;
+  string answer = 4;
+  int32 score_awarded = 5;
+  string comments = 6;
+}
+
+message AnswerList {
+  repeated AnswerResponse answers = 1;
+}
+
+message UpdateAnswerRequest {
+  int32 answer_id = 1;
+  optional int32 new_score = 2;
+  optional bool evaluated = 3;
+  optional string comments = 4;
+}

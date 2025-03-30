@@ -5,3 +5,6 @@ Run these commands from the root, i.e. pariksha directory
 
 <!-- Paper -->
 > protoc --go_out="./common/pkg" --go-grpc_out="./common/pkg" "common/proto/paper.proto"
+
+<!-- Exam -->
+> protoc --go_out="./common/pkg" --go-grpc_out="./common/pkg" "common/proto/exam.proto"
