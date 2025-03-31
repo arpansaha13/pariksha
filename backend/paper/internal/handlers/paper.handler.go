@@ -10,6 +10,7 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/models"
 )
@@ -19,7 +20,7 @@ type PaperServer struct {
 }
 
 func (s *PaperServer) GetUserPapers(ctx context.Context, _ *proto.Empty) (*proto.PaperList, error) {
-	userID, err := getUserID(ctx)
+	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +48,7 @@ func (s *PaperServer) GetUserPapers(ctx context.Context, _ *proto.Empty) (*proto
 }
 
 func (s *PaperServer) CreatePaper(ctx context.Context, _ *proto.Empty) (*proto.PaperResponse, error) {
-	userID, err := getUserID(ctx)
+	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +95,7 @@ func (s *PaperServer) CreatePaper(ctx context.Context, _ *proto.Empty) (*proto.P
 }
 
 func (s *PaperServer) GetPaper(ctx context.Context, req *proto.PaperRequest) (*proto.PaperResponse, error) {
-	userID, err := getUserID(ctx)
+	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +117,7 @@ func (s *PaperServer) GetPaper(ctx context.Context, req *proto.PaperRequest) (*p
 }
 
 func (s *PaperServer) UpdatePaper(ctx context.Context, req *proto.UpdatePaperRequest) (*proto.Empty, error) {
-	userID, err := getUserID(ctx)
+	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -12,12 +12,13 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/models"
 )
 
 func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperRequest) (*proto.QuestionList, error) {
-	userID, err := getUserID(ctx)
+	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +83,7 @@ func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperReq
 }
 
 func (s *PaperServer) GetQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.QuestionResponse, error) {
-	userID, err := getUserID(ctx)
+	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +105,7 @@ func (s *PaperServer) GetQuestion(ctx context.Context, req *proto.QuestionReques
 }
 
 func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuestionRequest) (*proto.QuestionResponse, error) {
-	userID, err := getUserID(ctx)
+	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +205,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 }
 
 func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuestionRequest) (*proto.Empty, error) {
-	userID, err := getUserID(ctx)
+	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +273,7 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 }
 
 func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.Empty, error) {
-	userID, err := getUserID(ctx)
+	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -331,7 +332,7 @@ func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionReq
 }
 
 func (s *PaperServer) ReorderQuestions(ctx context.Context, req *proto.ReorderQuestionsRequest) (*proto.Empty, error) {
-	userID, err := getUserID(ctx)
+	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -12,12 +12,13 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/models"
 )
 
 func (s *PaperServer) GetPaperCategories(ctx context.Context, req *proto.PaperRequest) (*proto.CategoryList, error) {
-	userID, err := getUserID(ctx)
+	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +52,7 @@ func (s *PaperServer) GetPaperCategories(ctx context.Context, req *proto.PaperRe
 }
 
 func (s *PaperServer) CreateCategory(ctx context.Context, req *proto.CreateCategoryRequest) (*proto.CategoryResponse, error) {
-	userID, err := getUserID(ctx)
+	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +118,7 @@ func (s *PaperServer) CreateCategory(ctx context.Context, req *proto.CreateCateg
 }
 
 func (s *PaperServer) UpdateCategory(ctx context.Context, req *proto.UpdateCategoryRequest) (*proto.Empty, error) {
-	userID, err := getUserID(ctx)
+	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +177,7 @@ func (s *PaperServer) UpdateCategory(ctx context.Context, req *proto.UpdateCateg
 }
 
 func (s *PaperServer) DeleteCategory(ctx context.Context, req *proto.CategoryRequest) (*proto.Empty, error) {
-	userID, err := getUserID(ctx)
+	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -292,7 +293,7 @@ func (s *PaperServer) DeleteCategory(ctx context.Context, req *proto.CategoryReq
 }
 
 func (s *PaperServer) ReorderCategories(ctx context.Context, req *proto.ReorderCategoriesRequest) (*proto.Empty, error) {
-	userID, err := getUserID(ctx)
+	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
