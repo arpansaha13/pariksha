@@ -23,8 +23,9 @@ service ExamService {
   rpc MarkAsEvaluated(ParticipantRequest) returns (EvaluationStatusResponse) {}
 
   // Answer operations
-  rpc UpsertAnswers(UpsertAnswersRequest) returns (UpsertAnswersResponse) {}
   rpc GetParticipantAnswers(ParticipantRequest) returns (AnswerList) {}
+  rpc GetAnswer(GetAnswerRequest) returns (AnswerResponse) {}
+  rpc UpsertAnswer(UpsertAnswersRequest) returns (UpsertAnswersResponse) {}
   rpc UpdateAnswerForEvaluation(UpdateAnswerRequest) returns (Empty) {}
 }
 
@@ -140,12 +141,11 @@ message Answer {
 
 message UpsertAnswersRequest {
   int32 exam_id = 1;
-  repeated Answer answers = 2;
+  Answer answer = 2;
 }
 
 message UpsertAnswersResponse {
-  int32 total_count = 1;
-  int32 skipped_count = 2;
+  int32 answer_id = 1;
 }
 
 message AnswerResponse {
@@ -166,4 +166,8 @@ message UpdateAnswerRequest {
   optional int32 new_score = 2;
   optional bool evaluated = 3;
   optional string comments = 4;
+}
+
+message GetAnswerRequest {
+  int32 answer_id = 1;
 }
