@@ -146,7 +146,7 @@ func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 		}
 	}()
 
-	conn, err := grpc.Dial(
+	conn, err := grpc.NewClient(
 		"passthrough://bufnet",
 		grpc.WithContextDialer(bufDialer),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
