@@ -18,10 +18,6 @@ import (
 	"pariksha/exam/internal/config/db"
 )
 
-type ExamServer struct {
-	proto.UnimplementedExamServiceServer
-}
-
 func (s *ExamServer) GetExamParticipants(ctx context.Context, req *proto.ExamRequest) (*proto.ParticipantList, error) {
 	var participants []models.ExamParticipant
 	if err := db.DB.Preload("User").Where("exam_id = ?", req.ExamId).Find(&participants).Error; err != nil {

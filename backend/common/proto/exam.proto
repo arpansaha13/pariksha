@@ -120,6 +120,7 @@ message RemoveParticipantRequest {
 
 message StartExamRequest {
   int32 exam_id = 1;
+  int32 duration_minutes = 2;
 }
 
 message EndExamRequest {
