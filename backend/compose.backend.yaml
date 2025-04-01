@@ -1,0 +1,23 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: ./server/Dockerfile
+    image: pariksha_backend
+    container_name: backend
+    env_file:
+      - ./server/.env
+    expose:
+      - "4000"
+    develop:
+      watch:
+        - action: rebuild
+          path: ./server/internal
+        - action: rebuild
+          path: ./server/cmd
+        - action: rebuild
+          path: ./common
+        - action: rebuild
+          path: ./server/go.mod
+        - action: rebuild
+          path: ./server/go.sum

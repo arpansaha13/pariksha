@@ -1,0 +1,61 @@
+services:
+  auth:
+    build:
+      context: .
+      dockerfile: ./auth/Dockerfile
+    image: pariksha_auth_service
+    container_name: auth_service
+    env_file:
+      - ./auth/.env
+    develop:
+      watch:
+        - action: rebuild
+          path: ./auth/internal
+        - action: rebuild
+          path: ./auth/cmd
+        - action: rebuild
+          path: ./common
+        - action: rebuild
+          path: ./auth/go.mod
+        - action: rebuild
+          path: ./auth/go.sum
+
+  sessionsCron:
+    build:
+      context: .
+      dockerfile: ./cron/sessions/Dockerfile
+    image: pariksha_sessions_cron
+    container_name: sessions_cron
+    env_file:
+      - ./auth/cron-sessions.env
+    develop:
+      watch:
+        - action: rebuild
+          path: ./cron/sessions/internal
+        - action: rebuild
+          path: ./cron/sessions/cmd
+        - action: rebuild
+          path: ./common
+        - action: rebuild
+          path: ./cron/sessions/go.mod
+        - action: rebuild
+          path: ./cron/sessions/go.sum
+
+  sessionsDb:
+    image: postgres:15.10-alpine
+    restart: always
+    container_name: sessions_db
+    env_file:
+      - ./auth/sessionsDb.env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB_SESSIONS}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_SESSIONS}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    expose:
+      - "5432"
+    ports:
+      - 6010:5432 # needed for pgAdmin

@@ -1,0 +1,40 @@
+services:
+  paper:
+    build:
+      context: .
+      dockerfile: ./paper/Dockerfile
+    image: pariksha_paper_service
+    container_name: paper_service
+    env_file:
+      - /paper/.env
+    develop:
+      watch:
+        - action: rebuild
+          path: ./paper/internal
+        - action: rebuild
+          path: ./paper/cmd
+        - action: rebuild
+          path: ./common
+        - action: rebuild
+          path: ./paper/go.mod
+        - action: rebuild
+          path: ./paper/go.sum
+
+  papersDb:
+    image: postgres:15.10-alpine
+    restart: always
+    container_name: papers_db
+    env_file:
+      - ./paper/papersDb.env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB_PAPERS}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_PAPERS}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    expose:
+      - "5432"
+    ports:
+      - 6020:5432 # needed for pgAdmin

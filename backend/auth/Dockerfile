@@ -23,8 +23,10 @@ COPY auth/go.mod auth/go.sum ./
 COPY auth/cmd/ ./cmd/
 COPY auth/internal/ ./internal/
 
-RUN --mount=type=cache,target=/gomod-cache --mount=type=cache,target=/go-cache go build -o ./bin/pariksha_auth ./cmd/auth/main.go
+RUN --mount=type=cache,target=/gomod-cache \
+	--mount=type=cache,target=/go-cache \
+	go build -o ./bin/pariksha_auth ./cmd/auth/main.go
 
-EXPOSE 4010
+EXPOSE 4000
 
 CMD ["/app/auth/bin/pariksha_auth"]

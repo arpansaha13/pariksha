@@ -1,0 +1,30 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: pariksha_frontend
+    container_name: frontend
+    env_file:
+      - .env
+    expose:
+      - '3000'
+    volumes:
+      - ./.nuxt:/app/.nuxt
+    stdin_open: true
+    tty: true
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src
+        - action: sync
+          path: ./nuxt.config.ts
+          target: /app/nuxt.config.ts
+        - action: sync
+          path: ./tailwind.config.ts
+          target: /app/tailwind.config.ts
+        - action: rebuild
+          path: ./package.json
+        - action: rebuild
+          path: ./package-lock.json
