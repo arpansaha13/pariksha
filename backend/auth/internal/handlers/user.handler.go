@@ -1,0 +1,82 @@
+package handlers
+
+import (
+	"context"
+	"database/sql"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"gorm.io/gorm"
+
+	"pariksha/auth/internal/config/db"
+	"pariksha/common/pkg/models"
+	"pariksha/common/pkg/proto"
+)
+
+func (s *AuthServer) GetUser(ctx context.Context, req *proto.GetUserRequest) (*proto.UserProfileResponse, error) {
+	var user models.User
+	if err := db.DB.Take(&user, req.UserId).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.NotFound, "user not found")
+		}
+		return nil, status.Error(codes.Internal, "failed to find user")
+	}
+
+	return &proto.UserProfileResponse{
+		Id:        int32(user.ID),
+		Username:  user.Username,
+		Email:     user.Email,
+		FirstName: user.FirstName.String,
+		LastName:  user.LastName.String,
+	}, nil
+}
+
+func (s *AuthServer) UpdateUser(ctx context.Context, req *proto.UpdateUserRequest) (*proto.UpdateUserResponse, error) {
+	var user models.User
+	if err := db.DB.Take(&user, req.UserId).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.NotFound, "user not found")
+		}
+		return nil, status.Error(codes.Internal, "failed to find user")
+	}
+
+	isUpdated := false
+	notUpdatedFields := make(map[string]string)
+
+	if req.Username != nil && *req.Username != user.Username {
+		var existingUser models.User
+		if err := db.DB.Where("username = ?", *req.Username).First(&existingUser).Error; err == nil {
+			notUpdatedFields["username"] = "username is already taken"
+		} else {
+			user.Username = *req.Username
+			isUpdated = true
+		}
+	}
+
+	if req.FirstName != nil && *req.FirstName != user.FirstName.String {
+		user.FirstName = sql.NullString{String: *req.FirstName, Valid: true}
+		isUpdated = true
+	}
+
+	if req.LastName != nil && *req.LastName != user.LastName.String {
+		user.LastName = sql.NullString{String: *req.LastName, Valid: true}
+		isUpdated = true
+	}
+
+	if isUpdated {
+		if err := db.DB.Save(&user).Error; err != nil {
+			return nil, status.Error(codes.Internal, "failed to update user info")
+		}
+	}
+
+	return &proto.UpdateUserResponse{
+		User: &proto.UserProfileResponse{
+			Id:        int32(user.ID),
+			Username:  user.Username,
+			Email:     user.Email,
+			FirstName: user.FirstName.String,
+			LastName:  user.LastName.String,
+		},
+		NotUpdatedFields: notUpdatedFields,
+	}, nil
+}

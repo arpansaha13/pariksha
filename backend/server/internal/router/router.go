@@ -70,8 +70,8 @@ func SetupRouter() *mux.Router {
 	protectedRouter.HandleFunc("/answers/{answerId}", handlers.GetAnswer).Methods("GET", "OPTIONS")
 
 	// User Routes
-	protectedRouter.HandleFunc("/user", handlers.GetUser).Methods("GET", "OPTIONS")
-	protectedRouter.HandleFunc("/user", handlers.UpdateUser).Methods("PATCH", "OPTIONS")
+	protectedRouter.HandleFunc("/user/{id}", handlers.GetUser).Methods("GET", "OPTIONS")
+	protectedRouter.HandleFunc("/user/{id}", handlers.UpdateUser).Methods("PATCH", "OPTIONS")
 
 	return r
 }

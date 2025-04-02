@@ -1,35 +1,48 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
-	"gorm.io/gorm"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
-	"pariksha/common/pkg/models"
-	"pariksha/server/internal/config/db"
+	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
+	"pariksha/server/internal/services"
 )
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	userID := vars["id"]
+	userID, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
 
-	var user models.User
-	if err := db.DB.Take(&user, userID).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			http.Error(w, "User not found", http.StatusNotFound)
+	resp, err := services.GetAuthService().Client().GetUser(r.Context(), &proto.GetUserRequest{
+		UserId: int32(userID),
+	})
+
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.NotFound:
+				http.Error(w, st.Message(), http.StatusNotFound)
+			default:
+				http.Error(w, st.Message(), http.StatusInternalServerError)
+			}
 		} else {
-			http.Error(w, "Failed to find user", http.StatusInternalServerError)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(resp)
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
@@ -46,51 +59,41 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := mux.Vars(r)
-	userID := vars["id"]
+	userID, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
 
-	var user models.User
-	if err := db.DB.Take(&user, userID).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			http.Error(w, "User not found", http.StatusNotFound)
+	req := &proto.UpdateUserRequest{
+		UserId: int32(userID),
+	}
+
+	if userDto.Username != "" {
+		req.Username = &userDto.Username
+	}
+	if userDto.FirstName != "" {
+		req.FirstName = &userDto.FirstName
+	}
+	if userDto.LastName != "" {
+		req.LastName = &userDto.LastName
+	}
+
+	resp, err := services.GetAuthService().Client().UpdateUser(r.Context(), req)
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.NotFound:
+				http.Error(w, st.Message(), http.StatusNotFound)
+			default:
+				http.Error(w, st.Message(), http.StatusInternalServerError)
+			}
 		} else {
-			http.Error(w, "Failed to find user", http.StatusInternalServerError)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}
 		return
 	}
 
-	isUpdated := false
-	notUpdatedFields := make(map[string]string)
-
-	if userDto.Username != "" && userDto.Username != user.Username {
-		var existingUser models.User
-		if err := db.DB.Where("username = ?", userDto.Username).First(&existingUser).Error; err == nil {
-			notUpdatedFields["Username"] = "Username is already taken"
-		} else {
-			user.Username = userDto.Username
-			isUpdated = true
-		}
-	}
-	if userDto.FirstName != "" && userDto.FirstName != user.FirstName.String {
-		user.FirstName = sql.NullString{String: userDto.FirstName, Valid: true}
-		isUpdated = true
-	}
-	if userDto.LastName != "" && userDto.LastName != user.LastName.String {
-		user.LastName = sql.NullString{String: userDto.LastName, Valid: true}
-		isUpdated = true
-	}
-
-	if isUpdated {
-		if err := db.DB.Save(&user).Error; err != nil {
-			http.Error(w, "Failed to update user info", http.StatusInternalServerError)
-			return
-		}
-	}
-
-	response := map[string]interface{}{
-		"updated_fields":     userDto,
-		"not_updated_fields": notUpdatedFields,
-	}
-
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(resp)
 }

@@ -5,6 +5,7 @@ package proto;
 option go_package = "/proto";
 
 import "common.proto";
+import "user.proto";
 
 // Common error response structure
 message ErrorResponse {
@@ -73,6 +74,10 @@ service AuthService {
     // - INVALID_ARGUMENT (400): Missing session key or CSRF token
     // - UNAUTHENTICATED (401): Invalid or expired session
   }
+
+  // User operations
+  rpc GetUser(GetUserRequest) returns (UserProfileResponse) {}
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse) {}
 }
 
 message LoginWithPasswordRequest {
