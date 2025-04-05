@@ -1,21 +1,22 @@
 <template>
   <div v-if="paper" class="col-span-2 flex items-center gap-2">
     <Icon name="i-heroicons-document-text" size="2rem" />
-    <h1 class="text-xl font-semibold">{{ paper.title }}</h1>
 
-    <UButton
-      :to="{
-        path: `/papers/${paperId}/edit`,
-        query: route.query,
-      }"
-      label="Start editing"
-      icon="i-heroicons-pencil-square"
-      size="sm"
-      color="neutral"
-      variant="ghost"
-      no-prefetch
-      class="ml-auto"
-    />
+    <EditableRoot
+      v-model="editablePaperTitle"
+      name="paper-title"
+      activation-mode="focus"
+      submit-mode="both"
+      placeholder=""
+      @submit="updatePaperTitle"
+    >
+      <EditableArea
+        class="rounded-sm px-1 text-xl focus-within:outline hover:outline"
+      >
+        <EditablePreview as="h1" class="font-semibold" />
+        <EditableInput class="font-semibold outline-none" />
+      </EditableArea>
+    </EditableRoot>
 
     <UButton
       to="/papers"
@@ -24,14 +25,16 @@
       size="sm"
       color="neutral"
       variant="ghost"
+      class="ml-auto"
     />
   </div>
 
-  <div class="col-span-2 flex h-full flex-col gap-y-4">
-    <ScrollAreaRoot
-      v-if="categoryLinks !== null"
-      class="flex items-center justify-between border-b border-gray-200 dark:border-gray-800"
-    >
+  <div
+    v-if="!isNullOrUndefined(categoryLinks)"
+    class="col-span-2 flex items-center justify-between gap-x-2 border-b border-gray-200 dark:border-gray-800"
+  >
+    <!-- subtract button-width and gap -->
+    <ScrollAreaRoot class="max-w-[calc(100%-44px)]">
       <ScrollAreaViewport>
         <UNavigationMenu
           :items="categoryLinks"
@@ -39,7 +42,19 @@
           orientation="horizontal"
           variant="link"
           highlight
-        />
+        >
+          <template #item="{ item }">
+            <UChip
+              :show="!!unsavedCount[item.to.query.category]"
+              :ui="{
+                root: 'overflow-hidden shrink',
+                base: '-top-1 -right-1.5',
+              }"
+            >
+              <span class="truncate">{{ item.label }}</span>
+            </UChip>
+          </template>
+        </UNavigationMenu>
       </ScrollAreaViewport>
       <ScrollAreaScrollbar
         class="flex touch-none bg-white p-0.5 transition-colors ease-out select-none data-[orientation=horizontal]:h-2 data-[orientation=horizontal]:flex-col"
@@ -50,70 +65,314 @@
         />
       </ScrollAreaScrollbar>
     </ScrollAreaRoot>
+
+    <UModal
+      title="Manage categories"
+      description="Add, edit, remove, or reorder your categories"
+      :ui="{
+        body: 'space-y-2',
+      }"
+      @after:leave="handleReorder"
+    >
+      <UTooltip text="Manage categories">
+        <UButton
+          icon="i-heroicons-adjustments-vertical"
+          size="sm"
+          color="neutral"
+          square
+          variant="outline"
+        />
+      </UTooltip>
+
+      <template #body>
+        <Draggable
+          v-model="categoriesCopyForReorder"
+          tag="ol"
+          item-key="id"
+          group="category-editable"
+          handle=".draggable-handle"
+          ghost-class="draggable-ghost"
+          drag-class="draggable-hold"
+          :animation="250"
+          @start="dragging = true"
+          @end="dragging = false"
+        >
+          <template #item="{ element: category }">
+            <li
+              :key="category.id"
+              class="group flex items-center gap-2 rounded-sm"
+            >
+              <!-- //NOSONAR gives error because this is a comment node and counts as multiple nodes inside template -->
+              <div class="draggable-handle flex size-5 cursor-grab">
+                <Icon
+                  name="i-heroicons-bars-2"
+                  class="m-auto text-gray-400 transition-colors"
+                />
+              </div>
+
+              <EditableRoot
+                v-slot="{ isEditing }"
+                v-model="categoryNames[category.id]"
+                activation-mode="focus"
+                submit-mode="both"
+                class="grow"
+                placeholder=""
+                @submit="() => handleUpdateCategory(category)"
+              >
+                <EditableArea
+                  :class="[
+                    'px-2 py-2 text-sm transition-colors dark:border-gray-800',
+                    isEditing
+                      ? 'border-primary-500 border-b-2'
+                      : 'border-b border-gray-200',
+                  ]"
+                >
+                  <EditablePreview />
+                  <EditableInput class="outline-none" />
+                </EditableArea>
+              </EditableRoot>
+
+              <div v-show="!dragging">
+                <UButton
+                  icon="i-heroicons-trash"
+                  size="sm"
+                  color="error"
+                  square
+                  variant="soft"
+                  class="invisible group-hover:visible"
+                  loading-auto
+                  :disabled="sortedCategories?.length === 1"
+                  @click="handleDeleteCategory(category)"
+                />
+              </div>
+            </li>
+          </template>
+        </Draggable>
+      </template>
+
+      <template #footer>
+        <UButton
+          label="Add category"
+          color="primary"
+          variant="soft"
+          loading-auto
+          @click="createCategory(paperId)"
+        />
+      </template>
+    </UModal>
   </div>
 
-  <div class="col-start-3 row-span-2 row-start-2">
-    <h2 class="mb-4 text-lg font-semibold">Question Pallet</h2>
+  <UCard
+    :ui="{
+      root: 'col-start-3 row-span-2 row-start-2 overflow-hidden flex flex-col',
+      body: 'overflow-auto grow p-0 sm:p-0',
+    }"
+  >
+    <template #header>
+      <h2 class="text-lg font-semibold">Question Pallet</h2>
+    </template>
 
-    <UCard v-if="currentCategoryQuestions">
-      <ul class="flex flex-wrap gap-4">
-        <li v-for="(q, i) of currentCategoryQuestions" :key="q.id">
-          <UButton
-            :to="{ query: { ...route.query, question: q.id } }"
-            :color="currentQuestionId === q.id ? 'primary' : 'neutral'"
-            :variant="currentQuestionId === q.id ? 'subtle' : 'outline'"
-            size="lg"
-            class="flex size-10 items-center justify-center rounded-full"
+    <div>
+      <Draggable
+        v-model="categoryQuestionsCopyForReorder"
+        tag="ol"
+        item-key="id"
+        group="question-editable"
+        handle=".draggable-handle"
+        class="divide-y divide-neutral-200 py-2 transition-colors"
+        ghost-class="draggable-ghost"
+        drag-class="draggable-hold"
+        :animation="250"
+        @start="dragging = true"
+        @end="onQuestionsReorderEnd"
+      >
+        <template #item="{ element: q }">
+          <li
+            :key="q.id"
+            :class="[
+              currentQuestionId === q.id
+                ? 'bg-(--ui-primary)/10 hover:bg-(--ui-primary)/15 disabled:bg-(--ui-primary)/10 aria-disabled:bg-(--ui-primary)/10'
+                : 'bg-(--ui-bg) hover:bg-(--ui-bg-elevated) disabled:bg-(--ui-bg) aria-disabled:bg-(--ui-bg)',
+            ]"
           >
-            {{ i + 1 }}
-          </UButton>
-        </li>
-      </ul>
-    </UCard>
-  </div>
+            <!-- //NOSONAR gives error because this is a comment node and counts as multiple nodes inside template -->
+            <UChip
+              :show="!isNullOrUndefined(editQuestionFormStates[q.id])"
+              inset
+              position="top-left"
+              :ui="{ root: 'flex gap-2 px-2', base: 'top-1 left-1' }"
+            >
+              <div class="draggable-handle flex size-6 shrink-0 cursor-grab">
+                <Icon
+                  name="i-heroicons-bars-2"
+                  class="m-auto text-gray-400 transition-colors"
+                />
+              </div>
 
-  <UCard v-if="question" :ui="{ root: 'col-span-2' }">
-    <QuestionMcq
-      v-if="question.type === QuestionType.MCQ"
-      :question="question.question"
-    />
-    <QuestionNonMcq v-else :question="question.question" />
+              <ULink
+                :to="{ query: { ...route.query, question: q.id } }"
+                raw
+                exact-query
+                class="block grow py-2.5 text-sm"
+                active-class="text-(--ui-primary)"
+                inactive-class="text-(--ui-text)"
+              >
+                <span class="line-clamp-2">
+                  {{ q.question.statement }}
+                </span>
+              </ULink>
+
+              <UButton
+                icon="i-heroicons-trash"
+                size="sm"
+                color="error"
+                square
+                variant="ghost"
+                loading-auto
+                class="shrink-0"
+                @click="handleDeleteQuestion(q.id)"
+              />
+            </UChip>
+          </li>
+        </template>
+      </Draggable>
+    </div>
+
+    <template #footer>
+      <UButton
+        :to="{ query: { ...route.query, question: QuestionId.ADD } }"
+        icon="i-heroicons-plus"
+        label="New question"
+        :color="currentQuestionId === QuestionId.ADD ? 'primary' : 'neutral'"
+        :variant="currentQuestionId === QuestionId.ADD ? 'subtle' : 'outline'"
+      />
+    </template>
   </UCard>
 
-  <UCard :ui="{ root: 'col-span-2', body: 'flex' }">
-    <UButton
-      v-if="prevQuestionId"
-      label="Previous"
-      color="neutral"
-      variant="outline"
-      :to="{ query: { ...route.query, question: prevQuestionId } }"
+  <UCard
+    :ui="{ root: 'col-span-2 overflow-hidden', body: 'h-full overflow-auto' }"
+  >
+    <QuestionForm
+      v-if="
+        currentQuestionId === QuestionId.ADD &&
+        currentCategoryId &&
+        createQuestionFormStates[currentCategoryId]
+      "
+      ref="createQuestionForm"
+      v-model:form-data="createQuestionFormStates[currentCategoryId]"
+      @submit="onCreateQuestionSubmit"
     />
-    <UButton
-      v-if="nextQuestionId"
-      label="Next"
-      color="neutral"
-      variant="outline"
-      :to="{ query: { ...route.query, question: nextQuestionId } }"
-      class="ml-auto"
+    <QuestionForm
+      v-if="currentQuestionId && editQuestionFormStates[currentQuestionId]"
+      ref="editQuestionForm"
+      v-model:form-data="editQuestionFormStates[currentQuestionId]!"
+      @submit="onEditQuestionSubmit"
     />
+    <QuestionMcq
+      v-else-if="question && question.type === QuestionType.MCQ"
+      :question="question.question"
+    />
+    <QuestionNonMcq v-else-if="question" :question="question.question" />
+  </UCard>
+
+  <UCard :ui="{ root: 'col-span-2', body: 'flex justify-between' }">
+    <div>
+      <UButton
+        v-if="questionNavigation.prev"
+        label="Previous"
+        color="neutral"
+        variant="outline"
+        :to="{ query: { ...route.query, question: questionNavigation.prev } }"
+      />
+    </div>
+    <div class="space-x-2">
+      <UButton
+        v-if="currentQuestionId === QuestionId.ADD"
+        label="Add question"
+        color="primary"
+        variant="solid"
+        @click="createQuestionFormRef?.submit()"
+      />
+      <UButton
+        v-else-if="
+          currentQuestionId &&
+          isNullOrUndefined(editQuestionFormStates[currentQuestionId])
+        "
+        label="Edit question"
+        color="primary"
+        variant="subtle"
+        @click="startQuestionEdit"
+      />
+      <template v-else-if="currentQuestionId">
+        <UButton
+          label="Save"
+          color="primary"
+          variant="solid"
+          @click="editQuestionFormRef?.submit()"
+        />
+        <UButton
+          label="Cancel"
+          color="neutral"
+          variant="outline"
+          @click="cancelQuestionEdit"
+        />
+      </template>
+      <UButton
+        v-if="!isNullOrUndefined(questionNavigation.next)"
+        label="Next"
+        color="neutral"
+        variant="outline"
+        :to="{ query: { ...route.query, question: questionNavigation.next } }"
+      />
+    </div>
   </UCard>
 </template>
 
 <script setup lang="ts">
+import Draggable from 'vuedraggable'
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import { QuestionType } from '~/types'
+import type { ComponentExposed } from 'vue-component-type-helpers'
+import { ConfirmModal, QuestionForm } from '#components'
+import {
+  type Question,
+  QuestionId,
+  QuestionType,
+  type QuestionCategory,
+  type QuestionMinimal,
+} from '~/types'
 
 definePageMeta({
   layout: 'paper',
 })
 
+enum QuestionIndex {
+  NON_EXISTENT = -1,
+
+  /** Special case for add question */
+  ADD = -2,
+}
+
 const route = useRoute()
+const overlay = useOverlay()
 const paperId = parseInt(route.params.paperId as string)
 const { data: paper } = await usePaper(paperId)
 const { data: groupedQuestions } = await usePaperQuestions(paperId)
 const { data: sortedCategories } = await usePaperCategories(paperId)
 
+const dragging = ref(false)
+const categoriesCopyForReorder = shallowRef<QuestionCategory[]>([])
+const categoryQuestionsCopyForReorder = shallowRef<QuestionMinimal[]>([])
 const lastVisitedQuestionForCategory = ref<Record<number, string>>({})
+
+const confirmModal = overlay.create(ConfirmModal)
+
+watchImmediate(
+  sortedCategories,
+  val => {
+    if (val) categoriesCopyForReorder.value = [...val]
+  },
+  { deep: true }
+)
 
 watchImmediate(route, newRoute => {
   const query = newRoute.query
@@ -124,14 +383,17 @@ watchImmediate(route, newRoute => {
 
 function getQuestionIdForCategoryId(categoryId: number) {
   const categoryQuestions = groupedQuestions.value?.[categoryId]
-  if (isNullOrUndefined(categoryQuestions)) return
+  if (isNullOrUndefined(categoryQuestions)) return QuestionId.ADD
   const questionId =
     lastVisitedQuestionForCategory.value[categoryId] ?? categoryQuestions[0].id
   return questionId
 }
 
 // Add initial `category` and `question` queries, if missing
-if (!route.query.category && sortedCategories.value?.length) {
+if (
+  (!route.query.category || !route.query.question) &&
+  sortedCategories.value?.length
+) {
   const categoryId = sortedCategories.value[0].id
   const questionId = getQuestionIdForCategoryId(categoryId)
   const query = { category: categoryId, question: questionId }
@@ -162,34 +424,431 @@ const currentCategoryQuestions = computed(() => {
   return groupedQuestions.value[currentCategoryId.value] ?? []
 })
 
+watchImmediate(
+  currentCategoryQuestions,
+  val => {
+    if (val) categoryQuestionsCopyForReorder.value = [...val]
+  },
+  { deep: true }
+)
+
 const currentQuestionId = computed(() => {
   return route.query.question ? parseInt(route.query.question as string) : null
 })
 
 const currentQuestionIdx = computed(() => {
-  if (!currentCategoryQuestions.value || !currentQuestionId.value) return -1
-  return currentCategoryQuestions.value.findIndex(
-    q => q.id === currentQuestionId.value
+  if (!currentQuestionId.value) return QuestionIndex.NON_EXISTENT
+  if (currentQuestionId.value === QuestionId.ADD) return QuestionIndex.ADD
+  return (
+    currentCategoryQuestions.value?.findIndex(
+      q => q.id === currentQuestionId.value
+    ) ?? QuestionIndex.NON_EXISTENT
   )
 })
 
 const { data: question } = await useQuestion(currentQuestionId)
 
-const prevQuestionId = computed(() => {
-  if (!currentCategoryQuestions.value || currentQuestionIdx.value <= 0)
-    return null
-  return currentCategoryQuestions.value[currentQuestionIdx.value - 1].id
-})
-
-const nextQuestionId = computed(() => {
-  if (
-    !currentCategoryQuestions.value ||
-    currentQuestionIdx.value === -1 ||
-    currentQuestionIdx.value >= currentCategoryQuestions.value.length - 1
-  ) {
-    return null
+const questionNavigation = computed(() => {
+  if (!currentCategoryQuestions.value) {
+    return { prev: null, next: null }
   }
 
-  return currentCategoryQuestions.value[currentQuestionIdx.value + 1].id
+  // If on add question page
+  if (currentQuestionId.value === QuestionId.ADD) {
+    return {
+      prev: currentCategoryQuestions.value.at(-1)?.id ?? null, // show last question as prev
+      next: null, // there is no next
+    }
+  }
+
+  // Non-existent question check should be after QuestionId.ADD
+  if (currentQuestionIdx.value < 0) {
+    return { prev: null, next: null }
+  }
+
+  // First question
+  if (currentQuestionIdx.value === 0) {
+    return {
+      prev: null,
+      next: currentCategoryQuestions.value[1]?.id ?? QuestionId.ADD,
+    }
+  }
+
+  // Last question
+  if (currentQuestionIdx.value === currentCategoryQuestions.value.length - 1) {
+    return {
+      prev: currentCategoryQuestions.value.at(-2)?.id ?? null,
+      next: QuestionId.ADD, // show add question as next
+    }
+  }
+
+  return {
+    prev: currentCategoryQuestions.value[currentQuestionIdx.value - 1].id,
+    next: currentCategoryQuestions.value[currentQuestionIdx.value + 1].id,
+  }
 })
+
+// ________________________EDIT PAPER TITLE_________________________
+const editablePaperTitle = ref(paper.value!.title)
+function updatePaperTitle() {
+  editablePaperTitle.value.trim()
+  if (!editablePaperTitle.value) {
+    editablePaperTitle.value = 'Untitled Paper'
+  }
+  if (editablePaperTitle.value !== paper.value!.title) {
+    return updatePaper(paperId, { title: editablePaperTitle.value })
+  }
+}
+watch(paper, newPaper => {
+  editablePaperTitle.value = newPaper!.title
+})
+
+// ________________________DELETE CATEGORY_________________________
+async function handleDeleteCategory(category: QuestionCategory) {
+  let shouldDelete = true
+
+  // If category has questions, then show a confirmation modal
+  const categoryQuestions = groupedQuestions.value![category.id]
+  if (categoryQuestions && categoryQuestions.length > 0) {
+    shouldDelete = await confirmModal.open({
+      title: 'Confirm category deletion',
+      description: `This category "${category.name}" has ${categoryQuestions.length} questions which will be deleted along with it.`,
+      confirmLabel: 'Delete category',
+    })
+  }
+
+  if (shouldDelete) {
+    return doDeleteCategory(category.id)
+  }
+}
+async function doDeleteCategory(categoryId: number) {
+  // If deleting current category, switch to another category first
+  if (currentCategoryId.value === categoryId) {
+    // Find another category to switch to
+    const nextCategory = sortedCategories.value?.find(c => c.id !== categoryId)
+    if (nextCategory) {
+      await navigateTo({
+        query: {
+          category: nextCategory.id,
+          question: getQuestionIdForCategoryId(nextCategory.id),
+        },
+      })
+    }
+  }
+
+  await deleteCategory(categoryId, paperId)
+}
+
+// ________________________UPDATE CATEGORY_________________________
+const categoryNames = ref<Record<number, string>>({})
+async function handleUpdateCategory(category: QuestionCategory) {
+  categoryNames.value[category.id].trim()
+
+  // If empty name, use default "Category {order}"
+  const name = categoryNames.value[category.id] || `Category ${category.order}`
+
+  if (name !== category.name) {
+    await updateCategory(category.id, paperId, { name })
+  }
+}
+watchImmediate(sortedCategories, newCategories => {
+  if (!newCategories) return
+
+  newCategories.forEach(category => {
+    categoryNames.value[category.id] = category.name
+  })
+})
+
+// _______________________REORDER CATEGORY________________________
+/**
+ * `reorder-categories` api is fired after the modal closes, so that all reorders can be batched.
+ * Because individual reorders cause inconsistencies during rollback (in case of error).
+ */
+function handleReorder() {
+  let isReordered = false
+
+  // Check if the order was changed
+  for (let i = 0; i < sortedCategories.value!.length; i++) {
+    if (
+      sortedCategories.value![i].id !== categoriesCopyForReorder.value[i].id
+    ) {
+      isReordered = true
+      break
+    }
+  }
+
+  if (isReordered) {
+    reorderCategories(
+      paperId,
+      categoriesCopyForReorder.value.map(cat => cat.id)
+    )
+  }
+}
+
+// _______________________REORDER QUESTIONS________________________
+function onQuestionsReorderEnd() {
+  dragging.value = false
+
+  if (!currentCategoryId.value) return
+  let isReordered = false
+
+  // Check if the order was changed
+  for (let i = 0; i < currentCategoryQuestions.value.length; i++) {
+    if (
+      currentCategoryQuestions.value[i].id !==
+      categoryQuestionsCopyForReorder.value[i].id
+    ) {
+      isReordered = true
+      break
+    }
+  }
+
+  if (isReordered) {
+    reorderQuestions(
+      paperId,
+      currentCategoryId.value,
+      categoryQuestionsCopyForReorder.value.map(q => q.id)
+    )
+  }
+}
+
+// ________________CREATE/EDIT QUESTION PREREQUISITES_______________
+const defaultCreateQuestionFormState = {
+  type: '' as QuestionType,
+  question: {
+    statement: '',
+    options: ['', ''],
+  },
+  max_score: 0,
+  tags: [] as string[],
+  correct_answer: '' as string | null | undefined,
+}
+
+type QuestionFormState = typeof defaultCreateQuestionFormState
+
+function createQuestionRequestBody(formState: QuestionFormState) {
+  const payload = {
+    type: formState.type,
+    category_id: currentCategoryId.value,
+    question: {
+      statement: formState.question.statement,
+    },
+    max_score: formState.max_score,
+    tags: [],
+    correct_answer: formState.correct_answer,
+  } as Parameters<typeof createQuestion>[1]
+
+  if (payload.type === QuestionType.MCQ) {
+    payload.question.options = formState.question.options
+  }
+
+  return payload
+}
+
+// ___________UNSAVED COUNT FOR CHIPS ON CATEGORY LINKS___________
+
+const unsavedCount = ref<Record<number, number>>({})
+
+function incUnsavedCount(categoryId: number) {
+  if (!unsavedCount.value[categoryId]) {
+    unsavedCount.value[categoryId] = 1
+  } else {
+    unsavedCount.value[categoryId]++
+  }
+}
+
+function decUnsavedCount(categoryId: number) {
+  if (!unsavedCount.value[categoryId]) {
+    unsavedCount.value[categoryId] = 0
+  } else {
+    unsavedCount.value[categoryId]--
+  }
+}
+
+// ________________________CREATE QUESTION________________________
+const createQuestionFormRef =
+  useTemplateRef<ComponentExposed<typeof QuestionForm>>('createQuestionForm')
+const createQuestionFormStates = reactive<Record<number, QuestionFormState>>({})
+
+watchImmediate(currentCategoryId, categoryId => {
+  if (categoryId && isNullOrUndefined(createQuestionFormStates[categoryId])) {
+    createQuestionFormStates[categoryId] = structuredClone(
+      defaultCreateQuestionFormState
+    )
+  }
+})
+
+async function onCreateQuestionSubmit() {
+  if (isNullOrUndefined(currentCategoryId.value)) return
+
+  const formState = createQuestionFormStates[currentCategoryId.value]
+  if (isNullOrUndefined(formState)) return
+
+  const payload = createQuestionRequestBody(formState)
+
+  try {
+    await createQuestion(paperId, payload)
+
+    // Navigate to the newly created question
+    // currentCategoryQuestions will be refreshed by createQuestion
+    const latestQuestion = currentCategoryQuestions.value.at(-1)
+    if (latestQuestion) {
+      navigateTo({
+        query: { ...route.query, question: latestQuestion.id },
+      })
+    }
+
+    // Reset formState after submission
+    createQuestionFormStates[currentCategoryId.value] = structuredClone(
+      defaultCreateQuestionFormState
+    )
+  } catch (error) {
+    console.error('Failed to create question:', error)
+  }
+}
+
+// ________________________EDIT QUESTION__________________________
+const editQuestionFormRef =
+  useTemplateRef<ComponentExposed<typeof QuestionForm>>('editQuestionForm')
+const editQuestionFormStates = reactive<
+  Record<number, QuestionFormState | null>
+>({})
+
+function startQuestionEdit() {
+  if (!question.value || !currentQuestionId.value) return
+  if (currentQuestionId.value === QuestionId.ADD) return
+
+  // Create form state for editing if it doesn't exist
+  if (isNullOrUndefined(editQuestionFormStates[currentQuestionId.value])) {
+    editQuestionFormStates[currentQuestionId.value] = {
+      type: question.value.type,
+      question: {
+        statement: '',
+        options: ['', ''],
+      },
+      max_score: question.value.max_score,
+      tags: [...question.value.tags],
+      correct_answer: question.value.correct_answer ?? undefined,
+    }
+
+    // Parse and populate question data based on type
+    if (question.value.type === QuestionType.MCQ) {
+      const mcqQuestion = question.value.question
+      editQuestionFormStates[currentQuestionId.value]!.question = {
+        statement: mcqQuestion.statement,
+        options: [...mcqQuestion.options], // Store new array reference
+      }
+    } else {
+      const generalQuestion = question.value.question
+      editQuestionFormStates[currentQuestionId.value]!.question.statement =
+        generalQuestion.statement
+    }
+
+    incUnsavedCount(question.value.category.id)
+  }
+}
+
+function cancelQuestionEdit() {
+  if (!currentQuestionId.value) return
+  editQuestionFormStates[currentQuestionId.value] = null
+  decUnsavedCount(currentCategoryId.value!)
+}
+
+async function onEditQuestionSubmit() {
+  if (!currentQuestionId.value) return
+  if (currentQuestionId.value === QuestionId.ADD) return
+
+  const formState = editQuestionFormStates[currentQuestionId.value]!
+  const payload = createQuestionRequestBody(formState)
+
+  try {
+    await updateQuestion(currentQuestionId.value, paperId, payload)
+    // Clear edit form state after successful update
+    editQuestionFormStates[currentQuestionId.value] = null
+    decUnsavedCount(currentCategoryId.value!)
+  } catch (error) {
+    console.error('Failed to update question:', error)
+  }
+}
+
+// ___________________AUTO-CANCEL QUESTION EDIT MODE_______________
+function isEditFormStateDirty(
+  oldQuestion: Question,
+  formState: QuestionFormState
+): boolean {
+  if (!oldQuestion || !formState) return false
+
+  if (
+    formState.type !== oldQuestion.type ||
+    formState.max_score !== oldQuestion.max_score ||
+    formState.correct_answer !== (oldQuestion.correct_answer ?? undefined) ||
+    !arrayEquals(formState.tags, oldQuestion.tags ?? [])
+  ) {
+    return true
+  }
+
+  // Check question data based on type
+  if (oldQuestion.type === QuestionType.MCQ) {
+    const mcqQuestion = oldQuestion.question
+    return (
+      formState.question.statement !== mcqQuestion.statement ||
+      !arrayEquals(formState.question.options, mcqQuestion.options)
+    )
+  }
+
+  const generalQuestion = oldQuestion.question
+  return formState.question.statement !== generalQuestion.statement
+}
+
+watch(question, (_, oldQuestion) => {
+  if (!oldQuestion) return
+
+  const formState = editQuestionFormStates[oldQuestion.id]
+
+  // If previous question was in edit mode but not dirty, cancel its edit
+  if (formState && !isEditFormStateDirty(oldQuestion, formState)) {
+    editQuestionFormStates[oldQuestion.id] = null
+    decUnsavedCount(oldQuestion.category.id)
+  }
+})
+
+// ________________________DELETE QUESTION________________________
+async function handleDeleteQuestion(questionId: number) {
+  if (!currentCategoryId.value) return
+
+  const shouldDelete = await confirmModal.open({
+    title: 'Confirm question deletion',
+    description:
+      'Are you sure you want to delete this question? This action cannot be undone.',
+    confirmLabel: 'Delete question',
+  })
+
+  if (!shouldDelete) return
+
+  // If deleting current question, switch to another one first
+  if (currentQuestionId.value === questionId) {
+    await navigateTo({
+      query: {
+        ...route.query,
+        question:
+          questionNavigation.value.prev ??
+          questionNavigation.value.next ??
+          QuestionId.ADD,
+      },
+    })
+  }
+
+  await deleteQuestion(questionId, paperId, currentCategoryId.value)
+}
 </script>
+
+<style scoped>
+@reference "../../../assets/css/main.css";
+
+.draggable-ghost {
+  @apply bg-gray-200;
+}
+.draggable-hold {
+  @apply cursor-grabbing opacity-0;
+}
+</style>

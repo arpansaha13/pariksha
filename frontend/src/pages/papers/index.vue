@@ -8,7 +8,7 @@
         body: 'p-0 sm:p-0',
       }"
     >
-      <ul class="divide-y">
+      <ul class="divide-y divide-gray-200">
         <li
           v-for="paper in papers"
           :key="paper.id"
@@ -22,17 +22,6 @@
               <UButton
                 :to="`/papers/${paper.id}`"
                 icon="i-heroicons-arrow-right-end-on-rectangle"
-                size="sm"
-                color="neutral"
-                square
-                variant="outline"
-                no-prefetch
-              />
-            </UTooltip>
-            <UTooltip text="Edit">
-              <UButton
-                :to="`/papers/${paper.id}/edit`"
-                icon="i-heroicons-pencil-square"
                 size="sm"
                 color="neutral"
                 square
