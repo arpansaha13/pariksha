@@ -40,11 +40,9 @@ func init() {
 
 func autoMigrate() {
 	err := DB.AutoMigrate(
-		&models.User{},
 		&models.Exam{},
 		&models.Answer{},
 		&models.ExamParticipant{},
-		&models.Otp{},
 	)
 
 	if err != nil {

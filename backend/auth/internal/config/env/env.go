@@ -23,12 +23,12 @@ var (
 )
 
 var (
-	DB_HOST    string
-	DB_PORT    string
-	DB_USER    string
-	DB_PASS    string
-	DB_NAME    string
-	DB_SSLMODE string
+	USERS_DB_HOST    string
+	USERS_DB_PORT    string
+	USERS_DB_USER    string
+	USERS_DB_PASS    string
+	USERS_DB_NAME    string
+	USERS_DB_SSLMODE string
 )
 
 var (
@@ -70,18 +70,18 @@ func init() {
 	CSRFTOKEN_COOKIE_NAME = utils.GetEnvWithDefault("CSRFTOKEN_COOKIE_NAME", "csrftoken")
 	OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD, _ = strconv.Atoi(utils.GetEnvWithDefault("OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD", "30"))
 
-	DB_USER = os.Getenv("DB_USER")
-	DB_PASS = os.Getenv("DB_PASS")
-	DB_NAME = os.Getenv("DB_NAME")
+	USERS_DB_USER = os.Getenv("USERS_DB_USER")
+	USERS_DB_PASS = os.Getenv("USERS_DB_PASS")
+	USERS_DB_NAME = os.Getenv("USERS_DB_NAME")
 
 	SESSIONS_DB_USER = os.Getenv("SESSIONS_DB_USER")
 	SESSIONS_DB_PASS = os.Getenv("SESSIONS_DB_PASS")
 	SESSIONS_DB_NAME = os.Getenv("SESSIONS_DB_NAME")
 
 	if GO_ENV != constants.GO_ENV_TEST {
-		DB_HOST = os.Getenv("DB_HOST")
-		DB_PORT = os.Getenv("DB_PORT")
-		DB_SSLMODE = os.Getenv("DB_SSLMODE")
+		USERS_DB_HOST = os.Getenv("USERS_DB_HOST")
+		USERS_DB_PORT = os.Getenv("USERS_DB_PORT")
+		USERS_DB_SSLMODE = os.Getenv("USERS_DB_SSLMODE")
 
 		SESSIONS_DB_HOST = os.Getenv("SESSIONS_DB_HOST")
 		SESSIONS_DB_PORT = os.Getenv("SESSIONS_DB_PORT")
@@ -97,9 +97,9 @@ func getRequiredEnvVars() []string {
 		"GO_ENV",
 		"AUTH_SERVER_PORT",
 		"JWT_SECRET_KEY",
-		"DB_USER",
-		"DB_PASS",
-		"DB_NAME",
+		"USERS_DB_USER",
+		"USERS_DB_PASS",
+		"USERS_DB_NAME",
 		"SESSIONS_DB_USER",
 		"SESSIONS_DB_PASS",
 		"SESSIONS_DB_NAME",
@@ -108,9 +108,9 @@ func getRequiredEnvVars() []string {
 	if os.Getenv("GO_ENV") != constants.GO_ENV_TEST {
 		// require these vars only when not in test environment
 		additionalEnvVars := []string{
-			"DB_HOST",
-			"DB_PORT",
-			"DB_SSLMODE",
+			"USERS_DB_HOST",
+			"USERS_DB_PORT",
+			"USERS_DB_SSLMODE",
 			"SESSIONS_DB_HOST",
 			"SESSIONS_DB_PORT",
 			"SESSIONS_DB_SSLMODE",

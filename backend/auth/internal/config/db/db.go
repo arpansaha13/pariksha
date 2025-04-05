@@ -40,9 +40,6 @@ func InitDB(host, port, user, password, dbname, sslmode string) error {
 func autoMigrateDB() error {
 	err := DB.AutoMigrate(
 		&models.User{},
-		&models.Exam{},
-		&models.Answer{},
-		&models.ExamParticipant{},
 		&models.Otp{},
 	)
 	if err != nil {
@@ -59,12 +56,12 @@ func init() {
 
 	// Initialize with environment variables for non-test environments
 	err := InitDB(
-		env.DB_HOST,
-		env.DB_PORT,
-		env.DB_USER,
-		env.DB_PASS,
-		env.DB_NAME,
-		env.DB_SSLMODE,
+		env.USERS_DB_HOST,
+		env.USERS_DB_PORT,
+		env.USERS_DB_USER,
+		env.USERS_DB_PASS,
+		env.USERS_DB_NAME,
+		env.USERS_DB_SSLMODE,
 	)
 	if err != nil {
 		log.Fatal("Failed to initialize database:", err)

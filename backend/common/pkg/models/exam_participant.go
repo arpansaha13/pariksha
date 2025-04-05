@@ -12,7 +12,6 @@ type ExamParticipant struct {
 	EndedAt          sql.NullTime
 	ScheduledEndTime sql.NullTime
 	Exam             Exam     `gorm:"foreignKey:ExamID"`
-	User             User     `gorm:"foreignKey:UserID"`
 	Answers          []Answer `gorm:"foreignKey:ExamParticipantID"`
 }
 

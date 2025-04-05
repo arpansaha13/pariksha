@@ -41,15 +41,28 @@ services:
         - action: rebuild
           path: ./cron/sessions/go.sum
 
+  usersDb:
+    image: postgres:15.10-alpine
+    restart: always
+    container_name: users_db
+    env_file:
+      - ./auth/usersDb.env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_USERS}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    expose:
+      - "5432"
+    ports:
+      - 6030:5432 # needed for pgAdmin
+
   sessionsDb:
     image: postgres:15.10-alpine
     restart: always
     container_name: sessions_db
     env_file:
       - ./auth/sessionsDb.env
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_DB=${POSTGRES_DB_SESSIONS}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_SESSIONS}"]
       interval: 10s

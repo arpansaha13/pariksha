@@ -101,15 +101,29 @@ services:
       - ./docker/data/db:/var/lib/postgresql/data
     networks:
       - backend-network
+
+  usersDb:
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB_USERS}
+    volumes:
+      - ./docker/data/usersDb:/var/lib/postgresql/data
+    networks:
       - auth-network
 
   sessionsDb:
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB_SESSIONS}
     volumes:
       - ./docker/data/sessionsDb:/var/lib/postgresql/data
     networks:
       - auth-network
 
   papersDb:
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB_PAPERS}
     volumes:
       - ./docker/data/papersDb:/var/lib/postgresql/data
     networks:

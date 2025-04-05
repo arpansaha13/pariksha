@@ -51,9 +51,9 @@ func setupContainers() func() {
 			Image:        "postgres:15.10-alpine",
 			ExposedPorts: []string{"5432/tcp"},
 			Env: map[string]string{
-				"POSTGRES_USER":     env.DB_USER,
-				"POSTGRES_PASSWORD": env.DB_PASS,
-				"POSTGRES_DB":       env.DB_NAME,
+				"POSTGRES_USER":     env.USERS_DB_USER,
+				"POSTGRES_PASSWORD": env.USERS_DB_PASS,
+				"POSTGRES_DB":       env.USERS_DB_NAME,
 			},
 			WaitingFor: wait.ForAll(
 				wait.ForLog("database system is ready to accept connections"),
@@ -112,9 +112,9 @@ func setupContainers() func() {
 	err = db.InitDB(
 		pgHost,
 		pgPort.Port(),
-		env.DB_USER,
-		env.DB_PASS,
-		env.DB_NAME,
+		env.USERS_DB_USER,
+		env.USERS_DB_PASS,
+		env.USERS_DB_NAME,
 		"disable",
 	)
 	if err != nil {
