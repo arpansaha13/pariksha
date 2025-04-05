@@ -3,4 +3,5 @@ include:
   - backend/compose.backend.yaml
   - backend/compose.auth.yaml
   - backend/compose.paper.yaml
+  - backend/compose.exam.yaml
   - backend/compose.mail.yaml

@@ -19,11 +19,11 @@ services:
 
   backend:
     depends_on:
-      db:
-        condition: service_healthy
       auth:
         condition: service_started
       paper:
+        condition: service_started
+      exam:
         condition: service_started
     networks:
       - frontend-network
@@ -31,7 +31,7 @@ services:
 
   auth:
     depends_on:
-      db:
+      usersDb:
         condition: service_healthy
       sessionsDb:
         condition: service_healthy
@@ -48,6 +48,14 @@ services:
     networks:
       - backend-network
       - papers-network
+
+  exam:
+    depends_on:
+      examsDb:
+        condition: service_healthy
+    networks:
+      - backend-network
+      - exams-network
 
   mail:
     depends_on:
@@ -79,29 +87,6 @@ services:
       - auth-network
       - mail-network
 
-  db:
-    image: postgres:15.10-alpine
-    restart: always
-    container_name: db
-    env_file:
-      - docker/env/pg.env
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_DB=${POSTGRES_DB}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    expose:
-      - "5432"
-    ports:
-      - 6000:5432 # needed for pgAdmin
-    volumes:
-      - ./docker/data/db:/var/lib/postgresql/data
-    networks:
-      - backend-network
-
   usersDb:
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -129,6 +114,15 @@ services:
     networks:
       - papers-network
 
+  examsDb:
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB_EXAMS}
+    volumes:
+      - ./docker/data/examsDb:/var/lib/postgresql/data
+    networks:
+      - exams-network
+
 networks:
   frontend-network:
     name: frontend-network
@@ -140,3 +134,5 @@ networks:
     name: mail-network
   papers-network:
     name: papers-network
+  exams-network:
+    name: exams-network
