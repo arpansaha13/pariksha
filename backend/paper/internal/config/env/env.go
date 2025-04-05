@@ -25,8 +25,8 @@ var (
 
 func init() {
 	if os.Getenv("GO_ENV") == "" {
-		if godotenv.Load("../../test.env") != nil {
-			log.Fatalf("Error loading .env file")
+		if godotenv.Load("../../env/test.env") != nil {
+			log.Fatalf("Error loading test.env file")
 		}
 	}
 

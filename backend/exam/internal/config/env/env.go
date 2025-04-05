@@ -23,10 +23,15 @@ var (
 	DB_SSLMODE string
 )
 
+var (
+	EXAM_QUEUE_HOST string
+	EXAM_QUEUE_PORT string
+)
+
 func init() {
 	if os.Getenv("GO_ENV") == "" {
-		if godotenv.Load("../../test.env") != nil {
-			log.Fatalf("Error loading .env file")
+		if godotenv.Load("../../env/test.env") != nil {
+			log.Fatalf("Error loading test.env file")
 		}
 	}
 
@@ -46,6 +51,9 @@ func init() {
 	DB_PASS = os.Getenv("DB_PASS")
 	DB_NAME = os.Getenv("DB_NAME")
 
+	EXAM_QUEUE_HOST = os.Getenv("EXAM_QUEUE_HOST")
+	EXAM_QUEUE_PORT = os.Getenv("EXAM_QUEUE_PORT")
+
 	if GO_ENV != constants.GO_ENV_TEST {
 		DB_HOST = os.Getenv("DB_HOST")
 		DB_PORT = os.Getenv("DB_PORT")
@@ -60,6 +68,8 @@ func getRequiredEnvVars() []string {
 		"DB_USER",
 		"DB_PASS",
 		"DB_NAME",
+		"EXAM_QUEUE_HOST",
+		"EXAM_QUEUE_PORT",
 	}
 
 	if os.Getenv("GO_ENV") != constants.GO_ENV_TEST {

@@ -53,6 +53,8 @@ services:
     depends_on:
       examsDb:
         condition: service_healthy
+      examQueue:
+        condition: service_healthy
     networks:
       - backend-network
       - exams-network
@@ -86,6 +88,13 @@ services:
     networks:
       - auth-network
       - mail-network
+
+  examQueue:
+    volumes:
+     - ./docker/data/examQueue/:/var/lib/rabbitmq/mnesia/
+     - ./docker/conf/exam.rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    networks:
+      - exams-network
 
   usersDb:
     environment:

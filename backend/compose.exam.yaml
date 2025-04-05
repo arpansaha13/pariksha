@@ -6,7 +6,7 @@ services:
     image: pariksha_exam_service
     container_name: exam_service
     env_file:
-      - /exam/.env
+      - /exam/env/.env
     develop:
       watch:
         - action: rebuild
@@ -25,7 +25,7 @@ services:
     restart: always
     container_name: exams_db
     env_file:
-      - ./exam/examsDb.env
+      - ./exam/env/examsDb.env
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_EXAMS}"]
       interval: 10s
@@ -35,3 +35,13 @@ services:
       - "5432"
     ports:
       - 6040:5432 # needed for pgAdmin
+
+  examQueue:
+    image: rabbitmq:3-management-alpine
+    container_name: exam_queue
+    healthcheck:
+      test: rabbitmq-diagnostics -q status
+      interval: 15s
+      timeout: 70s
+      retries: 3
+    restart: always

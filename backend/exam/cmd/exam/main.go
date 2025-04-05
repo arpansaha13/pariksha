@@ -11,6 +11,7 @@ import (
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/config/env"
 	"pariksha/exam/internal/handlers"
+	"pariksha/exam/internal/services"
 )
 
 func main() {
@@ -34,4 +35,6 @@ func main() {
 func closeConnections() {
 	sqlDb, _ := db.DB.DB()
 	sqlDb.Close()
+
+	services.CloseExamQueue()
 }

@@ -9,7 +9,10 @@ const (
 	GO_ENV_TEST       string = "test"
 )
 
-const RABBIT_MAIL_QUEUE_NAME string = "mail"
+const (
+	RABBIT_MAIL_QUEUE_NAME string = "mail_queue"
+	RABBIT_EXAM_QUEUE_NAME string = "exam_queue"
+)
 
 const (
 	VERIFICATION_OTP_LENGTH  int = 6

@@ -13,8 +13,10 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
+	"pariksha/exam/internal/services"
 )
 
 type ExamServer struct {
@@ -85,6 +87,11 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 	if err := db.DB.Create(&exam).Error; err != nil {
 		return nil, status.Error(codes.Internal, "failed to create exam")
 	}
+
+	services.PushToExamQueue(types.ExamQueuePayload{
+		ExamID:  exam.ID,
+		PaperID: exam.PaperID,
+	})
 
 	return createExamResponse(&exam)
 }

@@ -87,7 +87,7 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 		PaperId:            int32(examDto.PaperID),
 	})
 	if err != nil {
-		http.Error(w, "Failed to create exam", http.StatusInternalServerError)
+		handleGRPCError(w, err)
 		return
 	}
 
