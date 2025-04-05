@@ -92,3 +92,22 @@ func GetPaper(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
+
+func CheckPaperAccess(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	paperID, _ := strconv.Atoi(vars["id"])
+	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	paperService := services.GetPaperService()
+
+	ctx := paperService.CreateMetadata(userID)
+	_, err := paperService.Client().CheckPaperAccess(ctx, &proto.PaperRequest{
+		PaperId: int32(paperID),
+	})
+
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

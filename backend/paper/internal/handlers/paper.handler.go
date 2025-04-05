@@ -150,3 +150,26 @@ func (s *PaperServer) UpdatePaper(ctx context.Context, req *proto.UpdatePaperReq
 
 	return &proto.Empty{}, nil
 }
+
+func (s *PaperServer) CheckPaperAccess(ctx context.Context, req *proto.PaperRequest) (*proto.Empty, error) {
+	userID, err := utils.GetUserIDFromMetadata(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if paper exists
+	exists, err := paperExists(req.PaperId)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, status.Error(codes.NotFound, "paper not found")
+	}
+
+	// Check if user has owner access
+	if err := verifyPaperAccess(nil, int(req.PaperId), userID, constants.PAPER_OWNERSHIP_TYPE_OWNER); err != nil {
+		return nil, err
+	}
+
+	return &proto.Empty{}, nil
+}

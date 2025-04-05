@@ -16,6 +16,35 @@ import (
 	"pariksha/paper/internal/models"
 )
 
+// Helper function to check if a paper exists
+func paperExists(paperID any) (bool, error) {
+	var actualPaperID int
+
+	// Convert the ID to a standard int
+	switch v := paperID.(type) {
+	case sql.NullInt64:
+		if !v.Valid {
+			return false, status.Error(codes.InvalidArgument, "invalid paper id")
+		}
+		actualPaperID = int(v.Int64)
+	case int:
+		actualPaperID = v
+	case int32:
+		actualPaperID = int(v)
+	default:
+		return false, status.Error(codes.InvalidArgument, "invalid paper id type")
+	}
+
+	var exists bool
+	err := db.DB.Raw(`SELECT EXISTS (SELECT 1 FROM papers WHERE id = ?)`, actualPaperID).
+		Scan(&exists).Error
+	if err != nil {
+		return false, status.Error(codes.Internal, "failed to check paper existence")
+	}
+
+	return exists, nil
+}
+
 // Helper function to convert Paper model to proto response
 func paperToProto(paper models.Paper) *proto.PaperResponse {
 	var questionCounts proto.QuestionCount

@@ -23,10 +23,9 @@ func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperReq
 		return nil, err
 	}
 
-	var exists bool
-	err = db.DB.Raw(`SELECT EXISTS (SELECT 1 FROM papers p WHERE p.id = ?)`, req.PaperId).Scan(&exists).Error
+	exists, err := paperExists(req.PaperId)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to find paper")
+		return nil, err
 	}
 	if !exists {
 		return nil, status.Error(codes.NotFound, "paper not found")
