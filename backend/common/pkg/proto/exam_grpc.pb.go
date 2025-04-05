@@ -24,7 +24,7 @@ const (
 	ExamService_UpdateExam_FullMethodName                = "/proto.ExamService/UpdateExam"
 	ExamService_GetExam_FullMethodName                   = "/proto.ExamService/GetExam"
 	ExamService_GetExamParticipants_FullMethodName       = "/proto.ExamService/GetExamParticipants"
-	ExamService_AddExamParticipants_FullMethodName       = "/proto.ExamService/AddExamParticipants"
+	ExamService_AddExamParticipant_FullMethodName        = "/proto.ExamService/AddExamParticipant"
 	ExamService_RemoveExamParticipant_FullMethodName     = "/proto.ExamService/RemoveExamParticipant"
 	ExamService_StartExam_FullMethodName                 = "/proto.ExamService/StartExam"
 	ExamService_EndExam_FullMethodName                   = "/proto.ExamService/EndExam"
@@ -46,7 +46,7 @@ type ExamServiceClient interface {
 	GetExam(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamResponse, error)
 	// Participant operations
 	GetExamParticipants(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ParticipantList, error)
-	AddExamParticipants(ctx context.Context, in *AddParticipantsRequest, opts ...grpc.CallOption) (*AddParticipantsResponse, error)
+	AddExamParticipant(ctx context.Context, in *AddParticipantRequest, opts ...grpc.CallOption) (*ParticipantResponse, error)
 	RemoveExamParticipant(ctx context.Context, in *RemoveParticipantRequest, opts ...grpc.CallOption) (*Empty, error)
 	StartExam(ctx context.Context, in *StartExamRequest, opts ...grpc.CallOption) (*Empty, error)
 	EndExam(ctx context.Context, in *EndExamRequest, opts ...grpc.CallOption) (*Empty, error)
@@ -116,10 +116,10 @@ func (c *examServiceClient) GetExamParticipants(ctx context.Context, in *ExamReq
 	return out, nil
 }
 
-func (c *examServiceClient) AddExamParticipants(ctx context.Context, in *AddParticipantsRequest, opts ...grpc.CallOption) (*AddParticipantsResponse, error) {
+func (c *examServiceClient) AddExamParticipant(ctx context.Context, in *AddParticipantRequest, opts ...grpc.CallOption) (*ParticipantResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(AddParticipantsResponse)
-	err := c.cc.Invoke(ctx, ExamService_AddExamParticipants_FullMethodName, in, out, cOpts...)
+	out := new(ParticipantResponse)
+	err := c.cc.Invoke(ctx, ExamService_AddExamParticipant_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +217,7 @@ type ExamServiceServer interface {
 	GetExam(context.Context, *ExamRequest) (*ExamResponse, error)
 	// Participant operations
 	GetExamParticipants(context.Context, *ExamRequest) (*ParticipantList, error)
-	AddExamParticipants(context.Context, *AddParticipantsRequest) (*AddParticipantsResponse, error)
+	AddExamParticipant(context.Context, *AddParticipantRequest) (*ParticipantResponse, error)
 	RemoveExamParticipant(context.Context, *RemoveParticipantRequest) (*Empty, error)
 	StartExam(context.Context, *StartExamRequest) (*Empty, error)
 	EndExam(context.Context, *EndExamRequest) (*Empty, error)
@@ -252,8 +252,8 @@ func (UnimplementedExamServiceServer) GetExam(context.Context, *ExamRequest) (*E
 func (UnimplementedExamServiceServer) GetExamParticipants(context.Context, *ExamRequest) (*ParticipantList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamParticipants not implemented")
 }
-func (UnimplementedExamServiceServer) AddExamParticipants(context.Context, *AddParticipantsRequest) (*AddParticipantsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddExamParticipants not implemented")
+func (UnimplementedExamServiceServer) AddExamParticipant(context.Context, *AddParticipantRequest) (*ParticipantResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddExamParticipant not implemented")
 }
 func (UnimplementedExamServiceServer) RemoveExamParticipant(context.Context, *RemoveParticipantRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveExamParticipant not implemented")
@@ -390,20 +390,20 @@ func _ExamService_GetExamParticipants_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_AddExamParticipants_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddParticipantsRequest)
+func _ExamService_AddExamParticipant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddParticipantRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).AddExamParticipants(ctx, in)
+		return srv.(ExamServiceServer).AddExamParticipant(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_AddExamParticipants_FullMethodName,
+		FullMethod: ExamService_AddExamParticipant_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).AddExamParticipants(ctx, req.(*AddParticipantsRequest))
+		return srv.(ExamServiceServer).AddExamParticipant(ctx, req.(*AddParticipantRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -580,8 +580,8 @@ var ExamService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ExamService_GetExamParticipants_Handler,
 		},
 		{
-			MethodName: "AddExamParticipants",
-			Handler:    _ExamService_AddExamParticipants_Handler,
+			MethodName: "AddExamParticipant",
+			Handler:    _ExamService_AddExamParticipant_Handler,
 		},
 		{
 			MethodName: "RemoveExamParticipant",

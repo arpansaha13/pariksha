@@ -29,6 +29,7 @@ const (
 	AuthService_Authenticate_FullMethodName         = "/proto.AuthService/Authenticate"
 	AuthService_GetUser_FullMethodName              = "/proto.AuthService/GetUser"
 	AuthService_UpdateUser_FullMethodName           = "/proto.AuthService/UpdateUser"
+	AuthService_UpsertUser_FullMethodName           = "/proto.AuthService/UpsertUser"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -51,6 +52,7 @@ type AuthServiceClient interface {
 	// User operations
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*UserProfileResponse, error)
 	UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UpdateUserResponse, error)
+	UpsertUser(ctx context.Context, in *UpsertUserRequest, opts ...grpc.CallOption) (*UserProfileResponse, error)
 }
 
 type authServiceClient struct {
@@ -161,6 +163,16 @@ func (c *authServiceClient) UpdateUser(ctx context.Context, in *UpdateUserReques
 	return out, nil
 }
 
+func (c *authServiceClient) UpsertUser(ctx context.Context, in *UpsertUserRequest, opts ...grpc.CallOption) (*UserProfileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserProfileResponse)
+	err := c.cc.Invoke(ctx, AuthService_UpsertUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
@@ -181,6 +193,7 @@ type AuthServiceServer interface {
 	// User operations
 	GetUser(context.Context, *GetUserRequest) (*UserProfileResponse, error)
 	UpdateUser(context.Context, *UpdateUserRequest) (*UpdateUserResponse, error)
+	UpsertUser(context.Context, *UpsertUserRequest) (*UserProfileResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -220,6 +233,9 @@ func (UnimplementedAuthServiceServer) GetUser(context.Context, *GetUserRequest) 
 }
 func (UnimplementedAuthServiceServer) UpdateUser(context.Context, *UpdateUserRequest) (*UpdateUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUser not implemented")
+}
+func (UnimplementedAuthServiceServer) UpsertUser(context.Context, *UpsertUserRequest) (*UserProfileResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpsertUser not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -422,6 +438,24 @@ func _AuthService_UpdateUser_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_UpsertUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).UpsertUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_UpsertUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).UpsertUser(ctx, req.(*UpsertUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -468,6 +502,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateUser",
 			Handler:    _AuthService_UpdateUser_Handler,
+		},
+		{
+			MethodName: "UpsertUser",
+			Handler:    _AuthService_UpsertUser_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

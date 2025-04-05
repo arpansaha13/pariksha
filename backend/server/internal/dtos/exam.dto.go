@@ -35,13 +35,15 @@ type ExamResponse struct {
 type ExamParticipantResponse struct {
 	ID           int       `json:"id"`
 	UserID       int       `json:"userId"`
-	FirstName    string    `json:"firstName,omitempty"`
-	LastName     string    `json:"lastName,omitempty"`
-	Email        string    `json:"email"`
 	Status       int       `json:"status"`
 	ScoreAwarded int       `json:"scoreAwarded"`
 	StartedAt    time.Time `json:"startedAt,omitempty"`
 	EndedAt      time.Time `json:"endedAt,omitempty"`
+
+	// From auth service
+	FirstName string `json:"firstName,omitempty"`
+	LastName  string `json:"lastName,omitempty"`
+	Email     string `json:"email,omitempty"`
 }
 
 type AddExamParticipantDto struct {
@@ -52,7 +54,8 @@ type AddExamParticipantDto struct {
 }
 
 type AddExamParticipantResponse struct {
-	AddedCount     int    `json:"added_count"`
-	OmittedCount   int    `json:"omitted_count"`
-	MaxLimitReason string `json:"max_limit_reason,omitempty"`
+	ID           int `json:"id"`
+	UserID       int `json:"userId"`
+	Status       int `json:"status"`
+	ScoreAwarded int `json:"scoreAwarded"`
 }

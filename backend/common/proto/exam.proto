@@ -16,7 +16,7 @@ service ExamService {
 
   // Participant operations
   rpc GetExamParticipants(ExamRequest) returns (ParticipantList) {}
-  rpc AddExamParticipants(AddParticipantsRequest) returns (AddParticipantsResponse) {}
+  rpc AddExamParticipant(AddParticipantRequest) returns (ParticipantResponse) {}  // Changed
   rpc RemoveExamParticipant(RemoveParticipantRequest) returns (Empty) {}
   rpc StartExam(StartExamRequest) returns (Empty) {}
   rpc EndExam(EndExamRequest) returns (Empty) {}
@@ -83,9 +83,6 @@ message ParticipantRequest {
 message ParticipantResponse {
   int32 id = 1;
   int32 user_id = 2;
-  string first_name = 3;
-  string last_name = 4;
-  string email = 5;
   int32 status = 6;
   int32 score_awarded = 7;
   optional google.protobuf.Timestamp started_at = 8;
@@ -96,22 +93,10 @@ message ParticipantList {
   repeated ParticipantResponse participants = 1;
 }
 
-message AddParticipant {
-  int32 user_id = 1;
-  string email = 2;
-  string first_name = 3;
-  string last_name = 4;
-}
-
-message AddParticipantsRequest {
+// Replace AddParticipantsRequest with AddParticipantRequest
+message AddParticipantRequest {
   int32 exam_id = 1;
-  repeated AddParticipant participants = 2;
-}
-
-message AddParticipantsResponse {
-  int32 added_count = 1;
-  int32 omitted_count = 2;
-  optional string max_limit_reason = 3;
+  int32 user_id = 2;
 }
 
 message RemoveParticipantRequest {

@@ -54,13 +54,13 @@ func SetupRouter() *mux.Router {
 	protectedRouter.HandleFunc("/exams", handlers.GetUserExams).Methods("GET", "OPTIONS")
 	protectedRouter.HandleFunc("/exams", handlers.CreateExam).Methods("POST", "OPTIONS")
 	protectedRouter.HandleFunc("/exams/{examId}", handlers.UpdateExam).Methods("PATCH", "OPTIONS")
-	protectedRouter.HandleFunc("/exams/{examId}/participants", handlers.GetExamParticipants).Methods("GET", "OPTIONS")
-	protectedRouter.HandleFunc("/exams/{examId}/participants", handlers.AddExamParticipants).Methods("POST", "OPTIONS")
-	protectedRouter.HandleFunc("/exams/{examId}/participants/{participantId}", handlers.RemoveExamParticipant).Methods("DELETE", "OPTIONS")
 	protectedRouter.HandleFunc("/exams/{examId}/start", handlers.StartExam).Methods("PATCH", "OPTIONS")
 	protectedRouter.HandleFunc("/exams/{examId}/end", handlers.EndExam).Methods("PATCH", "OPTIONS")
 
 	// Exam Participant Routes
+	protectedRouter.HandleFunc("/exams/{examId}/participants", handlers.GetExamParticipants).Methods("GET", "OPTIONS")
+	protectedRouter.HandleFunc("/exams/{examId}/participants", handlers.AddExamParticipant).Methods("POST", "OPTIONS")
+	protectedRouter.HandleFunc("/exams/{examId}/participants/{participantId}", handlers.RemoveExamParticipant).Methods("DELETE", "OPTIONS")
 	protectedRouter.HandleFunc("/participants/{participantId}/evaluate", handlers.MarkAsEvaluated).Methods("PATCH", "OPTIONS")
 
 	// Answer Routes

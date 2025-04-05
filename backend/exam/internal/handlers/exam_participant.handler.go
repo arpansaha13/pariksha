@@ -2,9 +2,7 @@ package handlers
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
-	"strings"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -20,7 +18,7 @@ import (
 
 func (s *ExamServer) GetExamParticipants(ctx context.Context, req *proto.ExamRequest) (*proto.ParticipantList, error) {
 	var participants []models.ExamParticipant
-	if err := db.DB.Preload("User").Where("exam_id = ?", req.ExamId).Find(&participants).Error; err != nil {
+	if err := db.DB.Where("exam_id = ?", req.ExamId).Find(&participants).Error; err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch participants")
 	}
 
@@ -32,9 +30,6 @@ func (s *ExamServer) GetExamParticipants(ctx context.Context, req *proto.ExamReq
 		response.Participants[i] = &proto.ParticipantResponse{
 			Id:           int32(p.ID),
 			UserId:       int32(p.UserID),
-			FirstName:    p.User.FirstName.String,
-			LastName:     p.User.LastName.String,
-			Email:        p.User.Email,
 			Status:       int32(p.Status),
 			ScoreAwarded: int32(p.ScoreAwarded),
 		}
@@ -49,7 +44,7 @@ func (s *ExamServer) GetExamParticipants(ctx context.Context, req *proto.ExamReq
 	return response, nil
 }
 
-func (s *ExamServer) AddExamParticipants(ctx context.Context, req *proto.AddParticipantsRequest) (*proto.AddParticipantsResponse, error) {
+func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParticipantRequest) (*proto.ParticipantResponse, error) {
 	var exam models.Exam
 	if err := db.DB.Take(&exam, req.ExamId).Error; err != nil {
 		return nil, status.Error(codes.NotFound, "exam not found")
@@ -64,76 +59,36 @@ func (s *ExamServer) AddExamParticipants(ctx context.Context, req *proto.AddPart
 		return nil, status.Error(codes.Internal, "failed to get participant counts")
 	}
 
-	var examParticipants []models.ExamParticipant
-	addedCount := 0
-	omittedCount := 0
-	maxLimitReached := false
-
-	for _, p := range req.Participants {
-		currTotalParticipants := counts.Invited + counts.Started + counts.Ended
-		if currTotalParticipants == exam.MaxCandidatesCount {
-			maxLimitReached = true
-			omittedCount++
-			continue
-		}
-
-		var userID int32 = p.UserId
-		if userID == 0 && p.Email != "" {
-			// Create unverified user
-			username := strings.Split(p.Email, "@")[0]
-			user := models.User{
-				Email:    p.Email,
-				Username: username,
-			}
-
-			if p.FirstName != "" {
-				user.FirstName = sql.NullString{String: p.FirstName, Valid: true}
-			}
-			if p.LastName != "" {
-				user.LastName = sql.NullString{String: p.LastName, Valid: true}
-			}
-
-			if err := db.DB.Create(&user).Error; err != nil {
-				return nil, status.Error(codes.Internal, "failed to create user")
-			}
-			userID = int32(user.ID)
-		}
-
-		participant := models.ExamParticipant{
-			ExamID: int(req.ExamId),
-			UserID: int(userID),
-		}
-
-		examParticipants = append(examParticipants, participant)
-		counts.Invited++
-		addedCount++
+	currTotalParticipants := counts.Invited + counts.Started + counts.Ended
+	if currTotalParticipants >= exam.MaxCandidatesCount {
+		return nil, status.Error(codes.FailedPrecondition, "maximum participant limit reached for the exam")
 	}
 
-	if len(examParticipants) > 0 {
-		if err := db.DB.Create(&examParticipants).Error; err != nil {
-			return nil, status.Error(codes.Internal, "failed to add participants")
-		}
-
-		exam.ParticipantCounts, err = json.Marshal(counts)
-		if err != nil {
-			return nil, status.Error(codes.Internal, "failed to marshal counts")
-		}
-
-		if err := db.DB.Save(&exam).Error; err != nil {
-			return nil, status.Error(codes.Internal, "failed to update exam")
-		}
+	participant := models.ExamParticipant{
+		ExamID: int(req.ExamId),
+		UserID: int(req.UserId),
 	}
 
-	response := &proto.AddParticipantsResponse{
-		AddedCount:   int32(addedCount),
-		OmittedCount: int32(omittedCount),
-	}
-	if maxLimitReached {
-		maxLimitReason := "Maximum participant limit reached for the exam"
-		response.MaxLimitReason = &maxLimitReason
+	if err := db.DB.Create(&participant).Error; err != nil {
+		return nil, status.Error(codes.Internal, "failed to add participant")
 	}
 
-	return response, nil
+	counts.Invited++
+	exam.ParticipantCounts, err = json.Marshal(counts)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to marshal counts")
+	}
+
+	if err := db.DB.Save(&exam).Error; err != nil {
+		return nil, status.Error(codes.Internal, "failed to update exam")
+	}
+
+	return &proto.ParticipantResponse{
+		Id:           int32(participant.ID),
+		UserId:       int32(participant.UserID),
+		Status:       int32(participant.Status),
+		ScoreAwarded: int32(participant.ScoreAwarded),
+	}, nil
 }
 
 func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.RemoveParticipantRequest) (*proto.Empty, error) {

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -187,17 +188,29 @@ func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	authService := services.GetAuthService()
+	authCtx := context.Background()
+
 	response := make([]dtos.ExamParticipantResponse, len(participants.Participants))
 	for i, p := range participants.Participants {
+		// Get user details from auth service
+		userResp, err := authService.Client().GetUser(authCtx, &proto.GetUserRequest{
+			UserId: p.UserId,
+		})
+
 		response[i] = dtos.ExamParticipantResponse{
 			ID:           int(p.Id),
 			UserID:       int(p.UserId),
-			FirstName:    p.FirstName,
-			LastName:     p.LastName,
-			Email:        p.Email,
 			Status:       int(p.Status),
 			ScoreAwarded: int(p.ScoreAwarded),
 		}
+
+		if err == nil {
+			response[i].FirstName = userResp.FirstName
+			response[i].LastName = userResp.LastName
+			response[i].Email = userResp.Email
+		}
+
 		if p.StartedAt != nil {
 			response[i].StartedAt = p.StartedAt.AsTime()
 		}
@@ -210,7 +223,7 @@ func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
+func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	examID, err := strconv.Atoi(params["examId"])
 	if err != nil {
@@ -218,42 +231,59 @@ func AddExamParticipants(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var participantsDto []dtos.AddExamParticipantDto
-	if err := json.NewDecoder(r.Body).Decode(&participantsDto); err != nil {
+	var participantDto dtos.AddExamParticipantDto
+	if err := json.NewDecoder(r.Body).Decode(&participantDto); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	participants := make([]*proto.AddParticipant, len(participantsDto))
-	for i, p := range participantsDto {
-		participants[i] = &proto.AddParticipant{
-			UserId:    int32(p.UserID),
-			Email:     p.Email,
-			FirstName: p.FirstName,
-			LastName:  p.LastName,
-		}
+	errs := validate.Do.Struct(participantDto)
+	if errs != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
 	}
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
-	response, err := examService.Client().AddExamParticipants(ctx, &proto.AddParticipantsRequest{
-		ExamId:       int32(examID),
-		Participants: participants,
+	// First create/update user if email is provided
+	if participantDto.Email != "" {
+		authService := services.GetAuthService()
+		authCtx := context.Background()
+
+		userResp, err := authService.Client().UpsertUser(authCtx, &proto.UpsertUserRequest{
+			Email:     participantDto.Email,
+			FirstName: &participantDto.FirstName,
+			LastName:  &participantDto.LastName,
+		})
+		if err != nil {
+			http.Error(w, "Failed to create/update user", http.StatusInternalServerError)
+			return
+		}
+		participantDto.UserID = int(userResp.Id)
+	}
+
+	// Add participant
+	participant, err := examService.Client().AddExamParticipant(ctx, &proto.AddParticipantRequest{
+		ExamId: int32(examID),
+		UserId: int32(participantDto.UserID),
 	})
 	if err != nil {
-		http.Error(w, "Failed to add participants", http.StatusInternalServerError)
+		http.Error(w, "Failed to add participant", http.StatusInternalServerError)
 		return
+	}
+
+	response := dtos.AddExamParticipantResponse{
+		ID:           int(participant.Id),
+		UserID:       int(participant.UserId),
+		Status:       int(participant.Status),
+		ScoreAwarded: int(participant.ScoreAwarded),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(dtos.AddExamParticipantResponse{
-		AddedCount:     int(response.AddedCount),
-		OmittedCount:   int(response.OmittedCount),
-		MaxLimitReason: response.GetMaxLimitReason(),
-	})
+	json.NewEncoder(w).Encode(response)
 }
 
 func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
