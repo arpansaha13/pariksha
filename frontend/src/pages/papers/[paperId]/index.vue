@@ -343,6 +343,7 @@ import {
 
 definePageMeta({
   layout: 'paper',
+  middleware: ['check-paper-access'],
 })
 
 enum QuestionIndex {
