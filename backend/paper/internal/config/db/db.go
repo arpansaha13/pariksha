@@ -9,8 +9,8 @@ import (
 
 	"pariksha/common/pkg/config"
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/models"
 	"pariksha/paper/internal/config/env"
-	"pariksha/paper/internal/models"
 )
 
 var DB *gorm.DB

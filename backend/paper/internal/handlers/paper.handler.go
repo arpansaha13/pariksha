@@ -9,10 +9,10 @@ import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
-	"pariksha/paper/internal/models"
 )
 
 type PaperServer struct {

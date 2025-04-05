@@ -11,10 +11,10 @@ import (
 	"google.golang.org/grpc/status"
 
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
 	"pariksha/paper/internal/config/db"
-	"pariksha/paper/internal/models"
 )
 
 func TestGetPaperQuestions(t *testing.T) {

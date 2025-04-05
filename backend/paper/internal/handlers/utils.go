@@ -10,10 +10,10 @@ import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
 	"pariksha/paper/internal/config/db"
-	"pariksha/paper/internal/models"
 )
 
 // Helper function to check if a paper exists

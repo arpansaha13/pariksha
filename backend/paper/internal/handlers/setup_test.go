@@ -18,10 +18,10 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/config/env"
-	"pariksha/paper/internal/models"
 )
 
 const (
