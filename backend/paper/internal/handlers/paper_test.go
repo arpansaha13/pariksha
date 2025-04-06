@@ -293,3 +293,81 @@ func TestGetPaper(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckPaperAccess(t *testing.T) {
+	tests := []struct {
+		name         string
+		setup        func(t *testing.T) *models.Paper
+		userID       int32
+		expectedCode codes.Code
+	}{
+		{
+			name: "Success - Owner access",
+			setup: func(t *testing.T) *models.Paper {
+				paper := createTestPaper(t, int(userID))
+				return &paper
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+		},
+		{
+			name: "Paper not found",
+			setup: func(t *testing.T) *models.Paper {
+				return &models.Paper{ID: 999}
+			},
+			userID:       userID,
+			expectedCode: codes.NotFound,
+		},
+		{
+			name: "Not owner of paper",
+			setup: func(t *testing.T) *models.Paper {
+				// Create paper owned by user 2
+				paper := createTestPaper(t, 2)
+				// Add shared access for test user
+				ownership := models.PaperOwnership{
+					UserID:  int(userID),
+					PaperID: paper.ID,
+					Type:    constants.PAPER_OWNERSHIP_TYPE_SHARED,
+				}
+				err := db.DB.Create(&ownership).Error
+				require.NoError(t, err)
+				return &paper
+			},
+			userID:       userID,
+			expectedCode: codes.PermissionDenied,
+		},
+		{
+			name: "No access to paper",
+			setup: func(t *testing.T) *models.Paper {
+				// Create paper owned by user 2 with no sharing
+				paper := createTestPaper(t, 2)
+				return &paper
+			},
+			userID:       userID,
+			expectedCode: codes.PermissionDenied,
+		},
+		{
+			name: "Invalid user ID",
+			setup: func(t *testing.T) *models.Paper {
+				paper := createTestPaper(t, int(userID))
+				return &paper
+			},
+			userID:       0,
+			expectedCode: codes.InvalidArgument,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+			paper := tt.setup(t)
+
+			ctx := createContextWithUserID(tt.userID)
+			_, err := client.CheckPaperAccess(ctx, &proto.PaperRequest{
+				PaperId: int32(paper.ID),
+			})
+
+			assert.Equal(t, tt.expectedCode, status.Code(err))
+		})
+	}
+}

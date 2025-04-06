@@ -68,8 +68,6 @@ func getRequiredEnvVars() []string {
 		"DB_USER",
 		"DB_PASS",
 		"DB_NAME",
-		"EXAM_QUEUE_HOST",
-		"EXAM_QUEUE_PORT",
 	}
 
 	if os.Getenv("GO_ENV") != constants.GO_ENV_TEST {
@@ -78,6 +76,8 @@ func getRequiredEnvVars() []string {
 			"DB_HOST",
 			"DB_PORT",
 			"DB_SSLMODE",
+			"EXAM_QUEUE_HOST",
+			"EXAM_QUEUE_PORT",
 		}
 		baseEnvVars = append(baseEnvVars, additionalEnvVars...)
 	}

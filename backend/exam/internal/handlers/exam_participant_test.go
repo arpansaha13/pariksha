@@ -31,8 +31,8 @@ func TestGetExamParticipants(t *testing.T) {
 					UserID int
 					Status int
 				}{
-					{UserID: testUsers[0].ID, Status: constants.PARTICIPANT_STATUS_INVITED},
-					{UserID: testUsers[1].ID, Status: constants.PARTICIPANT_STATUS_STARTED},
+					{UserID: 2, Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: 3, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
 				return &exam
@@ -92,46 +92,38 @@ func TestGetExamParticipants(t *testing.T) {
 	}
 }
 
-func TestAddExamParticipants(t *testing.T) {
+func TestAddExamParticipant(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T) *models.Exam
-		request      *proto.AddParticipantsRequest
+		request      *proto.AddParticipantRequest
 		userID       int32
 		expectedCode codes.Code
-		validate     func(t *testing.T, examID int, resp *proto.AddParticipantsResponse)
+		validate     func(t *testing.T, examID int, resp *proto.ParticipantResponse)
 	}{
 		{
-			name: "Success - Add participants",
+			name: "Success - Add participant",
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, int(userID))
+				exam.Type = constants.EXAM_TYPE_INVITE
+				require.NoError(t, db.DB.Save(&exam).Error)
 				return &exam
 			},
-			request: &proto.AddParticipantsRequest{
-				Participants: []*proto.AddParticipant{
-					{
-						Email:     "test1@example.com",
-						FirstName: "Test",
-						LastName:  "User",
-					},
-					{
-						UserId: 2,
-					},
-				},
+			request: &proto.AddParticipantRequest{
+				UserId: 2, // Use hardcoded participant ID
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, examID int, resp *proto.AddParticipantsResponse) {
-				assert.Equal(t, int32(2), resp.AddedCount)
-				assert.Equal(t, int32(0), resp.OmittedCount)
-				assert.Empty(t, resp.MaxLimitReason)
+			validate: func(t *testing.T, examID int, resp *proto.ParticipantResponse) {
+				assert.Equal(t, int32(2), resp.UserId)
+				assert.Equal(t, int32(constants.PARTICIPANT_STATUS_INVITED), resp.Status)
 
 				// Check if exam participant counts were updated
 				var exam models.Exam
 				require.NoError(t, db.DB.First(&exam, examID).Error)
 				counts, err := exam.GetParticipantCounts()
 				require.NoError(t, err)
-				assert.Equal(t, 2, counts.Invited, "Invited count should be updated")
+				assert.Equal(t, 1, counts.Invited, "Invited count should be updated")
 				assert.Equal(t, 0, counts.Started)
 				assert.Equal(t, 0, counts.Ended)
 				assert.Equal(t, 0, counts.Unattended)
@@ -141,6 +133,7 @@ func TestAddExamParticipants(t *testing.T) {
 			name: "Max candidates limit reached",
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, int(userID))
+				exam.Type = constants.EXAM_TYPE_INVITE
 				exam.MaxCandidatesCount = 1
 				require.NoError(t, db.DB.Save(&exam).Error)
 
@@ -148,38 +141,42 @@ func TestAddExamParticipants(t *testing.T) {
 					UserID int
 					Status int
 				}{
-					{UserID: testUsers[1].ID, Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: 3, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
-
 				return &exam
 			},
-			request: &proto.AddParticipantsRequest{
-				Participants: []*proto.AddParticipant{
-					{Email: "test@example.com"},
-				},
+			request: &proto.AddParticipantRequest{
+				UserId: 2,
 			},
 			userID:       userID,
-			expectedCode: codes.OK,
-			validate: func(t *testing.T, examID int, resp *proto.AddParticipantsResponse) {
-				assert.Equal(t, int32(0), resp.AddedCount)
-				assert.Equal(t, int32(1), resp.OmittedCount)
-				assert.NotEmpty(t, resp.MaxLimitReason)
-
-				// Verify counts remained unchanged
-				var exam models.Exam
-				require.NoError(t, db.DB.First(&exam, examID).Error)
-				counts, err := exam.GetParticipantCounts()
-				require.NoError(t, err)
-				assert.Equal(t, 1, counts.Invited, "Invited count should remain unchanged")
-				assert.Equal(t, 0, counts.Started)
-				assert.Equal(t, 0, counts.Ended)
-				assert.Equal(t, 0, counts.Unattended)
-			},
+			expectedCode: codes.FailedPrecondition,
 		},
-		// TODO: Add test cases
-		// registered and guest users
-		// OPEN and INVITE exams
+		{
+			name: "Cannot add participant to OPEN exam",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, int(userID))
+				exam.Type = constants.EXAM_TYPE_OPEN
+				require.NoError(t, db.DB.Save(&exam).Error)
+				return &exam
+			},
+			request: &proto.AddParticipantRequest{
+				UserId: 2,
+			},
+			userID:       userID,
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name: "Exam not found",
+			setup: func(t *testing.T) *models.Exam {
+				return &models.Exam{ID: 9999}
+			},
+			request: &proto.AddParticipantRequest{
+				UserId: 2,
+			},
+			userID:       userID,
+			expectedCode: codes.NotFound,
+		},
 	}
 
 	for _, tt := range tests {
@@ -189,7 +186,7 @@ func TestAddExamParticipants(t *testing.T) {
 			tt.request.ExamId = int32(exam.ID)
 
 			ctx := createContextWithUserID(tt.userID)
-			resp, err := client.AddExamParticipants(ctx, tt.request)
+			resp, err := client.AddExamParticipant(ctx, tt.request)
 
 			if tt.expectedCode != codes.OK {
 				assert.Equal(t, tt.expectedCode, status.Code(err))
@@ -222,7 +219,7 @@ func TestRemoveExamParticipant(t *testing.T) {
 					UserID int
 					Status int
 				}{
-					{UserID: testUsers[1].ID, Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: 2, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
 
@@ -249,7 +246,7 @@ func TestRemoveExamParticipant(t *testing.T) {
 					UserID int
 					Status int
 				}{
-					{UserID: testUsers[1].ID, Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: 2, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
 

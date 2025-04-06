@@ -23,19 +23,18 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/config/env"
+	"pariksha/exam/internal/services"
 )
 
 const (
-	bufSize       = 1024 * 1024
-	userID        = 1
-	testUserEmail = "testuser@example.com"
+	bufSize = 1024 * 1024
+	userID  = 1 // Creator/admin user ID
 )
 
 var (
-	lis       *bufconn.Listener
-	ctx       context.Context
-	client    proto.ExamServiceClient
-	testUsers []models.User
+	lis    *bufconn.Listener
+	ctx    context.Context
+	client proto.ExamServiceClient
 )
 
 func setupContainer() func() {
@@ -62,9 +61,24 @@ func setupContainer() func() {
 		log.Fatalf("Failed to setup container: %v", err)
 	}
 
-	// Get container host and mapped port
+	// Start RabbitMQ container
+	rabbitContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "rabbitmq:3-management-alpine",
+			ExposedPorts: []string{"5672/tcp"},
+			WaitingFor:   wait.ForLog("Server startup complete"),
+		},
+		Started: true,
+	})
+	if err != nil {
+		log.Fatalf("Failed to setup RabbitMQ container: %v", err)
+	}
+
+	// Get container hosts and mapped ports
 	pgHost, _ := pgContainer.Host(ctx)
 	pgPort, _ := pgContainer.MappedPort(ctx, "5432")
+	rabbitHost, _ := rabbitContainer.Host(ctx)
+	rabbitPort, _ := rabbitContainer.MappedPort(ctx, "5672")
 
 	// Initialize DB connection
 	err = db.InitDB(
@@ -79,8 +93,16 @@ func setupContainer() func() {
 		log.Fatalf("Failed to initialize DB: %v", err)
 	}
 
+	// Initialize RabbitMQ connection
+	err = services.InitRabbitMQ(rabbitHost, rabbitPort.Port())
+	if err != nil {
+		log.Fatalf("Failed to initialize RabbitMQ: %v", err)
+	}
+
 	return func() {
+		services.CloseExamQueue()
 		pgContainer.Terminate(ctx)
+		rabbitContainer.Terminate(ctx)
 	}
 }
 
@@ -96,40 +118,6 @@ func clearTables(t *testing.T) {
 			t.Fatalf("Failed to clear table %s: %v", table, err)
 		}
 	}
-}
-
-func createTestUsers(t *testing.T) []models.User {
-	users := []models.User{
-		{
-			Email:    testUserEmail,
-			Username: "testuser1",
-			FirstName: sql.NullString{
-				String: "Test",
-				Valid:  true,
-			},
-			LastName: sql.NullString{
-				String: "User",
-				Valid:  true,
-			},
-		},
-		{
-			Email:    "testuser2@example.com",
-			Username: "testuser2",
-			FirstName: sql.NullString{
-				String: "Test2",
-				Valid:  true,
-			},
-			LastName: sql.NullString{
-				String: "User2",
-				Valid:  true,
-			},
-		},
-	}
-
-	for i := range users {
-		require.NoError(t, db.DB.Create(&users[i]).Error)
-	}
-	return users
 }
 
 func bufDialer(context.Context, string) (net.Conn, error) {
@@ -159,7 +147,7 @@ func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 		}
 	}()
 
-	conn, err := grpc.Dial(
+	conn, err := grpc.NewClient(
 		"passthrough://bufnet",
 		grpc.WithContextDialer(bufDialer),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -174,14 +162,8 @@ func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 func TestMain(m *testing.M) {
 	cleanup := setupContainer()
 
-	// Create test users
-	t := &testing.T{}
-	testUsers = createTestUsers(t)
-
 	srv, conn := setupGrpcServer()
 	defer func() {
-		// Cleanup users after all tests
-		db.DB.Exec("TRUNCATE TABLE users CASCADE")
 		conn.Close()
 		srv.Stop()
 	}()
