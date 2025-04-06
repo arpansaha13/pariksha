@@ -87,8 +87,8 @@ func TestGetUserExams(t *testing.T) {
 }
 
 func TestCreateExam(t *testing.T) {
-	examTypeOpen := constants.EXAM_TYPE_OPEN
-	examTypeInvite := constants.EXAM_TYPE_INVITE
+	examTypeOpen := constants.EXAM_ACCESS_TYPE_LINK
+	examTypeInvite := constants.EXAM_ACCESS_TYPE_INVITE
 	examTypeUnknown := "UNKNOWN"
 
 	tests := []struct {
@@ -113,18 +113,18 @@ func TestCreateExam(t *testing.T) {
 				assert.NotZero(t, resp.Id)
 				assert.Equal(t, "New Exam", resp.Title)
 				assert.Equal(t, int32(userID), resp.CreatedBy)
-				assert.Equal(t, constants.EXAM_TYPE_OPEN, resp.Type) // Should be OPEN by default
+				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type) // Should be LINK by default
 				assert.Equal(t, int32(50), resp.MaxCandidatesCount)
 				assert.Equal(t, int32(1), resp.PaperId)
 
 				// Verify in database
 				var exam models.Exam
 				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
-				assert.Equal(t, constants.EXAM_TYPE_OPEN, exam.Type)
+				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
 			},
 		},
 		{
-			name: "Success - Create exam with explicit OPEN type",
+			name: "Success - Create exam with explicit LINK type",
 			request: &proto.CreateExamRequest{
 				Title:              "New Exam",
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
@@ -136,11 +136,11 @@ func TestCreateExam(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamResponse) {
-				assert.Equal(t, constants.EXAM_TYPE_OPEN, resp.Type)
+				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
 
 				var exam models.Exam
 				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
-				assert.Equal(t, constants.EXAM_TYPE_OPEN, exam.Type)
+				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
 			},
 		},
 		{
@@ -156,11 +156,11 @@ func TestCreateExam(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamResponse) {
-				assert.Equal(t, constants.EXAM_TYPE_INVITE, resp.Type)
+				assert.Equal(t, constants.EXAM_ACCESS_TYPE_INVITE, resp.Type)
 
 				var exam models.Exam
 				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
-				assert.Equal(t, constants.EXAM_TYPE_INVITE, exam.Type)
+				assert.Equal(t, constants.EXAM_ACCESS_TYPE_INVITE, exam.Type)
 			},
 		},
 		{
@@ -239,7 +239,7 @@ func TestCreateExam(t *testing.T) {
 func TestUpdateExam(t *testing.T) {
 	title := "Updated Exam"
 	maxCandidates := int32(100)
-	examType := constants.EXAM_TYPE_OPEN
+	examType := constants.EXAM_ACCESS_TYPE_LINK
 
 	tests := []struct {
 		name         string
@@ -272,7 +272,7 @@ func TestUpdateExam(t *testing.T) {
 				require.NoError(t, db.DB.First(&updated, exam.ID).Error)
 
 				assert.Equal(t, "Updated Exam", updated.Title)
-				assert.Equal(t, constants.EXAM_TYPE_OPEN, updated.Type)
+				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, updated.Type)
 				assert.Equal(t, 100, updated.MaxCandidatesCount)
 			},
 		},
@@ -527,7 +527,7 @@ func TestStartExam(t *testing.T) {
 			name: "Success - Start open exam as new participant",
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, 2)
-				exam.Type = constants.EXAM_TYPE_OPEN
+				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
 				exam.StartsAt = time.Now().Add(-1 * time.Hour)
 				exam.EndsAt = time.Now().Add(1 * time.Hour)
 				require.NoError(t, db.DB.Save(&exam).Error)

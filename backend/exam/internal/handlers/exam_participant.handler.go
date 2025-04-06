@@ -50,8 +50,8 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 		return nil, status.Error(codes.NotFound, "exam not found")
 	}
 
-	if exam.Type == constants.EXAM_TYPE_OPEN {
-		return nil, status.Error(codes.InvalidArgument, "participants cannot be added in OPEN exams")
+	if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
+		return nil, status.Error(codes.InvalidArgument, "participants cannot be added in exams with access-type LINK")
 	}
 
 	counts, err := exam.GetParticipantCounts()

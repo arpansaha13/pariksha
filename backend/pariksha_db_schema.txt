@@ -16,7 +16,7 @@ Table exams {
   starts_at timestamp [not null]
   ends_at timestamp [not null]
   created_by integer
-  type varchar [note: 'Values can be "OPEN" or "INVITE"']
+  type varchar [note: 'Values can be "LINK" or "INVITE"']
   max_candidates_count integer [note: 'Maximum number of candidates that can take the exam']
   paper_id integer [note: 'Indicates which paper will be used in this exam']
 }

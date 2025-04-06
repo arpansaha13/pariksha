@@ -32,8 +32,8 @@ const (
 )
 
 const (
-	EXAM_TYPE_OPEN   string = "OPEN"
-	EXAM_TYPE_INVITE string = "INVITE"
+	EXAM_ACCESS_TYPE_LINK   string = "LINK"
+	EXAM_ACCESS_TYPE_INVITE string = "INVITE"
 )
 
 const (

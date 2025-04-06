@@ -105,7 +105,7 @@ func TestAddExamParticipant(t *testing.T) {
 			name: "Success - Add participant",
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, int(userID))
-				exam.Type = constants.EXAM_TYPE_INVITE
+				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
 				require.NoError(t, db.DB.Save(&exam).Error)
 				return &exam
 			},
@@ -133,7 +133,7 @@ func TestAddExamParticipant(t *testing.T) {
 			name: "Max candidates limit reached",
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, int(userID))
-				exam.Type = constants.EXAM_TYPE_INVITE
+				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
 				exam.MaxCandidatesCount = 1
 				require.NoError(t, db.DB.Save(&exam).Error)
 
@@ -153,10 +153,10 @@ func TestAddExamParticipant(t *testing.T) {
 			expectedCode: codes.FailedPrecondition,
 		},
 		{
-			name: "Cannot add participant to OPEN exam",
+			name: "Cannot add participant to exam with access-type LINK",
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, int(userID))
-				exam.Type = constants.EXAM_TYPE_OPEN
+				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
 				require.NoError(t, db.DB.Save(&exam).Error)
 				return &exam
 			},

@@ -79,10 +79,10 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 		PaperID:            int(req.PaperId),
 	}
 
-	// Only set Type if it's not OPEN
-	if req.Type != nil && *req.Type != constants.EXAM_TYPE_OPEN {
-		if *req.Type != constants.EXAM_TYPE_INVITE {
-			return nil, status.Error(codes.InvalidArgument, "exam type must be either OPEN or INVITE")
+	// Only set Type if it's not LINK
+	if req.Type != nil && *req.Type != constants.EXAM_ACCESS_TYPE_LINK {
+		if *req.Type != constants.EXAM_ACCESS_TYPE_INVITE {
+			return nil, status.Error(codes.InvalidArgument, "exam type must be either LINK or INVITE")
 		}
 		exam.Type = *req.Type
 	}
@@ -196,7 +196,7 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 		var participant models.ExamParticipant
 		participantErr := tx.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error
 
-		if exam.Type == constants.EXAM_TYPE_OPEN {
+		if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
 			if participantErr == gorm.ErrRecordNotFound {
 				participant = models.ExamParticipant{
 					ExamID: int(req.ExamId),
