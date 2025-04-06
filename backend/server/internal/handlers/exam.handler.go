@@ -78,14 +78,20 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
-	exam, err := examService.Client().CreateExam(ctx, &proto.CreateExamRequest{
+	createExamRequest := &proto.CreateExamRequest{
 		Title:              examDto.Title,
 		StartsAt:           timestamppb.New(examDto.StartsAt),
 		EndsAt:             timestamppb.New(examDto.EndsAt),
 		MaxCandidatesCount: int32(examDto.MaxCandidatesCount),
-		Type:               examDto.Type,
+		Type:               nil,
 		PaperId:            int32(examDto.PaperID),
-	})
+	}
+
+	if examDto.Type != "" {
+		createExamRequest.Type = &examDto.Type
+	}
+
+	exam, err := examService.Client().CreateExam(ctx, createExamRequest)
 	if err != nil {
 		handleGRPCError(w, err)
 		return

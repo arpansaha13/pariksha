@@ -16,10 +16,10 @@ type ParticipantCount struct {
 type Exam struct {
 	ID                 int `gorm:"primaryKey"`
 	Title              string
-	StartsAt           time.Time
-	EndsAt             time.Time
+	StartsAt           time.Time `gorm:"column:starts_at;not null"`
+	EndsAt             time.Time `gorm:"column:ends_at;not null"`
 	CreatedBy          int
-	Type               string `gorm:"type:varchar(10)"`
+	Type               string `gorm:"type:varchar(16);default:OPEN"`
 	MaxCandidatesCount int    `gorm:"not null"`
 	PaperID            int
 	ParticipantCounts  json.RawMessage   `gorm:"type:json;default:'{\"unattended\":0,\"invited\":0,\"started\":0,\"ended\":0}'"`

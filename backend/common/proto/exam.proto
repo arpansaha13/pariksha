@@ -39,7 +39,7 @@ message CreateExamRequest {
   google.protobuf.Timestamp starts_at = 2;
   google.protobuf.Timestamp ends_at = 3;
   int32 max_candidates_count = 4;
-  string type = 5;
+  optional string type = 5;
   int32 paper_id = 6;
 }
 

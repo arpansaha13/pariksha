@@ -9,7 +9,7 @@ type CreateExamDto struct {
 	StartsAt           time.Time `json:"starts_at" validate:"required"`
 	EndsAt             time.Time `json:"ends_at" validate:"required"`
 	MaxCandidatesCount int       `json:"max_candidates_count" validate:"required"`
-	Type               string    `json:"type" validate:"required"`
+	Type               string    `json:"type"`
 	PaperID            int       `json:"paper_id" validate:"required"`
 }
 

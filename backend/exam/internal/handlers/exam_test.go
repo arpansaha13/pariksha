@@ -87,6 +87,10 @@ func TestGetUserExams(t *testing.T) {
 }
 
 func TestCreateExam(t *testing.T) {
+	examTypeOpen := constants.EXAM_TYPE_OPEN
+	examTypeInvite := constants.EXAM_TYPE_INVITE
+	examTypeUnknown := "UNKNOWN"
+
 	tests := []struct {
 		name         string
 		request      *proto.CreateExamRequest
@@ -95,13 +99,12 @@ func TestCreateExam(t *testing.T) {
 		validate     func(t *testing.T, resp *proto.ExamResponse)
 	}{
 		{
-			name: "Success - Create exam",
+			name: "Success - Create exam with no type specified",
 			request: &proto.CreateExamRequest{
 				Title:              "New Exam",
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               constants.EXAM_TYPE_INVITE,
 				PaperId:            1,
 			},
 			userID:       userID,
@@ -110,21 +113,54 @@ func TestCreateExam(t *testing.T) {
 				assert.NotZero(t, resp.Id)
 				assert.Equal(t, "New Exam", resp.Title)
 				assert.Equal(t, int32(userID), resp.CreatedBy)
-				assert.Equal(t, constants.EXAM_TYPE_INVITE, resp.Type)
+				assert.Equal(t, constants.EXAM_TYPE_OPEN, resp.Type) // Should be OPEN by default
 				assert.Equal(t, int32(50), resp.MaxCandidatesCount)
 				assert.Equal(t, int32(1), resp.PaperId)
 
-				// Verify participant counts are initialized
-				assert.Equal(t, int32(0), resp.ParticipantCounts.Invited)
-				assert.Equal(t, int32(0), resp.ParticipantCounts.Started)
-				assert.Equal(t, int32(0), resp.ParticipantCounts.Ended)
-				assert.Equal(t, int32(0), resp.ParticipantCounts.Unattended)
-
-				// Verify exam in database
+				// Verify in database
 				var exam models.Exam
 				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
-				assert.Equal(t, "New Exam", exam.Title)
-				assert.Equal(t, int(userID), exam.CreatedBy)
+				assert.Equal(t, constants.EXAM_TYPE_OPEN, exam.Type)
+			},
+		},
+		{
+			name: "Success - Create exam with explicit OPEN type",
+			request: &proto.CreateExamRequest{
+				Title:              "New Exam",
+				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
+				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
+				MaxCandidatesCount: 50,
+				Type:               &examTypeOpen,
+				PaperId:            1,
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.ExamResponse) {
+				assert.Equal(t, constants.EXAM_TYPE_OPEN, resp.Type)
+
+				var exam models.Exam
+				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
+				assert.Equal(t, constants.EXAM_TYPE_OPEN, exam.Type)
+			},
+		},
+		{
+			name: "Success - Create exam with INVITE type",
+			request: &proto.CreateExamRequest{
+				Title:              "New Exam",
+				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
+				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
+				MaxCandidatesCount: 50,
+				Type:               &examTypeInvite,
+				PaperId:            1,
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.ExamResponse) {
+				assert.Equal(t, constants.EXAM_TYPE_INVITE, resp.Type)
+
+				var exam models.Exam
+				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
+				assert.Equal(t, constants.EXAM_TYPE_INVITE, exam.Type)
 			},
 		},
 		{
@@ -134,7 +170,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(48 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(24 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               constants.EXAM_TYPE_INVITE,
+				Type:               &examTypeInvite,
 				PaperId:            1,
 			},
 			userID:       userID,
@@ -147,7 +183,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(-24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(24 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               constants.EXAM_TYPE_INVITE,
+				Type:               &examTypeInvite,
 				PaperId:            1,
 			},
 			userID:       userID,
@@ -160,7 +196,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 0,
-				Type:               constants.EXAM_TYPE_INVITE,
+				Type:               &examTypeInvite,
 				PaperId:            1,
 			},
 			userID:       userID,
@@ -173,7 +209,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               "UNKNOWN",
+				Type:               &examTypeUnknown,
 				PaperId:            1,
 			},
 			userID:       userID,

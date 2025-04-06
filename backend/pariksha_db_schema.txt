@@ -13,8 +13,8 @@ Table users {
 Table exams {
   id integer [primary key]
   title varchar
-  starts_at timestamp
-  ends_at timestamp
+  starts_at timestamp [not null]
+  ends_at timestamp [not null]
   created_by integer
   type varchar [note: 'Values can be "OPEN" or "INVITE"']
   max_candidates_count integer [note: 'Maximum number of candidates that can take the exam']
@@ -65,8 +65,21 @@ Table answers {
   exam_participant_id integer [note: 'Which exam and user this answer-set belongs to']
   question_id integer [note: 'This answer is for which question']
   answer text
-  score_awarded integer [note: 'Score awarded on this answer']
+  score_awarded integer [note: 'Score awarded on this answer', default: 0]
   comments text [note: 'Any comments the evaluator might want to add, for e.g. why is the answer wrong']
+  evaluated boolean [not null, default: false]
+}
+
+Table exam_questions {
+  id integer [primary key]
+  exam_id integer [not null]
+  question_id integer [not null]
+}
+
+Table exam_categories {
+  id integer [primary key]
+  exam_id integer [not null]
+  category_id integer [not null]
 }
 
 Table sessions {
@@ -103,3 +116,7 @@ Ref: exam_participants.exam_id > exams.id // One exam can have many participants
 Ref: exam_participants.user_id > users.id // Which users can take this exam
 Ref: answers.exam_participant_id > exam_participants.id // One participant can have many answers
 // Ref: answers.question_id > questions.id // One question can have many answers
+Ref: exam_questions.exam_id > exams.id // One exam can have many questions
+Ref: exam_questions.question_id > questions.id // Link questions to exam
+Ref: exam_categories.exam_id > exams.id // One exam can have many categories
+Ref: exam_categories.category_id > question_categories.id // Link categories to exam

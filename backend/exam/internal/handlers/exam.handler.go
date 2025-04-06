@@ -70,18 +70,21 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 		return nil, status.Error(codes.InvalidArgument, "max candidates count must be greater than zero")
 	}
 
-	if req.Type != constants.EXAM_TYPE_OPEN && req.Type != constants.EXAM_TYPE_INVITE {
-		return nil, status.Error(codes.InvalidArgument, "exam type must be either OPEN or INVITE")
-	}
-
 	exam := models.Exam{
 		Title:              req.Title,
 		StartsAt:           startsAt,
 		EndsAt:             endsAt,
 		CreatedBy:          int(userID),
-		Type:               req.Type,
 		MaxCandidatesCount: int(req.MaxCandidatesCount),
 		PaperID:            int(req.PaperId),
+	}
+
+	// Only set Type if it's not OPEN
+	if req.Type != nil && *req.Type != constants.EXAM_TYPE_OPEN {
+		if *req.Type != constants.EXAM_TYPE_INVITE {
+			return nil, status.Error(codes.InvalidArgument, "exam type must be either OPEN or INVITE")
+		}
+		exam.Type = *req.Type
 	}
 
 	if err := db.DB.Create(&exam).Error; err != nil {
