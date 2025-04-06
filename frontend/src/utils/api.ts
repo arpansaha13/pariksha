@@ -16,3 +16,5 @@ export { createQuestion } from './api/papers/create-question'
 export { updateQuestion } from './api/papers/update-question'
 export { deleteQuestion } from './api/papers/delete-question'
 export { reorderQuestions } from './api/papers/reorder-questions'
+
+export { createExam } from './api/exams/createExam'

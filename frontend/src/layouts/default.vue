@@ -36,6 +36,11 @@ const links = [
   ],
   [
     {
+      label: 'Create new exam',
+      to: '/exams/new',
+      icon: 'i-lucide-bookmark-plus',
+    },
+    {
       label: 'Create new paper',
       to: '/papers/new',
       icon: 'i-heroicons-document-plus',
