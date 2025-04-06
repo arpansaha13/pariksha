@@ -1,6 +1,6 @@
-export { usePapers } from './api/usePapers'
-export { usePaper } from './api/usePaper'
-export { usePaperQuestions } from './api/usePaperQuestions'
-export { usePaperCategories } from './api/usePaperCategories'
+export { usePapers } from './api/papers/usePapers'
+export { usePaper } from './api/papers/usePaper'
+export { usePaperQuestions } from './api/papers/usePaperQuestions'
+export { usePaperCategories } from './api/papers/usePaperCategories'
 
-export { useQuestion } from './api/useQuestion'
+export { useQuestion } from './api/papers/useQuestion'
