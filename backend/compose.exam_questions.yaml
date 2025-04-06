@@ -1,0 +1,21 @@
+services:
+  examQuestionsWorker:
+    build:
+      context: .
+      dockerfile: ./workers/exam_questions/Dockerfile
+    image: pariksha_exam_questions_worker
+    container_name: exam_questions_worker
+    env_file:
+      - ./workers/exam_questions/.env
+    develop:
+      watch:
+        - action: rebuild
+          path: ./workers/exam_questions/internal
+        - action: rebuild
+          path: ./workers/exam_questions/cmd
+        - action: rebuild
+          path: ./backend/common
+        - action: rebuild
+          path: ./workers/exam_questions/go.mod
+        - action: rebuild
+          path: ./workers/exam_questions/go.sum

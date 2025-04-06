@@ -5,3 +5,4 @@ include:
   - backend/compose.paper.yaml
   - backend/compose.exam.yaml
   - backend/compose.mail.yaml
+  - backend/compose.exam_questions.yaml

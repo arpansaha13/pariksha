@@ -132,6 +132,14 @@ services:
     networks:
       - exams-network
 
+  examQuestionsWorker:
+    depends_on:
+      examQueue:
+        condition: service_healthy
+    networks:
+      - exams-network
+      - papers-network
+
 networks:
   frontend-network:
     name: frontend-network
