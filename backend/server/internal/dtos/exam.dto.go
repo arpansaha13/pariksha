@@ -5,20 +5,18 @@ import (
 )
 
 type CreateExamDto struct {
-	Title              string    `json:"title" validate:"required"`
-	StartsAt           time.Time `json:"starts_at" validate:"required"`
-	EndsAt             time.Time `json:"ends_at" validate:"required"`
-	MaxCandidatesCount int       `json:"max_candidates_count" validate:"required"`
-	Type               string    `json:"type"`
-	PaperID            int       `json:"paper_id" validate:"required"`
+	Title    string    `json:"title" validate:"required"`
+	StartsAt time.Time `json:"starts_at" validate:"required"`
+	EndsAt   time.Time `json:"ends_at" validate:"required"`
+	Type     string    `json:"type"`
+	PaperID  int       `json:"paper_id" validate:"required"`
 }
 
 type UpdateExamDto struct {
-	Title              string    `json:"title"`
-	StartsAt           time.Time `json:"starts_at"`
-	EndsAt             time.Time `json:"ends_at"`
-	MaxCandidatesCount int       `json:"max_candidates_count"`
-	Type               string    `json:"type"`
+	Title    string    `json:"title"`
+	StartsAt time.Time `json:"starts_at"`
+	EndsAt   time.Time `json:"ends_at"`
+	Type     string    `json:"type"`
 }
 
 type ExamResponse struct {

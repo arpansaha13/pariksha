@@ -82,7 +82,7 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 		Title:              examDto.Title,
 		StartsAt:           timestamppb.New(examDto.StartsAt),
 		EndsAt:             timestamppb.New(examDto.EndsAt),
-		MaxCandidatesCount: int32(examDto.MaxCandidatesCount),
+		MaxCandidatesCount: 10,
 		Type:               nil,
 		PaperId:            int32(examDto.PaperID),
 	}
@@ -147,10 +147,6 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 	}
 	if examDto.Type != "" {
 		req.Type = &examDto.Type
-	}
-	if examDto.MaxCandidatesCount != 0 {
-		maxCount := int32(examDto.MaxCandidatesCount)
-		req.MaxCandidatesCount = &maxCount
 	}
 
 	exam, err := examService.Client().UpdateExam(ctx, req)
