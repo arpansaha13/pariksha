@@ -12,7 +12,7 @@
         <li
           v-for="paper in papers"
           :key="paper.id"
-          class="group flex items-center justify-between px-4 py-3 hover:bg-gray-100"
+          class="group flex items-center justify-between px-4 py-3"
         >
           <div>
             <h2 class="text-sm font-medium">{{ paper.title }}</h2>
@@ -29,6 +29,17 @@
                 no-prefetch
               />
             </UTooltip>
+
+            <UTooltip text="Create exam">
+              <UButton
+                icon="i-lucide-bookmark-plus"
+                size="sm"
+                color="neutral"
+                square
+                variant="outline"
+                @click="createExamWithPaper(paper.id)"
+              />
+            </UTooltip>
           </div>
         </li>
       </ul>
@@ -38,4 +49,11 @@
 
 <script setup lang="ts">
 const { data: papers } = await usePapers()
+const newExamStore = useNewExamStore()
+
+function createExamWithPaper(paperId: number) {
+  newExamStore.clear()
+  newExamStore.paper_id = paperId
+  return navigateTo(`/exams/new`)
+}
 </script>
