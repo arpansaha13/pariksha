@@ -5,21 +5,24 @@
     <UCard>
       <UForm
         :state="formState"
+        :validate="validate"
+        :validate-on="['submit']"
         class="flex flex-col gap-y-5"
         @submit.prevent="onSubmit"
       >
-        <UFormField label="Type" required>
+        <UFormField label="Type" name="type" required>
           <UInput v-model="formState.title" required />
         </UFormField>
 
         <UFormField
           label="Paper"
+          name="paper_id"
           description="Choose the paper from which the questions will be taken."
           required
         >
           <USelectMenu
             v-if="papers"
-            v-model="selectedPaperId"
+            v-model="formState.paper_id"
             :items="papers"
             value-key="id"
             label-key="title"
@@ -30,6 +33,7 @@
 
         <UFormField
           label="Start date"
+          name="start_date"
           description="Candidates will be able to take their exam from this date."
           required
         >
@@ -52,6 +56,7 @@
 
         <UFormField
           label="End date"
+          name="end_date"
           description="Candidates will not be able to take their exam after this date."
           required
         >
@@ -90,6 +95,7 @@
 </template>
 
 <script setup lang="ts">
+import type { FormError } from '@nuxt/ui'
 import {
   CalendarDateTime,
   DateFormatter,
@@ -97,13 +103,15 @@ import {
 } from '@internationalized/date'
 import { type Exam, ExamAccessType } from '~/types/exam'
 
+const newExamStore = useNewExamStore()
+
 const formState = reactive<Pick<Exam, 'title' | 'type'>>({
-  title: '',
-  type: ExamAccessType.LINK,
+  title: newExamStore.title ?? '',
+  type: newExamStore.type ?? ExamAccessType.LINK,
+  paper_id: newExamStore.paper_id ?? undefined,
 })
 
 const { data: papers } = await usePapers()
-const selectedPaperId = ref()
 
 const date = new Date()
 const today = new CalendarDateTime(
@@ -112,11 +120,25 @@ const today = new CalendarDateTime(
   date.getDate()
 )
 
-const startDate = shallowRef(today)
-const endDate = shallowRef(today)
+const startDate = shallowRef(newExamStore.startDate ?? today)
+const endDate = shallowRef(newExamStore.endDate ?? today)
+
+watch(startDate, newValue => {
+  if (newValue > endDate.value) {
+    endDate.value = newValue
+  }
+})
 
 const df = new DateFormatter('en-US', {
   dateStyle: 'medium',
+})
+
+onBeforeUnmount(() => {
+  newExamStore.title = formState.title
+  newExamStore.type = formState.type
+  newExamStore.paper_id = formState.paper_id
+  newExamStore.startDate = startDate.value
+  newExamStore.endDate = endDate.value
 })
 
 const submitButtonRef = useTemplateRef('submitButton')
@@ -127,11 +149,27 @@ async function onSubmit() {
   const createdExam = await createExam({
     title: formState.title,
     type: formState.type,
-    paper_id: selectedPaperId.value,
+    paper_id: formState.paper_id,
     starts_at: startDate.value.toDate(getLocalTimeZone()),
     ends_at: endsAt.toDate(getLocalTimeZone()),
   })
 
+  newExamStore.clear()
   await navigateTo(`/exams/${createdExam.id}`)
+}
+
+function validate(
+  formState: Partial<Pick<Exam, 'title' | 'type'>>
+): FormError[] {
+  const errors: FormError[] = []
+
+  if (!formState.paper_id) {
+    errors.push({
+      name: 'paper_id',
+      message: 'Please select a paper',
+    })
+  }
+
+  return errors
 }
 </script>
