@@ -225,6 +225,9 @@ func validateQuestionData(questionType string, question interface{}) error {
 // Helper function to apply updates to a question
 func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionRequest) (models.Question, error) {
 	if req.Type != nil {
+		if req.Question == nil {
+			return question, status.Error(codes.InvalidArgument, "question content must be provided when changing question type")
+		}
 		question.Type = req.GetType()
 	}
 

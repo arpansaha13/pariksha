@@ -25,17 +25,28 @@ func TestGetUserPapers(t *testing.T) {
 		{
 			name: "Success - Get user papers",
 			setup: func(t *testing.T) {
-				createTestPaper(t, int(userID))
-				createTestPaper(t, int(userID))
+				paper1 := createTestPaper(t, int(userID))
+				err := db.DB.Model(&paper1).Update("question_counts", `{"mcq": 2, "short": 1, "long": 0}`).Error
+				require.NoError(t, err)
+
+				paper2 := createTestPaper(t, int(userID))
+				err = db.DB.Model(&paper2).Update("question_counts", `{"mcq": 1, "short": 0, "long": 1}`).Error
+				require.NoError(t, err)
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.PaperList) {
 				assert.Equal(t, 2, len(resp.Papers))
-				for _, paper := range resp.Papers {
-					assert.NotEmpty(t, paper.Title)
-					assert.Equal(t, constants.PAPER_OWNERSHIP_TYPE_OWNER, paper.Ownership.Type)
-				}
+
+				// Validate first paper
+				assert.Equal(t, int32(2), resp.Papers[0].QuestionCounts.Mcq)
+				assert.Equal(t, int32(1), resp.Papers[0].QuestionCounts.Short)
+				assert.Equal(t, int32(0), resp.Papers[0].QuestionCounts.Long)
+
+				// Validate second paper
+				assert.Equal(t, int32(1), resp.Papers[1].QuestionCounts.Mcq)
+				assert.Equal(t, int32(0), resp.Papers[1].QuestionCounts.Short)
+				assert.Equal(t, int32(1), resp.Papers[1].QuestionCounts.Long)
 			},
 		},
 		{
@@ -210,6 +221,8 @@ func TestGetPaper(t *testing.T) {
 			name: "Success - Get owned paper",
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, int(userID))
+				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 2, "short": 1, "long": 1}`).Error
+				require.NoError(t, err)
 				return &paper
 			},
 			userID:       userID,
@@ -219,6 +232,12 @@ func TestGetPaper(t *testing.T) {
 				assert.Equal(t, "Test Paper", resp.Title)
 				assert.Equal(t, constants.PAPER_OWNERSHIP_TYPE_OWNER, resp.Ownership.Type)
 				assert.Equal(t, int32(60), resp.DurationMinutes)
+
+				// Validate question counts
+				assert.NotNil(t, resp.QuestionCounts)
+				assert.Equal(t, int32(2), resp.QuestionCounts.Mcq)
+				assert.Equal(t, int32(1), resp.QuestionCounts.Short)
+				assert.Equal(t, int32(1), resp.QuestionCounts.Long)
 			},
 		},
 		{

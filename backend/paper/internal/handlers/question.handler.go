@@ -209,12 +209,14 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 		return nil, err
 	}
 
+	var transactionErr error
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
 		var question models.Question
 		err := tx.Preload("Paper").Take(&question, req.QuestionId).Error
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
-				return status.Error(codes.NotFound, "question not found")
+				transactionErr = status.Error(codes.NotFound, "question not found")
+				return transactionErr
 			}
 			return err
 		}
@@ -233,6 +235,7 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 
 			updatedQuestion, err := applyQuestionUpdates(newQuestion, req)
 			if err != nil {
+				transactionErr = err
 				return err
 			}
 
@@ -248,12 +251,14 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 				return err
 			}
 
-			return updatePaperStats(tx, question.Paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
+			transactionErr = updatePaperStats(tx, question.Paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
+			return transactionErr
 		}
 
 		// Apply updates to existing question
 		updatedQuestion, err := applyQuestionUpdates(question, req)
 		if err != nil {
+			transactionErr = err
 			return err
 		}
 
@@ -261,10 +266,14 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 			return err
 		}
 
-		return updatePaperStats(tx, updatedQuestion.Paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
+		transactionErr = updatePaperStats(tx, updatedQuestion.Paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
+		return transactionErr
 	})
 
 	if err != nil {
+		if transactionErr != nil {
+			return nil, transactionErr
+		}
 		return nil, status.Error(codes.Internal, "failed to update question")
 	}
 
@@ -277,17 +286,20 @@ func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionReq
 		return nil, err
 	}
 
+	var transactionErr error
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
 		var question models.Question
 		err := tx.Preload("Paper").Take(&question, req.QuestionId).Error
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
-				return status.Error(codes.NotFound, "question not found")
+				transactionErr = status.Error(codes.NotFound, "question not found")
+				return transactionErr
 			}
 			return err
 		}
 
 		if err := verifyPaperAccess(tx, question.PaperID, userID, constants.PAPER_OWNERSHIP_TYPE_OWNER); err != nil {
+			transactionErr = err
 			return err
 		}
 
@@ -324,6 +336,9 @@ func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionReq
 	})
 
 	if err != nil {
+		if transactionErr != nil {
+			return nil, transactionErr
+		}
 		return nil, status.Error(codes.Internal, "failed to delete question")
 	}
 
