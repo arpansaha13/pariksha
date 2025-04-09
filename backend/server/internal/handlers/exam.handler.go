@@ -19,7 +19,7 @@ import (
 )
 
 func GetUserExams(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
@@ -33,14 +33,14 @@ func GetUserExams(w http.ResponseWriter, r *http.Request) {
 	response := make([]dtos.ExamResponse, len(examList.Exams))
 	for i, exam := range examList.Exams {
 		response[i] = dtos.ExamResponse{
-			ID:                 int(exam.Id),
+			ID:                 exam.Id,
 			Title:              exam.Title,
 			StartsAt:           exam.StartsAt.AsTime(),
 			EndsAt:             exam.EndsAt.AsTime(),
-			CreatedBy:          int(exam.CreatedBy),
+			CreatedBy:          exam.CreatedBy,
 			Type:               exam.Type,
 			MaxCandidatesCount: int(exam.MaxCandidatesCount),
-			PaperID:            int(exam.PaperId),
+			PaperID:            exam.PaperId,
 		}
 	}
 
@@ -61,14 +61,14 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	// Verify paper exists first
 	paperService := services.GetPaperService()
 	paperCtx := paperService.CreateMetadata(userID)
 
 	_, err := paperService.Client().GetPaper(paperCtx, &proto.PaperRequest{
-		PaperId: int32(examDto.PaperID),
+		PaperId: examDto.PaperID,
 	})
 	if err != nil {
 		http.Error(w, "Paper not found", http.StatusNotFound)
@@ -84,7 +84,7 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 		EndsAt:             timestamppb.New(examDto.EndsAt),
 		MaxCandidatesCount: 10,
 		Type:               nil,
-		PaperId:            int32(examDto.PaperID),
+		PaperId:            examDto.PaperID,
 	}
 
 	if examDto.Type != "" {
@@ -98,14 +98,14 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := dtos.ExamResponse{
-		ID:                 int(exam.Id),
+		ID:                 exam.Id,
 		Title:              exam.Title,
 		StartsAt:           exam.StartsAt.AsTime(),
 		EndsAt:             exam.EndsAt.AsTime(),
-		CreatedBy:          int(exam.CreatedBy),
+		CreatedBy:          exam.CreatedBy,
 		Type:               exam.Type,
 		MaxCandidatesCount: int(exam.MaxCandidatesCount),
-		PaperID:            int(exam.PaperId),
+		PaperID:            exam.PaperId,
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -127,13 +127,13 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	examID, _ := strconv.Atoi(vars["examId"])
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	req := &proto.UpdateExamRequest{
-		ExamId: int32(examID),
+		ExamId: int64(examID),
 	}
 
 	if examDto.Title != "" {
@@ -156,14 +156,14 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := dtos.ExamResponse{
-		ID:                 int(exam.Id),
+		ID:                 exam.Id,
 		Title:              exam.Title,
 		StartsAt:           exam.StartsAt.AsTime(),
 		EndsAt:             exam.EndsAt.AsTime(),
-		CreatedBy:          int(exam.CreatedBy),
+		CreatedBy:          exam.CreatedBy,
 		Type:               exam.Type,
 		MaxCandidatesCount: int(exam.MaxCandidatesCount),
-		PaperID:            int(exam.PaperId),
+		PaperID:            exam.PaperId,
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -178,12 +178,12 @@ func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	participants, err := examService.Client().GetExamParticipants(ctx, &proto.ExamRequest{
-		ExamId: int32(examID),
+		ExamId: int64(examID),
 	})
 	if err != nil {
 		http.Error(w, "Failed to fetch participants", http.StatusInternalServerError)
@@ -201,8 +201,8 @@ func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
 		})
 
 		response[i] = dtos.ExamParticipantResponse{
-			ID:           int(p.Id),
-			UserID:       int(p.UserId),
+			ID:           p.Id,
+			UserID:       p.UserId,
 			Status:       int(p.Status),
 			ScoreAwarded: int(p.ScoreAwarded),
 		}
@@ -245,7 +245,7 @@ func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
@@ -263,13 +263,13 @@ func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to create/update user", http.StatusInternalServerError)
 			return
 		}
-		participantDto.UserID = int(userResp.Id)
+		participantDto.UserID = userResp.Id
 	}
 
 	// Add participant
 	participant, err := examService.Client().AddExamParticipant(ctx, &proto.AddParticipantRequest{
-		ExamId: int32(examID),
-		UserId: int32(participantDto.UserID),
+		ExamId: int64(examID),
+		UserId: participantDto.UserID,
 	})
 	if err != nil {
 		http.Error(w, "Failed to add participant", http.StatusInternalServerError)
@@ -277,8 +277,8 @@ func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := dtos.AddExamParticipantResponse{
-		ID:           int(participant.Id),
-		UserID:       int(participant.UserId),
+		ID:           participant.Id,
+		UserID:       participant.UserId,
 		Status:       int(participant.Status),
 		ScoreAwarded: int(participant.ScoreAwarded),
 	}
@@ -293,13 +293,13 @@ func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
 	examID, _ := strconv.Atoi(vars["examId"])
 	participantID, _ := strconv.Atoi(vars["participantId"])
 
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	_, err := examService.Client().RemoveExamParticipant(ctx, &proto.RemoveParticipantRequest{
-		ExamId:        int32(examID),
-		ParticipantId: int32(participantID),
+		ExamId:        int64(examID),
+		ParticipantId: int64(participantID),
 	})
 	if err != nil {
 		http.Error(w, "Failed to remove participant", http.StatusInternalServerError)
@@ -310,7 +310,7 @@ func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
 }
 
 // Helper function to create a new exam participant
-func createExamParticipant(tx *gorm.DB, examID, userID int) (*models.ExamParticipant, error) {
+func createExamParticipant(tx *gorm.DB, examID int64, userID int64) (*models.ExamParticipant, error) {
 	participant := models.ExamParticipant{
 		ExamID: examID,
 		UserID: userID,
@@ -330,14 +330,14 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	// Get paper details first
 	paperService := services.GetPaperService()
 	paperCtx := paperService.CreateMetadata(userID)
 
 	paper, err := paperService.Client().GetPaper(paperCtx, &proto.PaperRequest{
-		PaperId: int32(examID),
+		PaperId: int64(examID),
 	})
 	if err != nil {
 		http.Error(w, "Failed to get paper details", http.StatusInternalServerError)
@@ -349,7 +349,7 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 	ctx := examService.CreateMetadata(userID)
 
 	_, err = examService.Client().StartExam(ctx, &proto.StartExamRequest{
-		ExamId:          int32(examID),
+		ExamId:          int64(examID),
 		DurationMinutes: paper.DurationMinutes,
 	})
 	if err != nil {
@@ -361,14 +361,14 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 }
 
 func EndExam(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examID, _ := strconv.Atoi(mux.Vars(r)["examId"])
 
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	_, err := examService.Client().EndExam(ctx, &proto.EndExamRequest{
-		ExamId: int32(examID),
+		ExamId: int64(examID),
 	})
 	if err != nil {
 		http.Error(w, "Failed to end exam", http.StatusInternalServerError)

@@ -3,9 +3,9 @@ package models
 import "database/sql"
 
 type Answer struct {
-	ID                int `gorm:"primaryKey"`
-	ExamParticipantID int
-	QuestionID        int
+	ID                int64 `gorm:"primaryKey"`
+	ExamParticipantID int64
+	QuestionID        int64
 	Answer            sql.NullString  `gorm:"type:text"`
 	ScoreAwarded      int             `gorm:"default:0;not null"`
 	Comments          sql.NullString  `gorm:"type:text"`

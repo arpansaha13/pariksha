@@ -3,7 +3,7 @@ package models
 import "database/sql"
 
 type QuestionCategory struct {
-	ID      int `gorm:"primaryKey"`
+	ID      int64 `gorm:"primaryKey"`
 	PaperID sql.NullInt64
 	Name    string `gorm:"type:varchar(255);not null"`
 	Order   int    `gorm:"not null"`

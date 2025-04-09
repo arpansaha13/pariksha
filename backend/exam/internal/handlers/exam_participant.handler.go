@@ -28,8 +28,8 @@ func (s *ExamServer) GetExamParticipants(ctx context.Context, req *proto.ExamReq
 
 	for i, p := range participants {
 		response.Participants[i] = &proto.ParticipantResponse{
-			Id:           int32(p.ID),
-			UserId:       int32(p.UserID),
+			Id:           p.ID,
+			UserId:       p.UserID,
 			Status:       int32(p.Status),
 			ScoreAwarded: int32(p.ScoreAwarded),
 		}
@@ -65,8 +65,8 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 	}
 
 	participant := models.ExamParticipant{
-		ExamID: int(req.ExamId),
-		UserID: int(req.UserId),
+		ExamID: req.ExamId,
+		UserID: req.UserId,
 	}
 
 	if err := db.DB.Create(&participant).Error; err != nil {
@@ -84,8 +84,8 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 	}
 
 	return &proto.ParticipantResponse{
-		Id:           int32(participant.ID),
-		UserId:       int32(participant.UserID),
+		Id:           participant.ID,
+		UserId:       participant.UserID,
 		Status:       int32(participant.Status),
 		ScoreAwarded: int32(participant.ScoreAwarded),
 	}, nil

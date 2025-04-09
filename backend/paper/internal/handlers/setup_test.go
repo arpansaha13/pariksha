@@ -26,7 +26,7 @@ import (
 
 const (
 	bufSize                         = 1024 * 1024
-	userID                          = 1
+	userID                   int64  = 1
 	defaultPaperCategoryName string = "Category 1"
 )
 
@@ -96,7 +96,7 @@ func clearTables(t *testing.T) {
 	}
 }
 
-func createTestPaper(t *testing.T, userID int) models.Paper {
+func createTestPaper(t *testing.T, userID int64) models.Paper {
 	paper := models.Paper{
 		Title:           "Test Paper",
 		MaxScore:        0,
@@ -114,7 +114,7 @@ func createTestPaper(t *testing.T, userID int) models.Paper {
 	require.NoError(t, err)
 
 	category := models.QuestionCategory{
-		PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+		PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
 		Name:    defaultPaperCategoryName,
 		Order:   1,
 	}
@@ -128,9 +128,9 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
 }
 
-func createContextWithUserID(userID int32) context.Context {
+func createContextWithUserID(userID int64) context.Context {
 	md := metadata.New(map[string]string{
-		"user_id": strconv.Itoa(int(userID)),
+		"user_id": strconv.FormatInt(userID, 10),
 	})
 	return metadata.NewOutgoingContext(context.Background(), md)
 }

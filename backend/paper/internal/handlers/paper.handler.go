@@ -64,7 +64,7 @@ func (s *PaperServer) CreatePaper(ctx context.Context, _ *proto.Empty) (*proto.P
 		}
 
 		paperOwnership = models.PaperOwnership{
-			UserID:  int(userID),
+			UserID:  userID,
 			PaperID: paper.ID,
 			Type:    constants.PAPER_OWNERSHIP_TYPE_OWNER,
 		}
@@ -75,7 +75,7 @@ func (s *PaperServer) CreatePaper(ctx context.Context, _ *proto.Empty) (*proto.P
 
 		// Create default category for questions in this paper
 		defaultCategory := models.QuestionCategory{
-			PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+			PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
 			Name:    "Category 1",
 			Order:   1,
 		}
@@ -167,7 +167,7 @@ func (s *PaperServer) CheckPaperAccess(ctx context.Context, req *proto.PaperRequ
 	}
 
 	// Check if user has owner access
-	if err := verifyPaperAccess(nil, int(req.PaperId), userID, constants.PAPER_OWNERSHIP_TYPE_OWNER); err != nil {
+	if err := verifyPaperAccess(nil, req.PaperId, userID, constants.PAPER_OWNERSHIP_TYPE_OWNER); err != nil {
 		return nil, err
 	}
 

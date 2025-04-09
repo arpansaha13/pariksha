@@ -33,9 +33,9 @@ func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.Parti
 
 	for i, answer := range answers {
 		response.Answers[i] = &proto.AnswerResponse{
-			Id:                int32(answer.ID),
-			ExamParticipantId: int32(answer.ExamParticipantID),
-			QuestionId:        int32(answer.QuestionID),
+			Id:                answer.ID,
+			ExamParticipantId: answer.ExamParticipantID,
+			QuestionId:        answer.QuestionID,
 			Answer:            answer.Answer.String,
 			Comments:          answer.Comments.String,
 			ScoreAwarded:      int32(answer.ScoreAwarded),
@@ -55,9 +55,9 @@ func (s *ExamServer) GetAnswer(ctx context.Context, req *proto.GetAnswerRequest)
 	}
 
 	return &proto.AnswerResponse{
-		Id:                int32(answer.ID),
-		ExamParticipantId: int32(answer.ExamParticipantID),
-		QuestionId:        int32(answer.QuestionID),
+		Id:                answer.ID,
+		ExamParticipantId: answer.ExamParticipantID,
+		QuestionId:        answer.QuestionID,
 		Answer:            answer.Answer.String,
 		Comments:          answer.Comments.String,
 		ScoreAwarded:      int32(answer.ScoreAwarded),
@@ -89,7 +89,7 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 			// Create new answer
 			answer = models.Answer{
 				ExamParticipantID: examParticipant.ID,
-				QuestionID:        int(req.Answer.QuestionId),
+				QuestionID:        req.Answer.QuestionId,
 				Answer:            sql.NullString{String: req.Answer.Answer, Valid: true},
 			}
 			if err := db.DB.Create(&answer).Error; err != nil {
@@ -107,7 +107,7 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 	}
 
 	return &proto.UpsertAnswersResponse{
-		AnswerId: int32(answer.ID),
+		AnswerId: answer.ID,
 	}, nil
 }
 
@@ -225,6 +225,6 @@ func (s *ExamServer) MarkAsEvaluated(ctx context.Context, req *proto.Participant
 	}
 
 	return &proto.EvaluationStatusResponse{
-		UnevaluatedCount: unevaluatedCount,
+		UnevaluatedCount: int32(unevaluatedCount),
 	}, nil
 }

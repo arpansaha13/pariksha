@@ -19,16 +19,16 @@ func TestGetExamParticipants(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T) *models.Exam
-		userID       int32
+		userID       int64
 		expectedCode codes.Code
 		validate     func(t *testing.T, resp *proto.ParticipantList)
 	}{
 		{
 			name: "Success - Get exam participants",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
 				}{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_INVITED},
@@ -48,7 +48,7 @@ func TestGetExamParticipants(t *testing.T) {
 		{
 			name: "Success - No participants",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				return &exam
 			},
 			userID:       userID,
@@ -77,7 +77,7 @@ func TestGetExamParticipants(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			resp, err := client.GetExamParticipants(ctx, &proto.ExamRequest{
-				ExamId: int32(exam.ID),
+				ExamId: exam.ID,
 			})
 
 			if tt.expectedCode != codes.OK {
@@ -97,14 +97,14 @@ func TestAddExamParticipant(t *testing.T) {
 		name         string
 		setup        func(t *testing.T) *models.Exam
 		request      *proto.AddParticipantRequest
-		userID       int32
+		userID       int64
 		expectedCode codes.Code
-		validate     func(t *testing.T, examID int, resp *proto.ParticipantResponse)
+		validate     func(t *testing.T, examID int64, resp *proto.ParticipantResponse)
 	}{
 		{
 			name: "Success - Add participant",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
 				require.NoError(t, db.DB.Save(&exam).Error)
 				return &exam
@@ -114,8 +114,8 @@ func TestAddExamParticipant(t *testing.T) {
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, examID int, resp *proto.ParticipantResponse) {
-				assert.Equal(t, int32(2), resp.UserId)
+			validate: func(t *testing.T, examID int64, resp *proto.ParticipantResponse) {
+				assert.Equal(t, int64(2), resp.UserId)
 				assert.Equal(t, int32(constants.PARTICIPANT_STATUS_INVITED), resp.Status)
 
 				// Check if exam participant counts were updated
@@ -132,13 +132,13 @@ func TestAddExamParticipant(t *testing.T) {
 		{
 			name: "Max candidates limit reached",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
 				exam.MaxCandidatesCount = 1
 				require.NoError(t, db.DB.Save(&exam).Error)
 
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
 				}{
 					{UserID: 3, Status: constants.PARTICIPANT_STATUS_INVITED},
@@ -155,7 +155,7 @@ func TestAddExamParticipant(t *testing.T) {
 		{
 			name: "Cannot add participant to exam with access-type LINK",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
 				require.NoError(t, db.DB.Save(&exam).Error)
 				return &exam
@@ -183,7 +183,7 @@ func TestAddExamParticipant(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			exam := tt.setup(t)
-			tt.request.ExamId = int32(exam.ID)
+			tt.request.ExamId = exam.ID
 
 			ctx := createContextWithUserID(tt.userID)
 			resp, err := client.AddExamParticipant(ctx, tt.request)
@@ -204,19 +204,19 @@ func TestRemoveExamParticipant(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T) (*models.Exam, *models.ExamParticipant)
-		userID       int32
+		userID       int64
 		expectedCode codes.Code
-		validate     func(t *testing.T, examID, participantID int)
+		validate     func(t *testing.T, examID, participantID int64)
 	}{
 		{
 			name: "Success - Remove participant",
 			setup: func(t *testing.T) (*models.Exam, *models.ExamParticipant) {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				exam.StartsAt = time.Now().Add(1 * time.Hour)
 				require.NoError(t, db.DB.Save(&exam).Error)
 
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
 				}{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_INVITED},
@@ -229,7 +229,7 @@ func TestRemoveExamParticipant(t *testing.T) {
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, examID, participantID int) {
+			validate: func(t *testing.T, examID, participantID int64) {
 				var count int64
 				db.DB.Model(&models.ExamParticipant{}).Where("id = ?", participantID).Count(&count)
 				assert.Equal(t, int64(0), count)
@@ -238,12 +238,12 @@ func TestRemoveExamParticipant(t *testing.T) {
 		{
 			name: "Cannot remove after exam started",
 			setup: func(t *testing.T) (*models.Exam, *models.ExamParticipant) {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				exam.StartsAt = time.Now().Add(-1 * time.Hour)
 				require.NoError(t, db.DB.Save(&exam).Error)
 
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
 				}{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_INVITED},
@@ -260,7 +260,7 @@ func TestRemoveExamParticipant(t *testing.T) {
 		{
 			name: "Non-existent participant",
 			setup: func(t *testing.T) (*models.Exam, *models.ExamParticipant) {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				exam.StartsAt = time.Now().Add(1 * time.Hour)
 				require.NoError(t, db.DB.Save(&exam).Error)
 				return &exam, &models.ExamParticipant{ID: 9999}
@@ -286,8 +286,8 @@ func TestRemoveExamParticipant(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			_, err := client.RemoveExamParticipant(ctx, &proto.RemoveParticipantRequest{
-				ExamId:        int32(exam.ID),
-				ParticipantId: int32(participant.ID),
+				ExamId:        exam.ID,
+				ParticipantId: participant.ID,
 			})
 
 			if tt.expectedCode != codes.OK {

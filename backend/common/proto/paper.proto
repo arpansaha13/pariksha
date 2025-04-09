@@ -32,11 +32,11 @@ service PaperService {
 
 // Paper messages
 message PaperRequest {
-  int32 paper_id = 1;
+  int64 paper_id = 1;
 }
 
 message PaperResponse {
-  int32 id = 1;
+  int64 id = 1;
   string title = 2;
   int32 max_score = 3;
   int32 duration_minutes = 4;
@@ -49,7 +49,7 @@ message PaperList {
 }
 
 message UpdatePaperRequest {
-  int32 paper_id = 1;
+  int64 paper_id = 1;
   string title = 2;
 }
 
@@ -60,18 +60,18 @@ message QuestionCount {
 }
 
 message PaperOwnership {
-  int32 id = 1;
+  int64 id = 1;
   string path = 2;
   string type = 3;
 }
 
 // Question messages
 message QuestionRequest {
-  int32 question_id = 1;
+  int64 question_id = 1;
 }
 
 message QuestionResponse {
-  int32 id = 1;
+  int64 id = 1;
   oneof question {
     McqQuestion mcq = 2;
     GeneralQuestion general = 3;
@@ -79,7 +79,7 @@ message QuestionResponse {
   CategoryResponse category = 4;
   string type = 5;
   repeated string tags = 6;
-  int32 paper_id = 7;
+  int64 paper_id = 7;
   int32 max_score = 8;
   optional string correct_answer = 9;
 }
@@ -89,9 +89,9 @@ message QuestionList {
 }
 
 message QuestionMinimal {
-  int32 id = 1;
-  int32 category_id = 2;
-  int32 paper_id = 3;
+  int64 id = 1;
+  int64 category_id = 2;
+  int64 paper_id = 3;
   int32 order = 4;
   oneof question {
     McqQuestion mcq = 5;
@@ -109,12 +109,12 @@ message GeneralQuestion {
 }
 
 message CreateQuestionRequest {
-  int32 paper_id = 1;
+  int64 paper_id = 1;
   oneof question {
     McqQuestion mcq = 2;
     GeneralQuestion general = 3;
   }
-  int32 category_id = 4;
+  int64 category_id = 4;
   string type = 5;
   repeated string tags = 6;
   int32 max_score = 7;
@@ -122,30 +122,30 @@ message CreateQuestionRequest {
 }
 
 message UpdateQuestionRequest {
-  int32 question_id = 1;
+  int64 question_id = 1;
   optional string type = 2;
   oneof question {
     McqQuestion mcq = 3;
     GeneralQuestion general = 4;
   }
-  optional int32 category_id = 5;
+  optional int64 category_id = 5;
   optional int32 max_score = 6;
   repeated string tags = 7;
   optional string correct_answer = 8;
 }
 
 message ReorderQuestionsRequest {
-  int32 category_id = 1;
-  repeated int32 question_ids = 2;
+  int64 category_id = 1;
+  repeated int64 question_ids = 2;
 }
 
 // Category messages
 message CategoryRequest {
-  int32 category_id = 1;
+  int64 category_id = 1;
 }
 
 message CategoryResponse {
-  int32 id = 1;
+  int64 id = 1;
   string name = 2;
   int32 order = 3;
 }
@@ -155,15 +155,15 @@ message CategoryList {
 }
 
 message CreateCategoryRequest {
-  int32 paper_id = 1;
+  int64 paper_id = 1;
 }
 
 message UpdateCategoryRequest {
-  int32 category_id = 1;
+  int64 category_id = 1;
   string name = 2;
 }
 
 message ReorderCategoriesRequest {
-  int32 paper_id = 1;
-  repeated int32 category_ids = 2;
+  int64 paper_id = 1;
+  repeated int64 category_ids = 2;
 }

@@ -15,7 +15,7 @@ import (
 )
 
 func GetUserPapers(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	paperService := services.GetPaperService()
 
 	ctx := paperService.CreateMetadata(userID)
@@ -30,7 +30,7 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreatePaper(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	paperService := services.GetPaperService()
 
 	ctx := paperService.CreateMetadata(userID)
@@ -58,12 +58,12 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	paperID, _ := strconv.Atoi(vars["id"])
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	paperService := services.GetPaperService()
 
 	ctx := paperService.CreateMetadata(userID)
 	_, err := paperService.Client().UpdatePaper(ctx, &proto.UpdatePaperRequest{
-		PaperId: int32(paperID),
+		PaperId: int64(paperID),
 		Title:   paperDto.Title,
 	})
 	if err != nil {
@@ -77,12 +77,12 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 func GetPaper(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	paperID, _ := strconv.Atoi(vars["id"])
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	paperService := services.GetPaperService()
 
 	ctx := paperService.CreateMetadata(userID)
 	response, err := paperService.Client().GetPaper(ctx, &proto.PaperRequest{
-		PaperId: int32(paperID),
+		PaperId: int64(paperID),
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -96,12 +96,12 @@ func GetPaper(w http.ResponseWriter, r *http.Request) {
 func CheckPaperAccess(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	paperID, _ := strconv.Atoi(vars["id"])
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	paperService := services.GetPaperService()
 
 	ctx := paperService.CreateMetadata(userID)
 	_, err := paperService.Client().CheckPaperAccess(ctx, &proto.PaperRequest{
-		PaperId: int32(paperID),
+		PaperId: int64(paperID),
 	})
 
 	if err != nil {

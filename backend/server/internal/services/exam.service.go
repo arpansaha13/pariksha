@@ -59,9 +59,9 @@ func (s *ExamService) Client() proto.ExamServiceClient {
 	return s.client
 }
 
-func (s *ExamService) CreateMetadata(userID int) context.Context {
+func (s *ExamService) CreateMetadata(userID int64) context.Context {
 	md := metadata.New(map[string]string{
-		"user_id": strconv.Itoa(userID),
+		"user_id": strconv.FormatInt(userID, 10),
 	})
 	return metadata.NewOutgoingContext(context.Background(), md)
 }

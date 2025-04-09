@@ -17,13 +17,13 @@ import (
 func GetPaperCategories(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	paperID, _ := strconv.Atoi(vars["paper_id"])
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
 	response, err := paperService.Client().GetPaperCategories(ctx, &proto.PaperRequest{
-		PaperId: int32(paperID),
+		PaperId: int64(paperID),
 	})
 
 	if err != nil {
@@ -34,7 +34,7 @@ func GetPaperCategories(w http.ResponseWriter, r *http.Request) {
 	categories := make([]dtos.QuestionCategoryResponse, len(response.Categories))
 	for i, c := range response.Categories {
 		categories[i] = dtos.QuestionCategoryResponse{
-			ID:    int(c.Id),
+			ID:    c.Id,
 			Name:  c.Name,
 			Order: int(c.Order),
 		}
@@ -47,13 +47,13 @@ func GetPaperCategories(w http.ResponseWriter, r *http.Request) {
 func CreateCategory(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	paperID, _ := strconv.Atoi(vars["paper_id"])
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
 	response, err := paperService.Client().CreateCategory(ctx, &proto.CreateCategoryRequest{
-		PaperId: int32(paperID),
+		PaperId: int64(paperID),
 	})
 
 	if err != nil {
@@ -63,7 +63,7 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(dtos.QuestionCategoryResponse{
-		ID:    int(response.Id),
+		ID:    response.Id,
 		Name:  response.Name,
 		Order: int(response.Order),
 	})
@@ -72,7 +72,7 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	categoryID, _ := strconv.Atoi(vars["id"])
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	var categoryDto dtos.UpdateCategoryDto
 	if err := json.NewDecoder(r.Body).Decode(&categoryDto); err != nil {
@@ -89,7 +89,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	ctx := paperService.CreateMetadata(userID)
 
 	_, err := paperService.Client().UpdateCategory(ctx, &proto.UpdateCategoryRequest{
-		CategoryId: int32(categoryID),
+		CategoryId: int64(categoryID),
 		Name:       categoryDto.Name,
 	})
 
@@ -104,13 +104,13 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	categoryID, _ := strconv.Atoi(vars["id"])
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
 	_, err := paperService.Client().DeleteCategory(ctx, &proto.CategoryRequest{
-		CategoryId: int32(categoryID),
+		CategoryId: int64(categoryID),
 	})
 
 	if err != nil {
@@ -124,7 +124,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 func ReorderCategories(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	paperID, _ := strconv.Atoi(vars["paper_id"])
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	var reorderDto dtos.ReorderCategoryDto
 	if err := json.NewDecoder(r.Body).Decode(&reorderDto); err != nil {
@@ -140,13 +140,13 @@ func ReorderCategories(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	categoryIDs := make([]int32, len(reorderDto.Categories))
+	categoryIDs := make([]int64, len(reorderDto.Categories))
 	for i, id := range reorderDto.Categories {
-		categoryIDs[i] = int32(id)
+		categoryIDs[i] = id
 	}
 
 	_, err := paperService.Client().ReorderCategories(ctx, &proto.ReorderCategoriesRequest{
-		PaperId:     int32(paperID),
+		PaperId:     int64(paperID),
 		CategoryIds: categoryIDs,
 	})
 

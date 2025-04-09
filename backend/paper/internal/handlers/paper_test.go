@@ -18,18 +18,18 @@ func TestGetUserPapers(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T)
-		userID       int32
+		userID       int64
 		expectedCode codes.Code
 		validate     func(t *testing.T, resp *proto.PaperList)
 	}{
 		{
 			name: "Success - Get user papers",
 			setup: func(t *testing.T) {
-				paper1 := createTestPaper(t, int(userID))
+				paper1 := createTestPaper(t, userID)
 				err := db.DB.Model(&paper1).Update("question_counts", `{"mcq": 2, "short": 1, "long": 0}`).Error
 				require.NoError(t, err)
 
-				paper2 := createTestPaper(t, int(userID))
+				paper2 := createTestPaper(t, userID)
 				err = db.DB.Model(&paper2).Update("question_counts", `{"mcq": 1, "short": 0, "long": 1}`).Error
 				require.NoError(t, err)
 			},
@@ -90,7 +90,7 @@ func TestCreatePaper(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T)
-		userID       int32
+		userID       int64
 		expectedCode codes.Code
 		validate     func(t *testing.T, resp *proto.PaperResponse)
 	}{
@@ -144,7 +144,7 @@ func TestUpdatePaper(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T) *models.Paper
-		userID       int32
+		userID       int64
 		title        string
 		expectedCode codes.Code
 		validate     func(t *testing.T, paper *models.Paper)
@@ -152,7 +152,7 @@ func TestUpdatePaper(t *testing.T) {
 		{
 			name: "Success - Update title",
 			setup: func(t *testing.T) *models.Paper {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				return &paper
 			},
 			userID:       userID,
@@ -177,7 +177,7 @@ func TestUpdatePaper(t *testing.T) {
 		{
 			name: "Invalid user ID",
 			setup: func(t *testing.T) *models.Paper {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				return &paper
 			},
 			userID:       0,
@@ -192,7 +192,7 @@ func TestUpdatePaper(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			_, err := client.UpdatePaper(ctx, &proto.UpdatePaperRequest{
-				PaperId: int32(paper.ID),
+				PaperId: paper.ID,
 				Title:   tt.title,
 			})
 
@@ -213,14 +213,14 @@ func TestGetPaper(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T) *models.Paper
-		userID       int32
+		userID       int64
 		expectedCode codes.Code
 		validate     func(t *testing.T, resp *proto.PaperResponse)
 	}{
 		{
 			name: "Success - Get owned paper",
 			setup: func(t *testing.T) *models.Paper {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 2, "short": 1, "long": 1}`).Error
 				require.NoError(t, err)
 				return &paper
@@ -247,7 +247,7 @@ func TestGetPaper(t *testing.T) {
 				paper := createTestPaper(t, 2)
 				// Add shared access for test user
 				ownership := models.PaperOwnership{
-					UserID:  int(userID),
+					UserID:  userID,
 					PaperID: paper.ID,
 					Type:    constants.PAPER_OWNERSHIP_TYPE_SHARED,
 				}
@@ -283,7 +283,7 @@ func TestGetPaper(t *testing.T) {
 		{
 			name: "Invalid user ID",
 			setup: func(t *testing.T) *models.Paper {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				return &paper
 			},
 			userID:       0,
@@ -298,7 +298,7 @@ func TestGetPaper(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			resp, err := client.GetPaper(ctx, &proto.PaperRequest{
-				PaperId: int32(paper.ID),
+				PaperId: paper.ID,
 			})
 
 			if tt.expectedCode != codes.OK {
@@ -317,13 +317,13 @@ func TestCheckPaperAccess(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T) *models.Paper
-		userID       int32
+		userID       int64
 		expectedCode codes.Code
 	}{
 		{
 			name: "Success - Owner access",
 			setup: func(t *testing.T) *models.Paper {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				return &paper
 			},
 			userID:       userID,
@@ -344,7 +344,7 @@ func TestCheckPaperAccess(t *testing.T) {
 				paper := createTestPaper(t, 2)
 				// Add shared access for test user
 				ownership := models.PaperOwnership{
-					UserID:  int(userID),
+					UserID:  userID,
 					PaperID: paper.ID,
 					Type:    constants.PAPER_OWNERSHIP_TYPE_SHARED,
 				}
@@ -368,7 +368,7 @@ func TestCheckPaperAccess(t *testing.T) {
 		{
 			name: "Invalid user ID",
 			setup: func(t *testing.T) *models.Paper {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				return &paper
 			},
 			userID:       0,
@@ -383,7 +383,7 @@ func TestCheckPaperAccess(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			_, err := client.CheckPaperAccess(ctx, &proto.PaperRequest{
-				PaperId: int32(paper.ID),
+				PaperId: paper.ID,
 			})
 
 			assert.Equal(t, tt.expectedCode, status.Code(err))

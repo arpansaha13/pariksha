@@ -6,7 +6,7 @@ import (
 )
 
 type User struct {
-	ID        int            `gorm:"primaryKey"`
+	ID        int64          `gorm:"primaryKey"`
 	Username  string         `gorm:"type:varchar(255);not null;unique"`
 	Email     string         `gorm:"type:varchar(255);not null;unique"`
 	Password  sql.NullString `gorm:"type:varchar(255)"`

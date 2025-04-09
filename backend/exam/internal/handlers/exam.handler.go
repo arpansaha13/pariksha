@@ -57,7 +57,10 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 	startsAt := req.StartsAt.AsTime()
 	endsAt := req.EndsAt.AsTime()
 
-	now := time.Now()
+	// Time input is not implemented in frontend yet
+	// Compare dates only by truncating to start of day
+	now := time.Now().Truncate(24 * time.Hour)
+
 	if startsAt.Before(now) {
 		return nil, status.Error(codes.InvalidArgument, "start time cannot be in the past")
 	}
@@ -74,9 +77,9 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 		Title:              req.Title,
 		StartsAt:           startsAt,
 		EndsAt:             endsAt,
-		CreatedBy:          int(userID),
+		CreatedBy:          userID,
 		MaxCandidatesCount: int(req.MaxCandidatesCount),
-		PaperID:            int(req.PaperId),
+		PaperID:            req.PaperId,
 	}
 
 	// Only set Type if it's not LINK
@@ -111,7 +114,7 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 	}
 
 	// Verify ownership
-	if exam.CreatedBy != int(userID) {
+	if exam.CreatedBy != userID {
 		return nil, status.Error(codes.PermissionDenied, "not authorized to update exam")
 	}
 
@@ -199,8 +202,8 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 		if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
 			if participantErr == gorm.ErrRecordNotFound {
 				participant = models.ExamParticipant{
-					ExamID: int(req.ExamId),
-					UserID: int(userID),
+					ExamID: req.ExamId,
+					UserID: userID,
 					Status: constants.PARTICIPANT_STATUS_INVITED,
 				}
 				if err := tx.Create(&participant).Error; err != nil {

@@ -24,7 +24,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := services.GetAuthService().Client().GetUser(r.Context(), &proto.GetUserRequest{
-		UserId: int32(userID),
+		UserId: int64(userID),
 	})
 
 	if err != nil {
@@ -66,7 +66,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := &proto.UpdateUserRequest{
-		UserId: int32(userID),
+		UserId: int64(userID),
 	}
 
 	if userDto.Username != "" {

@@ -27,8 +27,8 @@ import (
 )
 
 const (
-	bufSize = 1024 * 1024
-	userID  = 1 // Creator/admin user ID
+	bufSize       = 1024 * 1024
+	userID  int64 = 1 // Creator/admin user ID
 )
 
 var (
@@ -124,9 +124,9 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
 }
 
-func createContextWithUserID(userID int32) context.Context {
+func createContextWithUserID(userID int64) context.Context {
 	md := metadata.New(map[string]string{
-		"user_id": strconv.Itoa(int(userID)),
+		"user_id": strconv.FormatInt(userID, 10),
 	})
 	return metadata.NewOutgoingContext(context.Background(), md)
 }
@@ -176,7 +176,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func createTestExam(t *testing.T, createdBy int) models.Exam {
+func createTestExam(t *testing.T, createdBy int64) models.Exam {
 	exam := models.Exam{
 		Title:              "Test Exam",
 		CreatedBy:          createdBy,
@@ -190,7 +190,7 @@ func createTestExam(t *testing.T, createdBy int) models.Exam {
 }
 
 func createTestExamParticipants(t *testing.T, exam *models.Exam, participants []struct {
-	UserID int
+	UserID int64
 	Status int
 }) error {
 	examParticipants := make([]models.ExamParticipant, len(participants))
@@ -234,7 +234,7 @@ func createTestExamParticipants(t *testing.T, exam *models.Exam, participants []
 	return db.DB.Save(&exam).Error
 }
 
-func createTestAnswer(t *testing.T, examParticipant *models.ExamParticipant, questionID int) models.Answer {
+func createTestAnswer(t *testing.T, examParticipant *models.ExamParticipant, questionID int64) models.Answer {
 	answer := models.Answer{
 		ExamParticipantID: examParticipant.ID,
 		QuestionID:        questionID,

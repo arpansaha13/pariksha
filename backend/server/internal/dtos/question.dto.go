@@ -3,33 +3,33 @@ package dtos
 import "encoding/json"
 
 type QuestionCategoryResponse struct {
-	ID    int    `json:"id"`
+	ID    int64  `json:"id"`
 	Name  string `json:"name"`
 	Order int    `json:"order"`
 }
 
 type QuestionResponse struct {
-	ID            int                       `json:"id"`
+	ID            int64                     `json:"id"`
 	Question      json.RawMessage           `json:"question"`
 	Category      *QuestionCategoryResponse `json:"category"`
 	Type          string                    `json:"type"`
 	Tags          json.RawMessage           `json:"tags"`
-	PaperID       int                       `json:"paper_id"`
+	PaperID       int64                     `json:"paper_id"`
 	MaxScore      int                       `json:"max_score"`
 	CorrectAnswer string                    `json:"correct_answer"`
 }
 
 type QuestionMinimalResponse struct {
-	ID         int             `json:"id"`
-	CategoryID int             `json:"category_id"`
-	PaperID    int             `json:"paper_id"`
-	Order      int             `json:"order"` // Add this field
+	ID         int64           `json:"id"`
+	CategoryID int64           `json:"category_id"`
+	PaperID    int64           `json:"paper_id"`
+	Order      int             `json:"order"`
 	Question   json.RawMessage `json:"question"`
 }
 
 type CreateQuestionDto struct {
 	Question      json.RawMessage `json:"question" validate:"required"`
-	CategoryID    int             `json:"category_id" validate:"required"`
+	CategoryID    int64           `json:"category_id" validate:"required"`
 	Type          string          `json:"type" validate:"required"`
 	Tags          json.RawMessage `json:"tags,omitempty" validate:"required"`
 	MaxScore      int             `json:"max_score" validate:"required"`
@@ -39,12 +39,12 @@ type CreateQuestionDto struct {
 type UpdateQuestionDto struct {
 	Type          string          `json:"type,omitempty"`
 	Question      json.RawMessage `json:"question,omitempty"`
-	CategoryID    int             `json:"category_id,omitempty"`
+	CategoryID    int64           `json:"category_id,omitempty"`
 	MaxScore      int             `json:"max_score,omitempty"`
 	Tags          json.RawMessage `json:"tags,omitempty"`
 	CorrectAnswer string          `json:"correct_answer,omitempty"`
 }
 
 type ReorderQuestionsDto struct {
-	Questions []int `json:"questions" validate:"required,min=1"`
+	Questions []int64 `json:"questions" validate:"required,min=1"`
 }

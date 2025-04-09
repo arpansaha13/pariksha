@@ -9,7 +9,7 @@ type CreateExamDto struct {
 	StartsAt time.Time `json:"starts_at" validate:"required"`
 	EndsAt   time.Time `json:"ends_at" validate:"required"`
 	Type     string    `json:"type"`
-	PaperID  int       `json:"paper_id" validate:"required"`
+	PaperID  int64     `json:"paper_id" validate:"required"`
 }
 
 type UpdateExamDto struct {
@@ -20,19 +20,19 @@ type UpdateExamDto struct {
 }
 
 type ExamResponse struct {
-	ID                 int       `json:"id"`
+	ID                 int64     `json:"id"`
 	Title              string    `json:"title"`
 	StartsAt           time.Time `json:"starts_at"`
 	EndsAt             time.Time `json:"ends_at"`
-	CreatedBy          int       `json:"created_by"`
+	CreatedBy          int64     `json:"created_by"`
 	Type               string    `json:"type"`
 	MaxCandidatesCount int       `json:"max_candidates_count"`
-	PaperID            int       `json:"paper_id"`
+	PaperID            int64     `json:"paper_id"`
 }
 
 type ExamParticipantResponse struct {
-	ID           int       `json:"id"`
-	UserID       int       `json:"userId"`
+	ID           int64     `json:"id"`
+	UserID       int64     `json:"userId"`
 	Status       int       `json:"status"`
 	ScoreAwarded int       `json:"scoreAwarded"`
 	StartedAt    time.Time `json:"startedAt,omitempty"`
@@ -45,15 +45,15 @@ type ExamParticipantResponse struct {
 }
 
 type AddExamParticipantDto struct {
-	UserID    int    `json:"user_id"`
+	UserID    int64  `json:"user_id"`
 	Email     string `json:"email"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 }
 
 type AddExamParticipantResponse struct {
-	ID           int `json:"id"`
-	UserID       int `json:"userId"`
-	Status       int `json:"status"`
-	ScoreAwarded int `json:"scoreAwarded"`
+	ID           int64 `json:"id"`
+	UserID       int64 `json:"userId"`
+	Status       int   `json:"status"`
+	ScoreAwarded int   `json:"scoreAwarded"`
 }

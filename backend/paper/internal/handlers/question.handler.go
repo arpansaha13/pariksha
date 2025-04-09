@@ -31,7 +31,7 @@ func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperReq
 		return nil, status.Error(codes.NotFound, "paper not found")
 	}
 
-	if err := verifyPaperAccess(nil, int(req.PaperId), userID, ""); err != nil {
+	if err := verifyPaperAccess(nil, req.PaperId, userID, ""); err != nil {
 		return nil, err
 	}
 
@@ -46,9 +46,9 @@ func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperReq
 
 	for i, question := range questions {
 		response.Questions[i] = &proto.QuestionMinimal{
-			Id:         int32(question.ID),
-			CategoryId: int32(question.CategoryID),
-			PaperId:    int32(question.PaperID.Int64),
+			Id:         question.ID,
+			CategoryId: question.CategoryID,
+			PaperId:    question.PaperID.Int64,
 			Order:      int32(question.Order),
 			Question:   nil,
 		}
@@ -160,8 +160,8 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		}
 
 		question = models.Question{
-			PaperID:    sql.NullInt64{Int64: int64(req.PaperId), Valid: true},
-			CategoryID: int(req.CategoryId),
+			PaperID:    sql.NullInt64{Int64: req.PaperId, Valid: true},
+			CategoryID: req.CategoryId,
 			Order:      maxOrder.MaxOrder + 1,
 			Question:   questionData,
 			Type:       req.Type,

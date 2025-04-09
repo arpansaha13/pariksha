@@ -1,10 +1,10 @@
 package models
 
 type ExamCategory struct {
-	ID         int  `gorm:"primaryKey"`
-	ExamID     int  `gorm:"not null"`
-	CategoryID int  `gorm:"not null"`
-	Exam       Exam `gorm:"foreignKey:ExamID"`
+	ID         int64 `gorm:"primaryKey"`
+	ExamID     int64 `gorm:"not null"`
+	CategoryID int64 `gorm:"not null"`
+	Exam       Exam  `gorm:"foreignKey:ExamID"`
 }
 
 func (ExamCategory) TableName() string {

@@ -14,14 +14,14 @@ type ParticipantCount struct {
 }
 
 type Exam struct {
-	ID                 int `gorm:"primaryKey"`
+	ID                 int64 `gorm:"primaryKey"`
 	Title              string
 	StartsAt           time.Time `gorm:"column:starts_at;not null"`
 	EndsAt             time.Time `gorm:"column:ends_at;not null"`
-	CreatedBy          int
+	CreatedBy          int64
 	Type               string `gorm:"type:varchar(16);default:LINK"`
 	MaxCandidatesCount int    `gorm:"not null"`
-	PaperID            int
+	PaperID            int64
 	ParticipantCounts  json.RawMessage   `gorm:"type:json;default:'{\"unattended\":0,\"invited\":0,\"started\":0,\"ended\":0}'"`
 	Participants       []ExamParticipant `gorm:"foreignKey:ExamID"`
 }

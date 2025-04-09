@@ -23,7 +23,7 @@ func (s *PaperServer) GetPaperCategories(ctx context.Context, req *proto.PaperRe
 		return nil, err
 	}
 
-	if err := verifyPaperAccess(nil, int(req.PaperId), userID, ""); err != nil {
+	if err := verifyPaperAccess(nil, req.PaperId, userID, ""); err != nil {
 		return nil, err
 	}
 
@@ -42,7 +42,7 @@ func (s *PaperServer) GetPaperCategories(ctx context.Context, req *proto.PaperRe
 
 	for i, category := range categories {
 		response.Categories[i] = &proto.CategoryResponse{
-			Id:    int32(category.ID),
+			Id:    category.ID,
 			Name:  category.Name,
 			Order: int32(category.Order),
 		}
@@ -95,7 +95,7 @@ func (s *PaperServer) CreateCategory(ctx context.Context, req *proto.CreateCateg
 		}
 
 		category = models.QuestionCategory{
-			PaperID: sql.NullInt64{Int64: int64(req.PaperId), Valid: true},
+			PaperID: sql.NullInt64{Int64: req.PaperId, Valid: true},
 			Name:    fmt.Sprintf("Category %d", count+1),
 			Order:   maxOrder.MaxOrder + 1,
 		}
@@ -111,7 +111,7 @@ func (s *PaperServer) CreateCategory(ctx context.Context, req *proto.CreateCateg
 	}
 
 	return &proto.CategoryResponse{
-		Id:    int32(category.ID),
+		Id:    category.ID,
 		Name:  category.Name,
 		Order: int32(category.Order),
 	}, nil

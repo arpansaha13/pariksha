@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func GetUserIDFromMetadata(ctx context.Context) (int32, error) {
+func GetUserIDFromMetadata(ctx context.Context) (int64, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return 0, status.Error(codes.Unauthenticated, "missing metadata")
@@ -25,5 +25,5 @@ func GetUserIDFromMetadata(ctx context.Context) (int32, error) {
 		return 0, status.Error(codes.InvalidArgument, "invalid user id")
 	}
 
-	return int32(userID), nil
+	return int64(userID), nil
 }

@@ -24,13 +24,13 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	resp, err := examService.Client().GetParticipantAnswers(ctx, &proto.ParticipantRequest{
-		ParticipantId: int32(participantID),
+		ParticipantId: int64(participantID),
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -40,9 +40,9 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 	var response []dtos.AnswerResponse
 	for _, answer := range resp.Answers {
 		response = append(response, dtos.AnswerResponse{
-			ID:                int(answer.Id),
-			ExamParticipantID: int(answer.ExamParticipantId),
-			QuestionID:        int(answer.QuestionId),
+			ID:                answer.Id,
+			ExamParticipantID: answer.ExamParticipantId,
+			QuestionID:        answer.QuestionId,
 			Answer:            answer.Answer,
 			Comments:          answer.Comments,
 			ScoreAwarded:      int(answer.ScoreAwarded),
@@ -60,12 +60,12 @@ func GetAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	resp, err := examService.Client().GetAnswer(ctx, &proto.GetAnswerRequest{
-		AnswerId: int32(answerID),
+		AnswerId: int64(answerID),
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -73,9 +73,9 @@ func GetAnswer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := dtos.AnswerResponse{
-		ID:                int(resp.Id),
-		ExamParticipantID: int(resp.ExamParticipantId),
-		QuestionID:        int(resp.QuestionId),
+		ID:                resp.Id,
+		ExamParticipantID: resp.ExamParticipantId,
+		QuestionID:        resp.QuestionId,
 		Answer:            resp.Answer,
 		Comments:          resp.Comments,
 		ScoreAwarded:      int(resp.ScoreAwarded),
@@ -97,18 +97,18 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examID, _ := strconv.Atoi(mux.Vars(r)["examId"])
 
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	resp, err := examService.Client().UpsertAnswer(ctx, &proto.UpsertAnswersRequest{
-		ExamId: int32(examID),
+		ExamId: int64(examID),
 		Answer: &proto.Answer{
 			Answer:      answerDTO.Answer,
 			SubmittedAt: timestamppb.New(answerDTO.SubmittedAt),
-			QuestionId:  int32(answerDTO.QuestionID),
+			QuestionId:  answerDTO.QuestionID,
 		},
 	})
 	if err != nil {
@@ -118,7 +118,7 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]int32{"answer_id": resp.AnswerId})
+	json.NewEncoder(w).Encode(map[string]int64{"answer_id": resp.AnswerId})
 }
 
 func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
@@ -133,14 +133,14 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	// Fetch answer to get question ID
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	answerResp, err := examService.Client().GetAnswer(ctx, &proto.GetAnswerRequest{
-		AnswerId: int32(updateDTO.AnswerID),
+		AnswerId: updateDTO.AnswerID,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -160,13 +160,13 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	// Create metadata with question max score
 	md := metadata.New(map[string]string{
-		"user_id":        strconv.Itoa(userID),
+		"user_id":        strconv.FormatInt(userID, 10),
 		"question_score": strconv.Itoa(int(questionResp.MaxScore)),
 	})
 	ctx = metadata.NewOutgoingContext(context.Background(), md)
 
 	req := &proto.UpdateAnswerRequest{
-		AnswerId: int32(updateDTO.AnswerID),
+		AnswerId: updateDTO.AnswerID,
 	}
 
 	if updateDTO.NewScore != nil {
@@ -197,19 +197,19 @@ func MarkAsEvaluated(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	resp, err := examService.Client().MarkAsEvaluated(ctx, &proto.ParticipantRequest{
-		ParticipantId: int32(participantID),
+		ParticipantId: int64(participantID),
 	})
 	if err != nil {
 		handleGRPCError(w, err)
 		return
 	}
 
-	response := map[string]int64{
+	response := map[string]int32{
 		"unevaluatedCount": resp.UnevaluatedCount,
 	}
 

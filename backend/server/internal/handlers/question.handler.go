@@ -19,13 +19,13 @@ import (
 func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	paperID, _ := strconv.Atoi(vars["id"])
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
 	response, err := paperService.Client().GetPaperQuestions(ctx, &proto.PaperRequest{
-		PaperId: int32(paperID),
+		PaperId: int64(paperID),
 	})
 
 	if err != nil {
@@ -47,9 +47,9 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 		}
 
 		httpResponse[i] = dtos.QuestionMinimalResponse{
-			ID:         int(q.Id),
-			CategoryID: int(q.CategoryId),
-			PaperID:    int(q.PaperId),
+			ID:         q.Id,
+			CategoryID: q.CategoryId,
+			PaperID:    q.PaperId,
 			Order:      int(q.Order),
 			Question:   questionData,
 		}
@@ -62,13 +62,13 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 func GetQuestion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	questionID, _ := strconv.Atoi(vars["id"])
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
 	response, err := paperService.Client().GetQuestion(ctx, &proto.QuestionRequest{
-		QuestionId: int32(questionID),
+		QuestionId: int64(questionID),
 	})
 
 	if err != nil {
@@ -90,16 +90,16 @@ func GetQuestion(w http.ResponseWriter, r *http.Request) {
 	tags, _ := json.Marshal(response.Tags)
 
 	httpResponse := dtos.QuestionResponse{
-		ID:       int(response.Id),
+		ID:       response.Id,
 		Question: questionData,
 		Category: &dtos.QuestionCategoryResponse{
-			ID:    int(response.Category.Id),
+			ID:    response.Category.Id,
 			Name:  response.Category.Name,
 			Order: int(response.Category.Order),
 		},
 		Type:          response.Type,
 		Tags:          tags,
-		PaperID:       int(response.PaperId),
+		PaperID:       response.PaperId,
 		MaxScore:      int(response.MaxScore),
 		CorrectAnswer: *response.CorrectAnswer,
 	}
@@ -111,7 +111,7 @@ func GetQuestion(w http.ResponseWriter, r *http.Request) {
 func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	paperID, _ := strconv.Atoi(vars["id"])
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	var questionDto dtos.CreateQuestionDto
 	if err := json.NewDecoder(r.Body).Decode(&questionDto); err != nil {
@@ -134,9 +134,9 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	requestObj := proto.CreateQuestionRequest{
-		PaperId:       int32(paperID),
+		PaperId:       int64(paperID),
 		Question:      nil,
-		CategoryId:    int32(questionDto.CategoryID),
+		CategoryId:    questionDto.CategoryID,
 		Type:          questionDto.Type,
 		Tags:          tags,
 		MaxScore:      int32(questionDto.MaxScore),
@@ -183,7 +183,7 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	questionID, _ := strconv.Atoi(vars["id"])
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	var updateDto dtos.UpdateQuestionDto
 	if err := json.NewDecoder(r.Body).Decode(&updateDto); err != nil {
@@ -195,7 +195,7 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	ctx := paperService.CreateMetadata(userID)
 
 	request := &proto.UpdateQuestionRequest{
-		QuestionId: int32(questionID),
+		QuestionId: int64(questionID),
 	}
 
 	// Set optional fields only if they are provided
@@ -232,8 +232,7 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if updateDto.CategoryID != 0 {
-		categoryId := int32(updateDto.CategoryID)
-		request.CategoryId = &categoryId
+		request.CategoryId = &updateDto.CategoryID
 	}
 
 	if updateDto.MaxScore != 0 {
@@ -266,13 +265,13 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	questionID, _ := strconv.Atoi(vars["id"])
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
 	_, err := paperService.Client().DeleteQuestion(ctx, &proto.QuestionRequest{
-		QuestionId: int32(questionID),
+		QuestionId: int64(questionID),
 	})
 
 	if err != nil {
@@ -286,7 +285,7 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 func ReorderQuestions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	categoryID, _ := strconv.Atoi(vars["category_id"])
-	userID := r.Context().Value(middlewares.UserIDKey).(int)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	var reorderDto dtos.ReorderQuestionsDto
 	if err := json.NewDecoder(r.Body).Decode(&reorderDto); err != nil {
@@ -302,13 +301,13 @@ func ReorderQuestions(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	questionIDs := make([]int32, len(reorderDto.Questions))
+	questionIDs := make([]int64, len(reorderDto.Questions))
 	for i, id := range reorderDto.Questions {
-		questionIDs[i] = int32(id)
+		questionIDs[i] = id
 	}
 
 	_, err := paperService.Client().ReorderQuestions(ctx, &proto.ReorderQuestionsRequest{
-		CategoryId:  int32(categoryID),
+		CategoryId:  int64(categoryID),
 		QuestionIds: questionIDs,
 	})
 
@@ -324,10 +323,10 @@ func protoQuestionToResponse(resp *proto.QuestionResponse) dtos.QuestionResponse
 	tags, _ := json.Marshal(resp.Tags)
 
 	response := dtos.QuestionResponse{
-		ID:            int(resp.Id),
+		ID:            resp.Id,
 		Type:          resp.Type,
 		Tags:          tags,
-		PaperID:       int(resp.PaperId),
+		PaperID:       resp.PaperId,
 		MaxScore:      int(resp.MaxScore),
 		CorrectAnswer: resp.GetCorrectAnswer(),
 	}
@@ -343,7 +342,7 @@ func protoQuestionToResponse(resp *proto.QuestionResponse) dtos.QuestionResponse
 
 	if resp.Category != nil {
 		response.Category = &dtos.QuestionCategoryResponse{
-			ID:    int(resp.Category.Id),
+			ID:    resp.Category.Id,
 			Name:  resp.Category.Name,
 			Order: int(resp.Category.Order),
 		}

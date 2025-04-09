@@ -16,14 +16,14 @@ func createExamResponse(exam *models.Exam) (*proto.ExamResponse, error) {
 	}
 
 	return &proto.ExamResponse{
-		Id:                 int32(exam.ID),
+		Id:                 exam.ID,
 		Title:              exam.Title,
 		StartsAt:           timestamppb.New(exam.StartsAt),
 		EndsAt:             timestamppb.New(exam.EndsAt),
-		CreatedBy:          int32(exam.CreatedBy),
+		CreatedBy:          exam.CreatedBy,
 		Type:               exam.Type,
 		MaxCandidatesCount: int32(exam.MaxCandidatesCount),
-		PaperId:            int32(exam.PaperID),
+		PaperId:            exam.PaperID,
 		ParticipantCounts: &proto.ParticipantCount{
 			Unattended: int32(counts.Unattended),
 			Invited:    int32(counts.Invited),

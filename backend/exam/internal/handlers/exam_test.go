@@ -20,7 +20,7 @@ func TestGetUserExams(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T)
-		userID       int32
+		userID       int64
 		expectedCode codes.Code
 		validate     func(t *testing.T, resp *proto.ExamList)
 	}{
@@ -28,15 +28,15 @@ func TestGetUserExams(t *testing.T) {
 			name: "Success - Get user exams",
 			setup: func(t *testing.T) {
 				// Create multiple exams for the user
-				createTestExam(t, int(userID))
-				createTestExam(t, int(userID))
+				createTestExam(t, userID)
+				createTestExam(t, userID)
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamList) {
 				assert.Equal(t, 2, len(resp.Exams))
 				for _, exam := range resp.Exams {
-					assert.Equal(t, int32(userID), exam.CreatedBy)
+					assert.Equal(t, userID, exam.CreatedBy)
 					assert.Equal(t, "Test Exam", exam.Title)
 					assert.Equal(t, "PRIVATE", exam.Type)
 				}
@@ -54,14 +54,14 @@ func TestGetUserExams(t *testing.T) {
 		{
 			name: "Success - Only get own exams",
 			setup: func(t *testing.T) {
-				createTestExam(t, int(userID))
+				createTestExam(t, userID)
 				createTestExam(t, 2) // Different user's exam
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamList) {
 				assert.Equal(t, 1, len(resp.Exams))
-				assert.Equal(t, int32(userID), resp.Exams[0].CreatedBy)
+				assert.Equal(t, userID, resp.Exams[0].CreatedBy)
 			},
 		},
 	}
@@ -94,7 +94,7 @@ func TestCreateExam(t *testing.T) {
 	tests := []struct {
 		name         string
 		request      *proto.CreateExamRequest
-		userID       int32
+		userID       int64
 		expectedCode codes.Code
 		validate     func(t *testing.T, resp *proto.ExamResponse)
 	}{
@@ -112,10 +112,10 @@ func TestCreateExam(t *testing.T) {
 			validate: func(t *testing.T, resp *proto.ExamResponse) {
 				assert.NotZero(t, resp.Id)
 				assert.Equal(t, "New Exam", resp.Title)
-				assert.Equal(t, int32(userID), resp.CreatedBy)
+				assert.Equal(t, userID, resp.CreatedBy)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type) // Should be LINK by default
 				assert.Equal(t, int32(50), resp.MaxCandidatesCount)
-				assert.Equal(t, int32(1), resp.PaperId)
+				assert.Equal(t, int64(1), resp.PaperId)
 
 				// Verify in database
 				var exam models.Exam
@@ -245,14 +245,14 @@ func TestUpdateExam(t *testing.T) {
 		name         string
 		setup        func(t *testing.T) *models.Exam
 		request      *proto.UpdateExamRequest
-		userID       int32
+		userID       int64
 		expectedCode codes.Code
 		validate     func(t *testing.T, exam *models.Exam)
 	}{
 		{
 			name: "Success - Update all fields",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				exam.StartsAt = time.Now().Add(24 * time.Hour)
 				exam.EndsAt = time.Now().Add(48 * time.Hour)
 				require.NoError(t, db.DB.Save(&exam).Error)
@@ -279,7 +279,7 @@ func TestUpdateExam(t *testing.T) {
 		{
 			name: "Fail - Cannot update started exam timing",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				exam.StartsAt = time.Now().Add(-1 * time.Hour)
 				require.NoError(t, db.DB.Save(&exam).Error)
 				return &exam
@@ -293,7 +293,7 @@ func TestUpdateExam(t *testing.T) {
 		{
 			name: "Fail - Cannot update ended exam",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				exam.StartsAt = time.Now().Add(-2 * time.Hour)
 				exam.EndsAt = time.Now().Add(-1 * time.Hour)
 				require.NoError(t, db.DB.Save(&exam).Error)
@@ -308,7 +308,7 @@ func TestUpdateExam(t *testing.T) {
 		{
 			name: "Fail - End time before start time",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				exam.StartsAt = time.Now().Add(24 * time.Hour)
 				exam.EndsAt = time.Now().Add(48 * time.Hour)
 				require.NoError(t, db.DB.Save(&exam).Error)
@@ -349,7 +349,7 @@ func TestUpdateExam(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			exam := tt.setup(t)
-			tt.request.ExamId = int32(exam.ID)
+			tt.request.ExamId = exam.ID
 
 			ctx := createContextWithUserID(tt.userID)
 			resp, err := client.UpdateExam(ctx, tt.request)
@@ -372,9 +372,9 @@ func TestEndExam(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T) (*models.Exam, *models.ExamParticipant)
-		userID       int32
+		userID       int64
 		expectedCode codes.Code
-		validate     func(t *testing.T, examID, participantID int)
+		validate     func(t *testing.T, examID int64, participantID int64)
 	}{
 		{
 			name: "Success - End exam",
@@ -385,10 +385,10 @@ func TestEndExam(t *testing.T) {
 				require.NoError(t, db.DB.Save(&exam).Error)
 
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
 				}{
-					{UserID: int(userID), Status: constants.PARTICIPANT_STATUS_STARTED},
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
 
@@ -398,7 +398,7 @@ func TestEndExam(t *testing.T) {
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, examID, participantID int) {
+			validate: func(t *testing.T, examID int64, participantID int64) {
 				var exam models.Exam
 				require.NoError(t, db.DB.First(&exam, examID).Error)
 				counts, err := exam.GetParticipantCounts()
@@ -438,10 +438,10 @@ func TestEndExam(t *testing.T) {
 				require.NoError(t, db.DB.Save(&exam).Error)
 
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
 				}{
-					{UserID: int(userID), Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
 
@@ -461,7 +461,7 @@ func TestEndExam(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			_, err := client.EndExam(ctx, &proto.EndExamRequest{
-				ExamId: int32(exam.ID),
+				ExamId: exam.ID,
 			})
 
 			if tt.expectedCode != codes.OK {
@@ -481,7 +481,7 @@ func TestStartExam(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T) *models.Exam
-		userID       int32
+		userID       int64
 		duration     int32
 		expectedCode codes.Code
 		validate     func(t *testing.T, exam *models.Exam)
@@ -495,10 +495,10 @@ func TestStartExam(t *testing.T) {
 				require.NoError(t, db.DB.Save(&exam).Error)
 
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
 				}{
-					{UserID: int(userID), Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
 				return &exam
@@ -551,10 +551,10 @@ func TestStartExam(t *testing.T) {
 				require.NoError(t, db.DB.Save(&exam).Error)
 
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
 				}{
-					{UserID: int(userID), Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
 				return &exam
@@ -572,10 +572,10 @@ func TestStartExam(t *testing.T) {
 				require.NoError(t, db.DB.Save(&exam).Error)
 
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
 				}{
-					{UserID: int(userID), Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
 				return &exam
@@ -593,10 +593,10 @@ func TestStartExam(t *testing.T) {
 				require.NoError(t, db.DB.Save(&exam).Error)
 
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
 				}{
-					{UserID: int(userID), Status: constants.PARTICIPANT_STATUS_STARTED},
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
 				return &exam
@@ -627,7 +627,7 @@ func TestStartExam(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			_, err := client.StartExam(ctx, &proto.StartExamRequest{
-				ExamId:          int32(exam.ID),
+				ExamId:          exam.ID,
 				DurationMinutes: tt.duration,
 			})
 

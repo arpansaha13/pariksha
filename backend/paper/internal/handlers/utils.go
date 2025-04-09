@@ -18,19 +18,17 @@ import (
 
 // Helper function to check if a paper exists
 func paperExists(paperID any) (bool, error) {
-	var actualPaperID int
+	var actualPaperID int64
 
-	// Convert the ID to a standard int
+	// Convert the ID to a standard int64
 	switch v := paperID.(type) {
 	case sql.NullInt64:
 		if !v.Valid {
 			return false, status.Error(codes.InvalidArgument, "invalid paper id")
 		}
-		actualPaperID = int(v.Int64)
-	case int:
+		actualPaperID = v.Int64
+	case int64:
 		actualPaperID = v
-	case int32:
-		actualPaperID = int(v)
 	default:
 		return false, status.Error(codes.InvalidArgument, "invalid paper id type")
 	}
@@ -51,13 +49,13 @@ func paperToProto(paper models.Paper) *proto.PaperResponse {
 	json.Unmarshal(paper.QuestionCounts, &questionCounts)
 
 	return &proto.PaperResponse{
-		Id:              int32(paper.ID),
+		Id:              paper.ID,
 		Title:           paper.Title,
 		MaxScore:        int32(paper.MaxScore),
 		DurationMinutes: int32(paper.DurationMinutes),
 		QuestionCounts:  &questionCounts,
 		Ownership: &proto.PaperOwnership{
-			Id:   int32(paper.PaperOwnership.ID),
+			Id:   paper.PaperOwnership.ID,
 			Path: paper.PaperOwnership.Path,
 			Type: paper.PaperOwnership.Type,
 		},
@@ -68,7 +66,7 @@ func questionToProto(question models.Question, includeCategory bool) (*proto.Que
 	var category *proto.CategoryResponse
 	if includeCategory {
 		category = &proto.CategoryResponse{
-			Id:    int32(question.Category.ID),
+			Id:    question.Category.ID,
 			Name:  question.Category.Name,
 			Order: int32(question.Category.Order),
 		}
@@ -82,12 +80,12 @@ func questionToProto(question models.Question, includeCategory bool) (*proto.Que
 	}
 
 	response := &proto.QuestionResponse{
-		Id:            int32(question.ID),
+		Id:            question.ID,
 		Question:      nil,
 		Category:      category,
 		Type:          question.Type,
 		Tags:          tags,
-		PaperId:       int32(question.PaperID.Int64),
+		PaperId:       question.PaperID.Int64,
 		MaxScore:      int32(question.MaxScore),
 		CorrectAnswer: &question.CorrectAnswer.String,
 	}
@@ -120,19 +118,19 @@ func questionToProto(question models.Question, includeCategory bool) (*proto.Que
 }
 
 // Helper function to verify paper access
-func verifyPaperAccess(tx *gorm.DB, paperID interface{}, userID int32, ownershipType string) error {
+func verifyPaperAccess(tx *gorm.DB, paperID any, userID int64, ownershipType string) error {
 	if tx == nil {
 		tx = db.DB
 	}
 
-	var actualPaperID int
+	var actualPaperID int64
 	switch v := paperID.(type) {
 	case sql.NullInt64:
 		if !v.Valid {
 			return status.Error(codes.InvalidArgument, "invalid paper id")
 		}
-		actualPaperID = int(v.Int64)
-	case int:
+		actualPaperID = v.Int64
+	case int64:
 		actualPaperID = v
 	default:
 		return status.Error(codes.InvalidArgument, "invalid paper id type")
@@ -250,7 +248,7 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 	}
 
 	if req.CategoryId != nil {
-		question.CategoryID = int(req.GetCategoryId())
+		question.CategoryID = req.GetCategoryId()
 	}
 
 	if req.MaxScore != nil {

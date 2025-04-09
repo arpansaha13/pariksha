@@ -30,11 +30,11 @@ func TestGetParticipantAnswers(t *testing.T) {
 		{
 			name: "Success - Get multiple answers",
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
-				}{{UserID: int(userID), Status: 1}})
+				}{{UserID: userID, Status: 1}})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -47,7 +47,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 				return &participant
 			},
 			metadata: map[string]string{
-				"user_id":        strconv.Itoa(int(userID)),
+				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
 			},
 			expectedCode: codes.OK,
@@ -66,7 +66,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 				return &models.ExamParticipant{ID: 9999}
 			},
 			metadata: map[string]string{
-				"user_id":        strconv.Itoa(int(userID)),
+				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
 			},
 			expectedCode: codes.NotFound,
@@ -74,11 +74,11 @@ func TestGetParticipantAnswers(t *testing.T) {
 		{
 			name: "Fail - No answers found",
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
-				}{{UserID: int(userID), Status: 1}})
+				}{{UserID: userID, Status: 1}})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -86,7 +86,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 				return &participant
 			},
 			metadata: map[string]string{
-				"user_id":        strconv.Itoa(int(userID)),
+				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
 			},
 			expectedCode: codes.NotFound,
@@ -100,7 +100,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 
 			ctx := createContextWithMetadata(tt.metadata)
 			resp, err := client.GetParticipantAnswers(ctx, &proto.ParticipantRequest{
-				ParticipantId: int32(participant.ID),
+				ParticipantId: participant.ID,
 			})
 
 			if tt.expectedCode != codes.OK {
@@ -126,11 +126,11 @@ func TestGetAnswer(t *testing.T) {
 		{
 			name: "Success - Get single answer",
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
-				}{{UserID: int(userID), Status: 1}})
+				}{{UserID: userID, Status: 1}})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -140,7 +140,7 @@ func TestGetAnswer(t *testing.T) {
 				return &answer
 			},
 			metadata: map[string]string{
-				"user_id":        strconv.Itoa(int(userID)),
+				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
 			},
 			expectedCode: codes.OK,
@@ -156,7 +156,7 @@ func TestGetAnswer(t *testing.T) {
 				return &models.Answer{ID: 9999}
 			},
 			metadata: map[string]string{
-				"user_id":        strconv.Itoa(int(userID)),
+				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
 			},
 			expectedCode: codes.NotFound,
@@ -170,7 +170,7 @@ func TestGetAnswer(t *testing.T) {
 
 			ctx := createContextWithMetadata(tt.metadata)
 			resp, err := client.GetAnswer(ctx, &proto.GetAnswerRequest{
-				AnswerId: int32(answer.ID),
+				AnswerId: answer.ID,
 			})
 
 			if tt.expectedCode != codes.OK {
@@ -189,7 +189,7 @@ func TestUpsertAnswer(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest)
-		userID       int32
+		userID       int64
 		metadata     map[string]string
 		expectedCode codes.Code
 		validate     func(t *testing.T, resp *proto.UpsertAnswersResponse)
@@ -199,10 +199,10 @@ func TestUpsertAnswer(t *testing.T) {
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2) // Created by different user
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
 				}{
-					{UserID: int(userID), Status: 2}, // Status STARTED
+					{UserID: userID, Status: 2}, // Status STARTED
 				})
 				require.NoError(t, err)
 
@@ -214,7 +214,7 @@ func TestUpsertAnswer(t *testing.T) {
 				require.NoError(t, db.DB.Save(&participant).Error)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: int32(exam.ID),
+					ExamId: exam.ID,
 					Answer: &proto.Answer{
 						QuestionId:  1,
 						Answer:      "Test answer content",
@@ -224,7 +224,7 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 			userID: userID,
 			metadata: map[string]string{
-				"user_id":        strconv.Itoa(int(userID)),
+				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
 			},
 			expectedCode: codes.OK,
@@ -235,7 +235,7 @@ func TestUpsertAnswer(t *testing.T) {
 				var answer models.Answer
 				require.NoError(t, db.DB.First(&answer, resp.AnswerId).Error)
 				assert.Equal(t, "Test answer content", answer.Answer.String)
-				assert.Equal(t, 1, answer.QuestionID)
+				assert.Equal(t, int64(1), answer.QuestionID)
 			},
 		},
 		{
@@ -243,10 +243,10 @@ func TestUpsertAnswer(t *testing.T) {
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
 				}{
-					{UserID: int(userID), Status: 2}, // Status STARTED
+					{UserID: userID, Status: 2}, // Status STARTED
 				})
 				require.NoError(t, err)
 
@@ -261,9 +261,9 @@ func TestUpsertAnswer(t *testing.T) {
 				answer := createTestAnswer(t, &participant, 1)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: int32(exam.ID),
+					ExamId: exam.ID,
 					Answer: &proto.Answer{
-						QuestionId:  int32(answer.QuestionID),
+						QuestionId:  answer.QuestionID,
 						Answer:      "Updated answer content",
 						SubmittedAt: timestamppb.Now(),
 					},
@@ -271,7 +271,7 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 			userID: userID,
 			metadata: map[string]string{
-				"user_id":        strconv.Itoa(int(userID)),
+				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
 			},
 			expectedCode: codes.OK,
@@ -298,7 +298,7 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 			userID: userID,
 			metadata: map[string]string{
-				"user_id":        strconv.Itoa(int(userID)),
+				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
 			},
 			expectedCode: codes.NotFound,
@@ -308,15 +308,15 @@ func TestUpsertAnswer(t *testing.T) {
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
 				}{
-					{UserID: int(userID), Status: 1}, // Status INVITED
+					{UserID: userID, Status: 1}, // Status INVITED
 				})
 				require.NoError(t, err)
 
 				return nil, &proto.UpsertAnswersRequest{
-					ExamId: int32(exam.ID),
+					ExamId: exam.ID,
 					Answer: &proto.Answer{
 						QuestionId:  1,
 						Answer:      "Test answer",
@@ -326,7 +326,7 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 			userID: userID,
 			metadata: map[string]string{
-				"user_id":        strconv.Itoa(int(userID)),
+				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
 			},
 			expectedCode: codes.FailedPrecondition,
@@ -336,10 +336,10 @@ func TestUpsertAnswer(t *testing.T) {
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
 				}{
-					{UserID: int(userID), Status: constants.PARTICIPANT_STATUS_STARTED},
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
 
@@ -351,7 +351,7 @@ func TestUpsertAnswer(t *testing.T) {
 				require.NoError(t, db.DB.Save(&participant).Error)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: int32(exam.ID),
+					ExamId: exam.ID,
 					Answer: &proto.Answer{
 						QuestionId:  1,
 						Answer:      "Test answer after end time",
@@ -361,7 +361,7 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 			userID: userID,
 			metadata: map[string]string{
-				"user_id":        strconv.Itoa(int(userID)),
+				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
 			},
 			expectedCode: codes.FailedPrecondition,
@@ -400,17 +400,17 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 		request       *proto.UpdateAnswerRequest
 		metadata      map[string]string
 		expectedCode  codes.Code
-		validate      func(t *testing.T, answerId int)
+		validate      func(t *testing.T, answerId int64)
 		questionScore int
 	}{
 		{
 			name: "Success - Update all fields",
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
-				}{{UserID: int(userID), Status: constants.PARTICIPANT_STATUS_ENDED}})
+				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED}})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -431,11 +431,11 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				Comments:  &comments,
 			},
 			metadata: map[string]string{
-				"user_id":        strconv.Itoa(int(userID)),
+				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
 			},
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, answerId int) {
+			validate: func(t *testing.T, answerId int64) {
 				var answer models.Answer
 				require.NoError(t, db.DB.First(&answer, answerId).Error)
 				assert.Equal(t, int(newScore), answer.ScoreAwarded)
@@ -452,11 +452,11 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 		{
 			name: "Success - Update only comments",
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
-				}{{UserID: int(userID), Status: constants.PARTICIPANT_STATUS_ENDED}})
+				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED}})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -469,11 +469,11 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				Comments: &comments,
 			},
 			metadata: map[string]string{
-				"user_id":        strconv.Itoa(int(userID)),
+				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
 			},
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, answerId int) {
+			validate: func(t *testing.T, answerId int64) {
 				var answer models.Answer
 				require.NoError(t, db.DB.First(&answer, answerId).Error)
 				assert.Equal(t, comments, answer.Comments.String)
@@ -484,11 +484,11 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 		{
 			name: "Fail - Score exceeds max score",
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
-				}{{UserID: int(userID), Status: constants.PARTICIPANT_STATUS_ENDED}})
+				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED}})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -515,7 +515,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				NewScore: &newScore,
 			},
 			metadata: map[string]string{
-				"user_id":        strconv.Itoa(int(userID)),
+				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
 			},
 			expectedCode:  codes.NotFound,
@@ -524,11 +524,11 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 		{
 			name: "Fail - Missing question score metadata",
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
-				}{{UserID: int(userID), Status: constants.PARTICIPANT_STATUS_ENDED}})
+				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED}})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -550,7 +550,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			answer := tt.setup(t)
-			tt.request.AnswerId = int32(answer.ID)
+			tt.request.AnswerId = answer.ID
 
 			ctx := createContextWithMetadata(tt.metadata)
 			_, err := client.UpdateAnswerForEvaluation(ctx, tt.request)
@@ -578,11 +578,11 @@ func TestMarkAsEvaluated(t *testing.T) {
 		{
 			name: "Success - All answers evaluated",
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
-				}{{UserID: int(userID), Status: constants.PARTICIPANT_STATUS_ENDED}})
+				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED}})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -602,7 +602,7 @@ func TestMarkAsEvaluated(t *testing.T) {
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, participant *models.ExamParticipant, resp *proto.EvaluationStatusResponse) {
 				// Verify unevaluated count is 0
-				assert.Equal(t, int64(0), resp.UnevaluatedCount)
+				assert.Equal(t, int32(0), resp.UnevaluatedCount)
 
 				// Verify participant status changed to EVALUATED
 				var updatedParticipant models.ExamParticipant
@@ -613,11 +613,11 @@ func TestMarkAsEvaluated(t *testing.T) {
 		{
 			name: "Success - Some answers unevaluated",
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
-				}{{UserID: int(userID), Status: constants.PARTICIPANT_STATUS_ENDED}})
+				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED}})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -637,7 +637,7 @@ func TestMarkAsEvaluated(t *testing.T) {
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, participant *models.ExamParticipant, resp *proto.EvaluationStatusResponse) {
 				// Verify one answer is still unevaluated
-				assert.Equal(t, int64(1), resp.UnevaluatedCount)
+				assert.Equal(t, int32(1), resp.UnevaluatedCount)
 
 				// Verify participant status remains ENDED
 				var updatedParticipant models.ExamParticipant
@@ -655,11 +655,11 @@ func TestMarkAsEvaluated(t *testing.T) {
 		{
 			name: "Fail - Exam not ended",
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, int(userID))
+				exam := createTestExam(t, userID)
 				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int
+					UserID int64
 					Status int
-				}{{UserID: int(userID), Status: constants.PARTICIPANT_STATUS_STARTED}})
+				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED}})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -676,7 +676,7 @@ func TestMarkAsEvaluated(t *testing.T) {
 			participant := tt.setup(t)
 
 			resp, err := client.MarkAsEvaluated(context.Background(), &proto.ParticipantRequest{
-				ParticipantId: int32(participant.ID),
+				ParticipantId: participant.ID,
 			})
 
 			if tt.expectedCode != codes.OK {

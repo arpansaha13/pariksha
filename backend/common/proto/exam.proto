@@ -31,7 +31,7 @@ service ExamService {
 
 // Exam messages
 message ExamRequest {
-  int32 exam_id = 1;
+  int64 exam_id = 1;
 }
 
 message CreateExamRequest {
@@ -40,11 +40,11 @@ message CreateExamRequest {
   google.protobuf.Timestamp ends_at = 3;
   int32 max_candidates_count = 4;
   optional string type = 5;
-  int32 paper_id = 6;
+  int64 paper_id = 6;
 }
 
 message UpdateExamRequest {
-  int32 exam_id = 1;
+  int64 exam_id = 1;
   optional string title = 2;
   optional google.protobuf.Timestamp starts_at = 3;
   optional google.protobuf.Timestamp ends_at = 4;
@@ -53,14 +53,14 @@ message UpdateExamRequest {
 }
 
 message ExamResponse {
-  int32 id = 1;
+  int64 id = 1;
   string title = 2;
   google.protobuf.Timestamp starts_at = 3;
   google.protobuf.Timestamp ends_at = 4;
-  int32 created_by = 5;
+  int64 created_by = 5;
   string type = 6;
   int32 max_candidates_count = 7;
-  int32 paper_id = 8;
+  int64 paper_id = 8;
   ParticipantCount participant_counts = 9;
 }
 
@@ -77,12 +77,12 @@ message ParticipantCount {
 
 // Participant messages
 message ParticipantRequest {
-  int32 participant_id = 1;
+  int64 participant_id = 1;
 }
 
 message ParticipantResponse {
-  int32 id = 1;
-  int32 user_id = 2;
+  int64 id = 1;
+  int64 user_id = 2;
   int32 status = 6;
   int32 score_awarded = 7;
   optional google.protobuf.Timestamp started_at = 8;
@@ -95,48 +95,48 @@ message ParticipantList {
 
 // Replace AddParticipantsRequest with AddParticipantRequest
 message AddParticipantRequest {
-  int32 exam_id = 1;
-  int32 user_id = 2;
+  int64 exam_id = 1;
+  int64 user_id = 2;
 }
 
 message RemoveParticipantRequest {
-  int32 exam_id = 1;
-  int32 participant_id = 2;
+  int64 exam_id = 1;
+  int64 participant_id = 2;
 }
 
 message StartExamRequest {
-  int32 exam_id = 1;
+  int64 exam_id = 1;
   int32 duration_minutes = 2;
 }
 
 message EndExamRequest {
-  int32 exam_id = 1;
+  int64 exam_id = 1;
 }
 
 message EvaluationStatusResponse {
-  int64 unevaluated_count = 1;
+  int32 unevaluated_count = 1;
 }
 
 // Answer messages
 message Answer {
   string answer = 1;
   google.protobuf.Timestamp submitted_at = 2;
-  int32 question_id = 3;
+  int64 question_id = 3;
 }
 
 message UpsertAnswersRequest {
-  int32 exam_id = 1;
+  int64 exam_id = 1;
   Answer answer = 2;
 }
 
 message UpsertAnswersResponse {
-  int32 answer_id = 1;
+  int64 answer_id = 1;
 }
 
 message AnswerResponse {
-  int32 id = 1;
-  int32 exam_participant_id = 2;
-  int32 question_id = 3;
+  int64 id = 1;
+  int64 exam_participant_id = 2;
+  int64 question_id = 3;
   string answer = 4;
   int32 score_awarded = 5;
   string comments = 6;
@@ -147,12 +147,12 @@ message AnswerList {
 }
 
 message UpdateAnswerRequest {
-  int32 answer_id = 1;
+  int64 answer_id = 1;
   optional int32 new_score = 2;
   optional bool evaluated = 3;
   optional string comments = 4;
 }
 
 message GetAnswerRequest {
-  int32 answer_id = 1;
+  int64 answer_id = 1;
 }

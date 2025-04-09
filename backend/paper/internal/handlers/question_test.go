@@ -21,20 +21,20 @@ func TestGetPaperQuestions(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T) (*models.Paper, []models.Question)
-		userID       int32
+		userID       int64
 		expectedCode codes.Code
 		validate     func(t *testing.T, questions []models.Question, resp *proto.QuestionList)
 	}{
 		{
 			name: "Success - Get questions for paper",
 			setup: func(t *testing.T) (*models.Paper, []models.Question) {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
 				questions := []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
 						CategoryID: category.ID,
 						Order:      1,
 						Type:       constants.QUESTION_TYPE_MCQ,
@@ -42,7 +42,7 @@ func TestGetPaperQuestions(t *testing.T) {
 						MaxScore:   5,
 					},
 					{
-						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
 						CategoryID: category.ID,
 						Order:      2,
 						Type:       constants.QUESTION_TYPE_SHORT,
@@ -87,7 +87,7 @@ func TestGetPaperQuestions(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			resp, err := client.GetPaperQuestions(ctx, &proto.PaperRequest{
-				PaperId: int32(paper.ID),
+				PaperId: paper.ID,
 			})
 
 			if tt.expectedCode != codes.OK {
@@ -106,7 +106,7 @@ func TestCreateQuestion(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T) (*models.Paper, *models.QuestionCategory)
-		userID       int32
+		userID       int64
 		request      *proto.CreateQuestionRequest
 		expectedCode codes.Code
 		validate     func(t *testing.T, paper *models.Paper, resp *proto.QuestionResponse)
@@ -114,7 +114,7 @@ func TestCreateQuestion(t *testing.T) {
 		{
 			name: "Success - Create MCQ question",
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 				return &paper, &category
@@ -151,7 +151,7 @@ func TestCreateQuestion(t *testing.T) {
 		{
 			name: "Success - Create SHORT question",
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 				return &paper, &category
@@ -187,7 +187,7 @@ func TestCreateQuestion(t *testing.T) {
 		{
 			name: "Success - Create LONG question",
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 				return &paper, &category
@@ -226,8 +226,8 @@ func TestCreateQuestion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			paper, category := tt.setup(t)
-			tt.request.PaperId = int32(paper.ID)
-			tt.request.CategoryId = int32(category.ID)
+			tt.request.PaperId = paper.ID
+			tt.request.CategoryId = category.ID
 
 			ctx := createContextWithUserID(tt.userID)
 			resp, err := client.CreateQuestion(ctx, tt.request)
@@ -252,14 +252,14 @@ func TestUpdateQuestion(t *testing.T) {
 		name         string
 		setup        func(t *testing.T) (*models.Paper, *models.Question)
 		request      *proto.UpdateQuestionRequest
-		userID       int32
+		userID       int64
 		expectedCode codes.Code
 		validate     func(t *testing.T, paper *models.Paper, question *models.Question)
 	}{
 		{
 			name: "Success - Update question without type change",
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 1, "short": 0, "long": 0}`).Error
 				require.NoError(t, err)
 
@@ -267,7 +267,7 @@ func TestUpdateQuestion(t *testing.T) {
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
 				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
 					CategoryID: category.ID,
 					Order:      1,
 					Type:       constants.QUESTION_TYPE_MCQ,
@@ -311,7 +311,7 @@ func TestUpdateQuestion(t *testing.T) {
 		{
 			name: "Success - Update question with type change",
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 1, "short": 0, "long": 0}`).Error
 				require.NoError(t, err)
 
@@ -319,7 +319,7 @@ func TestUpdateQuestion(t *testing.T) {
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
 				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
 					CategoryID: category.ID,
 					Order:      1,
 					Type:       constants.QUESTION_TYPE_MCQ,
@@ -359,12 +359,12 @@ func TestUpdateQuestion(t *testing.T) {
 		{
 			name: "Success - Update locked question creates new copy",
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
 				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
 					CategoryID: category.ID,
 					Order:      1,
 					Type:       constants.QUESTION_TYPE_MCQ,
@@ -408,12 +408,12 @@ func TestUpdateQuestion(t *testing.T) {
 		{
 			name: "Error - Type change without question content",
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
 				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
 					CategoryID: category.ID,
 					Order:      1,
 					Type:       constants.QUESTION_TYPE_MCQ,
@@ -432,12 +432,12 @@ func TestUpdateQuestion(t *testing.T) {
 		{
 			name: "Error - Type change with mismatched question content",
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
 				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
 					CategoryID: category.ID,
 					Order:      1,
 					Type:       constants.QUESTION_TYPE_MCQ,
@@ -466,7 +466,7 @@ func TestUpdateQuestion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			paper, question := tt.setup(t)
-			tt.request.QuestionId = int32(question.ID)
+			tt.request.QuestionId = question.ID
 
 			ctx := createContextWithUserID(tt.userID)
 			_, err := client.UpdateQuestion(ctx, tt.request)
@@ -486,14 +486,14 @@ func TestDeleteQuestion(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T) (*models.Paper, *models.Question)
-		userID       int32
+		userID       int64
 		expectedCode codes.Code
-		validate     func(t *testing.T, paper *models.Paper, questionID int)
+		validate     func(t *testing.T, paper *models.Paper, questionID int64)
 	}{
 		{
 			name: "Success - Delete MCQ question",
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				// Set initial question counts
 				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 1, "short": 1, "long": 1}`).Error
 				require.NoError(t, err)
@@ -502,7 +502,7 @@ func TestDeleteQuestion(t *testing.T) {
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
 				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
 					CategoryID: category.ID,
 					Order:      1,
 					Type:       constants.QUESTION_TYPE_MCQ,
@@ -514,7 +514,7 @@ func TestDeleteQuestion(t *testing.T) {
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, paper *models.Paper, questionID int) {
+			validate: func(t *testing.T, paper *models.Paper, questionID int64) {
 				// Verify question was deleted
 				var question models.Question
 				err := db.DB.First(&question, questionID).Error
@@ -533,7 +533,7 @@ func TestDeleteQuestion(t *testing.T) {
 		{
 			name: "Success - Delete locked question unlinks it",
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				// Set initial question counts
 				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 2, "short": 1, "long": 0}`).Error
 				require.NoError(t, err)
@@ -542,7 +542,7 @@ func TestDeleteQuestion(t *testing.T) {
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
 				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
 					CategoryID: category.ID,
 					Order:      1,
 					Type:       constants.QUESTION_TYPE_MCQ,
@@ -555,7 +555,7 @@ func TestDeleteQuestion(t *testing.T) {
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, paper *models.Paper, questionID int) {
+			validate: func(t *testing.T, paper *models.Paper, questionID int64) {
 				// Verify question is unlinked but exists
 				var question models.Question
 				require.NoError(t, db.DB.First(&question, questionID).Error)
@@ -581,7 +581,7 @@ func TestDeleteQuestion(t *testing.T) {
 			paper, question := tt.setup(t)
 
 			ctx := createContextWithUserID(tt.userID)
-			_, err := client.DeleteQuestion(ctx, &proto.QuestionRequest{QuestionId: int32(question.ID)})
+			_, err := client.DeleteQuestion(ctx, &proto.QuestionRequest{QuestionId: question.ID})
 
 			if tt.expectedCode != codes.OK {
 				assert.Equal(t, tt.expectedCode, status.Code(err))
@@ -599,27 +599,27 @@ func TestReorderQuestions(t *testing.T) {
 		name         string
 		setup        func(t *testing.T) (*models.Paper, *models.QuestionCategory, []models.Question)
 		request      *proto.ReorderQuestionsRequest
-		userID       int32
+		userID       int64
 		expectedCode codes.Code
 		validate     func(t *testing.T, questions []models.Question)
 	}{
 		{
 			name: "Success - Reorder questions",
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory, []models.Question) {
-				paper := createTestPaper(t, int(userID))
+				paper := createTestPaper(t, userID)
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
 				questions := []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
 						CategoryID: category.ID,
 						Order:      1,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Q1"}`),
 					},
 					{
-						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
 						CategoryID: category.ID,
 						Order:      2,
 						Type:       constants.QUESTION_TYPE_MCQ,
@@ -648,8 +648,8 @@ func TestReorderQuestions(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			_, err := client.ReorderQuestions(ctx, &proto.ReorderQuestionsRequest{
-				CategoryId:  int32(category.ID),
-				QuestionIds: []int32{int32(questions[1].ID), int32(questions[0].ID)}, // Reverse order
+				CategoryId:  category.ID,
+				QuestionIds: []int64{questions[1].ID, questions[0].ID}, // Reverse order
 			})
 
 			if tt.expectedCode != codes.OK {

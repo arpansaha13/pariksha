@@ -3,9 +3,9 @@ package models
 import "database/sql"
 
 type ExamParticipant struct {
-	ID               int `gorm:"primaryKey"`
-	ExamID           int
-	UserID           int
+	ID               int64 `gorm:"primaryKey"`
+	ExamID           int64
+	UserID           int64
 	ScoreAwarded     int
 	Status           int `gorm:"default:1;not null"` // 1 = INVITED
 	StartedAt        sql.NullTime

@@ -1,5 +1,5 @@
 Table users {
-  id integer [primary key]
+  id bigint [primary key]
   username varchar(255) [not null, unique]
   email varchar(255) [not null, unique]
   password varchar(255) [null]
@@ -11,18 +11,18 @@ Table users {
 }
 
 Table exams {
-  id integer [primary key]
+  id bigint [primary key]
   title varchar
   starts_at timestamp [not null]
   ends_at timestamp [not null]
-  created_by integer
+  created_by bigint
   type varchar [note: 'Values can be "LINK" or "INVITE"']
   max_candidates_count integer [note: 'Maximum number of candidates that can take the exam']
-  paper_id integer [note: 'Indicates which paper will be used in this exam']
+  paper_id bigint [note: 'Indicates which paper will be used in this exam']
 }
 
 Table papers {
-  id integer [primary key]
+  id bigint [primary key]
   title varchar(255) [not null, default: 'Untitled Paper']
   max_score integer [not null, default: 0, note: 'Maximum score that can be awarded in this paper - Sum of individual scores of each question']
   duration_minutes integer [not null]
@@ -30,40 +30,40 @@ Table papers {
 }
 
 Table paper_ownerships {
-  id integer [primary key]
-  user_id integer [not null]
-  paper_id integer [not null]
+  id bigint [primary key]
+  user_id bigint [not null]
+  paper_id bigint [not null]
   path text [null]
   type varchar(10) [not null, note: 'Can be OWNER or SHARED']
 }
 
 Table questions {
-  id integer [primary key]
+  id bigint [primary key]
   question json [not null]
-  category_id integer [not null, note: 'Used to group multiple questions']
+  category_id bigint [not null, note: 'Used to group multiple questions']
   order integer [not null]
   type varchar(20) [not null, note: 'MCQ, Short-answer, Long-answer']
   tags json [not null, default: '[]']
-  paper_id integer [null]
+  paper_id bigint [null]
   max_score integer [not null]
   correct_answer text [null]
   locked boolean [not null, default: false, note: 'Indicates if the question is used in an exam and is locked for editing']
 }
 
 Table exam_participants {
-  id integer [primary key]
+  id bigint [primary key]
   started_at timestamp
   ended_at timestamp
   scheduled_end_time timestamp [note: 'We cannot rely on calculating (starts_at + paper.duration) everytime because the paper duration could update during the exam']
-  exam_id integer
-  user_id integer [note: 'Which users can take this exam']
+  exam_id bigint
+  user_id bigint [note: 'Which users can take this exam']
   score_awarded integer [note: 'Total score obtained in this exam by this candidate - Sum of individual scores of each answer']
 }
 
 Table answers {
-  id integer [primary key]
-  exam_participant_id integer [note: 'Which exam and user this answer-set belongs to']
-  question_id integer [note: 'This answer is for which question']
+  id bigint [primary key]
+  exam_participant_id bigint [note: 'Which exam and user this answer-set belongs to']
+  question_id bigint [note: 'This answer is for which question']
   answer text
   score_awarded integer [note: 'Score awarded on this answer', default: 0]
   comments text [note: 'Any comments the evaluator might want to add, for e.g. why is the answer wrong']
@@ -71,15 +71,15 @@ Table answers {
 }
 
 Table exam_questions {
-  id integer [primary key]
-  exam_id integer [not null]
-  question_id integer [not null]
+  id bigint [primary key]
+  exam_id bigint [not null]
+  question_id bigint [not null]
 }
 
 Table exam_categories {
-  id integer [primary key]
-  exam_id integer [not null]
-  category_id integer [not null]
+  id bigint [primary key]
+  exam_id bigint [not null]
+  category_id bigint [not null]
 }
 
 Table sessions {
@@ -90,8 +90,8 @@ Table sessions {
 }
 
 Table question_categories {
-  id integer [primary key]
-  paper_id integer [null]
+  id bigint [primary key]
+  paper_id bigint [null]
   name varchar(255) [not null]
   order integer [not null, note: 'Used to maintain the order of categories']
   locked boolean [not null, default: false, note: 'Indicates if the category is used in an exam and is locked for editing']
