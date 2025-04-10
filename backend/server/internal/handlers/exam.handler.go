@@ -377,3 +377,38 @@ func EndExam(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func GetExam(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	examID, err := strconv.Atoi(vars["examId"])
+	if err != nil {
+		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		return
+	}
+
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	examService := services.GetExamService()
+	ctx := examService.CreateMetadata(userID)
+
+	exam, err := examService.Client().GetExam(ctx, &proto.ExamRequest{
+		ExamId: int64(examID),
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	response := dtos.ExamResponse{
+		ID:                 exam.Id,
+		Title:              exam.Title,
+		StartsAt:           exam.StartsAt.AsTime(),
+		EndsAt:             exam.EndsAt.AsTime(),
+		CreatedBy:          exam.CreatedBy,
+		Type:               exam.Type,
+		MaxCandidatesCount: int(exam.MaxCandidatesCount),
+		PaperID:            exam.PaperId,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}

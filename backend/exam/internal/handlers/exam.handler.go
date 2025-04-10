@@ -314,3 +314,34 @@ func (s *ExamServer) EndExam(ctx context.Context, req *proto.EndExamRequest) (*p
 
 	return &proto.Empty{}, nil
 }
+
+func (s *ExamServer) GetExam(ctx context.Context, req *proto.ExamRequest) (*proto.ExamResponse, error) {
+	userID, err := utils.GetUserIDFromMetadata(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var exam models.Exam
+	if err := db.DB.Take(&exam, req.ExamId).Error; err != nil {
+		return nil, status.Error(codes.NotFound, "exam not found")
+	}
+
+	// Check if user owns the exam or is a participant
+	isOwner := exam.CreatedBy == userID
+	isParticipant := false
+
+	if !isOwner {
+		var participant models.ExamParticipant
+		err := db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.Internal, "database error")
+		}
+		isParticipant = err == nil
+	}
+
+	if !isOwner && !isParticipant {
+		return nil, status.Error(codes.PermissionDenied, "not authorized to view exam")
+	}
+
+	return createExamResponse(&exam)
+}
