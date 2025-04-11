@@ -4,3 +4,6 @@ export { usePaperQuestions } from './api/papers/usePaperQuestions'
 export { usePaperCategories } from './api/papers/usePaperCategories'
 
 export { useQuestion } from './api/papers/useQuestion'
+
+export { useExam } from './api/exams/useExam'
+export { useExams } from './api/exams/useExams'

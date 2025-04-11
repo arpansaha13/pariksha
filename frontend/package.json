@@ -30,6 +30,7 @@
     "@nuxt/ui": "^3.0.0",
     "@nuxtjs/html-validator": "^1.8.2",
     "@pinia/nuxt": "^0.10.1",
+    "@vueuse/core": "^13.1.0",
     "@vueuse/nuxt": "^13.0.0",
     "nuxt": "^3.16.0",
     "pinia": "^3.0.1",

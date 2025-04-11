@@ -6,11 +6,11 @@
       <UForm
         :state="formState"
         :validate="validate"
-        :validate-on="['submit']"
+        :validate-on="[]"
         class="flex flex-col gap-y-5"
         @submit.prevent="onSubmit"
       >
-        <UFormField label="Type" name="type" required>
+        <UFormField label="Title" name="type" required>
           <UInput v-model="formState.title" required />
         </UFormField>
 
@@ -105,7 +105,11 @@ import { type Exam, ExamAccessType } from '~/types/exam'
 
 const newExamStore = useNewExamStore()
 
-const formState = reactive<Pick<Exam, 'title' | 'type'>>({
+interface ExamFormState extends Pick<Exam, 'title' | 'type'> {
+  paper_id: number | undefined
+}
+
+const formState = reactive<ExamFormState>({
   title: newExamStore.title ?? '',
   type: newExamStore.type ?? ExamAccessType.LINK,
   paper_id: newExamStore.paper_id ?? undefined,
@@ -120,8 +124,12 @@ const today = new CalendarDateTime(
   date.getDate()
 )
 
-const startDate = shallowRef(newExamStore.startDate ?? today)
-const endDate = shallowRef(newExamStore.endDate ?? today)
+const startDate = shallowRef(
+  (newExamStore.startDate as CalendarDateTime | null) ?? today
+)
+const endDate = shallowRef(
+  (newExamStore.endDate as CalendarDateTime | null) ?? today
+)
 
 watch(startDate, newValue => {
   if (newValue > endDate.value) {
@@ -136,7 +144,7 @@ const df = new DateFormatter('en-US', {
 onBeforeUnmount(() => {
   newExamStore.title = formState.title
   newExamStore.type = formState.type
-  newExamStore.paper_id = formState.paper_id
+  newExamStore.paper_id = formState.paper_id ?? null
   newExamStore.startDate = startDate.value
   newExamStore.endDate = endDate.value
 })
@@ -149,7 +157,7 @@ async function onSubmit() {
   const createdExam = await createExam({
     title: formState.title,
     type: formState.type,
-    paper_id: formState.paper_id,
+    paper_id: formState.paper_id!,
     starts_at: startDate.value.toDate(getLocalTimeZone()),
     ends_at: endsAt.toDate(getLocalTimeZone()),
   })
@@ -159,7 +167,7 @@ async function onSubmit() {
 }
 
 function validate(
-  formState: Partial<Pick<Exam, 'title' | 'type'>>
+  formState: Partial<Pick<Exam, 'title' | 'type' | 'paper_id'>>
 ): FormError[] {
   const errors: FormError[] = []
 
