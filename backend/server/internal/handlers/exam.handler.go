@@ -151,7 +151,7 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 
 	exam, err := examService.Client().UpdateExam(ctx, req)
 	if err != nil {
-		http.Error(w, "Failed to update exam", http.StatusInternalServerError)
+		handleGRPCError(w, err)
 		return
 	}
 
@@ -407,6 +407,34 @@ func GetExam(w http.ResponseWriter, r *http.Request) {
 		Type:               exam.Type,
 		MaxCandidatesCount: int(exam.MaxCandidatesCount),
 		PaperID:            exam.PaperId,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func CheckExamAccess(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	examID, err := strconv.Atoi(vars["examId"])
+	if err != nil {
+		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		return
+	}
+
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	examService := services.GetExamService()
+	ctx := examService.CreateMetadata(userID)
+
+	access, err := examService.Client().CheckExamAccess(ctx, &proto.ExamRequest{
+		ExamId: int64(examID),
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	response := dtos.ExamAccessResponse{
+		AccessType: access.AccessType.String(),
 	}
 
 	w.Header().Set("Content-Type", "application/json")

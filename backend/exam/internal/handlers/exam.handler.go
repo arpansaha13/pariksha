@@ -326,22 +326,65 @@ func (s *ExamServer) GetExam(ctx context.Context, req *proto.ExamRequest) (*prot
 		return nil, status.Error(codes.NotFound, "exam not found")
 	}
 
-	// Check if user owns the exam or is a participant
-	isOwner := exam.CreatedBy == userID
-	isParticipant := false
-
-	if !isOwner {
-		var participant models.ExamParticipant
-		err := db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error
-		if err != nil && err != gorm.ErrRecordNotFound {
-			return nil, status.Error(codes.Internal, "database error")
-		}
-		isParticipant = err == nil
+	// Check if user owns the exam
+	if exam.CreatedBy == userID {
+		return createExamResponse(&exam)
 	}
 
-	if !isOwner && !isParticipant {
-		return nil, status.Error(codes.PermissionDenied, "not authorized to view exam")
+	// If exam type is LINK, everyone has access
+	if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
+		return createExamResponse(&exam)
+	}
+
+	// For INVITE type exams, check if user is a participant
+	var participant models.ExamParticipant
+	err = db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.PermissionDenied, "not authorized to view exam")
+		}
+		return nil, status.Error(codes.Internal, "database error")
 	}
 
 	return createExamResponse(&exam)
+}
+
+func (s *ExamServer) CheckExamAccess(ctx context.Context, req *proto.ExamRequest) (*proto.ExamAccessResponse, error) {
+	userID, err := utils.GetUserIDFromMetadata(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var exam models.Exam
+	if err := db.DB.Take(&exam, req.ExamId).Error; err != nil {
+		return nil, status.Error(codes.NotFound, "exam not found")
+	}
+
+	// Check if user owns the exam
+	if exam.CreatedBy == userID {
+		return &proto.ExamAccessResponse{
+			AccessType: proto.ExamAccessType_OWNER,
+		}, nil
+	}
+
+	// If exam type is LINK, everyone has access as participant
+	if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
+		return &proto.ExamAccessResponse{
+			AccessType: proto.ExamAccessType_PARTICIPANT,
+		}, nil
+	}
+
+	// For INVITE type exams, check if user is a participant
+	var participant models.ExamParticipant
+	err = db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.PermissionDenied, "not authorized to access exam")
+		}
+		return nil, status.Error(codes.Internal, "database error")
+	}
+
+	return &proto.ExamAccessResponse{
+		AccessType: proto.ExamAccessType_PARTICIPANT,
+	}, nil
 }

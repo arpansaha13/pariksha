@@ -13,6 +13,7 @@ service ExamService {
   rpc CreateExam(CreateExamRequest) returns (ExamResponse) {}
   rpc UpdateExam(UpdateExamRequest) returns (ExamResponse) {}
   rpc GetExam(ExamRequest) returns (ExamResponse) {}
+  rpc CheckExamAccess(ExamRequest) returns (ExamAccessResponse) {}
 
   // Participant operations
   rpc GetExamParticipants(ExamRequest) returns (ParticipantList) {}
@@ -155,4 +156,13 @@ message UpdateAnswerRequest {
 
 message GetAnswerRequest {
   int64 answer_id = 1;
+}
+
+message ExamAccessResponse {
+  ExamAccessType access_type = 1;
+}
+
+enum ExamAccessType {
+  OWNER = 0;
+  PARTICIPANT = 1;
 }

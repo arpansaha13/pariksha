@@ -13,3 +13,8 @@ export interface Exam {
   max_candidates_count: number
   paper_id: number
 }
+
+export enum ExamPermission {
+  OWNER = 'OWNER',
+  PARTICIPANT = 'PARTICIPANT',
+}

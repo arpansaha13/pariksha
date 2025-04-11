@@ -19,3 +19,4 @@ export { reorderQuestions } from './api/papers/reorder-questions'
 
 export { createExam } from './api/exams/createExam'
 export { updateExam } from './api/exams/updateExam'
+export { checkExamAccess } from './api/exams/checkExamAccess'

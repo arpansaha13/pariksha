@@ -22,6 +22,52 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ExamAccessType int32
+
+const (
+	ExamAccessType_OWNER       ExamAccessType = 0
+	ExamAccessType_PARTICIPANT ExamAccessType = 1
+)
+
+// Enum value maps for ExamAccessType.
+var (
+	ExamAccessType_name = map[int32]string{
+		0: "OWNER",
+		1: "PARTICIPANT",
+	}
+	ExamAccessType_value = map[string]int32{
+		"OWNER":       0,
+		"PARTICIPANT": 1,
+	}
+)
+
+func (x ExamAccessType) Enum() *ExamAccessType {
+	p := new(ExamAccessType)
+	*p = x
+	return p
+}
+
+func (x ExamAccessType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ExamAccessType) Descriptor() protoreflect.EnumDescriptor {
+	return file_exam_proto_enumTypes[0].Descriptor()
+}
+
+func (ExamAccessType) Type() protoreflect.EnumType {
+	return &file_exam_proto_enumTypes[0]
+}
+
+func (x ExamAccessType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ExamAccessType.Descriptor instead.
+func (ExamAccessType) EnumDescriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{0}
+}
+
 // Exam messages
 type ExamRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1270,6 +1316,50 @@ func (x *GetAnswerRequest) GetAnswerId() int64 {
 	return 0
 }
 
+type ExamAccessResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AccessType    ExamAccessType         `protobuf:"varint,1,opt,name=access_type,json=accessType,proto3,enum=proto.ExamAccessType" json:"access_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExamAccessResponse) Reset() {
+	*x = ExamAccessResponse{}
+	mi := &file_exam_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExamAccessResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExamAccessResponse) ProtoMessage() {}
+
+func (x *ExamAccessResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExamAccessResponse.ProtoReflect.Descriptor instead.
+func (*ExamAccessResponse) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *ExamAccessResponse) GetAccessType() ExamAccessType {
+	if x != nil {
+		return x.AccessType
+	}
+	return ExamAccessType_OWNER
+}
+
 var File_exam_proto protoreflect.FileDescriptor
 
 var file_exam_proto_rawDesc = string([]byte{
@@ -1450,22 +1540,34 @@ var file_exam_proto_rawDesc = string([]byte{
 	0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x22, 0x2f, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x41, 0x6e,
 	0x73, 0x77, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x61,
 	0x6e, 0x73, 0x77, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x08,
-	0x61, 0x6e, 0x73, 0x77, 0x65, 0x72, 0x49, 0x64, 0x32, 0xaa, 0x07, 0x0a, 0x0b, 0x45, 0x78, 0x61,
-	0x6d, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x2f, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x55,
-	0x73, 0x65, 0x72, 0x45, 0x78, 0x61, 0x6d, 0x73, 0x12, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45,
-	0x78, 0x61, 0x6d, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x3d, 0x0a, 0x0a, 0x43, 0x72, 0x65,
-	0x61, 0x74, 0x65, 0x45, 0x78, 0x61, 0x6d, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e,
-	0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x45, 0x78, 0x61, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x78, 0x61, 0x6d, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x3d, 0x0a, 0x0a, 0x55, 0x70, 0x64, 0x61,
-	0x74, 0x65, 0x45, 0x78, 0x61, 0x6d, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x55,
-	0x70, 0x64, 0x61, 0x74, 0x65, 0x45, 0x78, 0x61, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x78, 0x61, 0x6d, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x34, 0x0a, 0x07, 0x47, 0x65, 0x74, 0x45, 0x78,
-	0x61, 0x6d, 0x12, 0x12, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x78, 0x61, 0x6d, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45,
-	0x78, 0x61, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x43, 0x0a,
+	0x61, 0x6e, 0x73, 0x77, 0x65, 0x72, 0x49, 0x64, 0x22, 0x4c, 0x0a, 0x12, 0x45, 0x78, 0x61, 0x6d,
+	0x41, 0x63, 0x63, 0x65, 0x73, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x36,
+	0x0a, 0x0b, 0x61, 0x63, 0x63, 0x65, 0x73, 0x73, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0e, 0x32, 0x15, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x78, 0x61, 0x6d,
+	0x41, 0x63, 0x63, 0x65, 0x73, 0x73, 0x54, 0x79, 0x70, 0x65, 0x52, 0x0a, 0x61, 0x63, 0x63, 0x65,
+	0x73, 0x73, 0x54, 0x79, 0x70, 0x65, 0x2a, 0x2c, 0x0a, 0x0e, 0x45, 0x78, 0x61, 0x6d, 0x41, 0x63,
+	0x63, 0x65, 0x73, 0x73, 0x54, 0x79, 0x70, 0x65, 0x12, 0x09, 0x0a, 0x05, 0x4f, 0x57, 0x4e, 0x45,
+	0x52, 0x10, 0x00, 0x12, 0x0f, 0x0a, 0x0b, 0x50, 0x41, 0x52, 0x54, 0x49, 0x43, 0x49, 0x50, 0x41,
+	0x4e, 0x54, 0x10, 0x01, 0x32, 0xee, 0x07, 0x0a, 0x0b, 0x45, 0x78, 0x61, 0x6d, 0x53, 0x65, 0x72,
+	0x76, 0x69, 0x63, 0x65, 0x12, 0x2f, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x55, 0x73, 0x65, 0x72, 0x45,
+	0x78, 0x61, 0x6d, 0x73, 0x12, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70,
+	0x74, 0x79, 0x1a, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x78, 0x61, 0x6d, 0x4c,
+	0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x3d, 0x0a, 0x0a, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x45,
+	0x78, 0x61, 0x6d, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x43, 0x72, 0x65, 0x61,
+	0x74, 0x65, 0x45, 0x78, 0x61, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x13, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x78, 0x61, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x22, 0x00, 0x12, 0x3d, 0x0a, 0x0a, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x45, 0x78,
+	0x61, 0x6d, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74,
+	0x65, 0x45, 0x78, 0x61, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x13, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x78, 0x61, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x22, 0x00, 0x12, 0x34, 0x0a, 0x07, 0x47, 0x65, 0x74, 0x45, 0x78, 0x61, 0x6d, 0x12, 0x12,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x78, 0x61, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x78, 0x61, 0x6d, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x42, 0x0a, 0x0f, 0x43, 0x68, 0x65,
+	0x63, 0x6b, 0x45, 0x78, 0x61, 0x6d, 0x41, 0x63, 0x63, 0x65, 0x73, 0x73, 0x12, 0x12, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x78, 0x61, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x78, 0x61, 0x6d, 0x41, 0x63, 0x63,
+	0x65, 0x73, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x43, 0x0a,
 	0x13, 0x47, 0x65, 0x74, 0x45, 0x78, 0x61, 0x6d, 0x50, 0x61, 0x72, 0x74, 0x69, 0x63, 0x69, 0x70,
 	0x61, 0x6e, 0x74, 0x73, 0x12, 0x12, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x78, 0x61,
 	0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
@@ -1525,80 +1627,86 @@ func file_exam_proto_rawDescGZIP() []byte {
 	return file_exam_proto_rawDescData
 }
 
-var file_exam_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_exam_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_exam_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_exam_proto_goTypes = []any{
-	(*ExamRequest)(nil),              // 0: proto.ExamRequest
-	(*CreateExamRequest)(nil),        // 1: proto.CreateExamRequest
-	(*UpdateExamRequest)(nil),        // 2: proto.UpdateExamRequest
-	(*ExamResponse)(nil),             // 3: proto.ExamResponse
-	(*ExamList)(nil),                 // 4: proto.ExamList
-	(*ParticipantCount)(nil),         // 5: proto.ParticipantCount
-	(*ParticipantRequest)(nil),       // 6: proto.ParticipantRequest
-	(*ParticipantResponse)(nil),      // 7: proto.ParticipantResponse
-	(*ParticipantList)(nil),          // 8: proto.ParticipantList
-	(*AddParticipantRequest)(nil),    // 9: proto.AddParticipantRequest
-	(*RemoveParticipantRequest)(nil), // 10: proto.RemoveParticipantRequest
-	(*StartExamRequest)(nil),         // 11: proto.StartExamRequest
-	(*EndExamRequest)(nil),           // 12: proto.EndExamRequest
-	(*EvaluationStatusResponse)(nil), // 13: proto.EvaluationStatusResponse
-	(*Answer)(nil),                   // 14: proto.Answer
-	(*UpsertAnswersRequest)(nil),     // 15: proto.UpsertAnswersRequest
-	(*UpsertAnswersResponse)(nil),    // 16: proto.UpsertAnswersResponse
-	(*AnswerResponse)(nil),           // 17: proto.AnswerResponse
-	(*AnswerList)(nil),               // 18: proto.AnswerList
-	(*UpdateAnswerRequest)(nil),      // 19: proto.UpdateAnswerRequest
-	(*GetAnswerRequest)(nil),         // 20: proto.GetAnswerRequest
-	(*timestamppb.Timestamp)(nil),    // 21: google.protobuf.Timestamp
-	(*Empty)(nil),                    // 22: proto.Empty
+	(ExamAccessType)(0),              // 0: proto.ExamAccessType
+	(*ExamRequest)(nil),              // 1: proto.ExamRequest
+	(*CreateExamRequest)(nil),        // 2: proto.CreateExamRequest
+	(*UpdateExamRequest)(nil),        // 3: proto.UpdateExamRequest
+	(*ExamResponse)(nil),             // 4: proto.ExamResponse
+	(*ExamList)(nil),                 // 5: proto.ExamList
+	(*ParticipantCount)(nil),         // 6: proto.ParticipantCount
+	(*ParticipantRequest)(nil),       // 7: proto.ParticipantRequest
+	(*ParticipantResponse)(nil),      // 8: proto.ParticipantResponse
+	(*ParticipantList)(nil),          // 9: proto.ParticipantList
+	(*AddParticipantRequest)(nil),    // 10: proto.AddParticipantRequest
+	(*RemoveParticipantRequest)(nil), // 11: proto.RemoveParticipantRequest
+	(*StartExamRequest)(nil),         // 12: proto.StartExamRequest
+	(*EndExamRequest)(nil),           // 13: proto.EndExamRequest
+	(*EvaluationStatusResponse)(nil), // 14: proto.EvaluationStatusResponse
+	(*Answer)(nil),                   // 15: proto.Answer
+	(*UpsertAnswersRequest)(nil),     // 16: proto.UpsertAnswersRequest
+	(*UpsertAnswersResponse)(nil),    // 17: proto.UpsertAnswersResponse
+	(*AnswerResponse)(nil),           // 18: proto.AnswerResponse
+	(*AnswerList)(nil),               // 19: proto.AnswerList
+	(*UpdateAnswerRequest)(nil),      // 20: proto.UpdateAnswerRequest
+	(*GetAnswerRequest)(nil),         // 21: proto.GetAnswerRequest
+	(*ExamAccessResponse)(nil),       // 22: proto.ExamAccessResponse
+	(*timestamppb.Timestamp)(nil),    // 23: google.protobuf.Timestamp
+	(*Empty)(nil),                    // 24: proto.Empty
 }
 var file_exam_proto_depIdxs = []int32{
-	21, // 0: proto.CreateExamRequest.starts_at:type_name -> google.protobuf.Timestamp
-	21, // 1: proto.CreateExamRequest.ends_at:type_name -> google.protobuf.Timestamp
-	21, // 2: proto.UpdateExamRequest.starts_at:type_name -> google.protobuf.Timestamp
-	21, // 3: proto.UpdateExamRequest.ends_at:type_name -> google.protobuf.Timestamp
-	21, // 4: proto.ExamResponse.starts_at:type_name -> google.protobuf.Timestamp
-	21, // 5: proto.ExamResponse.ends_at:type_name -> google.protobuf.Timestamp
-	5,  // 6: proto.ExamResponse.participant_counts:type_name -> proto.ParticipantCount
-	3,  // 7: proto.ExamList.exams:type_name -> proto.ExamResponse
-	21, // 8: proto.ParticipantResponse.started_at:type_name -> google.protobuf.Timestamp
-	21, // 9: proto.ParticipantResponse.ended_at:type_name -> google.protobuf.Timestamp
-	7,  // 10: proto.ParticipantList.participants:type_name -> proto.ParticipantResponse
-	21, // 11: proto.Answer.submitted_at:type_name -> google.protobuf.Timestamp
-	14, // 12: proto.UpsertAnswersRequest.answer:type_name -> proto.Answer
-	17, // 13: proto.AnswerList.answers:type_name -> proto.AnswerResponse
-	22, // 14: proto.ExamService.GetUserExams:input_type -> proto.Empty
-	1,  // 15: proto.ExamService.CreateExam:input_type -> proto.CreateExamRequest
-	2,  // 16: proto.ExamService.UpdateExam:input_type -> proto.UpdateExamRequest
-	0,  // 17: proto.ExamService.GetExam:input_type -> proto.ExamRequest
-	0,  // 18: proto.ExamService.GetExamParticipants:input_type -> proto.ExamRequest
-	9,  // 19: proto.ExamService.AddExamParticipant:input_type -> proto.AddParticipantRequest
-	10, // 20: proto.ExamService.RemoveExamParticipant:input_type -> proto.RemoveParticipantRequest
-	11, // 21: proto.ExamService.StartExam:input_type -> proto.StartExamRequest
-	12, // 22: proto.ExamService.EndExam:input_type -> proto.EndExamRequest
-	6,  // 23: proto.ExamService.MarkAsEvaluated:input_type -> proto.ParticipantRequest
-	6,  // 24: proto.ExamService.GetParticipantAnswers:input_type -> proto.ParticipantRequest
-	20, // 25: proto.ExamService.GetAnswer:input_type -> proto.GetAnswerRequest
-	15, // 26: proto.ExamService.UpsertAnswer:input_type -> proto.UpsertAnswersRequest
-	19, // 27: proto.ExamService.UpdateAnswerForEvaluation:input_type -> proto.UpdateAnswerRequest
-	4,  // 28: proto.ExamService.GetUserExams:output_type -> proto.ExamList
-	3,  // 29: proto.ExamService.CreateExam:output_type -> proto.ExamResponse
-	3,  // 30: proto.ExamService.UpdateExam:output_type -> proto.ExamResponse
-	3,  // 31: proto.ExamService.GetExam:output_type -> proto.ExamResponse
-	8,  // 32: proto.ExamService.GetExamParticipants:output_type -> proto.ParticipantList
-	7,  // 33: proto.ExamService.AddExamParticipant:output_type -> proto.ParticipantResponse
-	22, // 34: proto.ExamService.RemoveExamParticipant:output_type -> proto.Empty
-	22, // 35: proto.ExamService.StartExam:output_type -> proto.Empty
-	22, // 36: proto.ExamService.EndExam:output_type -> proto.Empty
-	13, // 37: proto.ExamService.MarkAsEvaluated:output_type -> proto.EvaluationStatusResponse
-	18, // 38: proto.ExamService.GetParticipantAnswers:output_type -> proto.AnswerList
-	17, // 39: proto.ExamService.GetAnswer:output_type -> proto.AnswerResponse
-	16, // 40: proto.ExamService.UpsertAnswer:output_type -> proto.UpsertAnswersResponse
-	22, // 41: proto.ExamService.UpdateAnswerForEvaluation:output_type -> proto.Empty
-	28, // [28:42] is the sub-list for method output_type
-	14, // [14:28] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	23, // 0: proto.CreateExamRequest.starts_at:type_name -> google.protobuf.Timestamp
+	23, // 1: proto.CreateExamRequest.ends_at:type_name -> google.protobuf.Timestamp
+	23, // 2: proto.UpdateExamRequest.starts_at:type_name -> google.protobuf.Timestamp
+	23, // 3: proto.UpdateExamRequest.ends_at:type_name -> google.protobuf.Timestamp
+	23, // 4: proto.ExamResponse.starts_at:type_name -> google.protobuf.Timestamp
+	23, // 5: proto.ExamResponse.ends_at:type_name -> google.protobuf.Timestamp
+	6,  // 6: proto.ExamResponse.participant_counts:type_name -> proto.ParticipantCount
+	4,  // 7: proto.ExamList.exams:type_name -> proto.ExamResponse
+	23, // 8: proto.ParticipantResponse.started_at:type_name -> google.protobuf.Timestamp
+	23, // 9: proto.ParticipantResponse.ended_at:type_name -> google.protobuf.Timestamp
+	8,  // 10: proto.ParticipantList.participants:type_name -> proto.ParticipantResponse
+	23, // 11: proto.Answer.submitted_at:type_name -> google.protobuf.Timestamp
+	15, // 12: proto.UpsertAnswersRequest.answer:type_name -> proto.Answer
+	18, // 13: proto.AnswerList.answers:type_name -> proto.AnswerResponse
+	0,  // 14: proto.ExamAccessResponse.access_type:type_name -> proto.ExamAccessType
+	24, // 15: proto.ExamService.GetUserExams:input_type -> proto.Empty
+	2,  // 16: proto.ExamService.CreateExam:input_type -> proto.CreateExamRequest
+	3,  // 17: proto.ExamService.UpdateExam:input_type -> proto.UpdateExamRequest
+	1,  // 18: proto.ExamService.GetExam:input_type -> proto.ExamRequest
+	1,  // 19: proto.ExamService.CheckExamAccess:input_type -> proto.ExamRequest
+	1,  // 20: proto.ExamService.GetExamParticipants:input_type -> proto.ExamRequest
+	10, // 21: proto.ExamService.AddExamParticipant:input_type -> proto.AddParticipantRequest
+	11, // 22: proto.ExamService.RemoveExamParticipant:input_type -> proto.RemoveParticipantRequest
+	12, // 23: proto.ExamService.StartExam:input_type -> proto.StartExamRequest
+	13, // 24: proto.ExamService.EndExam:input_type -> proto.EndExamRequest
+	7,  // 25: proto.ExamService.MarkAsEvaluated:input_type -> proto.ParticipantRequest
+	7,  // 26: proto.ExamService.GetParticipantAnswers:input_type -> proto.ParticipantRequest
+	21, // 27: proto.ExamService.GetAnswer:input_type -> proto.GetAnswerRequest
+	16, // 28: proto.ExamService.UpsertAnswer:input_type -> proto.UpsertAnswersRequest
+	20, // 29: proto.ExamService.UpdateAnswerForEvaluation:input_type -> proto.UpdateAnswerRequest
+	5,  // 30: proto.ExamService.GetUserExams:output_type -> proto.ExamList
+	4,  // 31: proto.ExamService.CreateExam:output_type -> proto.ExamResponse
+	4,  // 32: proto.ExamService.UpdateExam:output_type -> proto.ExamResponse
+	4,  // 33: proto.ExamService.GetExam:output_type -> proto.ExamResponse
+	22, // 34: proto.ExamService.CheckExamAccess:output_type -> proto.ExamAccessResponse
+	9,  // 35: proto.ExamService.GetExamParticipants:output_type -> proto.ParticipantList
+	8,  // 36: proto.ExamService.AddExamParticipant:output_type -> proto.ParticipantResponse
+	24, // 37: proto.ExamService.RemoveExamParticipant:output_type -> proto.Empty
+	24, // 38: proto.ExamService.StartExam:output_type -> proto.Empty
+	24, // 39: proto.ExamService.EndExam:output_type -> proto.Empty
+	14, // 40: proto.ExamService.MarkAsEvaluated:output_type -> proto.EvaluationStatusResponse
+	19, // 41: proto.ExamService.GetParticipantAnswers:output_type -> proto.AnswerList
+	18, // 42: proto.ExamService.GetAnswer:output_type -> proto.AnswerResponse
+	17, // 43: proto.ExamService.UpsertAnswer:output_type -> proto.UpsertAnswersResponse
+	24, // 44: proto.ExamService.UpdateAnswerForEvaluation:output_type -> proto.Empty
+	30, // [30:45] is the sub-list for method output_type
+	15, // [15:30] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_exam_proto_init() }
@@ -1616,13 +1724,14 @@ func file_exam_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_exam_proto_rawDesc), len(file_exam_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   21,
+			NumEnums:      1,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_exam_proto_goTypes,
 		DependencyIndexes: file_exam_proto_depIdxs,
+		EnumInfos:         file_exam_proto_enumTypes,
 		MessageInfos:      file_exam_proto_msgTypes,
 	}.Build()
 	File_exam_proto = out.File
