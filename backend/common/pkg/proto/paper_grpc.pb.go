@@ -24,6 +24,7 @@ const (
 	PaperService_CreatePaper_FullMethodName        = "/proto.PaperService/CreatePaper"
 	PaperService_UpdatePaper_FullMethodName        = "/proto.PaperService/UpdatePaper"
 	PaperService_CheckPaperAccess_FullMethodName   = "/proto.PaperService/CheckPaperAccess"
+	PaperService_GetPaperDuration_FullMethodName   = "/proto.PaperService/GetPaperDuration"
 	PaperService_GetPaperQuestions_FullMethodName  = "/proto.PaperService/GetPaperQuestions"
 	PaperService_GetQuestion_FullMethodName        = "/proto.PaperService/GetQuestion"
 	PaperService_CreateQuestion_FullMethodName     = "/proto.PaperService/CreateQuestion"
@@ -47,6 +48,7 @@ type PaperServiceClient interface {
 	CreatePaper(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PaperResponse, error)
 	UpdatePaper(ctx context.Context, in *UpdatePaperRequest, opts ...grpc.CallOption) (*Empty, error)
 	CheckPaperAccess(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*Empty, error)
+	GetPaperDuration(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*PaperDurationResponse, error)
 	// Question operations
 	GetPaperQuestions(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*QuestionList, error)
 	GetQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error)
@@ -114,6 +116,16 @@ func (c *paperServiceClient) CheckPaperAccess(ctx context.Context, in *PaperRequ
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
 	err := c.cc.Invoke(ctx, PaperService_CheckPaperAccess_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paperServiceClient) GetPaperDuration(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*PaperDurationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PaperDurationResponse)
+	err := c.cc.Invoke(ctx, PaperService_GetPaperDuration_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -240,6 +252,7 @@ type PaperServiceServer interface {
 	CreatePaper(context.Context, *Empty) (*PaperResponse, error)
 	UpdatePaper(context.Context, *UpdatePaperRequest) (*Empty, error)
 	CheckPaperAccess(context.Context, *PaperRequest) (*Empty, error)
+	GetPaperDuration(context.Context, *PaperRequest) (*PaperDurationResponse, error)
 	// Question operations
 	GetPaperQuestions(context.Context, *PaperRequest) (*QuestionList, error)
 	GetQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error)
@@ -277,6 +290,9 @@ func (UnimplementedPaperServiceServer) UpdatePaper(context.Context, *UpdatePaper
 }
 func (UnimplementedPaperServiceServer) CheckPaperAccess(context.Context, *PaperRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckPaperAccess not implemented")
+}
+func (UnimplementedPaperServiceServer) GetPaperDuration(context.Context, *PaperRequest) (*PaperDurationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPaperDuration not implemented")
 }
 func (UnimplementedPaperServiceServer) GetPaperQuestions(context.Context, *PaperRequest) (*QuestionList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPaperQuestions not implemented")
@@ -418,6 +434,24 @@ func _PaperService_CheckPaperAccess_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PaperServiceServer).CheckPaperAccess(ctx, req.(*PaperRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PaperService_GetPaperDuration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PaperRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaperServiceServer).GetPaperDuration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaperService_GetPaperDuration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaperServiceServer).GetPaperDuration(ctx, req.(*PaperRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -646,6 +680,10 @@ var PaperService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckPaperAccess",
 			Handler:    _PaperService_CheckPaperAccess_Handler,
+		},
+		{
+			MethodName: "GetPaperDuration",
+			Handler:    _PaperService_GetPaperDuration_Handler,
 		},
 		{
 			MethodName: "GetPaperQuestions",

@@ -41,6 +41,13 @@
 
       <DisplayDate :date="endsAt" :df="df" :ui="{ skeleton: 'h-4 w-[26ch]' }" />
     </div>
+
+    <template
+      v-if="isCalendarBefore(startsAt, now) && isCalendarAfter(endsAt, now)"
+      #footer
+    >
+      <UButton label="Start exam" loading-auto @click="handleStartExam" />
+    </template>
   </UCard>
 </template>
 
@@ -67,4 +74,9 @@ const df = new DateFormatter('en-US', {
 const now = toCalendarDateTime(new Date())
 const startsAt = toCalendarDateTime(exam.value!.starts_at)
 const endsAt = toCalendarDateTime(exam.value!.ends_at)
+
+async function handleStartExam() {
+  await startExam(examId)
+  await navigateTo(`/exams/${examId}/attempt`)
+}
 </script>

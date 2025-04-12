@@ -332,28 +332,32 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
-	// Get paper details first
-	paperService := services.GetPaperService()
-	paperCtx := paperService.CreateMetadata(userID)
-
-	paper, err := paperService.Client().GetPaper(paperCtx, &proto.PaperRequest{
-		PaperId: int64(examID),
-	})
-	if err != nil {
-		http.Error(w, "Failed to get paper details", http.StatusInternalServerError)
-		return
-	}
-
-	// Start exam
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
-	_, err = examService.Client().StartExam(ctx, &proto.StartExamRequest{
-		ExamId:          int64(examID),
-		DurationMinutes: paper.DurationMinutes,
+	exam, err := examService.Client().GetExam(ctx, &proto.ExamRequest{
+		ExamId: int64(examID),
 	})
 	if err != nil {
-		http.Error(w, "Failed to start exam", http.StatusInternalServerError)
+		handleGRPCError(w, err)
+		return
+	}
+
+	paperService := services.GetPaperService()
+	duration, err := paperService.Client().GetPaperDuration(context.Background(), &proto.PaperRequest{
+		PaperId: exam.PaperId,
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	_, err = examService.Client().StartExam(ctx, &proto.StartExamRequest{
+		ExamId:          int64(examID),
+		DurationMinutes: duration.DurationMinutes,
+	})
+	if err != nil {
+		handleGRPCError(w, err)
 		return
 	}
 

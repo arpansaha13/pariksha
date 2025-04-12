@@ -97,7 +97,7 @@
 <script setup lang="ts">
 import type { FormError } from '@nuxt/ui'
 import {
-  CalendarDateTime,
+  type CalendarDateTime,
   DateFormatter,
   getLocalTimeZone,
 } from '@internationalized/date'
@@ -117,12 +117,7 @@ const formState = reactive<ExamFormState>({
 
 const { data: papers } = await usePapers()
 
-const date = new Date()
-const today = new CalendarDateTime(
-  date.getFullYear(),
-  date.getMonth() + 1, // getMonth() is 0-indexed
-  date.getDate()
-)
+const today = toCalendarDateTime(new Date())
 
 const startDate = shallowRef(
   (newExamStore.startDate as CalendarDateTime | null) ?? today

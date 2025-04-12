@@ -191,7 +191,6 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 		if exam.StartsAt.After(now) {
 			return status.Error(codes.FailedPrecondition, "exam has not started yet")
 		}
-
 		if exam.EndsAt.Before(now) {
 			return status.Error(codes.FailedPrecondition, "exam has ended")
 		}
@@ -199,27 +198,35 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 		var participant models.ExamParticipant
 		participantErr := tx.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error
 
-		if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
-			if participantErr == gorm.ErrRecordNotFound {
-				participant = models.ExamParticipant{
-					ExamID: req.ExamId,
-					UserID: userID,
-					Status: constants.PARTICIPANT_STATUS_INVITED,
-				}
-				if err := tx.Create(&participant).Error; err != nil {
-					return status.Error(codes.Internal, "failed to create participant")
-				}
-			} else if participantErr != nil {
-				return status.Error(codes.Internal, "database error")
+		if participantErr == gorm.ErrRecordNotFound {
+			if exam.Type != constants.EXAM_ACCESS_TYPE_LINK {
+				return status.Error(codes.PermissionDenied, "participant is not invited")
 			}
-		} else {
-			if participantErr != nil {
-				return status.Error(codes.NotFound, "participant not found")
+			// Create participant with started status for LINK type exams
+			scheduledEndTime := now.Add(time.Duration(req.DurationMinutes) * time.Minute)
+			participant = models.ExamParticipant{
+				ExamID:           req.ExamId,
+				UserID:           userID,
+				Status:           constants.PARTICIPANT_STATUS_STARTED,
+				StartedAt:        sql.NullTime{Time: now, Valid: true},
+				ScheduledEndTime: sql.NullTime{Time: scheduledEndTime, Valid: true},
 			}
-		}
-
-		if participant.Status != constants.PARTICIPANT_STATUS_INVITED {
+			if err := tx.Create(&participant).Error; err != nil {
+				return status.Error(codes.Internal, "failed to create participant")
+			}
+		} else if participantErr != nil {
+			return status.Error(codes.Internal, "database error")
+		} else if participant.Status != constants.PARTICIPANT_STATUS_INVITED {
 			return status.Error(codes.FailedPrecondition, "participant has already started the exam")
+		} else {
+			// Update existing participant
+			scheduledEndTime := now.Add(time.Duration(req.DurationMinutes) * time.Minute)
+			participant.Status = constants.PARTICIPANT_STATUS_STARTED
+			participant.StartedAt = sql.NullTime{Time: now, Valid: true}
+			participant.ScheduledEndTime = sql.NullTime{Time: scheduledEndTime, Valid: true}
+			if err := tx.Save(&participant).Error; err != nil {
+				return status.Error(codes.Internal, "failed to update participant")
+			}
 		}
 
 		counts, err := exam.GetParticipantCounts()
@@ -227,14 +234,12 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 			return status.Error(codes.Internal, "failed to get participant counts")
 		}
 
-		scheduledEndTime := now.Add(time.Duration(req.DurationMinutes) * time.Minute)
-
-		participant.Status = constants.PARTICIPANT_STATUS_STARTED
-		participant.StartedAt = sql.NullTime{Time: now, Valid: true}
-		participant.ScheduledEndTime = sql.NullTime{Time: scheduledEndTime, Valid: true}
-
-		counts.Invited--
-		counts.Started++
+		if participantErr == gorm.ErrRecordNotFound {
+			counts.Started++
+		} else {
+			counts.Invited--
+			counts.Started++
+		}
 
 		exam.ParticipantCounts, err = json.Marshal(counts)
 		if err != nil {
@@ -243,9 +248,6 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 
 		if err := tx.Save(&exam).Error; err != nil {
 			return status.Error(codes.Internal, "failed to update exam")
-		}
-		if err := tx.Save(&participant).Error; err != nil {
-			return status.Error(codes.Internal, "failed to update participant")
 		}
 
 		return nil

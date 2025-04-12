@@ -13,6 +13,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
 )
 
@@ -38,7 +39,7 @@ func TestGetUserExams(t *testing.T) {
 				for _, exam := range resp.Exams {
 					assert.Equal(t, userID, exam.CreatedBy)
 					assert.Equal(t, "Test Exam", exam.Title)
-					assert.Equal(t, "PRIVATE", exam.Type)
+					assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
 				}
 			},
 		},
@@ -87,10 +88,6 @@ func TestGetUserExams(t *testing.T) {
 }
 
 func TestCreateExam(t *testing.T) {
-	examTypeOpen := constants.EXAM_ACCESS_TYPE_LINK
-	examTypeInvite := constants.EXAM_ACCESS_TYPE_INVITE
-	examTypeUnknown := "UNKNOWN"
-
 	tests := []struct {
 		name         string
 		request      *proto.CreateExamRequest
@@ -130,7 +127,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               &examTypeOpen,
+				Type:               utils.String(constants.EXAM_ACCESS_TYPE_LINK),
 				PaperId:            1,
 			},
 			userID:       userID,
@@ -150,7 +147,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               &examTypeInvite,
+				Type:               utils.String(constants.EXAM_ACCESS_TYPE_INVITE),
 				PaperId:            1,
 			},
 			userID:       userID,
@@ -170,7 +167,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(48 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(24 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               &examTypeInvite,
+				Type:               utils.String(constants.EXAM_ACCESS_TYPE_INVITE),
 				PaperId:            1,
 			},
 			userID:       userID,
@@ -183,7 +180,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(-24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(24 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               &examTypeInvite,
+				Type:               utils.String(constants.EXAM_ACCESS_TYPE_INVITE),
 				PaperId:            1,
 			},
 			userID:       userID,
@@ -196,7 +193,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 0,
-				Type:               &examTypeInvite,
+				Type:               utils.String(constants.EXAM_ACCESS_TYPE_INVITE),
 				PaperId:            1,
 			},
 			userID:       userID,
@@ -209,7 +206,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               &examTypeUnknown,
+				Type:               utils.String("UNKNOWN"),
 				PaperId:            1,
 			},
 			userID:       userID,
@@ -487,9 +484,10 @@ func TestStartExam(t *testing.T) {
 		validate     func(t *testing.T, exam *models.Exam)
 	}{
 		{
-			name: "Success - Start private exam as invited participant",
+			name: "Success - Start INVITE exam as invited participant",
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, 2) // Created by different user
+				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
 				exam.StartsAt = time.Now().Add(-1 * time.Hour)
 				exam.EndsAt = time.Now().Add(1 * time.Hour)
 				require.NoError(t, db.DB.Save(&exam).Error)
@@ -524,7 +522,7 @@ func TestStartExam(t *testing.T) {
 			},
 		},
 		{
-			name: "Success - Start open exam as new participant",
+			name: "Success - Start LINK exam as new participant",
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, 2)
 				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
@@ -537,8 +535,17 @@ func TestStartExam(t *testing.T) {
 			duration:     60,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, exam *models.Exam) {
+				var updated models.Exam
+				require.NoError(t, db.DB.First(&updated, exam.ID).Error)
+				counts, err := updated.GetParticipantCounts()
+				require.NoError(t, err)
+
+				assert.Equal(t, 0, counts.Invited)
+				assert.Equal(t, 1, counts.Started)
+				assert.Equal(t, 0, counts.Ended)
+
 				var participant models.ExamParticipant
-				err := db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error
+				err = db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error
 				require.NoError(t, err)
 				assert.Equal(t, constants.PARTICIPANT_STATUS_STARTED, participant.Status)
 			},
@@ -606,9 +613,10 @@ func TestStartExam(t *testing.T) {
 			expectedCode: codes.FailedPrecondition,
 		},
 		{
-			name: "Fail - Participant not found in private exam",
+			name: "Fail - Participant not added in INVITE exam",
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, 2)
+				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
 				exam.StartsAt = time.Now().Add(-1 * time.Hour)
 				exam.EndsAt = time.Now().Add(1 * time.Hour)
 				require.NoError(t, db.DB.Save(&exam).Error)
@@ -616,7 +624,7 @@ func TestStartExam(t *testing.T) {
 			},
 			userID:       userID,
 			duration:     60,
-			expectedCode: codes.NotFound,
+			expectedCode: codes.PermissionDenied,
 		},
 	}
 

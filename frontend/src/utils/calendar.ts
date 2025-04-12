@@ -12,6 +12,7 @@ export function toCalendarDateTime(date: Date | string): CalendarDateTime {
   )
 }
 
+/** Return `true` if `a` is before `b`. */
 export function isCalendarBefore(
   a: CalendarDateTime | Ref<CalendarDateTime>,
   b: CalendarDateTime | Ref<CalendarDateTime>
@@ -19,6 +20,7 @@ export function isCalendarBefore(
   return unref(a).compare(unref(b)) < 0
 }
 
+/** Return `true` if `a` is after `b`. */
 export function isCalendarAfter(
   a: CalendarDateTime | Ref<CalendarDateTime>,
   b: CalendarDateTime | Ref<CalendarDateTime>

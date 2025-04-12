@@ -13,6 +13,7 @@ service PaperService {
   rpc CreatePaper(Empty) returns (PaperResponse) {}
   rpc UpdatePaper(UpdatePaperRequest) returns (Empty) {}
   rpc CheckPaperAccess(PaperRequest) returns (Empty) {}
+  rpc GetPaperDuration(PaperRequest) returns (PaperDurationResponse) {}
 
   // Question operations
   rpc GetPaperQuestions(PaperRequest) returns (QuestionList) {}
@@ -167,4 +168,8 @@ message UpdateCategoryRequest {
 message ReorderCategoriesRequest {
   int64 paper_id = 1;
   repeated int64 category_ids = 2;
+}
+
+message PaperDurationResponse {
+  int32 duration_minutes = 1;
 }

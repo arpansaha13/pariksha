@@ -180,7 +180,7 @@ func createTestExam(t *testing.T, createdBy int64) models.Exam {
 	exam := models.Exam{
 		Title:              "Test Exam",
 		CreatedBy:          createdBy,
-		Type:               "PRIVATE",
+		Type:               constants.EXAM_ACCESS_TYPE_LINK,
 		MaxCandidatesCount: 10,
 		PaperID:            1,
 		ParticipantCounts:  []byte(`{"unattended":0,"invited":0,"started":0,"ended":0}`),
