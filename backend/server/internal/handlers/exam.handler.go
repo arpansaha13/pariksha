@@ -41,6 +41,7 @@ func GetUserExams(w http.ResponseWriter, r *http.Request) {
 			Type:               exam.Type,
 			MaxCandidatesCount: int(exam.MaxCandidatesCount),
 			PaperID:            exam.PaperId,
+			DurationMinutes:    exam.DurationMinutes,
 		}
 	}
 
@@ -85,6 +86,7 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 		MaxCandidatesCount: 10,
 		Type:               nil,
 		PaperId:            examDto.PaperID,
+		DurationMinutes:    examDto.DurationMinutes,
 	}
 
 	if examDto.Type != "" {
@@ -106,6 +108,7 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 		Type:               exam.Type,
 		MaxCandidatesCount: int(exam.MaxCandidatesCount),
 		PaperID:            exam.PaperId,
+		DurationMinutes:    exam.DurationMinutes,
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -148,6 +151,9 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 	if examDto.Type != "" {
 		req.Type = &examDto.Type
 	}
+	if examDto.DurationMinutes != nil {
+		req.DurationMinutes = examDto.DurationMinutes
+	}
 
 	exam, err := examService.Client().UpdateExam(ctx, req)
 	if err != nil {
@@ -164,6 +170,7 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 		Type:               exam.Type,
 		MaxCandidatesCount: int(exam.MaxCandidatesCount),
 		PaperID:            exam.PaperId,
+		DurationMinutes:    exam.DurationMinutes,
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -411,6 +418,7 @@ func GetExam(w http.ResponseWriter, r *http.Request) {
 		Type:               exam.Type,
 		MaxCandidatesCount: int(exam.MaxCandidatesCount),
 		PaperID:            exam.PaperId,
+		DurationMinutes:    exam.DurationMinutes,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

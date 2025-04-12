@@ -12,6 +12,7 @@ export interface Exam {
   type: ExamAccessType
   max_candidates_count: number
   paper_id: number
+  duration_minutes: number
 }
 
 export enum ExamPermission {

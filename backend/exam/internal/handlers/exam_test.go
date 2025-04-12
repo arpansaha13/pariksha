@@ -212,6 +212,41 @@ func TestCreateExam(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.InvalidArgument,
 		},
+		{
+			name: "Invalid - Zero duration minutes",
+			request: &proto.CreateExamRequest{
+				Title:              "Invalid Exam",
+				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
+				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
+				MaxCandidatesCount: 50,
+				Type:               utils.String(constants.EXAM_ACCESS_TYPE_LINK),
+				PaperId:            1,
+				DurationMinutes:    0,
+			},
+			userID:       userID,
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name: "Success - Create exam with duration",
+			request: &proto.CreateExamRequest{
+				Title:              "New Exam",
+				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
+				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
+				MaxCandidatesCount: 50,
+				Type:               utils.String(constants.EXAM_ACCESS_TYPE_LINK),
+				PaperId:            1,
+				DurationMinutes:    120,
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.ExamResponse) {
+				assert.Equal(t, int32(120), resp.DurationMinutes)
+
+				var exam models.Exam
+				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
+				assert.Equal(t, int32(120), exam.DurationMinutes)
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -339,6 +374,27 @@ func TestUpdateExam(t *testing.T) {
 			},
 			userID:       userID,
 			expectedCode: codes.PermissionDenied,
+		},
+		{
+			name: "Success - Update duration",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, userID)
+				exam.StartsAt = time.Now().Add(24 * time.Hour)
+				exam.EndsAt = time.Now().Add(48 * time.Hour)
+				require.NoError(t, db.DB.Save(&exam).Error)
+				return &exam
+			},
+			request: &proto.UpdateExamRequest{
+				ExamId:          0, // Will be set in test
+				DurationMinutes: utils.Int32(180),
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, exam *models.Exam) {
+				var updated models.Exam
+				require.NoError(t, db.DB.First(&updated, exam.ID).Error)
+				assert.Equal(t, int32(180), updated.DurationMinutes)
+			},
 		},
 	}
 

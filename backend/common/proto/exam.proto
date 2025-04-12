@@ -42,6 +42,7 @@ message CreateExamRequest {
   int32 max_candidates_count = 4;
   optional string type = 5;
   int64 paper_id = 6;
+  int32 duration_minutes = 7;
 }
 
 message UpdateExamRequest {
@@ -51,6 +52,7 @@ message UpdateExamRequest {
   optional google.protobuf.Timestamp ends_at = 4;
   optional int32 max_candidates_count = 5;
   optional string type = 6;
+  optional int32 duration_minutes = 7;
 }
 
 message ExamResponse {
@@ -63,6 +65,7 @@ message ExamResponse {
   int32 max_candidates_count = 7;
   int64 paper_id = 8;
   ParticipantCount participant_counts = 9;
+  int32 duration_minutes = 10;
 }
 
 message ExamList {

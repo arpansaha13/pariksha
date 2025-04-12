@@ -6,6 +6,7 @@ interface CreateExamBody {
   ends_at: Date
   type: ExamAccessType
   paper_id: number
+  duration_minutes: number
 }
 
 export async function createExam(body: CreateExamBody) {

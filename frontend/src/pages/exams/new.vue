@@ -77,6 +77,31 @@
           </UPopover>
         </UFormField>
 
+        <UFormField
+          label="Duration"
+          description="How much time the candidate will have to complete the exam."
+          name="duration"
+          required
+        >
+          <div class="flex gap-x-4">
+            <UFormField label="Hours" name="duration_hours">
+              <UInputNumber
+                v-model="formState.duration_hours"
+                :min="0"
+                :max="24"
+              />
+            </UFormField>
+
+            <UFormField label="Minutes" name="duration_minutes">
+              <UInputNumber
+                v-model="formState.duration_minutes"
+                :min="0"
+                :max="59"
+              />
+            </UFormField>
+          </div>
+        </UFormField>
+
         <button ref="submitButton" type="submit" class="hidden" />
       </UForm>
 
@@ -102,17 +127,22 @@ import {
   getLocalTimeZone,
 } from '@internationalized/date'
 import { type Exam, ExamAccessType } from '~/types/exam'
+import { isNullOrUndefined } from '@arpansaha13/utils'
 
 const newExamStore = useNewExamStore()
 
 interface ExamFormState extends Pick<Exam, 'title' | 'type'> {
   paper_id: number | undefined
+  duration_hours: number
+  duration_minutes: number
 }
 
 const formState = reactive<ExamFormState>({
   title: newExamStore.title ?? '',
   type: newExamStore.type ?? ExamAccessType.LINK,
   paper_id: newExamStore.paper_id ?? undefined,
+  duration_hours: 0,
+  duration_minutes: 0,
 })
 
 const { data: papers } = await usePapers()
@@ -144,32 +174,46 @@ onBeforeUnmount(() => {
   newExamStore.endDate = endDate.value
 })
 
+function calcMinutes(hours: number | undefined, minutes: number | undefined) {
+  if (isNullOrUndefined(hours)) return minutes ?? 0
+  if (isNullOrUndefined(minutes)) return hours * 60
+  return hours * 60 + minutes
+}
+
 const submitButtonRef = useTemplateRef('submitButton')
 async function onSubmit() {
   // Consider entire day on end date
   const endsAt = endDate.value.add({ hours: 23, minutes: 59, seconds: 59 })
-
   const createdExam = await createExam({
     title: formState.title,
     type: formState.type,
     paper_id: formState.paper_id!,
     starts_at: startDate.value.toDate(getLocalTimeZone()),
     ends_at: endsAt.toDate(getLocalTimeZone()),
+    duration_minutes: calcMinutes(
+      formState.duration_hours,
+      formState.duration_minutes
+    ),
   })
 
   newExamStore.clear()
   await navigateTo(`/exams/${createdExam.id}`)
 }
 
-function validate(
-  formState: Partial<Pick<Exam, 'title' | 'type' | 'paper_id'>>
-): FormError[] {
+function validate(formState: Partial<ExamFormState>): FormError[] {
   const errors: FormError[] = []
 
   if (!formState.paper_id) {
     errors.push({
       name: 'paper_id',
       message: 'Please select a paper',
+    })
+  }
+
+  if (calcMinutes(formState.duration_hours, formState.duration_minutes) === 0) {
+    errors.push({
+      name: 'duration',
+      message: 'Please set a duration for the exam',
     })
   }
 

@@ -73,13 +73,18 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 		return nil, status.Error(codes.InvalidArgument, "max candidates count must be greater than zero")
 	}
 
+	if req.DurationMinutes <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "duration minutes must be greater than zero")
+	}
+
 	exam := models.Exam{
 		Title:              req.Title,
 		StartsAt:           startsAt,
 		EndsAt:             endsAt,
 		CreatedBy:          userID,
-		MaxCandidatesCount: int(req.MaxCandidatesCount),
+		MaxCandidatesCount: req.MaxCandidatesCount,
 		PaperID:            req.PaperId,
+		DurationMinutes:    req.DurationMinutes,
 	}
 
 	// Only set Type if it's not LINK
@@ -160,7 +165,12 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 	}
 
 	if req.MaxCandidatesCount != nil {
-		exam.MaxCandidatesCount = int(*req.MaxCandidatesCount)
+		exam.MaxCandidatesCount = *req.MaxCandidatesCount
+		isUpdated = true
+	}
+
+	if req.DurationMinutes != nil && req.GetDurationMinutes() > 0 {
+		exam.DurationMinutes = req.GetDurationMinutes()
 		isUpdated = true
 	}
 

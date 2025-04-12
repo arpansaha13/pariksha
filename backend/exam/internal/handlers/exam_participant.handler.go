@@ -59,7 +59,7 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 		return nil, status.Error(codes.Internal, "failed to get participant counts")
 	}
 
-	currTotalParticipants := counts.Invited + counts.Started + counts.Ended
+	currTotalParticipants := int32(counts.Invited + counts.Started + counts.Ended)
 	if currTotalParticipants >= exam.MaxCandidatesCount {
 		return nil, status.Error(codes.FailedPrecondition, "maximum participant limit reached for the exam")
 	}

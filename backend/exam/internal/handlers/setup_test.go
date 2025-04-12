@@ -183,6 +183,7 @@ func createTestExam(t *testing.T, createdBy int64) models.Exam {
 		Type:               constants.EXAM_ACCESS_TYPE_LINK,
 		MaxCandidatesCount: 10,
 		PaperID:            1,
+		DurationMinutes:    60, // Add default duration
 		ParticipantCounts:  []byte(`{"unattended":0,"invited":0,"started":0,"ended":0}`),
 	}
 	require.NoError(t, db.DB.Create(&exam).Error)

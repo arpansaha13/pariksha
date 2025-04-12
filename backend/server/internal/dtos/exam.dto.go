@@ -5,18 +5,20 @@ import (
 )
 
 type CreateExamDto struct {
-	Title    string    `json:"title" validate:"required"`
-	StartsAt time.Time `json:"starts_at" validate:"required"`
-	EndsAt   time.Time `json:"ends_at" validate:"required"`
-	Type     string    `json:"type"`
-	PaperID  int64     `json:"paper_id" validate:"required"`
+	Title           string    `json:"title" validate:"required"`
+	StartsAt        time.Time `json:"starts_at" validate:"required"`
+	EndsAt          time.Time `json:"ends_at" validate:"required"`
+	Type            string    `json:"type"`
+	PaperID         int64     `json:"paper_id" validate:"required"`
+	DurationMinutes int32     `json:"duration_minutes" validate:"required,gt=0"`
 }
 
 type UpdateExamDto struct {
-	Title    string    `json:"title"`
-	StartsAt time.Time `json:"starts_at"`
-	EndsAt   time.Time `json:"ends_at"`
-	Type     string    `json:"type"`
+	Title           string    `json:"title"`
+	StartsAt        time.Time `json:"starts_at"`
+	EndsAt          time.Time `json:"ends_at"`
+	Type            string    `json:"type"`
+	DurationMinutes *int32    `json:"duration_minutes" validate:"omitempty,gt=0"`
 }
 
 type ExamResponse struct {
@@ -28,6 +30,7 @@ type ExamResponse struct {
 	Type               string    `json:"type"`
 	MaxCandidatesCount int       `json:"max_candidates_count"`
 	PaperID            int64     `json:"paper_id"`
+	DurationMinutes    int32     `json:"duration_minutes"`
 }
 
 type ExamParticipantResponse struct {
