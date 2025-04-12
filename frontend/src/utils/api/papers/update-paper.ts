@@ -1,7 +1,8 @@
 import type { Paper } from '~/types'
 
 interface UpdatePaperTitleBody {
-  title: string
+  title?: string
+  duration_minutes?: number
 }
 
 export async function updatePaper(paperId: number, body: UpdatePaperTitleBody) {

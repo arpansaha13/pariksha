@@ -18,6 +18,10 @@
       </EditableArea>
     </EditableRoot>
 
+    <PaperDurationModal :paper="paper" />
+  </div>
+
+  <div class="flex items-center justify-end">
     <UButton
       to="/papers"
       label="Back"
@@ -25,7 +29,6 @@
       size="sm"
       color="neutral"
       variant="ghost"
-      class="ml-auto"
     />
   </div>
 

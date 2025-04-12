@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/utils"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
@@ -61,11 +62,20 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	paperService := services.GetPaperService()
 
-	ctx := paperService.CreateMetadata(userID)
-	_, err := paperService.Client().UpdatePaper(ctx, &proto.UpdatePaperRequest{
+	updatePaperRequest := &proto.UpdatePaperRequest{
 		PaperId: int64(paperID),
-		Title:   paperDto.Title,
-	})
+	}
+
+	if paperDto.Title != "" {
+		updatePaperRequest.Title = &paperDto.Title
+	}
+
+	if paperDto.DurationMinutes > 0 {
+		updatePaperRequest.DurationMinutes = utils.Int32(paperDto.DurationMinutes)
+	}
+
+	ctx := paperService.CreateMetadata(userID)
+	_, err := paperService.Client().UpdatePaper(ctx, updatePaperRequest)
 	if err != nil {
 		handleGRPCError(w, err)
 		return

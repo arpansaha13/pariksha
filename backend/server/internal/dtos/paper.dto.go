@@ -5,7 +5,8 @@ import (
 )
 
 type UpdatePaperDto struct {
-	Title string `json:"title"`
+	Title           string `json:"title,omitempty"`
+	DurationMinutes int32  `json:"duration_minutes,omitempty"`
 }
 
 type PaperResponse struct {

@@ -137,8 +137,13 @@ func (s *PaperServer) UpdatePaper(ctx context.Context, req *proto.UpdatePaperReq
 
 	isUpdated := false
 
-	if req.Title != "" {
-		paper.Title = req.Title
+	if req.Title != nil && req.GetTitle() != paper.Title {
+		paper.Title = req.GetTitle()
+		isUpdated = true
+	}
+
+	if req.DurationMinutes != nil && int(req.GetDurationMinutes()) != paper.DurationMinutes {
+		paper.DurationMinutes = int(req.GetDurationMinutes())
 		isUpdated = true
 	}
 

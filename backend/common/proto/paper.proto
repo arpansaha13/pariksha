@@ -50,7 +50,8 @@ message PaperList {
 
 message UpdatePaperRequest {
   int64 paper_id = 1;
-  string title = 2;
+  optional string title = 2;
+  optional int32 duration_minutes = 3;
 }
 
 message QuestionCount {

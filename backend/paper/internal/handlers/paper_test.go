@@ -11,6 +11,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
 )
 
@@ -145,7 +146,7 @@ func TestUpdatePaper(t *testing.T) {
 		name         string
 		setup        func(t *testing.T) *models.Paper
 		userID       int64
-		title        string
+		request      *proto.UpdatePaperRequest
 		expectedCode codes.Code
 		validate     func(t *testing.T, paper *models.Paper)
 	}{
@@ -155,14 +156,56 @@ func TestUpdatePaper(t *testing.T) {
 				paper := createTestPaper(t, userID)
 				return &paper
 			},
-			userID:       userID,
-			title:        "Updated Title",
+			userID: userID,
+			request: &proto.UpdatePaperRequest{
+				Title: utils.String("Updated Title"),
+			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, paper *models.Paper) {
 				var updated models.Paper
 				err := db.DB.First(&updated, paper.ID).Error
 				require.NoError(t, err)
 				assert.Equal(t, "Updated Title", updated.Title)
+				assert.Equal(t, 60, updated.DurationMinutes) // Default duration unchanged
+			},
+		},
+		{
+			name: "Success - Update duration",
+			setup: func(t *testing.T) *models.Paper {
+				paper := createTestPaper(t, userID)
+				return &paper
+			},
+			userID: userID,
+			request: &proto.UpdatePaperRequest{
+				DurationMinutes: utils.Int32(90),
+			},
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, paper *models.Paper) {
+				var updated models.Paper
+				err := db.DB.First(&updated, paper.ID).Error
+				require.NoError(t, err)
+				assert.Equal(t, "Test Paper", updated.Title) // Original title unchanged
+				assert.Equal(t, 90, updated.DurationMinutes)
+			},
+		},
+		{
+			name: "Success - Update both title and duration",
+			setup: func(t *testing.T) *models.Paper {
+				paper := createTestPaper(t, userID)
+				return &paper
+			},
+			userID: userID,
+			request: &proto.UpdatePaperRequest{
+				Title:           utils.String("New Title"),
+				DurationMinutes: utils.Int32(120),
+			},
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, paper *models.Paper) {
+				var updated models.Paper
+				err := db.DB.First(&updated, paper.ID).Error
+				require.NoError(t, err)
+				assert.Equal(t, "New Title", updated.Title)
+				assert.Equal(t, 120, updated.DurationMinutes)
 			},
 		},
 		{
@@ -170,8 +213,10 @@ func TestUpdatePaper(t *testing.T) {
 			setup: func(t *testing.T) *models.Paper {
 				return &models.Paper{ID: 999}
 			},
-			userID:       userID,
-			title:        "Updated Title",
+			userID: userID,
+			request: &proto.UpdatePaperRequest{
+				Title: utils.String("Updated Title"),
+			},
 			expectedCode: codes.NotFound,
 		},
 		{
@@ -180,7 +225,10 @@ func TestUpdatePaper(t *testing.T) {
 				paper := createTestPaper(t, userID)
 				return &paper
 			},
-			userID:       0,
+			userID: 0,
+			request: &proto.UpdatePaperRequest{
+				Title: utils.String("Updated Title"),
+			},
 			expectedCode: codes.InvalidArgument,
 		},
 	}
@@ -191,10 +239,8 @@ func TestUpdatePaper(t *testing.T) {
 			paper := tt.setup(t)
 
 			ctx := createContextWithUserID(tt.userID)
-			_, err := client.UpdatePaper(ctx, &proto.UpdatePaperRequest{
-				PaperId: paper.ID,
-				Title:   tt.title,
-			})
+			tt.request.PaperId = paper.ID
+			_, err := client.UpdatePaper(ctx, tt.request)
 
 			if tt.expectedCode != codes.OK {
 				assert.Equal(t, tt.expectedCode, status.Code(err))
