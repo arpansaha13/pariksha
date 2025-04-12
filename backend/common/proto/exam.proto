@@ -50,7 +50,6 @@ message UpdateExamRequest {
   optional string title = 2;
   optional google.protobuf.Timestamp starts_at = 3;
   optional google.protobuf.Timestamp ends_at = 4;
-  optional int32 max_candidates_count = 5;
   optional string type = 6;
   optional int32 duration_minutes = 7;
 }

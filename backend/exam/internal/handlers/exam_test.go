@@ -103,6 +103,7 @@ func TestCreateExam(t *testing.T) {
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
 				PaperId:            1,
+				DurationMinutes:    120,
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
@@ -110,14 +111,15 @@ func TestCreateExam(t *testing.T) {
 				assert.NotZero(t, resp.Id)
 				assert.Equal(t, "New Exam", resp.Title)
 				assert.Equal(t, userID, resp.CreatedBy)
-				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type) // Should be LINK by default
+				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
 				assert.Equal(t, int32(50), resp.MaxCandidatesCount)
 				assert.Equal(t, int64(1), resp.PaperId)
+				assert.Equal(t, int32(120), resp.DurationMinutes)
 
-				// Verify in database
 				var exam models.Exam
 				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
+				assert.Equal(t, int32(120), exam.DurationMinutes)
 			},
 		},
 		{
@@ -129,15 +131,18 @@ func TestCreateExam(t *testing.T) {
 				MaxCandidatesCount: 50,
 				Type:               utils.String(constants.EXAM_ACCESS_TYPE_LINK),
 				PaperId:            1,
+				DurationMinutes:    90,
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamResponse) {
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
+				assert.Equal(t, int32(90), resp.DurationMinutes)
 
 				var exam models.Exam
 				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
+				assert.Equal(t, int32(90), exam.DurationMinutes)
 			},
 		},
 		{
@@ -149,15 +154,18 @@ func TestCreateExam(t *testing.T) {
 				MaxCandidatesCount: 50,
 				Type:               utils.String(constants.EXAM_ACCESS_TYPE_INVITE),
 				PaperId:            1,
+				DurationMinutes:    60,
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamResponse) {
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_INVITE, resp.Type)
+				assert.Equal(t, int32(60), resp.DurationMinutes)
 
 				var exam models.Exam
 				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_INVITE, exam.Type)
+				assert.Equal(t, int32(60), exam.DurationMinutes)
 			},
 		},
 		{
@@ -169,6 +177,7 @@ func TestCreateExam(t *testing.T) {
 				MaxCandidatesCount: 50,
 				Type:               utils.String(constants.EXAM_ACCESS_TYPE_INVITE),
 				PaperId:            1,
+				DurationMinutes:    60,
 			},
 			userID:       userID,
 			expectedCode: codes.InvalidArgument,
@@ -182,6 +191,7 @@ func TestCreateExam(t *testing.T) {
 				MaxCandidatesCount: 50,
 				Type:               utils.String(constants.EXAM_ACCESS_TYPE_INVITE),
 				PaperId:            1,
+				DurationMinutes:    60,
 			},
 			userID:       userID,
 			expectedCode: codes.InvalidArgument,
@@ -195,6 +205,7 @@ func TestCreateExam(t *testing.T) {
 				MaxCandidatesCount: 0,
 				Type:               utils.String(constants.EXAM_ACCESS_TYPE_INVITE),
 				PaperId:            1,
+				DurationMinutes:    60,
 			},
 			userID:       userID,
 			expectedCode: codes.InvalidArgument,
@@ -208,6 +219,7 @@ func TestCreateExam(t *testing.T) {
 				MaxCandidatesCount: 50,
 				Type:               utils.String("UNKNOWN"),
 				PaperId:            1,
+				DurationMinutes:    60,
 			},
 			userID:       userID,
 			expectedCode: codes.InvalidArgument,
@@ -227,25 +239,31 @@ func TestCreateExam(t *testing.T) {
 			expectedCode: codes.InvalidArgument,
 		},
 		{
-			name: "Success - Create exam with duration",
+			name: "Invalid - Missing duration minutes",
 			request: &proto.CreateExamRequest{
-				Title:              "New Exam",
+				Title:              "Invalid Exam",
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
 				Type:               utils.String(constants.EXAM_ACCESS_TYPE_LINK),
 				PaperId:            1,
-				DurationMinutes:    120,
 			},
 			userID:       userID,
-			expectedCode: codes.OK,
-			validate: func(t *testing.T, resp *proto.ExamResponse) {
-				assert.Equal(t, int32(120), resp.DurationMinutes)
-
-				var exam models.Exam
-				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
-				assert.Equal(t, int32(120), exam.DurationMinutes)
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name: "Invalid - Negative duration minutes",
+			request: &proto.CreateExamRequest{
+				Title:              "Invalid Exam",
+				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
+				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
+				MaxCandidatesCount: 50,
+				Type:               utils.String(constants.EXAM_ACCESS_TYPE_LINK),
+				PaperId:            1,
+				DurationMinutes:    -30,
 			},
+			userID:       userID,
+			expectedCode: codes.InvalidArgument,
 		},
 	}
 
@@ -270,7 +288,6 @@ func TestCreateExam(t *testing.T) {
 
 func TestUpdateExam(t *testing.T) {
 	title := "Updated Exam"
-	maxCandidates := int32(100)
 	examType := constants.EXAM_ACCESS_TYPE_LINK
 
 	tests := []struct {
@@ -291,11 +308,10 @@ func TestUpdateExam(t *testing.T) {
 				return &exam
 			},
 			request: &proto.UpdateExamRequest{
-				Title:              &title,
-				StartsAt:           timestamppb.New(time.Now().Add(48 * time.Hour)),
-				EndsAt:             timestamppb.New(time.Now().Add(72 * time.Hour)),
-				MaxCandidatesCount: &maxCandidates,
-				Type:               &examType,
+				Title:    &title,
+				StartsAt: timestamppb.New(time.Now().Add(48 * time.Hour)),
+				EndsAt:   timestamppb.New(time.Now().Add(72 * time.Hour)),
+				Type:     &examType,
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
@@ -305,7 +321,6 @@ func TestUpdateExam(t *testing.T) {
 
 				assert.Equal(t, "Updated Exam", updated.Title)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, updated.Type)
-				assert.Equal(t, 100, updated.MaxCandidatesCount)
 			},
 		},
 		{

@@ -88,11 +88,11 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 	}
 
 	// Only set Type if it's not LINK
-	if req.Type != nil && *req.Type != constants.EXAM_ACCESS_TYPE_LINK {
-		if *req.Type != constants.EXAM_ACCESS_TYPE_INVITE {
+	if req.Type != nil && req.GetType() != constants.EXAM_ACCESS_TYPE_LINK {
+		if req.GetType() != constants.EXAM_ACCESS_TYPE_INVITE {
 			return nil, status.Error(codes.InvalidArgument, "exam type must be either LINK or INVITE")
 		}
-		exam.Type = *req.Type
+		exam.Type = req.GetType()
 	}
 
 	if err := db.DB.Create(&exam).Error; err != nil {
@@ -161,11 +161,6 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 			return nil, status.Error(codes.FailedPrecondition, "cannot update type after exam has started")
 		}
 		exam.Type = *req.Type
-		isUpdated = true
-	}
-
-	if req.MaxCandidatesCount != nil {
-		exam.MaxCandidatesCount = *req.MaxCandidatesCount
 		isUpdated = true
 	}
 
