@@ -208,7 +208,7 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 				return status.Error(codes.PermissionDenied, "participant is not invited")
 			}
 			// Create participant with started status for LINK type exams
-			scheduledEndTime := now.Add(time.Duration(req.DurationMinutes) * time.Minute)
+			scheduledEndTime := now.Add(time.Duration(exam.DurationMinutes) * time.Minute)
 			participant = models.ExamParticipant{
 				ExamID:           req.ExamId,
 				UserID:           userID,
@@ -225,7 +225,7 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 			return status.Error(codes.FailedPrecondition, "participant has already started the exam")
 		} else {
 			// Update existing participant
-			scheduledEndTime := now.Add(time.Duration(req.DurationMinutes) * time.Minute)
+			scheduledEndTime := now.Add(time.Duration(exam.DurationMinutes) * time.Minute)
 			participant.Status = constants.PARTICIPANT_STATUS_STARTED
 			participant.StartedAt = sql.NullTime{Time: now, Valid: true}
 			participant.ScheduledEndTime = sql.NullTime{Time: scheduledEndTime, Valid: true}

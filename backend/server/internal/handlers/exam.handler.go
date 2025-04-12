@@ -342,26 +342,8 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
-	exam, err := examService.Client().GetExam(ctx, &proto.ExamRequest{
-		ExamId: int64(examID),
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	paperService := services.GetPaperService()
-	duration, err := paperService.Client().GetPaperDuration(context.Background(), &proto.PaperRequest{
-		PaperId: exam.PaperId,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
 	_, err = examService.Client().StartExam(ctx, &proto.StartExamRequest{
-		ExamId:          int64(examID),
-		DurationMinutes: duration.DurationMinutes,
+		ExamId: int64(examID),
 	})
 	if err != nil {
 		handleGRPCError(w, err)
