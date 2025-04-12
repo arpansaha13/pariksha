@@ -1,6 +1,8 @@
 <template>
   <div>
     <p>{{ question.statement }}</p>
+
+    <!-- <USeparator :ui="{ root: 'my-4' }" /> -->
   </div>
 </template>
 

@@ -255,7 +255,7 @@
   <UCard
     :ui="{ root: 'col-span-2 overflow-hidden', body: 'h-full overflow-auto' }"
   >
-    <QuestionForm
+    <PaperQuestionForm
       v-if="
         currentQuestionId === QuestionId.ADD &&
         currentCategoryId &&
@@ -265,17 +265,17 @@
       v-model:form-data="createQuestionFormStates[currentCategoryId]"
       @submit="onCreateQuestionSubmit"
     />
-    <QuestionForm
+    <PaperQuestionForm
       v-if="currentQuestionId && editQuestionFormStates[currentQuestionId]"
       ref="editQuestionForm"
       v-model:form-data="editQuestionFormStates[currentQuestionId]!"
       @submit="onEditQuestionSubmit"
     />
-    <QuestionMcq
+    <PaperQuestionMcq
       v-else-if="question && question.type === QuestionType.MCQ"
       :question="question.question"
     />
-    <QuestionNonMcq v-else-if="question" :question="question.question" />
+    <PaperQuestionNonMcq v-else-if="question" :question="question.question" />
   </UCard>
 
   <UCard :ui="{ root: 'col-span-2', body: 'flex justify-between' }">
@@ -335,7 +335,7 @@
 import Draggable from 'vuedraggable'
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { ComponentExposed } from 'vue-component-type-helpers'
-import { ConfirmModal, QuestionForm } from '#components'
+import { ConfirmModal, PaperQuestionForm } from '#components'
 import {
   type Question,
   QuestionId,
@@ -671,7 +671,9 @@ function decUnsavedCount(categoryId: number) {
 
 // ________________________CREATE QUESTION________________________
 const createQuestionFormRef =
-  useTemplateRef<ComponentExposed<typeof QuestionForm>>('createQuestionForm')
+  useTemplateRef<ComponentExposed<typeof PaperQuestionForm>>(
+    'createQuestionForm'
+  )
 const createQuestionFormStates = reactive<Record<number, QuestionFormState>>({})
 
 watchImmediate(currentCategoryId, categoryId => {
@@ -713,7 +715,7 @@ async function onCreateQuestionSubmit() {
 
 // ________________________EDIT QUESTION__________________________
 const editQuestionFormRef =
-  useTemplateRef<ComponentExposed<typeof QuestionForm>>('editQuestionForm')
+  useTemplateRef<ComponentExposed<typeof PaperQuestionForm>>('editQuestionForm')
 const editQuestionFormStates = reactive<
   Record<number, QuestionFormState | null>
 >({})

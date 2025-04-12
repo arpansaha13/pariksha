@@ -72,8 +72,9 @@
       label="Max score"
       description="Maximum score that can be awared for this question"
       name="max_score"
+      required
     >
-      <UInputNumber v-model="formState.max_score" :min="0" required />
+      <UInputNumber v-model="formState.max_score" :min="1" required />
     </UFormField>
 
     <UFormField
