@@ -9,6 +9,8 @@ export const useNewExamStore = defineStore('new-exam', {
     paper_id: null as number | null,
     startDate: null as CalendarDateTime | null,
     endDate: null as CalendarDateTime | null,
+    duration_hours: null as number | null,
+    duration_minutes: null as number | null,
   }),
   actions: {
     clear() {
@@ -17,6 +19,8 @@ export const useNewExamStore = defineStore('new-exam', {
       this.paper_id = null
       this.startDate = null
       this.endDate = null
+      this.duration_hours = null
+      this.duration_minutes = null
     },
   },
 })

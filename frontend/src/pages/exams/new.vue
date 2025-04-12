@@ -141,8 +141,8 @@ const formState = reactive<ExamFormState>({
   title: newExamStore.title ?? '',
   type: newExamStore.type ?? ExamAccessType.LINK,
   paper_id: newExamStore.paper_id ?? undefined,
-  duration_hours: 0,
-  duration_minutes: 0,
+  duration_hours: newExamStore.duration_hours ?? 0,
+  duration_minutes: newExamStore.duration_minutes ?? 0,
 })
 
 const { data: papers } = await usePapers()
@@ -162,6 +162,20 @@ watch(startDate, newValue => {
   }
 })
 
+// Add paper duration watch
+watch(
+  () => formState.paper_id,
+  paperId => {
+    if (!paperId || !papers.value) return
+
+    const selectedPaper = papers.value.find(p => p.id === paperId)
+    if (!selectedPaper?.duration_minutes) return
+
+    formState.duration_hours = Math.floor(selectedPaper.duration_minutes / 60)
+    formState.duration_minutes = selectedPaper.duration_minutes % 60
+  }
+)
+
 const df = new DateFormatter('en-US', {
   dateStyle: 'medium',
 })
@@ -172,6 +186,8 @@ onBeforeUnmount(() => {
   newExamStore.paper_id = formState.paper_id ?? null
   newExamStore.startDate = startDate.value
   newExamStore.endDate = endDate.value
+  newExamStore.duration_hours = formState.duration_hours
+  newExamStore.duration_minutes = formState.duration_minutes
 })
 
 function calcMinutes(hours: number | undefined, minutes: number | undefined) {
