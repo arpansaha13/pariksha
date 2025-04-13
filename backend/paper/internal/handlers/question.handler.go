@@ -15,26 +15,10 @@ import (
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/interceptors"
 )
 
 func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperRequest) (*proto.QuestionList, error) {
-	userID, err := utils.GetUserIDFromMetadata(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	exists, err := paperExists(req.PaperId)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, status.Error(codes.NotFound, "paper not found")
-	}
-
-	if err := verifyPaperAccess(nil, req.PaperId, userID, ""); err != nil {
-		return nil, err
-	}
-
 	var questions []models.Question
 	if err := db.DB.Where("paper_id = ?", req.PaperId).Find(&questions).Error; err != nil {
 		return nil, status.Error(codes.Internal, "failed to retrieve questions")
@@ -82,48 +66,15 @@ func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperReq
 }
 
 func (s *PaperServer) GetQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.QuestionResponse, error) {
-	userID, err := utils.GetUserIDFromMetadata(ctx)
-	if err != nil {
-		return nil, err
+	question, ok := ctx.Value(interceptors.QuestionCtxKey{}).(models.Question)
+	if !ok {
+		return nil, status.Error(codes.Internal, "question data not found in context")
 	}
-
-	var question models.Question
-	err = db.DB.Preload("Category").Take(&question, req.QuestionId).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, status.Error(codes.NotFound, "question not found")
-		}
-		return nil, status.Error(codes.Internal, "failed to find question")
-	}
-
-	if err := verifyPaperAccess(nil, question.PaperID, userID, ""); err != nil {
-		return nil, err
-	}
-
 	return questionToProto(question, true)
 }
 
 func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuestionRequest) (*proto.QuestionResponse, error) {
-	userID, err := utils.GetUserIDFromMetadata(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Verify paper access
-	var paper models.Paper
-	err = db.DB.Preload("PaperOwnership", "user_id = ?", userID).
-		Take(&paper, req.PaperId).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, status.Error(codes.NotFound, "paper not found")
-		}
-		return nil, status.Error(codes.Internal, "failed to find paper")
-	}
-
-	if paper.PaperOwnership.ID == 0 || paper.PaperOwnership.Type != constants.PAPER_OWNERSHIP_TYPE_OWNER {
-		return nil, status.Error(codes.PermissionDenied, "only owner can create questions")
-	}
-
+	// Validate question data
 	switch q := req.Question.(type) {
 	case *proto.CreateQuestionRequest_Mcq:
 		if err := validateQuestionData(req.Type, q.Mcq); err != nil {
@@ -148,7 +99,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 	tags, _ := json.Marshal(req.Tags)
 
 	var question models.Question
-	err = db.DB.Transaction(func(tx *gorm.DB) error {
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		// Get max order for this category
 		var maxOrder struct{ MaxOrder int }
 		err := tx.Model(&models.Question{}).
@@ -175,6 +126,15 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 
 		if err := tx.Create(&question).Error; err != nil {
 			return err
+		}
+
+		var paper models.Paper
+		err = db.DB.Take(&paper, req.PaperId).Error
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return status.Error(codes.NotFound, "paper not found")
+			}
+			return status.Error(codes.Internal, "failed to retrieve paper")
 		}
 
 		// Update paper max score
@@ -204,27 +164,13 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 }
 
 func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuestionRequest) (*proto.Empty, error) {
-	userID, err := utils.GetUserIDFromMetadata(ctx)
-	if err != nil {
-		return nil, err
+	question, ok := ctx.Value(interceptors.QuestionCtxKey{}).(models.Question)
+	if !ok {
+		return nil, status.Error(codes.Internal, "question data not found in context")
 	}
 
 	var transactionErr error
-	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		var question models.Question
-		err := tx.Preload("Paper").Take(&question, req.QuestionId).Error
-		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				transactionErr = status.Error(codes.NotFound, "question not found")
-				return transactionErr
-			}
-			return err
-		}
-
-		if err := verifyPaperAccess(tx, question.PaperID, userID, constants.PAPER_OWNERSHIP_TYPE_OWNER); err != nil {
-			return err
-		}
-
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		oldType := question.Type
 		oldMaxScore := question.MaxScore
 
@@ -281,28 +227,13 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 }
 
 func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.Empty, error) {
-	userID, err := utils.GetUserIDFromMetadata(ctx)
-	if err != nil {
-		return nil, err
+	question, ok := ctx.Value(interceptors.QuestionCtxKey{}).(models.Question)
+	if !ok {
+		return nil, status.Error(codes.Internal, "question data not found in context")
 	}
 
 	var transactionErr error
-	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		var question models.Question
-		err := tx.Preload("Paper").Take(&question, req.QuestionId).Error
-		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				transactionErr = status.Error(codes.NotFound, "question not found")
-				return transactionErr
-			}
-			return err
-		}
-
-		if err := verifyPaperAccess(tx, question.PaperID, userID, constants.PAPER_OWNERSHIP_TYPE_OWNER); err != nil {
-			transactionErr = err
-			return err
-		}
-
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		// Update paper max score
 		if err := tx.Model(&question.Paper).
 			UpdateColumn("max_score", gorm.Expr("max_score - ?", question.MaxScore)).

@@ -13,35 +13,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
-	"pariksha/paper/internal/config/db"
 )
-
-// Helper function to check if a paper exists
-func paperExists(paperID any) (bool, error) {
-	var actualPaperID int64
-
-	// Convert the ID to a standard int64
-	switch v := paperID.(type) {
-	case sql.NullInt64:
-		if !v.Valid {
-			return false, status.Error(codes.InvalidArgument, "invalid paper id")
-		}
-		actualPaperID = v.Int64
-	case int64:
-		actualPaperID = v
-	default:
-		return false, status.Error(codes.InvalidArgument, "invalid paper id type")
-	}
-
-	var exists bool
-	err := db.DB.Raw(`SELECT EXISTS (SELECT 1 FROM papers WHERE id = ?)`, actualPaperID).
-		Scan(&exists).Error
-	if err != nil {
-		return false, status.Error(codes.Internal, "failed to check paper existence")
-	}
-
-	return exists, nil
-}
 
 // Helper function to convert Paper model to proto response
 func paperToProto(paper models.Paper) *proto.PaperResponse {
@@ -115,53 +87,6 @@ func questionToProto(question models.Question, includeCategory bool) (*proto.Que
 	}
 
 	return response, nil
-}
-
-// Helper function to verify paper access
-func verifyPaperAccess(tx *gorm.DB, paperID any, userID int64, ownershipType string) error {
-	if tx == nil {
-		tx = db.DB
-	}
-
-	var actualPaperID int64
-	switch v := paperID.(type) {
-	case sql.NullInt64:
-		if !v.Valid {
-			return status.Error(codes.InvalidArgument, "invalid paper id")
-		}
-		actualPaperID = v.Int64
-	case int64:
-		actualPaperID = v
-	default:
-		return status.Error(codes.InvalidArgument, "invalid paper id type")
-	}
-
-	var condition string
-	var args []any
-
-	args = append(args, actualPaperID, userID)
-	condition = "po.paper_id = ? AND po.user_id = ?"
-
-	if ownershipType != "" {
-		condition += " AND po.type = ?"
-		args = append(args, ownershipType)
-	}
-
-	var exists bool
-	err := tx.Raw(`SELECT EXISTS (
-			SELECT 1 FROM paper_ownerships po
-			WHERE `+condition+`)`, args...).
-		Scan(&exists).Error
-
-	if err != nil {
-		return status.Error(codes.Internal, "failed to check paper access")
-	}
-
-	if !exists {
-		return status.Error(codes.PermissionDenied, "no permission to perform this action")
-	}
-
-	return nil
 }
 
 // Helper function to update question counts

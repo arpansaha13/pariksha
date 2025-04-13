@@ -11,6 +11,7 @@ import (
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/config/env"
 	"pariksha/paper/internal/handlers"
+	"pariksha/paper/internal/interceptors"
 )
 
 func main() {
@@ -20,7 +21,9 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(interceptors.PaperAccessInterceptor()),
+	)
 	proto.RegisterPaperServiceServer(grpcServer, &handlers.PaperServer{})
 
 	log.Printf("Paper gRPC server is running on port %s\n", port)

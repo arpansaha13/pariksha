@@ -95,13 +95,8 @@ func (s *PaperServer) CreatePaper(ctx context.Context, _ *proto.Empty) (*proto.P
 }
 
 func (s *PaperServer) GetPaper(ctx context.Context, req *proto.PaperRequest) (*proto.PaperResponse, error) {
-	userID, err := utils.GetUserIDFromMetadata(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	var paper models.Paper
-	err = db.DB.Preload("PaperOwnership").Take(&paper, req.PaperId).Error
+	err := db.DB.Preload("PaperOwnership").Take(&paper, req.PaperId).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, status.Error(codes.NotFound, "paper not found")
@@ -109,30 +104,17 @@ func (s *PaperServer) GetPaper(ctx context.Context, req *proto.PaperRequest) (*p
 		return nil, status.Error(codes.Internal, "failed to retrieve paper")
 	}
 
-	if err := verifyPaperAccess(nil, paper.ID, userID, ""); err != nil {
-		return nil, err
-	}
-
 	return paperToProto(paper), nil
 }
 
 func (s *PaperServer) UpdatePaper(ctx context.Context, req *proto.UpdatePaperRequest) (*proto.Empty, error) {
-	userID, err := utils.GetUserIDFromMetadata(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	var paper models.Paper
-	err = db.DB.Take(&paper, req.PaperId).Error
+	err := db.DB.Take(&paper, req.PaperId).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, status.Error(codes.NotFound, "paper not found")
 		}
 		return nil, status.Error(codes.Internal, "failed to find paper")
-	}
-
-	if err := verifyPaperAccess(nil, paper.ID, userID, constants.PAPER_OWNERSHIP_TYPE_OWNER); err != nil {
-		return nil, err
 	}
 
 	isUpdated := false
@@ -157,24 +139,5 @@ func (s *PaperServer) UpdatePaper(ctx context.Context, req *proto.UpdatePaperReq
 }
 
 func (s *PaperServer) CheckPaperAccess(ctx context.Context, req *proto.PaperRequest) (*proto.Empty, error) {
-	userID, err := utils.GetUserIDFromMetadata(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Check if paper exists
-	exists, err := paperExists(req.PaperId)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, status.Error(codes.NotFound, "paper not found")
-	}
-
-	// Check if user has owner access
-	if err := verifyPaperAccess(nil, req.PaperId, userID, constants.PAPER_OWNERSHIP_TYPE_OWNER); err != nil {
-		return nil, err
-	}
-
 	return &proto.Empty{}, nil
 }

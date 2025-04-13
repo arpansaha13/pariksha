@@ -22,6 +22,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/config/env"
+	"pariksha/paper/internal/interceptors"
 )
 
 const (
@@ -137,7 +138,9 @@ func createContextWithUserID(userID int64) context.Context {
 
 func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 	lis = bufconn.Listen(bufSize)
-	srv := grpc.NewServer()
+	srv := grpc.NewServer(
+		grpc.UnaryInterceptor(interceptors.PaperAccessInterceptor()),
+	)
 	proto.RegisterPaperServiceServer(srv, &PaperServer{})
 
 	go func() {
