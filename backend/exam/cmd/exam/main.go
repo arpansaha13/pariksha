@@ -11,6 +11,7 @@ import (
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/config/env"
 	"pariksha/exam/internal/handlers"
+	"pariksha/exam/internal/interceptors"
 	"pariksha/exam/internal/services"
 )
 
@@ -21,7 +22,9 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(interceptors.ExamAccessInterceptor()),
+	)
 	proto.RegisterExamServiceServer(grpcServer, &handlers.ExamServer{})
 
 	log.Printf("Exam gRPC server is running on port %s\n", port)

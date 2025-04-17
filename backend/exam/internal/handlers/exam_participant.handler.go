@@ -14,6 +14,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/exam/internal/config/db"
+	"pariksha/exam/internal/interceptors"
 )
 
 func (s *ExamServer) GetExamParticipants(ctx context.Context, req *proto.ExamRequest) (*proto.ParticipantList, error) {
@@ -45,9 +46,9 @@ func (s *ExamServer) GetExamParticipants(ctx context.Context, req *proto.ExamReq
 }
 
 func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParticipantRequest) (*proto.ParticipantResponse, error) {
-	var exam models.Exam
-	if err := db.DB.Take(&exam, req.ExamId).Error; err != nil {
-		return nil, status.Error(codes.NotFound, "exam not found")
+	exam, ok := interceptors.GetExamFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
 
 	if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
@@ -92,16 +93,17 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 }
 
 func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.RemoveParticipantRequest) (*proto.Empty, error) {
+	exam, ok := interceptors.GetExamFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "exam not found in context")
+	}
+
+	if exam.StartsAt.Before(time.Now()) {
+		return nil, status.Error(codes.FailedPrecondition, "cannot remove participant after exam has started")
+	}
+
+	var transactionErr error
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		var exam models.Exam
-		if err := tx.Take(&exam, req.ExamId).Error; err != nil {
-			return status.Error(codes.NotFound, "exam not found")
-		}
-
-		if exam.StartsAt.Before(time.Now()) {
-			return status.Error(codes.FailedPrecondition, "cannot remove participant after exam has started")
-		}
-
 		counts, err := exam.GetParticipantCounts()
 		if err != nil {
 			return status.Error(codes.Internal, "failed to get participant counts")
@@ -109,7 +111,8 @@ func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.Remov
 
 		var participant models.ExamParticipant
 		if err := tx.Take(&participant, req.ParticipantId).Error; err != nil {
-			return status.Error(codes.NotFound, "participant not found")
+			transactionErr = status.Error(codes.NotFound, "participant not found")
+			return err
 		}
 
 		// Update counts based on participant's status
@@ -139,6 +142,9 @@ func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.Remov
 	})
 
 	if err != nil {
+		if transactionErr != nil {
+			return nil, transactionErr
+		}
 		return nil, err
 	}
 

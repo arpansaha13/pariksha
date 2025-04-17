@@ -16,6 +16,7 @@ import (
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
+	"pariksha/exam/internal/interceptors"
 	"pariksha/exam/internal/services"
 )
 
@@ -108,19 +109,9 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 }
 
 func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamRequest) (*proto.ExamResponse, error) {
-	userID, err := utils.GetUserIDFromMetadata(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var exam models.Exam
-	if err := db.DB.Take(&exam, req.ExamId).Error; err != nil {
-		return nil, status.Error(codes.NotFound, "exam not found")
-	}
-
-	// Verify ownership
-	if exam.CreatedBy != userID {
-		return nil, status.Error(codes.PermissionDenied, "not authorized to update exam")
+	exam, ok := interceptors.GetExamFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
 
 	isUpdated := false
@@ -175,7 +166,7 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 		}
 	}
 
-	return createExamResponse(&exam)
+	return createExamResponse(exam)
 }
 
 func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest) (*proto.Empty, error) {
@@ -185,9 +176,9 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 	}
 
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		var exam models.Exam
-		if err := tx.Take(&exam, req.ExamId).Error; err != nil {
-			return status.Error(codes.NotFound, "exam not found")
+		exam, ok := interceptors.GetExamFromContext(ctx)
+		if !ok {
+			return status.Error(codes.Internal, "exam not found in context")
 		}
 
 		now := time.Now()
@@ -200,16 +191,14 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 			return status.Error(codes.FailedPrecondition, "exam has ended")
 		}
 
-		var participant models.ExamParticipant
-		participantErr := tx.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error
-
-		if participantErr == gorm.ErrRecordNotFound {
+		participant, ok := interceptors.GetParticipantFromContext(ctx)
+		if !ok {
 			if exam.Type != constants.EXAM_ACCESS_TYPE_LINK {
 				return status.Error(codes.PermissionDenied, "participant is not invited")
 			}
 			// Create participant with started status for LINK type exams
 			scheduledEndTime := now.Add(time.Duration(exam.DurationMinutes) * time.Minute)
-			participant = models.ExamParticipant{
+			participant = &models.ExamParticipant{
 				ExamID:           req.ExamId,
 				UserID:           userID,
 				Status:           constants.PARTICIPANT_STATUS_STARTED,
@@ -219,8 +208,6 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 			if err := tx.Create(&participant).Error; err != nil {
 				return status.Error(codes.Internal, "failed to create participant")
 			}
-		} else if participantErr != nil {
-			return status.Error(codes.Internal, "database error")
 		} else if participant.Status != constants.PARTICIPANT_STATUS_INVITED {
 			return status.Error(codes.FailedPrecondition, "participant has already started the exam")
 		} else {
@@ -239,7 +226,7 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 			return status.Error(codes.Internal, "failed to get participant counts")
 		}
 
-		if participantErr == gorm.ErrRecordNotFound {
+		if !ok {
 			counts.Started++
 		} else {
 			counts.Invited--
@@ -266,22 +253,17 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 }
 
 func (s *ExamServer) EndExam(ctx context.Context, req *proto.EndExamRequest) (*proto.Empty, error) {
-	userID, err := utils.GetUserIDFromMetadata(ctx)
-	if err != nil {
-		return nil, err
+	exam, ok := interceptors.GetExamFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
 
-	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		var participant models.ExamParticipant
-		if err := tx.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error; err != nil {
-			return status.Error(codes.NotFound, "participant not found")
-		}
+	participant, ok := interceptors.GetParticipantFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "participant not found in context")
+	}
 
-		var exam models.Exam
-		if err := tx.Take(&exam, req.ExamId).Error; err != nil {
-			return status.Error(codes.NotFound, "exam not found")
-		}
-
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		if time.Now().Before(exam.StartsAt) {
 			return status.Error(codes.FailedPrecondition, "exam has not started yet")
 		}
@@ -323,37 +305,12 @@ func (s *ExamServer) EndExam(ctx context.Context, req *proto.EndExamRequest) (*p
 }
 
 func (s *ExamServer) GetExam(ctx context.Context, req *proto.ExamRequest) (*proto.ExamResponse, error) {
-	userID, err := utils.GetUserIDFromMetadata(ctx)
-	if err != nil {
-		return nil, err
+	exam, ok := interceptors.GetExamFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
 
-	var exam models.Exam
-	if err := db.DB.Take(&exam, req.ExamId).Error; err != nil {
-		return nil, status.Error(codes.NotFound, "exam not found")
-	}
-
-	// Check if user owns the exam
-	if exam.CreatedBy == userID {
-		return createExamResponse(&exam)
-	}
-
-	// If exam type is LINK, everyone has access
-	if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
-		return createExamResponse(&exam)
-	}
-
-	// For INVITE type exams, check if user is a participant
-	var participant models.ExamParticipant
-	err = db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, status.Error(codes.PermissionDenied, "not authorized to view exam")
-		}
-		return nil, status.Error(codes.Internal, "database error")
-	}
-
-	return createExamResponse(&exam)
+	return createExamResponse(exam)
 }
 
 func (s *ExamServer) CheckExamAccess(ctx context.Context, req *proto.ExamRequest) (*proto.ExamAccessResponse, error) {
@@ -362,35 +319,19 @@ func (s *ExamServer) CheckExamAccess(ctx context.Context, req *proto.ExamRequest
 		return nil, err
 	}
 
-	var exam models.Exam
-	if err := db.DB.Take(&exam, req.ExamId).Error; err != nil {
-		return nil, status.Error(codes.NotFound, "exam not found")
+	exam, ok := interceptors.GetExamFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
 
-	// Check if user owns the exam
 	if exam.CreatedBy == userID {
 		return &proto.ExamAccessResponse{
 			AccessType: proto.ExamAccessType_OWNER,
 		}, nil
 	}
 
-	// If exam type is LINK, everyone has access as participant
-	if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
-		return &proto.ExamAccessResponse{
-			AccessType: proto.ExamAccessType_PARTICIPANT,
-		}, nil
-	}
-
-	// For INVITE type exams, check if user is a participant
-	var participant models.ExamParticipant
-	err = db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, status.Error(codes.PermissionDenied, "not authorized to access exam")
-		}
-		return nil, status.Error(codes.Internal, "database error")
-	}
-
+	// No need to verify LinkExam or participant
+	// because the interceptor does this
 	return &proto.ExamAccessResponse{
 		AccessType: proto.ExamAccessType_PARTICIPANT,
 	}, nil

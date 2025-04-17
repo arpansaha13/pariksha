@@ -193,7 +193,7 @@ func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
 		ExamId: int64(examID),
 	})
 	if err != nil {
-		http.Error(w, "Failed to fetch participants", http.StatusInternalServerError)
+		handleGRPCError(w, err)
 		return
 	}
 
@@ -279,7 +279,7 @@ func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
 		UserId: participantDto.UserID,
 	})
 	if err != nil {
-		http.Error(w, "Failed to add participant", http.StatusInternalServerError)
+		handleGRPCError(w, err)
 		return
 	}
 
@@ -309,7 +309,7 @@ func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
 		ParticipantId: int64(participantID),
 	})
 	if err != nil {
-		http.Error(w, "Failed to remove participant", http.StatusInternalServerError)
+		handleGRPCError(w, err)
 		return
 	}
 

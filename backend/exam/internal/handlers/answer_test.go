@@ -202,7 +202,7 @@ func TestUpsertAnswer(t *testing.T) {
 					UserID int64
 					Status int
 				}{
-					{UserID: userID, Status: 2}, // Status STARTED
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
 
@@ -246,7 +246,7 @@ func TestUpsertAnswer(t *testing.T) {
 					UserID int64
 					Status int
 				}{
-					{UserID: userID, Status: 2}, // Status STARTED
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
 
@@ -287,8 +287,9 @@ func TestUpsertAnswer(t *testing.T) {
 		{
 			name: "Fail - Exam participant not found",
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
+				exam := createTestExam(t, 2)
 				return nil, &proto.UpsertAnswersRequest{
-					ExamId: 9999,
+					ExamId: exam.ID,
 					Answer: &proto.Answer{
 						QuestionId:  1,
 						Answer:      "Test answer",
@@ -301,7 +302,7 @@ func TestUpsertAnswer(t *testing.T) {
 				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
 			},
-			expectedCode: codes.NotFound,
+			expectedCode: codes.PermissionDenied,
 		},
 		{
 			name: "Fail - Exam not started",
@@ -311,7 +312,7 @@ func TestUpsertAnswer(t *testing.T) {
 					UserID int64
 					Status int
 				}{
-					{UserID: userID, Status: 1}, // Status INVITED
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
 

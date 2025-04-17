@@ -63,10 +63,7 @@ func TestGetExamParticipants(t *testing.T) {
 				return &models.Exam{ID: 9999}
 			},
 			userID:       userID,
-			expectedCode: codes.OK,
-			validate: func(t *testing.T, resp *proto.ParticipantList) {
-				assert.Equal(t, 0, len(resp.Participants), "Should return empty array for non-existent exam")
-			},
+			expectedCode: codes.NotFound,
 		},
 	}
 

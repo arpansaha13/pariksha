@@ -13,8 +13,8 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
+	"pariksha/exam/internal/interceptors"
 )
 
 func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.ParticipantRequest) (*proto.AnswerList, error) {
@@ -65,30 +65,25 @@ func (s *ExamServer) GetAnswer(ctx context.Context, req *proto.GetAnswerRequest)
 }
 
 func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersRequest) (*proto.UpsertAnswersResponse, error) {
-	userID, err := utils.GetUserIDFromMetadata(ctx)
-	if err != nil {
-		return nil, err
+	participant, ok := interceptors.GetParticipantFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "participant not found in context")
 	}
 
-	var examParticipant models.ExamParticipant
-	if err := db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&examParticipant).Error; err != nil {
-		return nil, status.Error(codes.NotFound, "exam participant not found")
-	}
-
-	if examParticipant.Status != constants.PARTICIPANT_STATUS_STARTED {
+	if participant.Status != constants.PARTICIPANT_STATUS_STARTED {
 		return nil, status.Error(codes.FailedPrecondition, "exam has not started")
 	}
 
-	if req.Answer.SubmittedAt.AsTime().After(examParticipant.ScheduledEndTime.Time) {
+	if req.Answer.SubmittedAt.AsTime().After(participant.ScheduledEndTime.Time) {
 		return nil, status.Error(codes.FailedPrecondition, "cannot submit answer after scheduled end time")
 	}
 
 	var answer models.Answer
-	if err := db.DB.Where("exam_participant_id = ? AND question_id = ?", examParticipant.ID, req.Answer.QuestionId).Take(&answer).Error; err != nil {
+	if err := db.DB.Where("exam_participant_id = ? AND question_id = ?", participant.ID, req.Answer.QuestionId).Take(&answer).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			// Create new answer
 			answer = models.Answer{
-				ExamParticipantID: examParticipant.ID,
+				ExamParticipantID: participant.ID,
 				QuestionID:        req.Answer.QuestionId,
 				Answer:            sql.NullString{String: req.Answer.Answer, Valid: true},
 			}
@@ -128,6 +123,10 @@ func (s *ExamServer) UpdateAnswerForEvaluation(ctx context.Context, req *proto.U
 		return nil, status.Error(codes.Internal, "invalid question score")
 	}
 
+	if req.NewScore != nil && req.GetNewScore() > int32(maxScore) {
+		return nil, status.Error(codes.InvalidArgument, "new score exceeds max score for the question")
+	}
+
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
 		var answer models.Answer
 		if err := tx.Take(&answer, req.AnswerId).Error; err != nil {
@@ -135,10 +134,6 @@ func (s *ExamServer) UpdateAnswerForEvaluation(ctx context.Context, req *proto.U
 				return status.Error(codes.NotFound, "answer not found")
 			}
 			return status.Error(codes.Internal, "database error")
-		}
-
-		if req.NewScore != nil && *req.NewScore > int32(maxScore) {
-			return status.Error(codes.InvalidArgument, "new score exceeds max score for the question")
 		}
 
 		isUpdated := false

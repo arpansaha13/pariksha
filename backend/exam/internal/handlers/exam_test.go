@@ -484,11 +484,13 @@ func TestEndExam(t *testing.T) {
 		{
 			name: "Fail - Participant not found",
 			setup: func(t *testing.T) (*models.Exam, *models.ExamParticipant) {
-				exam := createTestExam(t, userID)
-				return &exam, &models.ExamParticipant{ID: 9999}
+				exam := createTestExam(t, 2)
+				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
+				require.NoError(t, db.DB.Save(&exam).Error)
+				return &exam, &models.ExamParticipant{ID: userID}
 			},
 			userID:       userID,
-			expectedCode: codes.NotFound,
+			expectedCode: codes.PermissionDenied,
 		},
 		{
 			name: "Fail - Exam not found",

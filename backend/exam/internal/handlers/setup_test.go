@@ -23,6 +23,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/config/env"
+	"pariksha/exam/internal/interceptors"
 	"pariksha/exam/internal/services"
 )
 
@@ -138,7 +139,9 @@ func createContextWithMetadata(mdMap map[string]string) context.Context {
 
 func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 	lis = bufconn.Listen(bufSize)
-	srv := grpc.NewServer()
+	srv := grpc.NewServer(
+		grpc.UnaryInterceptor(interceptors.ExamAccessInterceptor()),
+	)
 	proto.RegisterExamServiceServer(srv, &ExamServer{})
 
 	go func() {
