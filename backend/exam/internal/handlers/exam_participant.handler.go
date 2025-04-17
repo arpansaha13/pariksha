@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -74,10 +73,9 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 		return nil, status.Error(codes.Internal, "failed to add participant")
 	}
 
-	counts.Invited++
-	exam.ParticipantCounts, err = json.Marshal(counts)
+	exam.ParticipantCounts, err = updateParticipantCounts(&counts, 0, constants.PARTICIPANT_STATUS_INVITED)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to marshal counts")
+		return nil, err
 	}
 
 	if err := db.DB.Save(&exam).Error; err != nil {
@@ -116,20 +114,9 @@ func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.Remov
 		}
 
 		// Update counts based on participant's status
-		switch participant.Status {
-		case constants.PARTICIPANT_STATUS_INVITED:
-			counts.Invited--
-		case constants.PARTICIPANT_STATUS_STARTED:
-			counts.Started--
-		case constants.PARTICIPANT_STATUS_ENDED:
-			counts.Ended--
-		case constants.PARTICIPANT_STATUS_UNATTENDED:
-			counts.Unattended--
-		}
-
-		exam.ParticipantCounts, err = json.Marshal(counts)
+		exam.ParticipantCounts, err = updateParticipantCounts(&counts, participant.Status, 0)
 		if err != nil {
-			return status.Error(codes.Internal, "failed to marshal counts")
+			return err
 		}
 
 		if err := tx.Save(&exam).Error; err != nil {

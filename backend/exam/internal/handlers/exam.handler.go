@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -24,6 +23,7 @@ type ExamServer struct {
 	proto.UnimplementedExamServiceServer
 }
 
+// GetUserExams retrieves all exams created by the authenticated user
 func (s *ExamServer) GetUserExams(ctx context.Context, _ *proto.Empty) (*proto.ExamList, error) {
 	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
@@ -49,6 +49,7 @@ func (s *ExamServer) GetUserExams(ctx context.Context, _ *proto.Empty) (*proto.E
 	return response, nil
 }
 
+// CreateExam creates a new exam with the specified configuration and validates time constraints
 func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamRequest) (*proto.ExamResponse, error) {
 	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
@@ -58,16 +59,8 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 	startsAt := req.StartsAt.AsTime()
 	endsAt := req.EndsAt.AsTime()
 
-	// Time input is not implemented in frontend yet
-	// Compare dates only by truncating to start of day
-	now := time.Now().Truncate(24 * time.Hour)
-
-	if startsAt.Before(now) {
-		return nil, status.Error(codes.InvalidArgument, "start time cannot be in the past")
-	}
-
-	if endsAt.Before(startsAt) || endsAt.Equal(startsAt) {
-		return nil, status.Error(codes.InvalidArgument, "end time must be after start time")
+	if err := validateExamTiming(startsAt, endsAt); err != nil {
+		return nil, err
 	}
 
 	if req.MaxCandidatesCount <= 0 {
@@ -108,6 +101,7 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 	return createExamResponse(&exam)
 }
 
+// UpdateExam modifies an existing exam's details while enforcing time-based restrictions
 func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamRequest) (*proto.ExamResponse, error) {
 	exam, ok := interceptors.GetExamFromContext(ctx)
 	if !ok {
@@ -126,23 +120,26 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 		return nil, status.Error(codes.FailedPrecondition, "cannot update exam after it has ended")
 	}
 
-	if req.StartsAt != nil {
-		startsAt := req.StartsAt.AsTime()
-		if now.After(exam.StartsAt) {
-			return nil, status.Error(codes.FailedPrecondition, "cannot update start time after exam has started")
-		}
-		if startsAt.Before(now) {
-			return nil, status.Error(codes.InvalidArgument, "start time cannot be in the past")
-		}
-		exam.StartsAt = startsAt
-		isUpdated = true
+	if req.StartsAt != nil && now.After(exam.StartsAt) {
+		return nil, status.Error(codes.FailedPrecondition, "cannot update start time after exam has started")
 	}
 
-	if req.EndsAt != nil {
-		endsAt := req.EndsAt.AsTime()
-		if endsAt.Before(exam.StartsAt) || endsAt.Equal(exam.StartsAt) {
-			return nil, status.Error(codes.InvalidArgument, "end time cannot be before or equal to start time")
+	if req.StartsAt != nil || req.EndsAt != nil {
+		startsAt := exam.StartsAt
+		endsAt := exam.EndsAt
+
+		if req.StartsAt != nil {
+			startsAt = req.StartsAt.AsTime()
 		}
+		if req.EndsAt != nil {
+			endsAt = req.EndsAt.AsTime()
+		}
+
+		if err := validateExamTiming(startsAt, endsAt); err != nil {
+			return nil, err
+		}
+
+		exam.StartsAt = startsAt
 		exam.EndsAt = endsAt
 		isUpdated = true
 	}
@@ -169,6 +166,7 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 	return createExamResponse(exam)
 }
 
+// StartExam initiates an exam for a participant and updates participation statistics
 func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest) (*proto.Empty, error) {
 	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
@@ -227,15 +225,12 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 		}
 
 		if !ok {
-			counts.Started++
+			exam.ParticipantCounts, err = updateParticipantCounts(&counts, 0, constants.PARTICIPANT_STATUS_STARTED)
 		} else {
-			counts.Invited--
-			counts.Started++
+			exam.ParticipantCounts, err = updateParticipantCounts(&counts, constants.PARTICIPANT_STATUS_INVITED, constants.PARTICIPANT_STATUS_STARTED)
 		}
-
-		exam.ParticipantCounts, err = json.Marshal(counts)
 		if err != nil {
-			return status.Error(codes.Internal, "failed to marshal counts")
+			return err
 		}
 
 		if err := tx.Save(&exam).Error; err != nil {
@@ -252,6 +247,7 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 	return &proto.Empty{}, nil
 }
 
+// EndExam marks a participant's exam as complete and updates participation statistics
 func (s *ExamServer) EndExam(ctx context.Context, req *proto.EndExamRequest) (*proto.Empty, error) {
 	exam, ok := interceptors.GetExamFromContext(ctx)
 	if !ok {
@@ -273,15 +269,9 @@ func (s *ExamServer) EndExam(ctx context.Context, req *proto.EndExamRequest) (*p
 			return status.Error(codes.Internal, "failed to parse participant counts")
 		}
 
-		// Update counts
-		if participant.Status == constants.PARTICIPANT_STATUS_STARTED {
-			counts.Started--
-			counts.Ended++
-		}
-
-		exam.ParticipantCounts, err = json.Marshal(counts)
+		exam.ParticipantCounts, err = updateParticipantCounts(&counts, participant.Status, constants.PARTICIPANT_STATUS_ENDED)
 		if err != nil {
-			return status.Error(codes.Internal, "failed to marshal counts")
+			return err
 		}
 
 		participant.Status = constants.PARTICIPANT_STATUS_ENDED
@@ -304,6 +294,7 @@ func (s *ExamServer) EndExam(ctx context.Context, req *proto.EndExamRequest) (*p
 	return &proto.Empty{}, nil
 }
 
+// GetExam retrieves detailed information about a specific exam
 func (s *ExamServer) GetExam(ctx context.Context, req *proto.ExamRequest) (*proto.ExamResponse, error) {
 	exam, ok := interceptors.GetExamFromContext(ctx)
 	if !ok {
@@ -313,6 +304,7 @@ func (s *ExamServer) GetExam(ctx context.Context, req *proto.ExamRequest) (*prot
 	return createExamResponse(exam)
 }
 
+// CheckExamAccess determines whether the user has access to this exam with access-level as owner or participant
 func (s *ExamServer) CheckExamAccess(ctx context.Context, req *proto.ExamRequest) (*proto.ExamAccessResponse, error) {
 	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {

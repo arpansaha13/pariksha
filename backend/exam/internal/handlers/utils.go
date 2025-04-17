@@ -1,13 +1,58 @@
 package handlers
 
 import (
+	"encoding/json"
+	"time"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 )
+
+// validateExamTiming checks if the exam's timing constraints are valid
+func validateExamTiming(startsAt, endsAt time.Time) error {
+	// Time input is not implemented in frontend yet
+	// Compare dates only by truncating to start of day
+	now := time.Now().Truncate(24 * time.Hour)
+
+	if startsAt.Before(now) {
+		return status.Error(codes.InvalidArgument, "start time cannot be in the past")
+	}
+	if endsAt.Before(startsAt) || endsAt.Equal(startsAt) {
+		return status.Error(codes.InvalidArgument, "end time must be after start time")
+	}
+	return nil
+}
+
+// updateParticipantCounts updates the exam's participant counts and returns marshaled counts
+func updateParticipantCounts(counts *models.ParticipantCount, fromStatus int, toStatus int) (json.RawMessage, error) {
+	switch fromStatus {
+	case constants.PARTICIPANT_STATUS_INVITED:
+		counts.Invited--
+	case constants.PARTICIPANT_STATUS_STARTED:
+		counts.Started--
+	}
+
+	switch toStatus {
+	case constants.PARTICIPANT_STATUS_INVITED:
+		counts.Invited++
+	case constants.PARTICIPANT_STATUS_STARTED:
+		counts.Started++
+	case constants.PARTICIPANT_STATUS_ENDED:
+		counts.Ended++
+	}
+
+	marshaled, err := json.Marshal(counts)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to marshal counts")
+	}
+
+	return marshaled, nil
+}
 
 func createExamResponse(exam *models.Exam) (*proto.ExamResponse, error) {
 	counts, err := exam.GetParticipantCounts()
