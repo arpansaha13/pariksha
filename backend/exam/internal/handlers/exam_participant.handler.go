@@ -137,3 +137,12 @@ func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.Remov
 
 	return &proto.Empty{}, nil
 }
+
+// CheckExamParticipant checks if a user is a participant of an exam
+func (s *ExamServer) CheckExamParticipant(ctx context.Context, req *proto.CheckParticipantRequest) (*proto.CheckParticipantResponse, error) {
+	// The ParticipantRule in interceptor has already validated that the user is a participant
+	// If we reach here, it means the user is a participant
+	return &proto.CheckParticipantResponse{
+		IsParticipant: true,
+	}, nil
+}

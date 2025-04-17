@@ -22,6 +22,7 @@ service ExamService {
   rpc StartExam(StartExamRequest) returns (Empty) {}
   rpc EndExam(EndExamRequest) returns (Empty) {}
   rpc MarkAsEvaluated(ParticipantRequest) returns (EvaluationStatusResponse) {}
+  rpc CheckExamParticipant(CheckParticipantRequest) returns (CheckParticipantResponse) {}
 
   // Answer operations
   rpc GetParticipantAnswers(ParticipantRequest) returns (AnswerList) {}
@@ -162,6 +163,14 @@ message GetAnswerRequest {
 
 message ExamAccessResponse {
   ExamAccessType access_type = 1;
+}
+
+message CheckParticipantRequest {
+  int64 exam_id = 1;
+}
+
+message CheckParticipantResponse {
+  bool is_participant = 1;
 }
 
 enum ExamAccessType {

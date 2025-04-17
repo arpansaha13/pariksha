@@ -39,11 +39,13 @@ var (
 		"/proto.ExamService/StartExam",
 		"/proto.ExamService/EndExam",
 		"/proto.ExamService/UpsertAnswer",
+		"/proto.ExamService/CheckExamParticipant",
 	}
 
 	participantMethods = []string{
 		"/proto.ExamService/EndExam",
 		"/proto.ExamService/UpsertAnswer",
+		"/proto.ExamService/CheckExamParticipant",
 	}
 )
 
@@ -231,6 +233,8 @@ func ExamAccessInterceptor() grpc.UnaryServerInterceptor {
 		case *proto.RemoveParticipantRequest:
 			examID = r.ExamId
 		case *proto.UpsertAnswersRequest:
+			examID = r.ExamId
+		case *proto.CheckParticipantRequest:
 			examID = r.ExamId
 		case *proto.UpdateAnswerRequest:
 			// Find exam ID using joins, selecting only exam_id

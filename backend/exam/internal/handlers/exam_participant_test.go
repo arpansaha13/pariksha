@@ -299,3 +299,78 @@ func TestRemoveExamParticipant(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckExamParticipant(t *testing.T) {
+	tests := []struct {
+		name         string
+		setup        func(t *testing.T) *models.Exam
+		userID       int64
+		expectedCode codes.Code
+		expected     bool
+	}{
+		{
+			name: "Success - User is participant",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, 2) // Created by different user
+				err := createTestExamParticipants(t, &exam, []struct {
+					UserID int64
+					Status int
+				}{
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
+				})
+				require.NoError(t, err)
+				return &exam
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			expected:     true,
+		},
+		{
+			name: "Failure - User is not participant",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, 2) // Created by different user
+				return &exam
+			},
+			userID:       userID,
+			expectedCode: codes.PermissionDenied,
+		},
+		{
+			name: "Exam not found",
+			setup: func(t *testing.T) *models.Exam {
+				return &models.Exam{ID: 9999}
+			},
+			userID:       userID,
+			expectedCode: codes.NotFound,
+		},
+		{
+			name: "Failure - User is exam owner",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, userID) // Created by same user
+				return &exam
+			},
+			userID:       userID,
+			expectedCode: codes.PermissionDenied,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+			exam := tt.setup(t)
+
+			ctx := createContextWithUserID(tt.userID)
+			resp, err := client.CheckExamParticipant(ctx, &proto.CheckParticipantRequest{
+				ExamId: exam.ID,
+			})
+
+			if tt.expectedCode != codes.OK {
+				assert.Equal(t, tt.expectedCode, status.Code(err))
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, resp)
+			assert.Equal(t, tt.expected, resp.IsParticipant)
+		})
+	}
+}
