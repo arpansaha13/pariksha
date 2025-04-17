@@ -111,13 +111,21 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 	isUpdated := false
 	now := time.Now()
 
+	if now.After(exam.EndsAt) {
+		// Allow only title updates after exam has ended
+		if req.Title != nil && *req.Title != exam.Title {
+			exam.Title = *req.Title
+			if err := db.DB.Save(&exam).Error; err != nil {
+				return nil, status.Error(codes.Internal, "failed to update exam")
+			}
+			return createExamResponse(exam)
+		}
+		return nil, status.Error(codes.FailedPrecondition, "cannot update exam after it has ended")
+	}
+
 	if req.Title != nil && *req.Title != exam.Title {
 		exam.Title = *req.Title
 		isUpdated = true
-	}
-
-	if now.After(exam.EndsAt) {
-		return nil, status.Error(codes.FailedPrecondition, "cannot update exam after it has ended")
 	}
 
 	if req.StartsAt != nil && now.After(exam.StartsAt) {

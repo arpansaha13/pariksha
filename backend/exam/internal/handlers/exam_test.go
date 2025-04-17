@@ -324,7 +324,7 @@ func TestUpdateExam(t *testing.T) {
 			},
 		},
 		{
-			name: "Fail - Cannot update started exam timing",
+			name: "Fail - Cannot update StartsAt time after exam has started",
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, userID)
 				exam.StartsAt = time.Now().Add(-1 * time.Hour)
@@ -333,21 +333,6 @@ func TestUpdateExam(t *testing.T) {
 			},
 			request: &proto.UpdateExamRequest{
 				StartsAt: timestamppb.New(time.Now().Add(1 * time.Hour)),
-			},
-			userID:       userID,
-			expectedCode: codes.FailedPrecondition,
-		},
-		{
-			name: "Fail - Cannot update ended exam",
-			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, userID)
-				exam.StartsAt = time.Now().Add(-2 * time.Hour)
-				exam.EndsAt = time.Now().Add(-1 * time.Hour)
-				require.NoError(t, db.DB.Save(&exam).Error)
-				return &exam
-			},
-			request: &proto.UpdateExamRequest{
-				Title: &title,
 			},
 			userID:       userID,
 			expectedCode: codes.FailedPrecondition,
@@ -409,6 +394,55 @@ func TestUpdateExam(t *testing.T) {
 				var updated models.Exam
 				require.NoError(t, db.DB.First(&updated, exam.ID).Error)
 				assert.Equal(t, int32(180), updated.DurationMinutes)
+			},
+		},
+		{
+			name: "Success - Update title after exam has ended",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, userID)
+				exam.StartsAt = time.Now().Add(-2 * time.Hour)
+				exam.EndsAt = time.Now().Add(-1 * time.Hour)
+				require.NoError(t, db.DB.Save(&exam).Error)
+				return &exam
+			},
+			request: &proto.UpdateExamRequest{
+				Title: &title,
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, exam *models.Exam) {
+				var updated models.Exam
+				require.NoError(t, db.DB.First(&updated, exam.ID).Error)
+				assert.Equal(t, "Updated Exam", updated.Title)
+			},
+		},
+		{
+			name: "Fail - Update non-title field after exam has ended",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, userID)
+				exam.StartsAt = time.Now().Add(-2 * time.Hour)
+				exam.EndsAt = time.Now().Add(-1 * time.Hour)
+				exam.DurationMinutes = 60
+				exam.Title = "Original Title"
+				require.NoError(t, db.DB.Save(&exam).Error)
+				return &exam
+			},
+			request: &proto.UpdateExamRequest{
+				Title:           &title,
+				DurationMinutes: utils.Int32(180),
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, exam *models.Exam) {
+				var updated models.Exam
+				require.NoError(t, db.DB.First(&updated, exam.ID).Error)
+
+				// Verify that all fields other than title remain unchanged
+				assert.Equal(t, title, updated.Title)
+				assert.Equal(t, exam.DurationMinutes, updated.DurationMinutes)
+				assert.Equal(t, exam.StartsAt.Unix(), updated.StartsAt.Unix())
+				assert.Equal(t, exam.EndsAt.Unix(), updated.EndsAt.Unix())
+				assert.Equal(t, exam.Type, updated.Type)
 			},
 		},
 	}
