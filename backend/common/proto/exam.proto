@@ -14,10 +14,12 @@ service ExamService {
   rpc UpdateExam(UpdateExamRequest) returns (ExamResponse) {}
   rpc GetExam(ExamRequest) returns (ExamResponse) {}
   rpc CheckExamAccess(ExamRequest) returns (ExamAccessResponse) {}
+  rpc GetExamQuestions(ExamRequest) returns (ExamQuestionsResponse) {}
+  rpc GetExamCategories(ExamRequest) returns (ExamCategoriesResponse) {}
 
   // Participant operations
   rpc GetExamParticipants(ExamRequest) returns (ParticipantList) {}
-  rpc AddExamParticipant(AddParticipantRequest) returns (ParticipantResponse) {}  // Changed
+  rpc AddExamParticipant(AddParticipantRequest) returns (ParticipantResponse) {}
   rpc RemoveExamParticipant(RemoveParticipantRequest) returns (Empty) {}
   rpc StartExam(StartExamRequest) returns (Empty) {}
   rpc EndExam(EndExamRequest) returns (Empty) {}
@@ -171,6 +173,22 @@ message CheckParticipantRequest {
 
 message CheckParticipantResponse {
   bool is_participant = 1;
+}
+
+message ExamQuestion {
+  int64 question_id = 1;
+}
+
+message ExamQuestionsResponse {
+  repeated ExamQuestion questions = 1;
+}
+
+message ExamCategory {
+  int64 category_id = 1;
+}
+
+message ExamCategoriesResponse {
+  repeated ExamCategory categories = 1;
 }
 
 enum ExamAccessType {

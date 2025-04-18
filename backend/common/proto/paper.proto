@@ -21,6 +21,7 @@ service PaperService {
   rpc UpdateQuestion(UpdateQuestionRequest) returns (Empty) {}
   rpc DeleteQuestion(QuestionRequest) returns (Empty) {}
   rpc ReorderQuestions(ReorderQuestionsRequest) returns (Empty) {}
+  rpc GetQuestionsByIds(GetQuestionsByIdsRequest) returns (QuestionBatchResponse) {}
 
   // Category operations
   rpc GetPaperCategories(PaperRequest) returns (CategoryList) {}
@@ -28,6 +29,7 @@ service PaperService {
   rpc UpdateCategory(UpdateCategoryRequest) returns (Empty) {}
   rpc DeleteCategory(CategoryRequest) returns (Empty) {}
   rpc ReorderCategories(ReorderCategoriesRequest) returns (Empty) {}
+  rpc GetCategoriesByIds(GetCategoriesByIdsRequest) returns (CategoryBatchResponse) {}
 }
 
 // Paper messages
@@ -140,7 +142,41 @@ message ReorderQuestionsRequest {
   repeated int64 question_ids = 2;
 }
 
+message GetQuestionsByIdsRequest {
+  repeated int64 question_ids = 1;
+}
+
+message QuestionBatchResponse {
+  repeated QuestionBatchItem questions = 1;
+}
+
+message QuestionBatchItem {
+  int64 id = 1;
+  oneof question {
+    McqQuestion mcq = 2;
+    GeneralQuestion general = 3;
+  }
+  int32 max_score = 4;
+  int32 order = 5;
+  string type = 6;
+  int64 category_id = 7;
+}
+
 // Category messages
+message GetCategoriesByIdsRequest {
+  repeated int64 category_ids = 1;
+}
+
+message CategoryBatchResponse {
+  repeated CategoryBatchItem categories = 1;
+}
+
+message CategoryBatchItem {
+  int64 id = 1;
+  string name = 2;
+  int32 order = 3;
+}
+
 message CategoryRequest {
   int64 category_id = 1;
 }

@@ -458,3 +458,134 @@ func CheckExamParticipant(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	examID, err := strconv.Atoi(vars["examId"])
+	if err != nil {
+		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		return
+	}
+
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	examService := services.GetExamService()
+	ctx := examService.CreateMetadata(userID)
+
+	// Get question IDs from exam service
+	questions, err := examService.Client().GetExamQuestions(ctx, &proto.ExamRequest{
+		ExamId: int64(examID),
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	// Extract question IDs
+	questionIDs := make([]int64, len(questions.Questions))
+	for i, q := range questions.Questions {
+		questionIDs[i] = q.QuestionId
+	}
+
+	// No questions to fetch
+	if len(questionIDs) == 0 {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode([]dtos.ExamQuestionsResponse{})
+		return
+	}
+
+	// Get question data from paper service
+	paperService := services.GetPaperService()
+	paperCtx := paperService.CreateMetadata(userID)
+
+	questionData, err := paperService.Client().GetQuestionsByIds(paperCtx, &proto.GetQuestionsByIdsRequest{
+		QuestionIds: questionIDs,
+	})
+	if err != nil {
+		http.Error(w, "Failed to retrieve question data", http.StatusInternalServerError)
+		return
+	}
+
+	// Convert to response format
+	response := make([]dtos.ExamQuestionsResponse, len(questionData.Questions))
+	for i, q := range questionData.Questions {
+		var questionContent json.RawMessage
+		switch q := q.Question.(type) {
+		case *proto.QuestionBatchItem_Mcq:
+			questionContent, _ = json.Marshal(q.Mcq)
+		case *proto.QuestionBatchItem_General:
+			questionContent, _ = json.Marshal(q.General)
+		}
+
+		response[i] = dtos.ExamQuestionsResponse{
+			QuestionID: q.Id,
+			Question:   questionContent,
+			MaxScore:   int(q.MaxScore),
+			Type:       q.Type,
+			Order:      int(q.Order),
+			CategoryID: q.CategoryId,
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func GetExamCategories(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	examID, err := strconv.Atoi(vars["examId"])
+	if err != nil {
+		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		return
+	}
+
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	examService := services.GetExamService()
+	ctx := examService.CreateMetadata(userID)
+
+	// Get category IDs from exam service
+	categories, err := examService.Client().GetExamCategories(ctx, &proto.ExamRequest{
+		ExamId: int64(examID),
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	// Extract category IDs
+	categoryIDs := make([]int64, len(categories.Categories))
+	for i, c := range categories.Categories {
+		categoryIDs[i] = c.CategoryId
+	}
+
+	// No categories to fetch
+	if len(categoryIDs) == 0 {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode([]dtos.ExamCategoriesResponse{})
+		return
+	}
+
+	// Get category data from paper service
+	paperService := services.GetPaperService()
+	paperCtx := paperService.CreateMetadata(userID)
+
+	categoryData, err := paperService.Client().GetCategoriesByIds(paperCtx, &proto.GetCategoriesByIdsRequest{
+		CategoryIds: categoryIDs,
+	})
+	if err != nil {
+		http.Error(w, "Failed to retrieve category data", http.StatusInternalServerError)
+		return
+	}
+
+	// Convert to response format
+	response := make([]dtos.ExamCategoriesResponse, len(categoryData.Categories))
+	for i, c := range categoryData.Categories {
+		response[i] = dtos.ExamCategoriesResponse{
+			CategoryID: c.Id,
+			Name:       c.Name,
+			Order:      int(c.Order),
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}

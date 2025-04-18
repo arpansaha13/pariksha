@@ -24,6 +24,8 @@ const (
 	ExamService_UpdateExam_FullMethodName                = "/proto.ExamService/UpdateExam"
 	ExamService_GetExam_FullMethodName                   = "/proto.ExamService/GetExam"
 	ExamService_CheckExamAccess_FullMethodName           = "/proto.ExamService/CheckExamAccess"
+	ExamService_GetExamQuestions_FullMethodName          = "/proto.ExamService/GetExamQuestions"
+	ExamService_GetExamCategories_FullMethodName         = "/proto.ExamService/GetExamCategories"
 	ExamService_GetExamParticipants_FullMethodName       = "/proto.ExamService/GetExamParticipants"
 	ExamService_AddExamParticipant_FullMethodName        = "/proto.ExamService/AddExamParticipant"
 	ExamService_RemoveExamParticipant_FullMethodName     = "/proto.ExamService/RemoveExamParticipant"
@@ -47,6 +49,8 @@ type ExamServiceClient interface {
 	UpdateExam(ctx context.Context, in *UpdateExamRequest, opts ...grpc.CallOption) (*ExamResponse, error)
 	GetExam(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamResponse, error)
 	CheckExamAccess(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamAccessResponse, error)
+	GetExamQuestions(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamQuestionsResponse, error)
+	GetExamCategories(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamCategoriesResponse, error)
 	// Participant operations
 	GetExamParticipants(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ParticipantList, error)
 	AddExamParticipant(ctx context.Context, in *AddParticipantRequest, opts ...grpc.CallOption) (*ParticipantResponse, error)
@@ -114,6 +118,26 @@ func (c *examServiceClient) CheckExamAccess(ctx context.Context, in *ExamRequest
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExamAccessResponse)
 	err := c.cc.Invoke(ctx, ExamService_CheckExamAccess_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *examServiceClient) GetExamQuestions(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamQuestionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ExamQuestionsResponse)
+	err := c.cc.Invoke(ctx, ExamService_GetExamQuestions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *examServiceClient) GetExamCategories(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamCategoriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ExamCategoriesResponse)
+	err := c.cc.Invoke(ctx, ExamService_GetExamCategories_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -240,6 +264,8 @@ type ExamServiceServer interface {
 	UpdateExam(context.Context, *UpdateExamRequest) (*ExamResponse, error)
 	GetExam(context.Context, *ExamRequest) (*ExamResponse, error)
 	CheckExamAccess(context.Context, *ExamRequest) (*ExamAccessResponse, error)
+	GetExamQuestions(context.Context, *ExamRequest) (*ExamQuestionsResponse, error)
+	GetExamCategories(context.Context, *ExamRequest) (*ExamCategoriesResponse, error)
 	// Participant operations
 	GetExamParticipants(context.Context, *ExamRequest) (*ParticipantList, error)
 	AddExamParticipant(context.Context, *AddParticipantRequest) (*ParticipantResponse, error)
@@ -277,6 +303,12 @@ func (UnimplementedExamServiceServer) GetExam(context.Context, *ExamRequest) (*E
 }
 func (UnimplementedExamServiceServer) CheckExamAccess(context.Context, *ExamRequest) (*ExamAccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckExamAccess not implemented")
+}
+func (UnimplementedExamServiceServer) GetExamQuestions(context.Context, *ExamRequest) (*ExamQuestionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExamQuestions not implemented")
+}
+func (UnimplementedExamServiceServer) GetExamCategories(context.Context, *ExamRequest) (*ExamCategoriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExamCategories not implemented")
 }
 func (UnimplementedExamServiceServer) GetExamParticipants(context.Context, *ExamRequest) (*ParticipantList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamParticipants not implemented")
@@ -418,6 +450,42 @@ func _ExamService_CheckExamAccess_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ExamServiceServer).CheckExamAccess(ctx, req.(*ExamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ExamService_GetExamQuestions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExamRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExamServiceServer).GetExamQuestions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExamService_GetExamQuestions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExamServiceServer).GetExamQuestions(ctx, req.(*ExamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ExamService_GetExamCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExamRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExamServiceServer).GetExamCategories(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExamService_GetExamCategories_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExamServiceServer).GetExamCategories(ctx, req.(*ExamRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -646,6 +714,14 @@ var ExamService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckExamAccess",
 			Handler:    _ExamService_CheckExamAccess_Handler,
+		},
+		{
+			MethodName: "GetExamQuestions",
+			Handler:    _ExamService_GetExamQuestions_Handler,
+		},
+		{
+			MethodName: "GetExamCategories",
+			Handler:    _ExamService_GetExamCategories_Handler,
 		},
 		{
 			MethodName: "GetExamParticipants",

@@ -15,7 +15,7 @@ func handleGRPCError(w http.ResponseWriter, err error) {
 	}
 
 	switch st.Code() {
-	case codes.InvalidArgument:
+	case codes.InvalidArgument, codes.FailedPrecondition:
 		http.Error(w, st.Message(), http.StatusBadRequest)
 	case codes.Unauthenticated:
 		http.Error(w, st.Message(), http.StatusUnauthorized)

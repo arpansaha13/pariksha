@@ -336,3 +336,47 @@ func (s *ExamServer) CheckExamAccess(ctx context.Context, req *proto.ExamRequest
 		AccessType: proto.ExamAccessType_PARTICIPANT,
 	}, nil
 }
+
+// GetExamQuestions retrieves all questions associated with an exam
+func (s *ExamServer) GetExamQuestions(ctx context.Context, req *proto.ExamRequest) (*proto.ExamQuestionsResponse, error) {
+	var examQuestions []models.ExamQuestion
+	if err := db.DB.Model(&models.ExamQuestion{}).
+		Select("question_id").
+		Where("exam_id = ?", req.ExamId).
+		Find(&examQuestions).Error; err != nil {
+		return nil, status.Error(codes.Internal, "failed to fetch questions")
+	}
+
+	questions := make([]*proto.ExamQuestion, len(examQuestions))
+	for i, eq := range examQuestions {
+		questions[i] = &proto.ExamQuestion{
+			QuestionId: eq.QuestionID,
+		}
+	}
+
+	return &proto.ExamQuestionsResponse{
+		Questions: questions,
+	}, nil
+}
+
+// GetExamCategories retrieves all category IDs associated with an exam
+func (s *ExamServer) GetExamCategories(ctx context.Context, req *proto.ExamRequest) (*proto.ExamCategoriesResponse, error) {
+	var examCategories []models.ExamCategory
+	if err := db.DB.Model(&models.ExamCategory{}).
+		Select("category_id").
+		Where("exam_id = ?", req.ExamId).
+		Find(&examCategories).Error; err != nil {
+		return nil, status.Error(codes.Internal, "failed to fetch categories")
+	}
+
+	categories := make([]*proto.ExamCategory, len(examCategories))
+	for i, ec := range examCategories {
+		categories[i] = &proto.ExamCategory{
+			CategoryId: ec.CategoryID,
+		}
+	}
+
+	return &proto.ExamCategoriesResponse{
+		Categories: categories,
+	}, nil
+}

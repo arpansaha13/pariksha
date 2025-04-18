@@ -59,6 +59,8 @@ func SetupRouter() *mux.Router {
 	protectedRouter.HandleFunc("/exams/{examId}/check", handlers.CheckExamAccess).Methods("GET", "OPTIONS")
 	protectedRouter.HandleFunc("/exams/{examId}/start", handlers.StartExam).Methods("PATCH", "OPTIONS")
 	protectedRouter.HandleFunc("/exams/{examId}/end", handlers.EndExam).Methods("PATCH", "OPTIONS")
+	protectedRouter.HandleFunc("/exams/{examId}/questions", handlers.GetExamQuestions).Methods("GET", "OPTIONS")
+	protectedRouter.HandleFunc("/exams/{examId}/categories", handlers.GetExamCategories).Methods("GET", "OPTIONS")
 
 	// Exam Participant Routes
 	protectedRouter.HandleFunc("/exams/{examId}/participants", handlers.GetExamParticipants).Methods("GET", "OPTIONS")

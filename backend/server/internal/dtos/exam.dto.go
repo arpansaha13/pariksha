@@ -1,6 +1,7 @@
 package dtos
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -63,4 +64,19 @@ type AddExamParticipantResponse struct {
 
 type ExamAccessResponse struct {
 	AccessType string `json:"access_type"` // "OWNER" or "PARTICIPANT"
+}
+
+type ExamQuestionsResponse struct {
+	QuestionID int64           `json:"question_id"`
+	Question   json.RawMessage `json:"question"`
+	MaxScore   int             `json:"max_score"`
+	Type       string          `json:"type"`
+	Order      int             `json:"order"`
+	CategoryID int64           `json:"category_id"`
+}
+
+type ExamCategoriesResponse struct {
+	CategoryID int64  `json:"category_id"`
+	Name       string `json:"name"`
+	Order      int    `json:"order"`
 }

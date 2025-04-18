@@ -30,11 +30,13 @@ const (
 	PaperService_UpdateQuestion_FullMethodName     = "/proto.PaperService/UpdateQuestion"
 	PaperService_DeleteQuestion_FullMethodName     = "/proto.PaperService/DeleteQuestion"
 	PaperService_ReorderQuestions_FullMethodName   = "/proto.PaperService/ReorderQuestions"
+	PaperService_GetQuestionsByIds_FullMethodName  = "/proto.PaperService/GetQuestionsByIds"
 	PaperService_GetPaperCategories_FullMethodName = "/proto.PaperService/GetPaperCategories"
 	PaperService_CreateCategory_FullMethodName     = "/proto.PaperService/CreateCategory"
 	PaperService_UpdateCategory_FullMethodName     = "/proto.PaperService/UpdateCategory"
 	PaperService_DeleteCategory_FullMethodName     = "/proto.PaperService/DeleteCategory"
 	PaperService_ReorderCategories_FullMethodName  = "/proto.PaperService/ReorderCategories"
+	PaperService_GetCategoriesByIds_FullMethodName = "/proto.PaperService/GetCategoriesByIds"
 )
 
 // PaperServiceClient is the client API for PaperService service.
@@ -54,12 +56,14 @@ type PaperServiceClient interface {
 	UpdateQuestion(ctx context.Context, in *UpdateQuestionRequest, opts ...grpc.CallOption) (*Empty, error)
 	DeleteQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*Empty, error)
 	ReorderQuestions(ctx context.Context, in *ReorderQuestionsRequest, opts ...grpc.CallOption) (*Empty, error)
+	GetQuestionsByIds(ctx context.Context, in *GetQuestionsByIdsRequest, opts ...grpc.CallOption) (*QuestionBatchResponse, error)
 	// Category operations
 	GetPaperCategories(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*CategoryList, error)
 	CreateCategory(ctx context.Context, in *CreateCategoryRequest, opts ...grpc.CallOption) (*CategoryResponse, error)
 	UpdateCategory(ctx context.Context, in *UpdateCategoryRequest, opts ...grpc.CallOption) (*Empty, error)
 	DeleteCategory(ctx context.Context, in *CategoryRequest, opts ...grpc.CallOption) (*Empty, error)
 	ReorderCategories(ctx context.Context, in *ReorderCategoriesRequest, opts ...grpc.CallOption) (*Empty, error)
+	GetCategoriesByIds(ctx context.Context, in *GetCategoriesByIdsRequest, opts ...grpc.CallOption) (*CategoryBatchResponse, error)
 }
 
 type paperServiceClient struct {
@@ -180,6 +184,16 @@ func (c *paperServiceClient) ReorderQuestions(ctx context.Context, in *ReorderQu
 	return out, nil
 }
 
+func (c *paperServiceClient) GetQuestionsByIds(ctx context.Context, in *GetQuestionsByIdsRequest, opts ...grpc.CallOption) (*QuestionBatchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QuestionBatchResponse)
+	err := c.cc.Invoke(ctx, PaperService_GetQuestionsByIds_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *paperServiceClient) GetPaperCategories(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*CategoryList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CategoryList)
@@ -230,6 +244,16 @@ func (c *paperServiceClient) ReorderCategories(ctx context.Context, in *ReorderC
 	return out, nil
 }
 
+func (c *paperServiceClient) GetCategoriesByIds(ctx context.Context, in *GetCategoriesByIdsRequest, opts ...grpc.CallOption) (*CategoryBatchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CategoryBatchResponse)
+	err := c.cc.Invoke(ctx, PaperService_GetCategoriesByIds_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PaperServiceServer is the server API for PaperService service.
 // All implementations must embed UnimplementedPaperServiceServer
 // for forward compatibility.
@@ -247,12 +271,14 @@ type PaperServiceServer interface {
 	UpdateQuestion(context.Context, *UpdateQuestionRequest) (*Empty, error)
 	DeleteQuestion(context.Context, *QuestionRequest) (*Empty, error)
 	ReorderQuestions(context.Context, *ReorderQuestionsRequest) (*Empty, error)
+	GetQuestionsByIds(context.Context, *GetQuestionsByIdsRequest) (*QuestionBatchResponse, error)
 	// Category operations
 	GetPaperCategories(context.Context, *PaperRequest) (*CategoryList, error)
 	CreateCategory(context.Context, *CreateCategoryRequest) (*CategoryResponse, error)
 	UpdateCategory(context.Context, *UpdateCategoryRequest) (*Empty, error)
 	DeleteCategory(context.Context, *CategoryRequest) (*Empty, error)
 	ReorderCategories(context.Context, *ReorderCategoriesRequest) (*Empty, error)
+	GetCategoriesByIds(context.Context, *GetCategoriesByIdsRequest) (*CategoryBatchResponse, error)
 	mustEmbedUnimplementedPaperServiceServer()
 }
 
@@ -296,6 +322,9 @@ func (UnimplementedPaperServiceServer) DeleteQuestion(context.Context, *Question
 func (UnimplementedPaperServiceServer) ReorderQuestions(context.Context, *ReorderQuestionsRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReorderQuestions not implemented")
 }
+func (UnimplementedPaperServiceServer) GetQuestionsByIds(context.Context, *GetQuestionsByIdsRequest) (*QuestionBatchResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetQuestionsByIds not implemented")
+}
 func (UnimplementedPaperServiceServer) GetPaperCategories(context.Context, *PaperRequest) (*CategoryList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPaperCategories not implemented")
 }
@@ -310,6 +339,9 @@ func (UnimplementedPaperServiceServer) DeleteCategory(context.Context, *Category
 }
 func (UnimplementedPaperServiceServer) ReorderCategories(context.Context, *ReorderCategoriesRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReorderCategories not implemented")
+}
+func (UnimplementedPaperServiceServer) GetCategoriesByIds(context.Context, *GetCategoriesByIdsRequest) (*CategoryBatchResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCategoriesByIds not implemented")
 }
 func (UnimplementedPaperServiceServer) mustEmbedUnimplementedPaperServiceServer() {}
 func (UnimplementedPaperServiceServer) testEmbeddedByValue()                      {}
@@ -530,6 +562,24 @@ func _PaperService_ReorderQuestions_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PaperService_GetQuestionsByIds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetQuestionsByIdsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaperServiceServer).GetQuestionsByIds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaperService_GetQuestionsByIds_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaperServiceServer).GetQuestionsByIds(ctx, req.(*GetQuestionsByIdsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _PaperService_GetPaperCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PaperRequest)
 	if err := dec(in); err != nil {
@@ -620,6 +670,24 @@ func _PaperService_ReorderCategories_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PaperService_GetCategoriesByIds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCategoriesByIdsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaperServiceServer).GetCategoriesByIds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaperService_GetCategoriesByIds_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaperServiceServer).GetCategoriesByIds(ctx, req.(*GetCategoriesByIdsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PaperService_ServiceDesc is the grpc.ServiceDesc for PaperService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -672,6 +740,10 @@ var PaperService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _PaperService_ReorderQuestions_Handler,
 		},
 		{
+			MethodName: "GetQuestionsByIds",
+			Handler:    _PaperService_GetQuestionsByIds_Handler,
+		},
+		{
 			MethodName: "GetPaperCategories",
 			Handler:    _PaperService_GetPaperCategories_Handler,
 		},
@@ -690,6 +762,10 @@ var PaperService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReorderCategories",
 			Handler:    _PaperService_ReorderCategories_Handler,
+		},
+		{
+			MethodName: "GetCategoriesByIds",
+			Handler:    _PaperService_GetCategoriesByIds_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

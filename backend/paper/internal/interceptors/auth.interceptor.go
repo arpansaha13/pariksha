@@ -112,6 +112,7 @@ func shouldIntercept(methodName string) bool {
 		"/proto.PaperService/UpdateQuestion",
 		"/proto.PaperService/DeleteQuestion",
 		"/proto.PaperService/CreateQuestion",
+		// "/proto.PaperService/TestGetQuestionsByIds",
 	}
 
 	for _, method := range methodsToIntercept {

@@ -40,12 +40,16 @@ var (
 		"/proto.ExamService/EndExam",
 		"/proto.ExamService/UpsertAnswer",
 		"/proto.ExamService/CheckExamParticipant",
+		"/proto.ExamService/GetExamQuestions",
+		"/proto.ExamService/GetExamCategories",
 	}
 
 	participantMethods = []string{
 		"/proto.ExamService/EndExam",
 		"/proto.ExamService/UpsertAnswer",
 		"/proto.ExamService/CheckExamParticipant",
+		"/proto.ExamService/GetExamQuestions",
+		"/proto.ExamService/GetExamCategories",
 	}
 )
 

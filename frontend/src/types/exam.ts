@@ -1,3 +1,5 @@
+import type { Question, QuestionCategory, QuestionMinimal } from './question'
+
 export enum ExamAccessType {
   LINK = 'LINK',
   INVITE = 'INVITE',
@@ -19,3 +21,12 @@ export enum ExamPermission {
   OWNER = 'OWNER',
   PARTICIPANT = 'PARTICIPANT',
 }
+
+export type ExamQuestion = Pick<
+  Question,
+  'id' | 'max_score' | 'question' | 'type' | 'category'
+>
+
+export type ExamQuestionMinimal = Pick<QuestionMinimal, 'id' | 'category_id'>
+
+export type ExamCategory = Pick<QuestionCategory, 'id' | 'name' | 'order'>

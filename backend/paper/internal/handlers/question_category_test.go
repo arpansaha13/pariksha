@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"testing"
@@ -531,6 +532,91 @@ func TestDeleteCategory(t *testing.T) {
 
 			require.NoError(t, err)
 			tt.validate(t, category.ID)
+		})
+	}
+}
+
+func TestGetCategoriesByIds(t *testing.T) {
+	tests := []struct {
+		name         string
+		setup        func(t *testing.T) []models.QuestionCategory
+		request      *proto.GetCategoriesByIdsRequest
+		expectedCode codes.Code
+		validate     func(t *testing.T, resp *proto.CategoryBatchResponse, categories []models.QuestionCategory)
+	}{
+		{
+			name: "Success - Get multiple categories",
+			setup: func(t *testing.T) []models.QuestionCategory {
+				paper := createTestPaper(t, userID)
+				var defaultCategory models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&defaultCategory).Error)
+
+				categories := []models.QuestionCategory{
+					defaultCategory,
+					{
+						PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
+						Name:    "Category 2",
+						Order:   2,
+					},
+					{
+						PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
+						Name:    "Category 3",
+						Order:   3,
+					},
+				}
+				// Skip first category as it's already created
+				require.NoError(t, db.DB.Create(categories[1:]).Error)
+				return categories
+			},
+			request: &proto.GetCategoriesByIdsRequest{
+				CategoryIds: []int64{1, 2, 3},
+			},
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.CategoryBatchResponse, categories []models.QuestionCategory) {
+				require.Len(t, resp.Categories, len(categories))
+				for i, category := range resp.Categories {
+					assert.Equal(t, categories[i].ID, category.Id)
+					assert.Equal(t, categories[i].Name, category.Name)
+					assert.Equal(t, int32(categories[i].Order), category.Order)
+				}
+			},
+		},
+		{
+			name: "Success - Empty result for non-existent IDs",
+			setup: func(t *testing.T) []models.QuestionCategory {
+				return []models.QuestionCategory{}
+			},
+			request: &proto.GetCategoriesByIdsRequest{
+				CategoryIds: []int64{999, 1000},
+			},
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.CategoryBatchResponse, categories []models.QuestionCategory) {
+				assert.Empty(t, resp.Categories)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+			categories := tt.setup(t)
+			if len(categories) > 0 {
+				tt.request.CategoryIds = make([]int64, len(categories))
+				for i, c := range categories {
+					tt.request.CategoryIds[i] = c.ID
+				}
+			}
+
+			resp, err := client.GetCategoriesByIds(context.Background(), tt.request)
+
+			if tt.expectedCode != codes.OK {
+				assert.Equal(t, tt.expectedCode, status.Code(err))
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, resp)
+			tt.validate(t, resp, categories)
 		})
 	}
 }
