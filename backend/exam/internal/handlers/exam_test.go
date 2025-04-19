@@ -445,6 +445,31 @@ func TestUpdateExam(t *testing.T) {
 				assert.Equal(t, exam.Type, updated.Type)
 			},
 		},
+		{
+			name: "Success - Update EndsAt after exam has started",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, userID)
+				exam.StartsAt = time.Now().Add(-1 * time.Hour) // Started 1 hour ago
+				exam.EndsAt = time.Now().Add(1 * time.Hour)    // Originally ends in 1 hour
+				require.NoError(t, db.DB.Save(&exam).Error)
+				return &exam
+			},
+			request: &proto.UpdateExamRequest{
+				EndsAt: timestamppb.New(time.Now().Add(2 * time.Hour)), // Extend to 2 hours from now
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, exam *models.Exam) {
+				var updated models.Exam
+				require.NoError(t, db.DB.First(&updated, exam.ID).Error)
+
+				// Verify that EndsAt was updated but other fields remain unchanged
+				assert.Equal(t, exam.Title, updated.Title)
+				assert.Equal(t, exam.StartsAt.Unix(), updated.StartsAt.Unix())
+				assert.Equal(t, exam.Type, updated.Type)
+				assert.Greater(t, updated.EndsAt.Unix(), exam.EndsAt.Unix())
+			},
+		},
 	}
 
 	for _, tt := range tests {

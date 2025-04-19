@@ -13,8 +13,8 @@ import (
 	"pariksha/common/pkg/proto"
 )
 
-// validateExamTiming checks if the exam's timing constraints are valid
-func validateExamTiming(startsAt, endsAt time.Time) error {
+// validateExamStartTiming checks if the exam's `startsAt` constraints are valid
+func validateExamStartTiming(startsAt time.Time) error {
 	// Time input is not implemented in frontend yet
 	// Compare dates only by truncating to start of day
 	now := time.Now().Truncate(24 * time.Hour)
@@ -22,6 +22,11 @@ func validateExamTiming(startsAt, endsAt time.Time) error {
 	if startsAt.Before(now) {
 		return status.Error(codes.InvalidArgument, "start time cannot be in the past")
 	}
+	return nil
+}
+
+// validateExamEndTiming checks if the exam's `endsAt` constraints are valid
+func validateExamEndTiming(startsAt time.Time, endsAt time.Time) error {
 	if endsAt.Before(startsAt) || endsAt.Equal(startsAt) {
 		return status.Error(codes.InvalidArgument, "end time must be after start time")
 	}

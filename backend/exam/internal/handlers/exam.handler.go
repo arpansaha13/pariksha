@@ -59,7 +59,11 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 	startsAt := req.StartsAt.AsTime()
 	endsAt := req.EndsAt.AsTime()
 
-	if err := validateExamTiming(startsAt, endsAt); err != nil {
+	if err := validateExamStartTiming(startsAt); err != nil {
+		return nil, err
+	}
+
+	if err := validateExamEndTiming(startsAt, endsAt); err != nil {
 		return nil, err
 	}
 
@@ -132,22 +136,20 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 		return nil, status.Error(codes.FailedPrecondition, "cannot update start time after exam has started")
 	}
 
-	if req.StartsAt != nil || req.EndsAt != nil {
-		startsAt := exam.StartsAt
-		endsAt := exam.EndsAt
-
-		if req.StartsAt != nil {
-			startsAt = req.StartsAt.AsTime()
-		}
-		if req.EndsAt != nil {
-			endsAt = req.EndsAt.AsTime()
-		}
-
-		if err := validateExamTiming(startsAt, endsAt); err != nil {
+	if req.StartsAt != nil {
+		startsAt := req.StartsAt.AsTime()
+		if err := validateExamStartTiming(startsAt); err != nil {
 			return nil, err
 		}
-
 		exam.StartsAt = startsAt
+		isUpdated = true
+	}
+
+	if req.EndsAt != nil {
+		endsAt := req.EndsAt.AsTime()
+		if err := validateExamEndTiming(exam.StartsAt, endsAt); err != nil {
+			return nil, err
+		}
 		exam.EndsAt = endsAt
 		isUpdated = true
 	}
