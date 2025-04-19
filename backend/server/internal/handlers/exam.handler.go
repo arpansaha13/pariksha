@@ -431,6 +431,11 @@ func CheckExamAccess(w http.ResponseWriter, r *http.Request) {
 		AccessType: access.AccessType.String(),
 	}
 
+	if access.ParticipantStatus != nil {
+		status := int(access.GetParticipantStatus())
+		response.ParticipantStatus = &status
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
@@ -448,7 +453,7 @@ func CheckExamParticipant(w http.ResponseWriter, r *http.Request) {
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
-	_, err = examService.Client().CheckExamParticipant(ctx, &proto.CheckParticipantRequest{
+	response, err := examService.Client().CheckExamParticipant(ctx, &proto.CheckParticipantRequest{
 		ExamId: int64(examID),
 	})
 	if err != nil {
@@ -456,7 +461,8 @@ func CheckExamParticipant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]int{"participant_status": int(response.ParticipantStatus)})
 }
 
 func GetExamQuestions(w http.ResponseWriter, r *http.Request) {

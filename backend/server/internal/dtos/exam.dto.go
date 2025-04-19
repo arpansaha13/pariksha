@@ -63,7 +63,8 @@ type AddExamParticipantResponse struct {
 }
 
 type ExamAccessResponse struct {
-	AccessType string `json:"access_type"` // "OWNER" or "PARTICIPANT"
+	AccessType        string `json:"access_type"` // "OWNER" or "PARTICIPANT"
+	ParticipantStatus *int   `json:"participant_status,omitempty"`
 }
 
 type ExamQuestionMinimalResponse struct {

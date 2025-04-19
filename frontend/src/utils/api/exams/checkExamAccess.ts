@@ -1,7 +1,8 @@
-import type { ExamPermission } from '~/types/exam'
+import type { ExamParticipantStatus, ExamPermission } from '~/types/exam'
 
 interface CheckExamAccessResponse {
   access_type: ExamPermission
+  participant_status: ExamParticipantStatus
 }
 
 export async function checkExamAccess(examId: number) {

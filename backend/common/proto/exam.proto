@@ -165,6 +165,7 @@ message GetAnswerRequest {
 
 message ExamAccessResponse {
   ExamAccessType access_type = 1;
+  optional int32 participant_status = 2;
 }
 
 message CheckParticipantRequest {
@@ -172,7 +173,7 @@ message CheckParticipantRequest {
 }
 
 message CheckParticipantResponse {
-  bool is_participant = 1;
+  int32 participant_status = 1;
 }
 
 message ExamQuestion {

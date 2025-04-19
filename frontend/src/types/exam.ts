@@ -5,6 +5,14 @@ export enum ExamAccessType {
   INVITE = 'INVITE',
 }
 
+export enum ExamParticipantStatus {
+  UNATTENDED = 0,
+  INVITED = 1,
+  STARTED = 2,
+  ENDED = 3,
+  EVALUATED = 4,
+}
+
 export interface Exam {
   id: number
   title: string

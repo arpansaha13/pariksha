@@ -46,13 +46,36 @@
       v-if="isCalendarBefore(startsAt, now) && isCalendarAfter(endsAt, now)"
       #footer
     >
-      <UButton label="Start exam" loading-auto @click="handleStartExam" />
+      <p v-if="isParticipantExamEnded">You have already attempted this exam</p>
+
+      <UButton
+        v-else-if="isParticipantExamStarted"
+        label="Continue"
+        :to="`/exams/${examId}/attempt`"
+      />
+
+      <UButton
+        v-else
+        label="Start exam"
+        loading-auto
+        @click="handleStartExam"
+      />
     </template>
   </UCard>
 </template>
 
 <script setup lang="ts">
 import { DateFormatter } from '@internationalized/date'
+import { ExamParticipantStatus } from '~/types'
+
+const nuxtApp = useNuxtApp()
+const examAccess = nuxtApp.$examAccess as Awaited<
+  ReturnType<typeof checkExamAccess>
+>
+const isParticipantExamStarted =
+  examAccess.participant_status === ExamParticipantStatus.STARTED
+const isParticipantExamEnded =
+  examAccess.participant_status === ExamParticipantStatus.ENDED
 
 const route = useRoute()
 const examId = parseInt(route.params.examId as string)

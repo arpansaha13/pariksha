@@ -330,10 +330,27 @@ func (s *ExamServer) CheckExamAccess(ctx context.Context, req *proto.ExamRequest
 		}, nil
 	}
 
-	// No need to verify LinkExam or participant
-	// because the interceptor does this
+	participant, ok := interceptors.GetParticipantFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "participant not found in context")
+	}
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
+				return &proto.ExamAccessResponse{
+					AccessType:        proto.ExamAccessType_PARTICIPANT,
+					ParticipantStatus: utils.Int32(constants.PARTICIPANT_STATUS_INVITED),
+				}, nil
+			}
+			return nil, status.Error(codes.PermissionDenied, "no permission to access this exam")
+		}
+		return nil, status.Error(codes.Internal, "database error")
+	}
+
 	return &proto.ExamAccessResponse{
-		AccessType: proto.ExamAccessType_PARTICIPANT,
+		AccessType:        proto.ExamAccessType_PARTICIPANT,
+		ParticipantStatus: utils.Int32(int32(participant.Status)),
 	}, nil
 }
 
