@@ -82,7 +82,7 @@ message QuestionResponse {
     McqQuestion mcq = 2;
     GeneralQuestion general = 3;
   }
-  CategoryResponse category = 4;
+  int64 category_id = 4;
   string type = 5;
   repeated string tags = 6;
   int64 paper_id = 7;

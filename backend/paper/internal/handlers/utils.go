@@ -34,18 +34,7 @@ func paperToProto(paper models.Paper) *proto.PaperResponse {
 	}
 }
 
-func questionToProto(question models.Question, includeCategory bool) (*proto.QuestionResponse, error) {
-	var category *proto.CategoryResponse
-	if includeCategory {
-		category = &proto.CategoryResponse{
-			Id:    question.Category.ID,
-			Name:  question.Category.Name,
-			Order: int32(question.Category.Order),
-		}
-	}
-
-	questionType := question.Type
-
+func questionToProto(question models.Question) (*proto.QuestionResponse, error) {
 	var tags []string
 	if err := json.Unmarshal(question.Tags, &tags); err != nil {
 		return nil, status.Error(codes.Internal, "invalid tags data")
@@ -54,7 +43,7 @@ func questionToProto(question models.Question, includeCategory bool) (*proto.Que
 	response := &proto.QuestionResponse{
 		Id:            question.ID,
 		Question:      nil,
-		Category:      category,
+		CategoryId:    question.CategoryID,
 		Type:          question.Type,
 		Tags:          tags,
 		PaperId:       question.PaperID.Int64,
@@ -62,7 +51,7 @@ func questionToProto(question models.Question, includeCategory bool) (*proto.Que
 		CorrectAnswer: &question.CorrectAnswer.String,
 	}
 
-	switch questionType {
+	switch question.Type {
 	case constants.QUESTION_TYPE_MCQ:
 		var mcq structs.MCQQuestion
 		if err := json.Unmarshal(question.Question, &mcq); err != nil {

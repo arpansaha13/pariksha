@@ -24,9 +24,12 @@ export enum ExamPermission {
 
 export type ExamQuestion = Pick<
   Question,
-  'id' | 'max_score' | 'question' | 'type' | 'category'
+  'id' | 'max_score' | 'question' | 'type' | 'category_id'
 >
 
-export type ExamQuestionMinimal = Pick<QuestionMinimal, 'id' | 'category_id'>
+export type ExamQuestionMinimal = Pick<
+  QuestionMinimal,
+  'id' | 'category_id' | 'order'
+>
 
 export type ExamCategory = Pick<QuestionCategory, 'id' | 'name' | 'order'>

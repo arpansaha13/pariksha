@@ -50,7 +50,6 @@
             <UChip
               :show="!!unsavedCount[item.to.query.category]"
               :ui="{
-                root: 'overflow-hidden shrink',
                 base: '-top-1 -right-1.5',
               }"
             >
@@ -750,7 +749,7 @@ function startQuestionEdit() {
         generalQuestion.statement
     }
 
-    incUnsavedCount(question.value.category.id)
+    incUnsavedCount(question.value.category_id)
   }
 }
 
@@ -814,7 +813,7 @@ watch(question, (_, oldQuestion) => {
   // If previous question was in edit mode but not dirty, cancel its edit
   if (formState && !isEditFormStateDirty(oldQuestion, formState)) {
     editQuestionFormStates[oldQuestion.id] = null
-    decUnsavedCount(oldQuestion.category.id)
+    decUnsavedCount(oldQuestion.category_id)
   }
 })
 

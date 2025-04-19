@@ -66,13 +66,10 @@ type ExamAccessResponse struct {
 	AccessType string `json:"access_type"` // "OWNER" or "PARTICIPANT"
 }
 
-type ExamQuestionsResponse struct {
-	QuestionID int64           `json:"id"`
-	Question   json.RawMessage `json:"question"`
-	MaxScore   int             `json:"max_score"`
-	Type       string          `json:"type"`
-	Order      int             `json:"order"`
-	CategoryID int64           `json:"category_id"`
+type ExamQuestionMinimalResponse struct {
+	QuestionID int64 `json:"id"`
+	CategoryID int64 `json:"category_id"`
+	Order      int   `json:"order"`
 }
 
 type ExamCategoriesResponse struct {
@@ -82,9 +79,9 @@ type ExamCategoriesResponse struct {
 }
 
 type ExamQuestionResponse struct {
-	ID       int64                    `json:"id"`
-	Question json.RawMessage          `json:"question"`
-	Category QuestionCategoryResponse `json:"category"`
-	Type     string                   `json:"type"`
-	MaxScore int                      `json:"max_score"`
+	ID         int64           `json:"id"`
+	Question   json.RawMessage `json:"question"`
+	CategoryID int64           `json:"category_id"`
+	Type       string          `json:"type"`
+	MaxScore   int             `json:"max_score"`
 }

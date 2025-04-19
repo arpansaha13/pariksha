@@ -489,7 +489,7 @@ func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
 	// No questions to fetch
 	if len(questionIDs) == 0 {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]dtos.ExamQuestionsResponse{})
+		json.NewEncoder(w).Encode([]dtos.ExamQuestionMinimalResponse{})
 		return
 	}
 
@@ -505,24 +505,12 @@ func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Convert to response format
-	response := make([]dtos.ExamQuestionsResponse, len(questionData.Questions))
+	response := make([]dtos.ExamQuestionMinimalResponse, len(questionData.Questions))
 	for i, q := range questionData.Questions {
-		var questionContent json.RawMessage
-		switch q := q.Question.(type) {
-		case *proto.QuestionBatchItem_Mcq:
-			questionContent, _ = json.Marshal(q.Mcq)
-		case *proto.QuestionBatchItem_General:
-			questionContent, _ = json.Marshal(q.General)
-		}
-
-		response[i] = dtos.ExamQuestionsResponse{
+		response[i] = dtos.ExamQuestionMinimalResponse{
 			QuestionID: q.Id,
-			Question:   questionContent,
-			MaxScore:   int(q.MaxScore),
-			Type:       q.Type,
-			Order:      int(q.Order),
 			CategoryID: q.CategoryId,
+			Order:      int(q.Order),
 		}
 	}
 
@@ -616,16 +604,11 @@ func GetExamQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := dtos.ExamQuestionResponse{
-		ID:       question.Id,
-		Question: questionContent,
-		Type:     question.Type,
-		MaxScore: int(question.MaxScore),
-	}
-
-	if question.Category != nil {
-		response.Category.ID = question.Category.Id
-		response.Category.Name = question.Category.Name
-		response.Category.Order = int(question.Category.Order)
+		ID:         question.Id,
+		Question:   questionContent,
+		CategoryID: question.CategoryId,
+		Type:       question.Type,
+		MaxScore:   int(question.MaxScore),
 	}
 
 	w.Header().Set("Content-Type", "application/json")

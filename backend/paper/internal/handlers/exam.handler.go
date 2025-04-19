@@ -88,7 +88,6 @@ func (s *PaperServer) GetCategoriesByIds(ctx context.Context, req *proto.GetCate
 func (s *PaperServer) GetExamQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.QuestionResponse, error) {
 	var question models.Question
 	if err := db.DB.Select("id, question, type, max_score, category_id").
-		Preload("Category").
 		Take(&question, req.QuestionId).Error; err != nil {
 		return nil, status.Error(codes.NotFound, "question not found")
 	}
@@ -97,11 +96,8 @@ func (s *PaperServer) GetExamQuestion(ctx context.Context, req *proto.QuestionRe
 		Id:       question.ID,
 		Type:     question.Type,
 		MaxScore: int32(question.MaxScore),
-		Category: &proto.CategoryResponse{
-			Id:    question.Category.ID,
-			Name:  question.Category.Name,
-			Order: int32(question.Category.Order),
-		},
+
+		CategoryId: question.CategoryID,
 	}
 
 	switch question.Type {

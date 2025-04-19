@@ -70,7 +70,7 @@ func (s *PaperServer) GetQuestion(ctx context.Context, req *proto.QuestionReques
 	if !ok {
 		return nil, status.Error(codes.Internal, "question data not found in context")
 	}
-	return questionToProto(question, true)
+	return questionToProto(question)
 }
 
 func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuestionRequest) (*proto.QuestionResponse, error) {
@@ -160,7 +160,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		return nil, status.Error(codes.Internal, "failed to create question")
 	}
 
-	return questionToProto(question, true)
+	return questionToProto(question)
 }
 
 func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuestionRequest) (*proto.Empty, error) {

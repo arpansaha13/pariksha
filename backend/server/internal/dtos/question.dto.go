@@ -9,14 +9,14 @@ type QuestionCategoryResponse struct {
 }
 
 type QuestionResponse struct {
-	ID            int64                     `json:"id"`
-	Question      json.RawMessage           `json:"question"`
-	Category      *QuestionCategoryResponse `json:"category"`
-	Type          string                    `json:"type"`
-	Tags          json.RawMessage           `json:"tags"`
-	PaperID       int64                     `json:"paper_id"`
-	MaxScore      int                       `json:"max_score"`
-	CorrectAnswer string                    `json:"correct_answer"`
+	ID            int64           `json:"id"`
+	Question      json.RawMessage `json:"question"`
+	CategoryID    int64           `json:"category_id"`
+	Type          string          `json:"type"`
+	Tags          json.RawMessage `json:"tags"`
+	PaperID       int64           `json:"paper_id"`
+	MaxScore      int             `json:"max_score"`
+	CorrectAnswer string          `json:"correct_answer"`
 }
 
 type QuestionMinimalResponse struct {

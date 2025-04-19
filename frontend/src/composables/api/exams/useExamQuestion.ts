@@ -6,7 +6,7 @@ export function useExamQuestion(questionId: ComputedRef<number | null>) {
   const { payload } = useNuxtApp()
 
   return useAsyncData(
-    AsyncDataKeys.QUESTION(),
+    AsyncDataKeys.EXAM_QUESTION(),
     async () => {
       if (isNullOrUndefined(questionId.value)) return Promise.resolve(null)
       if (questionId.value === QuestionId.ADD) return Promise.resolve(null)
@@ -19,7 +19,7 @@ export function useExamQuestion(questionId: ComputedRef<number | null>) {
       if (isNullOrUndefined(data.tags)) data.tags = []
 
       // A new key is not created in Nuxt Cache/Payload by itself when watched value changes
-      payload.data[AsyncDataKeys.QUESTION(questionId.value)] = data
+      payload.data[AsyncDataKeys.EXAM_QUESTION(questionId.value)] = data
       return data
     },
     {

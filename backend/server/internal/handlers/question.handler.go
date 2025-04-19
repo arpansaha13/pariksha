@@ -90,13 +90,9 @@ func GetQuestion(w http.ResponseWriter, r *http.Request) {
 	tags, _ := json.Marshal(response.Tags)
 
 	httpResponse := dtos.QuestionResponse{
-		ID:       response.Id,
-		Question: questionData,
-		Category: &dtos.QuestionCategoryResponse{
-			ID:    response.Category.Id,
-			Name:  response.Category.Name,
-			Order: int(response.Category.Order),
-		},
+		ID:            response.Id,
+		Question:      questionData,
+		CategoryID:    response.CategoryId,
 		Type:          response.Type,
 		Tags:          tags,
 		PaperID:       response.PaperId,
@@ -328,6 +324,7 @@ func protoQuestionToResponse(resp *proto.QuestionResponse) dtos.QuestionResponse
 		Tags:          tags,
 		PaperID:       resp.PaperId,
 		MaxScore:      int(resp.MaxScore),
+		CategoryID:    resp.CategoryId,
 		CorrectAnswer: resp.GetCorrectAnswer(),
 	}
 
@@ -338,14 +335,6 @@ func protoQuestionToResponse(resp *proto.QuestionResponse) dtos.QuestionResponse
 	case *proto.QuestionResponse_General:
 		data, _ := json.Marshal(q.General)
 		response.Question = data
-	}
-
-	if resp.Category != nil {
-		response.Category = &dtos.QuestionCategoryResponse{
-			ID:    resp.Category.Id,
-			Name:  resp.Category.Name,
-			Order: int(resp.Category.Order),
-		}
 	}
 
 	return response
