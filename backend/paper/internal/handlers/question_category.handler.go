@@ -262,25 +262,3 @@ func (s *PaperServer) ReorderCategories(ctx context.Context, req *proto.ReorderC
 
 	return &proto.Empty{}, nil
 }
-
-// GetCategoriesByIds retrieves multiple categories by their IDs in a single request
-func (s *PaperServer) GetCategoriesByIds(ctx context.Context, req *proto.GetCategoriesByIdsRequest) (*proto.CategoryBatchResponse, error) {
-	var categories []models.QuestionCategory
-	if err := db.DB.Where("id IN ?", req.CategoryIds).Find(&categories).Error; err != nil {
-		return nil, status.Error(codes.Internal, "failed to retrieve categories")
-	}
-
-	response := &proto.CategoryBatchResponse{
-		Categories: make([]*proto.CategoryBatchItem, len(categories)),
-	}
-
-	for i, category := range categories {
-		response.Categories[i] = &proto.CategoryBatchItem{
-			Id:    category.ID,
-			Name:  category.Name,
-			Order: int32(category.Order),
-		}
-	}
-
-	return response, nil
-}
