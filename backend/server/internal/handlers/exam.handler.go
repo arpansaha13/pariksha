@@ -589,3 +589,45 @@ func GetExamCategories(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
+
+func GetExamQuestion(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	questionID, err := strconv.Atoi(vars["questionId"])
+	if err != nil {
+		http.Error(w, "Invalid question ID", http.StatusBadRequest)
+		return
+	}
+
+	paperService := services.GetPaperService()
+	question, err := paperService.Client().GetExamQuestion(context.Background(), &proto.QuestionRequest{
+		QuestionId: int64(questionID),
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	var questionContent json.RawMessage
+	switch q := question.Question.(type) {
+	case *proto.QuestionResponse_Mcq:
+		questionContent, _ = json.Marshal(q.Mcq)
+	case *proto.QuestionResponse_General:
+		questionContent, _ = json.Marshal(q.General)
+	}
+
+	response := dtos.ExamQuestionResponse{
+		ID:       question.Id,
+		Question: questionContent,
+		Type:     question.Type,
+		MaxScore: int(question.MaxScore),
+	}
+
+	if question.Category != nil {
+		response.Category.ID = question.Category.Id
+		response.Category.Name = question.Category.Name
+		response.Category.Order = int(question.Category.Order)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}

@@ -83,3 +83,50 @@ func (s *PaperServer) GetCategoriesByIds(ctx context.Context, req *proto.GetCate
 
 	return response, nil
 }
+
+// GetExamQuestion retrieves minimal question data needed for exam taking
+func (s *PaperServer) GetExamQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.QuestionResponse, error) {
+	var question models.Question
+	if err := db.DB.Select("id, question, type, max_score, category_id").
+		Preload("Category").
+		Take(&question, req.QuestionId).Error; err != nil {
+		return nil, status.Error(codes.NotFound, "question not found")
+	}
+
+	response := &proto.QuestionResponse{
+		Id:       question.ID,
+		Type:     question.Type,
+		MaxScore: int32(question.MaxScore),
+		Category: &proto.CategoryResponse{
+			Id:    question.Category.ID,
+			Name:  question.Category.Name,
+			Order: int32(question.Category.Order),
+		},
+	}
+
+	switch question.Type {
+	case constants.QUESTION_TYPE_MCQ:
+		var mcq structs.MCQQuestion
+		if err := json.Unmarshal(question.Question, &mcq); err != nil {
+			return nil, status.Error(codes.Internal, "invalid question data")
+		}
+		response.Question = &proto.QuestionResponse_Mcq{
+			Mcq: &proto.McqQuestion{
+				Statement: mcq.Statement,
+				Options:   mcq.Options,
+			},
+		}
+	default:
+		var general structs.GeneralQuestion
+		if err := json.Unmarshal(question.Question, &general); err != nil {
+			return nil, status.Error(codes.Internal, "invalid question data")
+		}
+		response.Question = &proto.QuestionResponse_General{
+			General: &proto.GeneralQuestion{
+				Statement: general.Statement,
+			},
+		}
+	}
+
+	return response, nil
+}

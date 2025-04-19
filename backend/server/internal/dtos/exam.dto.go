@@ -67,7 +67,7 @@ type ExamAccessResponse struct {
 }
 
 type ExamQuestionsResponse struct {
-	QuestionID int64           `json:"question_id"`
+	QuestionID int64           `json:"id"`
 	Question   json.RawMessage `json:"question"`
 	MaxScore   int             `json:"max_score"`
 	Type       string          `json:"type"`
@@ -76,7 +76,15 @@ type ExamQuestionsResponse struct {
 }
 
 type ExamCategoriesResponse struct {
-	CategoryID int64  `json:"category_id"`
+	CategoryID int64  `json:"id"`
 	Name       string `json:"name"`
 	Order      int    `json:"order"`
+}
+
+type ExamQuestionResponse struct {
+	ID       int64                    `json:"id"`
+	Question json.RawMessage          `json:"question"`
+	Category QuestionCategoryResponse `json:"category"`
+	Type     string                   `json:"type"`
+	MaxScore int                      `json:"max_score"`
 }

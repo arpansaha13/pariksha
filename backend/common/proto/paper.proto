@@ -21,7 +21,6 @@ service PaperService {
   rpc UpdateQuestion(UpdateQuestionRequest) returns (Empty) {}
   rpc DeleteQuestion(QuestionRequest) returns (Empty) {}
   rpc ReorderQuestions(ReorderQuestionsRequest) returns (Empty) {}
-  rpc GetQuestionsByIds(GetQuestionsByIdsRequest) returns (QuestionBatchResponse) {}
 
   // Category operations
   rpc GetPaperCategories(PaperRequest) returns (CategoryList) {}
@@ -29,7 +28,11 @@ service PaperService {
   rpc UpdateCategory(UpdateCategoryRequest) returns (Empty) {}
   rpc DeleteCategory(CategoryRequest) returns (Empty) {}
   rpc ReorderCategories(ReorderCategoriesRequest) returns (Empty) {}
+
+  // Exam operations
+  rpc GetQuestionsByIds(GetQuestionsByIdsRequest) returns (QuestionBatchResponse) {}
   rpc GetCategoriesByIds(GetCategoriesByIdsRequest) returns (CategoryBatchResponse) {}
+  rpc GetExamQuestion(QuestionRequest) returns (QuestionResponse) {}
 }
 
 // Paper messages
