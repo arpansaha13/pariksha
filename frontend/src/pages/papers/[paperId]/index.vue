@@ -2,23 +2,11 @@
   <div v-if="paper" class="col-span-2 flex items-center gap-2">
     <Icon name="i-heroicons-document-text" size="2rem" />
 
-    <EditableRoot
-      v-model="editablePaperTitle"
-      name="paper-title"
-      activation-mode="focus"
-      submit-mode="both"
-      placeholder=""
-      @submit="updatePaperTitle"
-    >
-      <EditableArea
-        class="rounded-sm px-1 text-xl focus-within:outline hover:outline"
-      >
-        <EditablePreview as="h1" class="font-semibold" />
-        <EditableInput class="font-semibold outline-none" />
-      </EditableArea>
-    </EditableRoot>
+    <PaperTitle :paper="paper" />
 
-    <PaperDurationModal :paper="paper" />
+    <div class="ml-auto">
+      <PaperDurationModal :paper="paper" />
+    </div>
   </div>
 
   <div class="flex items-center justify-end">
@@ -33,135 +21,22 @@
   </div>
 
   <div
-    v-if="!isNullOrUndefined(categoryLinks)"
+    v-if="!isNullOrUndefined(sortedCategories)"
     class="col-span-2 flex items-center justify-between gap-x-2 border-b border-gray-200 dark:border-gray-800"
   >
-    <!-- subtract button-width and gap -->
-    <ScrollAreaRoot class="max-w-[calc(100%-44px)]">
-      <ScrollAreaViewport>
-        <UNavigationMenu
-          :items="categoryLinks"
-          color="primary"
-          orientation="horizontal"
-          variant="link"
-          highlight
-        >
-          <template #item="{ item }">
-            <UChip
-              :show="!!unsavedCount[item.to.query.category]"
-              :ui="{
-                base: '-top-1 -right-1.5',
-              }"
-            >
-              <span class="truncate">{{ item.label }}</span>
-            </UChip>
-          </template>
-        </UNavigationMenu>
-      </ScrollAreaViewport>
-      <ScrollAreaScrollbar
-        class="flex touch-none bg-white p-0.5 transition-colors ease-out select-none data-[orientation=horizontal]:h-2 data-[orientation=horizontal]:flex-col"
-        orientation="horizontal"
-      >
-        <ScrollAreaThumb
-          class="relative flex-1 rounded-sm bg-gray-200 transition-colors before:absolute before:top-1/2 before:left-1/2 before:h-full before:w-full before:-translate-x-1/2 before:-translate-y-1/2 before:content-[''] hover:bg-gray-300"
-        />
-      </ScrollAreaScrollbar>
-    </ScrollAreaRoot>
+    <PaperCategoryNavigation
+      :sorted-categories="sortedCategories"
+      :unsaved-count="unsavedCount"
+      :get-question-id-for-category-id="getQuestionIdForCategoryId"
+    />
 
-    <UModal
-      title="Manage categories"
-      description="Add, edit, remove, or reorder your categories"
-      :ui="{
-        body: 'space-y-2',
-      }"
-      @after:leave="handleReorder"
-    >
-      <UTooltip text="Manage categories">
-        <UButton
-          icon="i-heroicons-adjustments-vertical"
-          size="sm"
-          color="neutral"
-          square
-          variant="outline"
-        />
-      </UTooltip>
-
-      <template #body>
-        <Draggable
-          v-model="categoriesCopyForReorder"
-          tag="ol"
-          item-key="id"
-          group="category-editable"
-          handle=".draggable-handle"
-          ghost-class="draggable-ghost"
-          drag-class="draggable-hold"
-          :animation="250"
-          @start="dragging = true"
-          @end="dragging = false"
-        >
-          <template #item="{ element: category }">
-            <li
-              :key="category.id"
-              class="group flex items-center gap-2 rounded-sm"
-            >
-              <!-- //NOSONAR gives error because this is a comment node and counts as multiple nodes inside template -->
-              <div class="draggable-handle flex size-5 cursor-grab">
-                <Icon
-                  name="i-heroicons-bars-2"
-                  class="m-auto text-gray-400 transition-colors"
-                />
-              </div>
-
-              <EditableRoot
-                v-slot="{ isEditing }"
-                v-model="categoryNames[category.id]"
-                activation-mode="focus"
-                submit-mode="both"
-                class="grow"
-                placeholder=""
-                @submit="() => handleUpdateCategory(category)"
-              >
-                <EditableArea
-                  :class="[
-                    'px-2 py-2 text-sm transition-colors dark:border-gray-800',
-                    isEditing
-                      ? 'border-primary-500 border-b-2'
-                      : 'border-b border-gray-200',
-                  ]"
-                >
-                  <EditablePreview />
-                  <EditableInput class="outline-none" />
-                </EditableArea>
-              </EditableRoot>
-
-              <div v-show="!dragging">
-                <UButton
-                  icon="i-heroicons-trash"
-                  size="sm"
-                  color="error"
-                  square
-                  variant="soft"
-                  class="invisible group-hover:visible"
-                  loading-auto
-                  :disabled="sortedCategories?.length === 1"
-                  @click="handleDeleteCategory(category)"
-                />
-              </div>
-            </li>
-          </template>
-        </Draggable>
-      </template>
-
-      <template #footer>
-        <UButton
-          label="Add category"
-          color="primary"
-          variant="soft"
-          loading-auto
-          @click="createCategory(paperId)"
-        />
-      </template>
-    </UModal>
+    <PaperCategoryManageModal
+      v-if="!isNullOrUndefined(groupedQuestions) && currentCategoryId"
+      :sorted-categories="sortedCategories"
+      :grouped-questions="groupedQuestions"
+      :current-category-id="currentCategoryId"
+      :get-question-id-for-category-id="getQuestionIdForCategoryId"
+    />
   </div>
 
   <UCard
@@ -175,69 +50,14 @@
     </template>
 
     <div>
-      <Draggable
-        v-model="categoryQuestionsCopyForReorder"
-        tag="ol"
-        item-key="id"
-        group="question-editable"
-        handle=".draggable-handle"
-        class="divide-y divide-neutral-200 py-2 transition-colors"
-        ghost-class="draggable-ghost"
-        drag-class="draggable-hold"
-        :animation="250"
-        @start="dragging = true"
-        @end="onQuestionsReorderEnd"
-      >
-        <template #item="{ element: q }">
-          <li
-            :key="q.id"
-            :class="[
-              currentQuestionId === q.id
-                ? 'bg-(--ui-primary)/10 hover:bg-(--ui-primary)/15 disabled:bg-(--ui-primary)/10 aria-disabled:bg-(--ui-primary)/10'
-                : 'bg-(--ui-bg) hover:bg-(--ui-bg-elevated) disabled:bg-(--ui-bg) aria-disabled:bg-(--ui-bg)',
-            ]"
-          >
-            <!-- //NOSONAR gives error because this is a comment node and counts as multiple nodes inside template -->
-            <UChip
-              :show="!isNullOrUndefined(editQuestionFormStates[q.id])"
-              inset
-              position="top-left"
-              :ui="{ root: 'flex gap-2 px-2', base: 'top-1 left-1' }"
-            >
-              <div class="draggable-handle flex size-6 shrink-0 cursor-grab">
-                <Icon
-                  name="i-heroicons-bars-2"
-                  class="m-auto text-gray-400 transition-colors"
-                />
-              </div>
-
-              <ULink
-                :to="{ query: { ...route.query, question: q.id } }"
-                raw
-                exact-query
-                class="block grow py-2.5 text-sm"
-                active-class="text-(--ui-primary)"
-                inactive-class="text-(--ui-text)"
-              >
-                <span class="line-clamp-2">
-                  {{ q.question.statement }}
-                </span>
-              </ULink>
-
-              <UButton
-                icon="i-heroicons-trash"
-                size="sm"
-                color="error"
-                square
-                variant="ghost"
-                loading-auto
-                class="shrink-0"
-                @click="handleDeleteQuestion(q.id)"
-              />
-            </UChip>
-          </li>
-        </template>
-      </Draggable>
+      <PaperQuestionList
+        v-if="currentCategoryId && !isNullOrUndefined(currentQuestionId)"
+        :current-category-id="currentCategoryId"
+        :current-question-id="currentQuestionId"
+        :current-category-questions="currentCategoryQuestions"
+        :edit-question-form-states="editQuestionFormStates"
+        :question-navigation="questionNavigation"
+      />
     </div>
 
     <template #footer>
@@ -331,66 +151,25 @@
 </template>
 
 <script setup lang="ts">
-import Draggable from 'vuedraggable'
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { ComponentExposed } from 'vue-component-type-helpers'
-import { ConfirmModal, PaperQuestionForm } from '#components'
-import {
-  type Question,
-  QuestionId,
-  QuestionType,
-  type QuestionCategory,
-  type QuestionMinimal,
-} from '~/types'
+import { PaperQuestionForm } from '#components'
+import { QuestionId, QuestionType } from '~/types'
 
 definePageMeta({
   layout: 'paper',
   middleware: ['check-paper-access'],
 })
 
-enum QuestionIndex {
-  NON_EXISTENT = -1,
-
-  /** Special case for add question */
-  ADD = -2,
-}
-
 const route = useRoute()
-const overlay = useOverlay()
 const paperId = parseInt(route.params.paperId as string)
 const { data: paper } = await usePaper(paperId)
 const { data: groupedQuestions } = await usePaperQuestions(paperId)
 const { data: sortedCategories } = await usePaperCategories(paperId)
 
-const dragging = ref(false)
-const categoriesCopyForReorder = shallowRef<QuestionCategory[]>([])
-const categoryQuestionsCopyForReorder = shallowRef<QuestionMinimal[]>([])
-const lastVisitedQuestionForCategory = ref<Record<number, string>>({})
-
-const confirmModal = overlay.create(ConfirmModal)
-
-watchImmediate(
-  sortedCategories,
-  val => {
-    if (val) categoriesCopyForReorder.value = [...val]
-  },
-  { deep: true }
-)
-
-watchImmediate(route, newRoute => {
-  const query = newRoute.query
-  if (isNullOrUndefined(query) || isNullOrUndefined(query.category)) return
-  const categoryId = parseInt(query.category as string)
-  lastVisitedQuestionForCategory.value[categoryId] = query.question as string
+const getQuestionIdForCategoryId = usePaperQuestionIdForCategoryId({
+  groupedQuestions,
 })
-
-function getQuestionIdForCategoryId(categoryId: number) {
-  const categoryQuestions = groupedQuestions.value?.[categoryId]
-  if (isNullOrUndefined(categoryQuestions)) return QuestionId.ADD
-  const questionId =
-    lastVisitedQuestionForCategory.value[categoryId] ?? categoryQuestions[0].id
-  return questionId
-}
 
 // Add initial `category` and `question` queries, if missing
 if (
@@ -400,23 +179,8 @@ if (
   const categoryId = sortedCategories.value[0].id
   const questionId = getQuestionIdForCategoryId(categoryId)
   const query = { category: categoryId, question: questionId }
-  navigateTo({ query }, { replace: true })
+  await navigateTo({ query }, { replace: true })
 }
-
-const categoryLinks = computed(() => {
-  if (!sortedCategories.value) return null
-
-  return sortedCategories.value.map(category => ({
-    label: category.name,
-    to: {
-      query: {
-        category: category.id,
-        question: getQuestionIdForCategoryId(category.id),
-      },
-    },
-    exactQuery: true,
-  }))
-})
 
 const currentCategoryId = computed(() => {
   return route.query.category ? parseInt(route.query.category as string) : null
@@ -427,193 +191,16 @@ const currentCategoryQuestions = computed(() => {
   return groupedQuestions.value[currentCategoryId.value] ?? []
 })
 
-watchImmediate(
-  currentCategoryQuestions,
-  val => {
-    if (val) categoryQuestionsCopyForReorder.value = [...val]
-  },
-  { deep: true }
-)
-
 const currentQuestionId = computed(() => {
   return route.query.question ? parseInt(route.query.question as string) : null
 })
 
-const currentQuestionIdx = computed(() => {
-  if (!currentQuestionId.value) return QuestionIndex.NON_EXISTENT
-  if (currentQuestionId.value === QuestionId.ADD) return QuestionIndex.ADD
-  return (
-    currentCategoryQuestions.value?.findIndex(
-      q => q.id === currentQuestionId.value
-    ) ?? QuestionIndex.NON_EXISTENT
-  )
+const { questionNavigation } = usePaperQuestionNavigation({
+  currentQuestionId,
+  currentCategoryQuestions,
 })
 
 const { data: question } = await useQuestion(currentQuestionId)
-
-const questionNavigation = computed(() => {
-  if (!currentCategoryQuestions.value) {
-    return { prev: null, next: null }
-  }
-
-  // If on add question page
-  if (currentQuestionId.value === QuestionId.ADD) {
-    return {
-      prev: currentCategoryQuestions.value.at(-1)?.id ?? null, // show last question as prev
-      next: null, // there is no next
-    }
-  }
-
-  // Non-existent question check should be after QuestionId.ADD
-  if (currentQuestionIdx.value < 0) {
-    return { prev: null, next: null }
-  }
-
-  // First question
-  if (currentQuestionIdx.value === 0) {
-    return {
-      prev: null,
-      next: currentCategoryQuestions.value[1]?.id ?? QuestionId.ADD,
-    }
-  }
-
-  // Last question
-  if (currentQuestionIdx.value === currentCategoryQuestions.value.length - 1) {
-    return {
-      prev: currentCategoryQuestions.value.at(-2)?.id ?? null,
-      next: QuestionId.ADD, // show add question as next
-    }
-  }
-
-  return {
-    prev: currentCategoryQuestions.value[currentQuestionIdx.value - 1].id,
-    next: currentCategoryQuestions.value[currentQuestionIdx.value + 1].id,
-  }
-})
-
-// ________________________EDIT PAPER TITLE_________________________
-const editablePaperTitle = ref(paper.value!.title)
-function updatePaperTitle() {
-  editablePaperTitle.value.trim()
-  if (!editablePaperTitle.value) {
-    editablePaperTitle.value = 'Untitled Paper'
-  }
-  if (editablePaperTitle.value !== paper.value!.title) {
-    return updatePaper(paperId, { title: editablePaperTitle.value })
-  }
-}
-watch(paper, newPaper => {
-  editablePaperTitle.value = newPaper!.title
-})
-
-// ________________________DELETE CATEGORY_________________________
-async function handleDeleteCategory(category: QuestionCategory) {
-  let shouldDelete = true
-
-  // If category has questions, then show a confirmation modal
-  const categoryQuestions = groupedQuestions.value![category.id]
-  if (categoryQuestions && categoryQuestions.length > 0) {
-    shouldDelete = await confirmModal.open({
-      title: 'Confirm category deletion',
-      description: `This category "${category.name}" has ${categoryQuestions.length} questions which will be deleted along with it.`,
-      confirmLabel: 'Delete category',
-    })
-  }
-
-  if (shouldDelete) {
-    return doDeleteCategory(category.id)
-  }
-}
-async function doDeleteCategory(categoryId: number) {
-  // If deleting current category, switch to another category first
-  if (currentCategoryId.value === categoryId) {
-    // Find another category to switch to
-    const nextCategory = sortedCategories.value?.find(c => c.id !== categoryId)
-    if (nextCategory) {
-      await navigateTo({
-        query: {
-          category: nextCategory.id,
-          question: getQuestionIdForCategoryId(nextCategory.id),
-        },
-      })
-    }
-  }
-
-  await deleteCategory(categoryId, paperId)
-}
-
-// ________________________UPDATE CATEGORY_________________________
-const categoryNames = ref<Record<number, string>>({})
-async function handleUpdateCategory(category: QuestionCategory) {
-  categoryNames.value[category.id].trim()
-
-  // If empty name, use default "Category {order}"
-  const name = categoryNames.value[category.id] || `Category ${category.order}`
-
-  if (name !== category.name) {
-    await updateCategory(category.id, paperId, { name })
-  }
-}
-watchImmediate(sortedCategories, newCategories => {
-  if (!newCategories) return
-
-  newCategories.forEach(category => {
-    categoryNames.value[category.id] = category.name
-  })
-})
-
-// _______________________REORDER CATEGORY________________________
-/**
- * `reorder-categories` api is fired after the modal closes, so that all reorders can be batched.
- * Because individual reorders cause inconsistencies during rollback (in case of error).
- */
-function handleReorder() {
-  let isReordered = false
-
-  // Check if the order was changed
-  for (let i = 0; i < sortedCategories.value!.length; i++) {
-    if (
-      sortedCategories.value![i].id !== categoriesCopyForReorder.value[i].id
-    ) {
-      isReordered = true
-      break
-    }
-  }
-
-  if (isReordered) {
-    reorderCategories(
-      paperId,
-      categoriesCopyForReorder.value.map(cat => cat.id)
-    )
-  }
-}
-
-// _______________________REORDER QUESTIONS________________________
-function onQuestionsReorderEnd() {
-  dragging.value = false
-
-  if (!currentCategoryId.value) return
-  let isReordered = false
-
-  // Check if the order was changed
-  for (let i = 0; i < currentCategoryQuestions.value.length; i++) {
-    if (
-      currentCategoryQuestions.value[i].id !==
-      categoryQuestionsCopyForReorder.value[i].id
-    ) {
-      isReordered = true
-      break
-    }
-  }
-
-  if (isReordered) {
-    reorderQuestions(
-      paperId,
-      currentCategoryId.value,
-      categoryQuestionsCopyForReorder.value.map(q => q.id)
-    )
-  }
-}
 
 // ________________CREATE/EDIT QUESTION PREREQUISITES_______________
 const defaultCreateQuestionFormState = {
@@ -649,7 +236,6 @@ function createQuestionRequestBody(formState: QuestionFormState) {
 }
 
 // ___________UNSAVED COUNT FOR CHIPS ON CATEGORY LINKS___________
-
 const unsavedCount = ref<Record<number, number>>({})
 
 function incUnsavedCount(categoryId: number) {
@@ -776,75 +362,11 @@ async function onEditQuestionSubmit() {
   }
 }
 
-// ___________________AUTO-CANCEL QUESTION EDIT MODE_______________
-function isEditFormStateDirty(
-  oldQuestion: Question,
-  formState: QuestionFormState
-): boolean {
-  if (!oldQuestion || !formState) return false
-
-  if (
-    formState.type !== oldQuestion.type ||
-    formState.max_score !== oldQuestion.max_score ||
-    formState.correct_answer !== (oldQuestion.correct_answer ?? undefined) ||
-    !arrayEquals(formState.tags, oldQuestion.tags ?? [])
-  ) {
-    return true
-  }
-
-  // Check question data based on type
-  if (oldQuestion.type === QuestionType.MCQ) {
-    const mcqQuestion = oldQuestion.question
-    return (
-      formState.question.statement !== mcqQuestion.statement ||
-      !arrayEquals(formState.question.options, mcqQuestion.options)
-    )
-  }
-
-  const generalQuestion = oldQuestion.question
-  return formState.question.statement !== generalQuestion.statement
-}
-
-watch(question, (_, oldQuestion) => {
-  if (!oldQuestion) return
-
-  const formState = editQuestionFormStates[oldQuestion.id]
-
-  // If previous question was in edit mode but not dirty, cancel its edit
-  if (formState && !isEditFormStateDirty(oldQuestion, formState)) {
-    editQuestionFormStates[oldQuestion.id] = null
-    decUnsavedCount(oldQuestion.category_id)
-  }
+usePaperAutoCancelQuestionEdit({
+  question,
+  editQuestionFormStates,
+  decUnsavedCount,
 })
-
-// ________________________DELETE QUESTION________________________
-async function handleDeleteQuestion(questionId: number) {
-  if (!currentCategoryId.value) return
-
-  const shouldDelete = await confirmModal.open({
-    title: 'Confirm question deletion',
-    description:
-      'Are you sure you want to delete this question? This action cannot be undone.',
-    confirmLabel: 'Delete question',
-  })
-
-  if (!shouldDelete) return
-
-  // If deleting current question, switch to another one first
-  if (currentQuestionId.value === questionId) {
-    await navigateTo({
-      query: {
-        ...route.query,
-        question:
-          questionNavigation.value.prev ??
-          questionNavigation.value.next ??
-          QuestionId.ADD,
-      },
-    })
-  }
-
-  await deleteQuestion(questionId, paperId, currentCategoryId.value)
-}
 </script>
 
 <style scoped>

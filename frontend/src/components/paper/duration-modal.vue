@@ -10,7 +10,6 @@
         size="sm"
         color="neutral"
         variant="outline"
-        class="ml-auto"
       />
     </UTooltip>
 
