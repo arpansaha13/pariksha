@@ -35,6 +35,7 @@
   <UCard :ui="{ root: 'col-span-2', body: 'flex' }">
     <UButton
       v-if="prevQuestionId"
+      replace
       label="Previous"
       color="neutral"
       variant="outline"
@@ -42,6 +43,7 @@
     />
     <UButton
       v-if="nextQuestionId"
+      replace
       label="Next"
       color="neutral"
       variant="outline"

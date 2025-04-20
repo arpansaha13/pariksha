@@ -38,6 +38,7 @@
           <ULink
             :to="{ query: { ...route.query, question: q.id } }"
             raw
+            replace
             exact-query
             class="block grow py-2.5 text-sm"
             active-class="text-(--ui-primary)"

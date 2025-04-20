@@ -67,6 +67,7 @@
         label="New question"
         :color="currentQuestionId === QuestionId.ADD ? 'primary' : 'neutral'"
         :variant="currentQuestionId === QuestionId.ADD ? 'subtle' : 'outline'"
+        replace
       />
     </template>
   </UCard>
@@ -101,6 +102,7 @@
     <div>
       <UButton
         v-if="questionNavigation.prev"
+        replace
         label="Previous"
         color="neutral"
         variant="outline"
@@ -141,6 +143,7 @@
       </template>
       <UButton
         v-if="!isNullOrUndefined(questionNavigation.next)"
+        replace
         label="Next"
         color="neutral"
         variant="outline"

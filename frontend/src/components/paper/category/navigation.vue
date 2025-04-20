@@ -60,6 +60,7 @@ const categoryLinks = computed(() => {
       },
     },
     exactQuery: true,
+    replace: true,
   }))
 })
 </script>
