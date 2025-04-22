@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -128,15 +127,14 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(r)
-	examID, _ := strconv.Atoi(vars["examId"])
+	examID, err := getInt64FromVars(mux.Vars(r), "examId")
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	req := &proto.UpdateExamRequest{
-		ExamId: int64(examID),
+		ExamId: examID,
 	}
 
 	if examDto.Title != "" {
@@ -178,10 +176,9 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	examID, err := strconv.Atoi(vars["examId"])
+	examID, err := getInt64FromVars(mux.Vars(r), "examId")
 	if err != nil {
-		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -190,7 +187,7 @@ func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
 	ctx := examService.CreateMetadata(userID)
 
 	participants, err := examService.Client().GetExamParticipants(ctx, &proto.ExamRequest{
-		ExamId: int64(examID),
+		ExamId: examID,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -233,10 +230,9 @@ func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
 }
 
 func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	examID, err := strconv.Atoi(params["examId"])
+	examID, err := getInt64FromVars(mux.Vars(r), "examId")
 	if err != nil {
-		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -275,7 +271,7 @@ func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
 
 	// Add participant
 	participant, err := examService.Client().AddExamParticipant(ctx, &proto.AddParticipantRequest{
-		ExamId: int64(examID),
+		ExamId: examID,
 		UserId: participantDto.UserID,
 	})
 	if err != nil {
@@ -297,16 +293,24 @@ func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
 
 func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	examID, _ := strconv.Atoi(vars["examId"])
-	participantID, _ := strconv.Atoi(vars["participantId"])
+	examID, err := getInt64FromVars(vars, "examId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	participantID, err := getInt64FromVars(vars, "participantId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
-	_, err := examService.Client().RemoveExamParticipant(ctx, &proto.RemoveParticipantRequest{
-		ExamId:        int64(examID),
-		ParticipantId: int64(participantID),
+	_, err = examService.Client().RemoveExamParticipant(ctx, &proto.RemoveParticipantRequest{
+		ExamId:        examID,
+		ParticipantId: participantID,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -330,10 +334,9 @@ func createExamParticipant(tx *gorm.DB, examID int64, userID int64) (*models.Exa
 }
 
 func StartExam(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	examID, err := strconv.Atoi(vars["examId"])
+	examID, err := getInt64FromVars(mux.Vars(r), "examId")
 	if err != nil {
-		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -343,7 +346,7 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 	ctx := examService.CreateMetadata(userID)
 
 	_, err = examService.Client().StartExam(ctx, &proto.StartExamRequest{
-		ExamId: int64(examID),
+		ExamId: examID,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -355,13 +358,17 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 
 func EndExam(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	examID, _ := strconv.Atoi(mux.Vars(r)["examId"])
+	examID, err := getInt64FromVars(mux.Vars(r), "examId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
-	_, err := examService.Client().EndExam(ctx, &proto.EndExamRequest{
-		ExamId: int64(examID),
+	_, err = examService.Client().EndExam(ctx, &proto.EndExamRequest{
+		ExamId: examID,
 	})
 	if err != nil {
 		http.Error(w, "Failed to end exam", http.StatusInternalServerError)
@@ -372,10 +379,9 @@ func EndExam(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetExam(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	examID, err := strconv.Atoi(vars["examId"])
+	examID, err := getInt64FromVars(mux.Vars(r), "examId")
 	if err != nil {
-		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -384,7 +390,7 @@ func GetExam(w http.ResponseWriter, r *http.Request) {
 	ctx := examService.CreateMetadata(userID)
 
 	exam, err := examService.Client().GetExam(ctx, &proto.ExamRequest{
-		ExamId: int64(examID),
+		ExamId: examID,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -408,10 +414,9 @@ func GetExam(w http.ResponseWriter, r *http.Request) {
 }
 
 func CheckExamAccess(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	examID, err := strconv.Atoi(vars["examId"])
+	examID, err := getInt64FromVars(mux.Vars(r), "examId")
 	if err != nil {
-		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -420,7 +425,7 @@ func CheckExamAccess(w http.ResponseWriter, r *http.Request) {
 	ctx := examService.CreateMetadata(userID)
 
 	access, err := examService.Client().CheckExamAccess(ctx, &proto.ExamRequest{
-		ExamId: int64(examID),
+		ExamId: examID,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -442,10 +447,9 @@ func CheckExamAccess(w http.ResponseWriter, r *http.Request) {
 
 // CheckExamParticipant checks if the current user is a participant of the exam
 func CheckExamParticipant(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	examID, err := strconv.Atoi(vars["examId"])
+	examID, err := getInt64FromVars(mux.Vars(r), "examId")
 	if err != nil {
-		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -454,7 +458,7 @@ func CheckExamParticipant(w http.ResponseWriter, r *http.Request) {
 	ctx := examService.CreateMetadata(userID)
 
 	response, err := examService.Client().CheckExamParticipant(ctx, &proto.CheckParticipantRequest{
-		ExamId: int64(examID),
+		ExamId: examID,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -466,10 +470,9 @@ func CheckExamParticipant(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	examID, err := strconv.Atoi(vars["examId"])
+	examID, err := getInt64FromVars(mux.Vars(r), "examId")
 	if err != nil {
-		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -479,7 +482,7 @@ func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
 
 	// Get question IDs from exam service
 	questions, err := examService.Client().GetExamQuestions(ctx, &proto.ExamRequest{
-		ExamId: int64(examID),
+		ExamId: examID,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -525,10 +528,9 @@ func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetExamCategories(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	examID, err := strconv.Atoi(vars["examId"])
+	examID, err := getInt64FromVars(mux.Vars(r), "examId")
 	if err != nil {
-		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -538,7 +540,7 @@ func GetExamCategories(w http.ResponseWriter, r *http.Request) {
 
 	// Get category IDs from exam service
 	categories, err := examService.Client().GetExamCategories(ctx, &proto.ExamRequest{
-		ExamId: int64(examID),
+		ExamId: examID,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -585,16 +587,15 @@ func GetExamCategories(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetExamQuestion(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	questionID, err := strconv.Atoi(vars["questionId"])
+	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
 	if err != nil {
-		http.Error(w, "Invalid question ID", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	paperService := services.GetPaperService()
 	question, err := paperService.Client().GetExamQuestion(context.Background(), &proto.QuestionRequest{
-		QuestionId: int64(questionID),
+		QuestionId: questionID,
 	})
 	if err != nil {
 		handleGRPCError(w, err)

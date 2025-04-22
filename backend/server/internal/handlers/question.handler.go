@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 
@@ -17,15 +16,18 @@ import (
 )
 
 func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	paperID, _ := strconv.Atoi(vars["id"])
+	paperID, err := getInt64FromVars(mux.Vars(r), "paperId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
 	response, err := paperService.Client().GetPaperQuestions(ctx, &proto.PaperRequest{
-		PaperId: int64(paperID),
+		PaperId: paperID,
 	})
 
 	if err != nil {
@@ -60,15 +62,18 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetQuestion(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	questionID, _ := strconv.Atoi(vars["id"])
+	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
 	response, err := paperService.Client().GetQuestion(ctx, &proto.QuestionRequest{
-		QuestionId: int64(questionID),
+		QuestionId: questionID,
 	})
 
 	if err != nil {
@@ -105,8 +110,7 @@ func GetQuestion(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateQuestion(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	paperID, _ := strconv.Atoi(vars["id"])
+	paperID, err := getInt64FromVars(mux.Vars(r), "paperId")
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	var questionDto dtos.CreateQuestionDto
@@ -130,7 +134,7 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	requestObj := proto.CreateQuestionRequest{
-		PaperId:       int64(paperID),
+		PaperId:       paperID,
 		Question:      nil,
 		CategoryId:    questionDto.CategoryID,
 		Type:          questionDto.Type,
@@ -177,8 +181,11 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	questionID, _ := strconv.Atoi(vars["id"])
+	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	var updateDto dtos.UpdateQuestionDto
@@ -191,7 +198,7 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	ctx := paperService.CreateMetadata(userID)
 
 	request := &proto.UpdateQuestionRequest{
-		QuestionId: int64(questionID),
+		QuestionId: questionID,
 	}
 
 	// Set optional fields only if they are provided
@@ -249,7 +256,7 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 		request.CorrectAnswer = &updateDto.CorrectAnswer
 	}
 
-	_, err := paperService.Client().UpdateQuestion(ctx, request)
+	_, err = paperService.Client().UpdateQuestion(ctx, request)
 	if err != nil {
 		handleGRPCError(w, err)
 		return
@@ -259,15 +266,18 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	questionID, _ := strconv.Atoi(vars["id"])
+	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	_, err := paperService.Client().DeleteQuestion(ctx, &proto.QuestionRequest{
-		QuestionId: int64(questionID),
+	_, err = paperService.Client().DeleteQuestion(ctx, &proto.QuestionRequest{
+		QuestionId: questionID,
 	})
 
 	if err != nil {
@@ -279,8 +289,11 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReorderQuestions(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	categoryID, _ := strconv.Atoi(vars["category_id"])
+	categoryID, err := getInt64FromVars(mux.Vars(r), "category_id")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	var reorderDto dtos.ReorderQuestionsDto
@@ -302,8 +315,8 @@ func ReorderQuestions(w http.ResponseWriter, r *http.Request) {
 		questionIDs[i] = id
 	}
 
-	_, err := paperService.Client().ReorderQuestions(ctx, &proto.ReorderQuestionsRequest{
-		CategoryId:  int64(categoryID),
+	_, err = paperService.Client().ReorderQuestions(ctx, &proto.ReorderQuestionsRequest{
+		CategoryId:  categoryID,
 		QuestionIds: questionIDs,
 	})
 

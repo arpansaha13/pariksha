@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 
@@ -15,15 +14,18 @@ import (
 )
 
 func GetPaperCategories(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	paperID, _ := strconv.Atoi(vars["paper_id"])
+	paperID, err := getInt64FromVars(mux.Vars(r), "paperId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
 	response, err := paperService.Client().GetPaperCategories(ctx, &proto.PaperRequest{
-		PaperId: int64(paperID),
+		PaperId: paperID,
 	})
 
 	if err != nil {
@@ -45,15 +47,18 @@ func GetPaperCategories(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateCategory(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	paperID, _ := strconv.Atoi(vars["paper_id"])
+	paperID, err := getInt64FromVars(mux.Vars(r), "paperId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
 	response, err := paperService.Client().CreateCategory(ctx, &proto.CreateCategoryRequest{
-		PaperId: int64(paperID),
+		PaperId: paperID,
 	})
 
 	if err != nil {
@@ -70,8 +75,11 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateCategory(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	categoryID, _ := strconv.Atoi(vars["id"])
+	categoryID, err := getInt64FromVars(mux.Vars(r), "categoryId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	var categoryDto dtos.UpdateCategoryDto
@@ -88,8 +96,8 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	_, err := paperService.Client().UpdateCategory(ctx, &proto.UpdateCategoryRequest{
-		CategoryId: int64(categoryID),
+	_, err = paperService.Client().UpdateCategory(ctx, &proto.UpdateCategoryRequest{
+		CategoryId: categoryID,
 		Name:       categoryDto.Name,
 	})
 
@@ -102,15 +110,18 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteCategory(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	categoryID, _ := strconv.Atoi(vars["id"])
+	categoryID, err := getInt64FromVars(mux.Vars(r), "categoryId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	_, err := paperService.Client().DeleteCategory(ctx, &proto.CategoryRequest{
-		CategoryId: int64(categoryID),
+	_, err = paperService.Client().DeleteCategory(ctx, &proto.CategoryRequest{
+		CategoryId: categoryID,
 	})
 
 	if err != nil {
@@ -122,8 +133,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReorderCategories(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	paperID, _ := strconv.Atoi(vars["paper_id"])
+	paperID, err := getInt64FromVars(mux.Vars(r), "paperId")
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	var reorderDto dtos.ReorderCategoryDto
@@ -145,8 +155,8 @@ func ReorderCategories(w http.ResponseWriter, r *http.Request) {
 		categoryIDs[i] = id
 	}
 
-	_, err := paperService.Client().ReorderCategories(ctx, &proto.ReorderCategoriesRequest{
-		PaperId:     int64(paperID),
+	_, err = paperService.Client().ReorderCategories(ctx, &proto.ReorderCategoriesRequest{
+		PaperId:     paperID,
 		CategoryIds: categoryIDs,
 	})
 

@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 
@@ -58,12 +57,16 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := mux.Vars(r)
-	paperID, _ := strconv.Atoi(vars["id"])
+	paperID, err := getInt64FromVars(vars, "paperId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	paperService := services.GetPaperService()
 
 	updatePaperRequest := &proto.UpdatePaperRequest{
-		PaperId: int64(paperID),
+		PaperId: paperID,
 	}
 
 	if paperDto.Title != "" {
@@ -75,7 +78,7 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := paperService.CreateMetadata(userID)
-	_, err := paperService.Client().UpdatePaper(ctx, updatePaperRequest)
+	_, err = paperService.Client().UpdatePaper(ctx, updatePaperRequest)
 	if err != nil {
 		handleGRPCError(w, err)
 		return
@@ -86,13 +89,17 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 
 func GetPaper(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	paperID, _ := strconv.Atoi(vars["id"])
+	paperID, err := getInt64FromVars(vars, "paperId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	paperService := services.GetPaperService()
 
 	ctx := paperService.CreateMetadata(userID)
 	response, err := paperService.Client().GetPaper(ctx, &proto.PaperRequest{
-		PaperId: int64(paperID),
+		PaperId: paperID,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -105,13 +112,17 @@ func GetPaper(w http.ResponseWriter, r *http.Request) {
 
 func CheckPaperAccess(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	paperID, _ := strconv.Atoi(vars["id"])
+	paperID, err := getInt64FromVars(vars, "paperId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	paperService := services.GetPaperService()
 
 	ctx := paperService.CreateMetadata(userID)
-	_, err := paperService.Client().CheckPaperAccess(ctx, &proto.PaperRequest{
-		PaperId: int64(paperID),
+	_, err = paperService.Client().CheckPaperAccess(ctx, &proto.PaperRequest{
+		PaperId: paperID,
 	})
 
 	if err != nil {

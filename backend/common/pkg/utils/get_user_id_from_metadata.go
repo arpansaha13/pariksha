@@ -20,10 +20,10 @@ func GetUserIDFromMetadata(ctx context.Context) (int64, error) {
 		return 0, status.Error(codes.Unauthenticated, "missing user id")
 	}
 
-	userID, err := strconv.Atoi(userIDs[0])
+	userID, err := strconv.ParseInt(userIDs[0], 10, 64)
 	if err != nil || userID == 0 {
 		return 0, status.Error(codes.InvalidArgument, "invalid user id")
 	}
 
-	return int64(userID), nil
+	return userID, nil
 }

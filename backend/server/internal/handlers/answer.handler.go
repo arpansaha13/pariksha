@@ -18,9 +18,9 @@ import (
 )
 
 func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
-	participantID, err := strconv.Atoi(mux.Vars(r)["participantId"])
+	participantID, err := getInt64FromVars(mux.Vars(r), "participantId")
 	if err != nil {
-		http.Error(w, "Invalid participant ID", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -30,7 +30,7 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 	ctx := examService.CreateMetadata(userID)
 
 	resp, err := examService.Client().GetParticipantAnswers(ctx, &proto.ParticipantRequest{
-		ParticipantId: int64(participantID),
+		ParticipantId: participantID,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -54,9 +54,9 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAnswer(w http.ResponseWriter, r *http.Request) {
-	answerID, err := strconv.Atoi(mux.Vars(r)["answerId"])
+	answerID, err := getInt64FromVars(mux.Vars(r), "answerId")
 	if err != nil {
-		http.Error(w, "Invalid answer ID", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -65,7 +65,7 @@ func GetAnswer(w http.ResponseWriter, r *http.Request) {
 	ctx := examService.CreateMetadata(userID)
 
 	resp, err := examService.Client().GetAnswer(ctx, &proto.GetAnswerRequest{
-		AnswerId: int64(answerID),
+		AnswerId: answerID,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -98,13 +98,17 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	examID, _ := strconv.Atoi(mux.Vars(r)["examId"])
+	examID, err := getInt64FromVars(mux.Vars(r), "examId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	resp, err := examService.Client().UpsertAnswer(ctx, &proto.UpsertAnswersRequest{
-		ExamId: int64(examID),
+		ExamId: examID,
 		Answer: &proto.Answer{
 			Answer:      answerDTO.Answer,
 			SubmittedAt: timestamppb.New(answerDTO.SubmittedAt),
@@ -191,7 +195,7 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 }
 
 func MarkAsEvaluated(w http.ResponseWriter, r *http.Request) {
-	participantID, err := strconv.Atoi(mux.Vars(r)["participantId"])
+	participantID, err := getInt64FromVars(mux.Vars(r), "participantId")
 	if err != nil {
 		http.Error(w, "Invalid participant ID", http.StatusBadRequest)
 		return
@@ -202,7 +206,7 @@ func MarkAsEvaluated(w http.ResponseWriter, r *http.Request) {
 	ctx := examService.CreateMetadata(userID)
 
 	resp, err := examService.Client().MarkAsEvaluated(ctx, &proto.ParticipantRequest{
-		ParticipantId: int64(participantID),
+		ParticipantId: participantID,
 	})
 	if err != nil {
 		handleGRPCError(w, err)

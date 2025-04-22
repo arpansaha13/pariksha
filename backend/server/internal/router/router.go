@@ -32,24 +32,24 @@ func SetupRouter() *mux.Router {
 	// Paper Routes
 	protectedRouter.HandleFunc("/papers", handlers.GetUserPapers).Methods("GET", "OPTIONS")
 	protectedRouter.HandleFunc("/papers", handlers.CreatePaper).Methods("POST", "OPTIONS")
-	protectedRouter.HandleFunc("/papers/{id}", handlers.GetPaper).Methods("GET", "OPTIONS")
-	protectedRouter.HandleFunc("/papers/{id}", handlers.UpdatePaper).Methods("PATCH", "OPTIONS")
-	protectedRouter.HandleFunc("/papers/{id}/check", handlers.CheckPaperAccess).Methods("GET", "OPTIONS")
-	protectedRouter.HandleFunc("/papers/{id}/questions", handlers.GetPaperQuestions).Methods("GET", "OPTIONS")
-	protectedRouter.HandleFunc("/papers/{id}/questions", handlers.CreateQuestion).Methods("POST", "OPTIONS")
+	protectedRouter.HandleFunc("/papers/{paperId}", handlers.GetPaper).Methods("GET", "OPTIONS")
+	protectedRouter.HandleFunc("/papers/{paperId}", handlers.UpdatePaper).Methods("PATCH", "OPTIONS")
+	protectedRouter.HandleFunc("/papers/{paperId}/check", handlers.CheckPaperAccess).Methods("GET", "OPTIONS")
+	protectedRouter.HandleFunc("/papers/{paperId}/questions", handlers.GetPaperQuestions).Methods("GET", "OPTIONS")
+	protectedRouter.HandleFunc("/papers/{paperId}/questions", handlers.CreateQuestion).Methods("POST", "OPTIONS")
 
 	// Question Routes
-	protectedRouter.HandleFunc("/questions/{id}", handlers.GetQuestion).Methods("GET", "OPTIONS")
-	protectedRouter.HandleFunc("/questions/{id}", handlers.UpdateQuestion).Methods("PATCH", "OPTIONS")
-	protectedRouter.HandleFunc("/questions/{id}", handlers.DeleteQuestion).Methods("DELETE", "OPTIONS")
+	protectedRouter.HandleFunc("/questions/{questionId}", handlers.GetQuestion).Methods("GET", "OPTIONS")
+	protectedRouter.HandleFunc("/questions/{questionId}", handlers.UpdateQuestion).Methods("PATCH", "OPTIONS")
+	protectedRouter.HandleFunc("/questions/{questionId}", handlers.DeleteQuestion).Methods("DELETE", "OPTIONS")
 	protectedRouter.HandleFunc("/categories/{category_id}/questions/reorder", handlers.ReorderQuestions).Methods("PATCH", "OPTIONS")
 
 	// Question Category Routes
-	protectedRouter.HandleFunc("/papers/{paper_id}/categories", handlers.GetPaperCategories).Methods("GET", "OPTIONS")
-	protectedRouter.HandleFunc("/papers/{paper_id}/categories", handlers.CreateCategory).Methods("POST", "OPTIONS")
-	protectedRouter.HandleFunc("/categories/{id}", handlers.UpdateCategory).Methods("PATCH", "OPTIONS")
-	protectedRouter.HandleFunc("/categories/{id}", handlers.DeleteCategory).Methods("DELETE", "OPTIONS")
-	protectedRouter.HandleFunc("/papers/{paper_id}/categories/reorder", handlers.ReorderCategories).Methods("PATCH", "OPTIONS")
+	protectedRouter.HandleFunc("/papers/{paperId}/categories", handlers.GetPaperCategories).Methods("GET", "OPTIONS")
+	protectedRouter.HandleFunc("/papers/{paperId}/categories", handlers.CreateCategory).Methods("POST", "OPTIONS")
+	protectedRouter.HandleFunc("/categories/{categoryId}", handlers.UpdateCategory).Methods("PATCH", "OPTIONS")
+	protectedRouter.HandleFunc("/categories/{categoryId}", handlers.DeleteCategory).Methods("DELETE", "OPTIONS")
+	protectedRouter.HandleFunc("/papers/{paperId}/categories/reorder", handlers.ReorderCategories).Methods("PATCH", "OPTIONS")
 
 	// Exam Routes
 	protectedRouter.HandleFunc("/exams", handlers.GetUserExams).Methods("GET", "OPTIONS")
@@ -77,8 +77,8 @@ func SetupRouter() *mux.Router {
 	protectedRouter.HandleFunc("/answers/{answerId}", handlers.GetAnswer).Methods("GET", "OPTIONS")
 
 	// User Routes
-	protectedRouter.HandleFunc("/user/{id}", handlers.GetUser).Methods("GET", "OPTIONS")
-	protectedRouter.HandleFunc("/user/{id}", handlers.UpdateUser).Methods("PATCH", "OPTIONS")
+	protectedRouter.HandleFunc("/user/{userId}", handlers.GetUser).Methods("GET", "OPTIONS")
+	protectedRouter.HandleFunc("/user/{userId}", handlers.UpdateUser).Methods("PATCH", "OPTIONS")
 
 	return r
 }

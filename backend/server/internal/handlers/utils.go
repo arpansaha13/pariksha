@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -28,4 +30,20 @@ func handleGRPCError(w http.ResponseWriter, err error) {
 	default:
 		http.Error(w, st.Message(), http.StatusInternalServerError)
 	}
+}
+
+// GetInt64FromVars parses an int64 value from a map using the given key.
+// Returns error if the value is missing or cannot be parsed.
+func getInt64FromVars(vars map[string]string, key string) (int64, error) {
+	val, ok := vars[key]
+	if !ok {
+		return 0, fmt.Errorf("missing required parameter: %s", key)
+	}
+
+	id, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid %s: must be a number", key)
+	}
+
+	return id, nil
 }

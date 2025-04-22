@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc/codes"
@@ -16,15 +15,14 @@ import (
 )
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	userID, err := strconv.Atoi(vars["id"])
+	userID, err := getInt64FromVars(mux.Vars(r), "userId")
 	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	resp, err := services.GetAuthService().Client().GetUser(r.Context(), &proto.GetUserRequest{
-		UserId: int64(userID),
+		UserId: userID,
 	})
 
 	if err != nil {
@@ -58,15 +56,14 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(r)
-	userID, err := strconv.Atoi(vars["id"])
+	userID, err := getInt64FromVars(mux.Vars(r), "userId")
 	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	req := &proto.UpdateUserRequest{
-		UserId: int64(userID),
+		UserId: userID,
 	}
 
 	if userDto.Username != "" {
