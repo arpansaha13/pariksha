@@ -37,11 +37,14 @@ services:
       - 6040:5432 # needed for pgAdmin
 
   examQueue:
-    image: rabbitmq:3-management-alpine
+    image: redis:7-alpine
     container_name: exam_queue
+    command: redis-server --appendonly yes
     healthcheck:
-      test: rabbitmq-diagnostics -q status
-      interval: 15s
-      timeout: 70s
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
       retries: 3
     restart: always
+    expose:
+      - "6379"

@@ -1,10 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
-	rabbit "github.com/rabbitmq/amqp091-go"
+	"github.com/hibiken/asynq"
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/utils"
@@ -13,46 +14,21 @@ import (
 )
 
 func main() {
-	var rabbitAddr = env.EXAM_QUEUE_HOST + ":" + env.EXAM_QUEUE_PORT
-
-	conn, err := rabbit.Dial(fmt.Sprintf("amqp://guest:guest@%s/", rabbitAddr))
-	utils.FailOnError(err, "Failed to connect to RabbitMQ")
-	defer conn.Close()
-
-	ch, err := conn.Channel()
-	utils.FailOnError(err, "Failed to open a channel")
-	defer ch.Close()
-
-	q, err := ch.QueueDeclare(
-		constants.RABBIT_EXAM_QUEUE_NAME,
-		false,
-		false,
-		false,
-		false,
-		nil,
+	redisAddr := fmt.Sprintf("%s:%s", env.EXAM_QUEUE_HOST, env.EXAM_QUEUE_PORT)
+	srv := asynq.NewServer(
+		asynq.RedisClientOpt{Addr: redisAddr},
+		asynq.Config{Concurrency: 10},
 	)
-	utils.FailOnError(err, "Failed to declare a queue")
 
-	msgs, err := ch.Consume(
-		q.Name,
-		"",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-	utils.FailOnError(err, "Failed to register a consumer")
+	mux := asynq.NewServeMux()
+	mux.HandleFunc(constants.EXAM_QUEUE_TASK_START_EXAM, func(ctx context.Context, task *asynq.Task) error {
+		handlers.PrepareExamQuestions(task.Payload())
+		return nil
+	})
 
-	var forever chan struct{}
+	if err := srv.Run(mux); err != nil {
+		utils.FailOnError(err, "Failed to run asynq server")
+	}
 
-	go func() {
-		for d := range msgs {
-			handlers.PrepareExamQuestions(d.Body)
-		}
-	}()
-
-	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
-
-	<-forever
+	log.Printf(" [*] Running exam questions worker. To exit press CTRL+C")
 }

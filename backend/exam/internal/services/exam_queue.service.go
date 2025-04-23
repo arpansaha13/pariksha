@@ -1,13 +1,11 @@
 package services
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
-	"time"
 
-	rabbit "github.com/rabbitmq/amqp091-go"
+	"github.com/hibiken/asynq"
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/types"
@@ -15,37 +13,20 @@ import (
 	"pariksha/exam/internal/config/env"
 )
 
-var rabbitConn *rabbit.Connection
-var rabbitCh *rabbit.Channel
-var examQueue rabbit.Queue
+var asynqClient *asynq.Client
 
-// InitRabbitMQ initializes RabbitMQ connection with given host and port
-func InitRabbitMQ(host, port string) error {
-	var err error
-	var rabbitAddr = host + ":" + port
+// InitExamQueue initializes Redis connection for Asynq with given host and port
+func InitExamQueue(host, port string) error {
+	redisAddr := fmt.Sprintf("%s:%s", host, port)
+	asynqClient = asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
 
-	rabbitConn, err = rabbit.Dial(fmt.Sprintf("amqp://guest:guest@%s/", rabbitAddr))
-	if err != nil {
-		return fmt.Errorf("failed to connect to RabbitMQ: %v", err)
+	// Test connection
+	if err := asynqClient.Close(); err != nil {
+		return fmt.Errorf("failed to connect to Redis: %v", err)
 	}
 
-	rabbitCh, err = rabbitConn.Channel()
-	if err != nil {
-		return fmt.Errorf("failed to open a channel: %v", err)
-	}
-
-	examQueue, err = rabbitCh.QueueDeclare(
-		constants.RABBIT_EXAM_QUEUE_NAME,
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to declare a queue: %v", err)
-	}
-
+	// Recreate client for actual use
+	asynqClient = asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
 	return nil
 }
 
@@ -56,42 +37,30 @@ func init() {
 	}
 
 	// Initialize with environment variables for non-test environments
-	err := InitRabbitMQ(env.EXAM_QUEUE_HOST, env.EXAM_QUEUE_PORT)
-	utils.FailOnError(err, "Failed to initialize RabbitMQ")
+	err := InitExamQueue(env.EXAM_QUEUE_HOST, env.EXAM_QUEUE_PORT)
+	utils.FailOnError(err, "Failed to initialize Exam Queue")
 }
 
 func CloseExamQueue() {
-	if rabbitConn != nil {
-		rabbitConn.Close()
-	}
-	if rabbitCh != nil {
-		rabbitCh.Close()
+	if asynqClient != nil {
+		asynqClient.Close()
 	}
 }
 
 func PushToExamQueue(payload types.ExamQueuePayload) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	byteArray, err := json.Marshal(payload)
-
+	taskBytes, err := json.Marshal(payload)
 	if err != nil {
-		log.Default().Println("Failed to marshal message: ", err)
+		log.Default().Printf("Failed to marshal payload: %v", err)
+		return
 	}
 
-	err = rabbitCh.PublishWithContext(
-		ctx,
-		"",
-		examQueue.Name,
-		false,
-		false,
-		rabbit.Publishing{
-			ContentType: "text/plain",
-			Body:        byteArray,
-		},
-	)
+	task := asynq.NewTask(constants.EXAM_QUEUE_TASK_START_EXAM, taskBytes)
 
+	info, err := asynqClient.Enqueue(task)
 	if err != nil {
-		log.Default().Println("Failed to publish a message: ", err)
+		log.Default().Printf("Failed to enqueue task: %v", err)
+		return
 	}
+
+	log.Default().Printf("Enqueued task: id=%s queue=%s", info.ID, info.Queue)
 }

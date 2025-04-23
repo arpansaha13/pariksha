@@ -62,24 +62,24 @@ func setupContainer() func() {
 		log.Fatalf("Failed to setup container: %v", err)
 	}
 
-	// Start RabbitMQ container
-	rabbitContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+	// Start Redis container
+	redisContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "rabbitmq:3-management-alpine",
-			ExposedPorts: []string{"5672/tcp"},
-			WaitingFor:   wait.ForLog("Server startup complete"),
+			Image:        "redis:7-alpine",
+			ExposedPorts: []string{"6379/tcp"},
+			WaitingFor:   wait.ForLog("Ready to accept connections"),
 		},
 		Started: true,
 	})
 	if err != nil {
-		log.Fatalf("Failed to setup RabbitMQ container: %v", err)
+		log.Fatalf("Failed to setup Redis container: %v", err)
 	}
 
 	// Get container hosts and mapped ports
 	pgHost, _ := pgContainer.Host(ctx)
 	pgPort, _ := pgContainer.MappedPort(ctx, "5432")
-	rabbitHost, _ := rabbitContainer.Host(ctx)
-	rabbitPort, _ := rabbitContainer.MappedPort(ctx, "5672")
+	redisHost, _ := redisContainer.Host(ctx)
+	redisPort, _ := redisContainer.MappedPort(ctx, "6379")
 
 	// Initialize DB connection
 	err = db.InitDB(
@@ -94,16 +94,16 @@ func setupContainer() func() {
 		log.Fatalf("Failed to initialize DB: %v", err)
 	}
 
-	// Initialize RabbitMQ connection
-	err = services.InitRabbitMQ(rabbitHost, rabbitPort.Port())
+	// Initialize Redis connection
+	err = services.InitExamQueue(redisHost, redisPort.Port())
 	if err != nil {
-		log.Fatalf("Failed to initialize RabbitMQ: %v", err)
+		log.Fatalf("Failed to initialize Redis: %v", err)
 	}
 
 	return func() {
 		services.CloseExamQueue()
 		pgContainer.Terminate(ctx)
-		rabbitContainer.Terminate(ctx)
+		redisContainer.Terminate(ctx)
 	}
 }
 

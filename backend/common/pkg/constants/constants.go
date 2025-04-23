@@ -10,8 +10,8 @@ const (
 )
 
 const (
-	RABBIT_MAIL_QUEUE_NAME string = "mail_queue"
-	RABBIT_EXAM_QUEUE_NAME string = "exam_queue"
+	RABBIT_MAIL_QUEUE_NAME     string = "mail_queue"
+	EXAM_QUEUE_TASK_START_EXAM string = "exam_queue:start_exam"
 )
 
 const (
