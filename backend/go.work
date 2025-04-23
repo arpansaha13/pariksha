@@ -14,4 +14,4 @@ use ./server
 
 use ./cron/sessions
 
-use ./workers/exam_questions
+use ./workers/exam

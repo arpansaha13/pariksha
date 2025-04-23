@@ -1,4 +1,4 @@
-module pariksha/workers/exam_questions
+module pariksha/workers/exam
 
 go 1.23.4
 

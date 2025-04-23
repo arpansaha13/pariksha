@@ -1,21 +1,21 @@
 services:
-  examQuestionsWorker:
+  examWorker:
     build:
       context: .
-      dockerfile: ./workers/exam_questions/Dockerfile
-    image: pariksha_exam_questions_worker
-    container_name: exam_questions_worker
+      dockerfile: ./workers/exam/Dockerfile
+    image: pariksha_exam_worker
+    container_name: exam_worker
     env_file:
-      - ./workers/exam_questions/.env
+      - ./workers/exam/.env
     develop:
       watch:
         - action: rebuild
-          path: ./workers/exam_questions/internal
+          path: ./workers/exam/internal
         - action: rebuild
-          path: ./workers/exam_questions/cmd
+          path: ./workers/exam/cmd
         - action: rebuild
           path: ./backend/common
         - action: rebuild
-          path: ./workers/exam_questions/go.mod
+          path: ./workers/exam/go.mod
         - action: rebuild
-          path: ./workers/exam_questions/go.sum
+          path: ./workers/exam/go.sum

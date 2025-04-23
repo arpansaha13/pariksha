@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 
@@ -9,8 +8,8 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/utils"
-	"pariksha/workers/exam_questions/internal/config/env"
-	"pariksha/workers/exam_questions/internal/handlers"
+	"pariksha/workers/exam/internal/config/env"
+	"pariksha/workers/exam/internal/handlers"
 )
 
 func main() {
@@ -21,10 +20,7 @@ func main() {
 	)
 
 	mux := asynq.NewServeMux()
-	mux.HandleFunc(constants.EXAM_QUEUE_TASK_START_EXAM, func(ctx context.Context, task *asynq.Task) error {
-		handlers.PrepareExamQuestions(task.Payload())
-		return nil
-	})
+	mux.HandleFunc(constants.EXAM_QUEUE_TASK_START_EXAM, handlers.PrepareExamQuestions)
 
 	if err := srv.Run(mux); err != nil {
 		utils.FailOnError(err, "Failed to run asynq server")

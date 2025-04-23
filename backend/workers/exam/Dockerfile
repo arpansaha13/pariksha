@@ -11,7 +11,7 @@ RUN go mod download
 
 COPY common/ .
 
-WORKDIR /app/workers/exam_questions
+WORKDIR /app/workers/exam
 
 # https://medium.com/@marcin.niemira/optimise-docker-build-for-go-c03d6eb8b4b
 
@@ -19,13 +19,13 @@ ENV CGO_ENABLED=1
 ENV GOCACHE=/go-cache
 ENV GOMODCACHE=/gomod-cache
 
-COPY workers/exam_questions/go.mod workers/exam_questions/go.sum ./
-COPY workers/exam_questions/cmd/ ./cmd/
-COPY workers/exam_questions/internal/ ./internal/
+COPY workers/exam/go.mod workers/exam/go.sum ./
+COPY workers/exam/cmd/ ./cmd/
+COPY workers/exam/internal/ ./internal/
 
 RUN --mount=type=cache,target=/gomod-cache \
 	--mount=type=cache,target=/go-cache \
-	go build -o ./bin/pariksha_exam_questions_worker \
-	./cmd/exam_questions/main.go
+	go build -o ./bin/pariksha_exam_worker \
+	./cmd/exam/main.go
 
-CMD ["/app/workers/exam_questions/bin/pariksha_exam_questions_worker"]
+CMD ["/app/workers/exam/bin/pariksha_exam_worker"]

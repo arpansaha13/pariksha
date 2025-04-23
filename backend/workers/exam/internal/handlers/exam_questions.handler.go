@@ -1,26 +1,29 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 
+	"github.com/hibiken/asynq"
+
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/types"
-	"pariksha/workers/exam_questions/internal/config/db"
+	"pariksha/workers/exam/internal/config/db"
 )
 
-func PrepareExamQuestions(body []byte) {
+func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 	var payload types.ExamQueuePayload
-	if err := json.Unmarshal(body, &payload); err != nil {
+	if err := json.Unmarshal(task.Payload(), &payload); err != nil {
 		log.Default().Printf("Failed to unmarshal payload: %v", err)
-		return
+		return err
 	}
 
 	// Start a transaction in papers DB
 	papersTx := db.Papers.Begin()
 	if papersTx.Error != nil {
 		log.Default().Printf("Failed to start papers transaction: %v", papersTx.Error)
-		return
+		return papersTx.Error
 	}
 
 	// Get all questions for the paper
@@ -28,7 +31,7 @@ func PrepareExamQuestions(body []byte) {
 	if err := papersTx.Where("paper_id = ?", payload.PaperID).Find(&questions).Error; err != nil {
 		papersTx.Rollback()
 		log.Default().Printf("Failed to fetch questions: %v", err)
-		return
+		return err
 	}
 
 	// Get all categories for the paper
@@ -36,21 +39,21 @@ func PrepareExamQuestions(body []byte) {
 	if err := papersTx.Where("paper_id = ?", payload.PaperID).Find(&categories).Error; err != nil {
 		papersTx.Rollback()
 		log.Default().Printf("Failed to fetch categories: %v", err)
-		return
+		return err
 	}
 
 	// Lock all questions
 	if err := papersTx.Model(&models.Question{}).Where("paper_id = ?", payload.PaperID).Update("locked", true).Error; err != nil {
 		papersTx.Rollback()
 		log.Default().Printf("Failed to lock questions: %v", err)
-		return
+		return err
 	}
 
 	// Lock all categories
 	if err := papersTx.Model(&models.QuestionCategory{}).Where("paper_id = ?", payload.PaperID).Update("locked", true).Error; err != nil {
 		papersTx.Rollback()
 		log.Default().Printf("Failed to lock categories: %v", err)
-		return
+		return err
 	}
 
 	// Start a transaction in exams DB
@@ -58,7 +61,7 @@ func PrepareExamQuestions(body []byte) {
 	if examsTx.Error != nil {
 		papersTx.Rollback()
 		log.Default().Printf("Failed to start exams transaction: %v", examsTx.Error)
-		return
+		return examsTx.Error
 	}
 
 	// Create exam questions
@@ -71,7 +74,7 @@ func PrepareExamQuestions(body []byte) {
 			examsTx.Rollback()
 			papersTx.Rollback()
 			log.Default().Printf("Failed to create exam question: %v", err)
-			return
+			return err
 		}
 	}
 
@@ -85,7 +88,7 @@ func PrepareExamQuestions(body []byte) {
 			examsTx.Rollback()
 			papersTx.Rollback()
 			log.Default().Printf("Failed to create exam category: %v", err)
-			return
+			return err
 		}
 	}
 
@@ -94,13 +97,14 @@ func PrepareExamQuestions(body []byte) {
 		examsTx.Rollback()
 		papersTx.Rollback()
 		log.Default().Printf("Failed to commit exams transaction: %v", err)
-		return
+		return err
 	}
 
 	if err := papersTx.Commit().Error; err != nil {
 		log.Default().Printf("Failed to commit papers transaction: %v", err)
-		return
+		return err
 	}
 
 	log.Default().Printf("Successfully prepared exam questions for exam %d from paper %d", payload.ExamID, payload.PaperID)
+	return nil
 }

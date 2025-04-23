@@ -133,7 +133,7 @@ services:
     networks:
       - exams-network
 
-  examQuestionsWorker:
+  examWorker:
     depends_on:
       examQueue:
         condition: service_healthy

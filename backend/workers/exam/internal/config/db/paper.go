@@ -9,7 +9,7 @@ import (
 
 	"pariksha/common/pkg/config"
 	"pariksha/common/pkg/constants"
-	"pariksha/workers/exam_questions/internal/config/env"
+	"pariksha/workers/exam/internal/config/env"
 )
 
 var Papers *gorm.DB
