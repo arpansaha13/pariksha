@@ -97,7 +97,7 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 		return nil, status.Error(codes.Internal, "failed to create exam")
 	}
 
-	services.PushToExamQueue(types.ExamQueuePayload{
+	services.EnqueuePrepareQuestons(types.ExamQueuePayload{
 		ExamID:  exam.ID,
 		PaperID: exam.PaperID,
 	})
@@ -183,6 +183,7 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 		return nil, err
 	}
 
+	var participant *models.ExamParticipant
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
 		exam, ok := interceptors.GetExamFromContext(ctx)
 		if !ok {
@@ -199,7 +200,7 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 			return status.Error(codes.FailedPrecondition, "exam has ended")
 		}
 
-		participant, ok := interceptors.GetParticipantFromContext(ctx)
+		participant, ok = interceptors.GetParticipantFromContext(ctx)
 		if !ok {
 			if exam.Type != constants.EXAM_ACCESS_TYPE_LINK {
 				return status.Error(codes.PermissionDenied, "participant is not invited")
@@ -246,6 +247,14 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 		if err := tx.Save(&exam).Error; err != nil {
 			return status.Error(codes.Internal, "failed to update exam")
 		}
+
+		// After successfully creating/updating participant
+		// Add delayed task for auto-ending exam
+		autoEndPayload := types.AutoEndExamPayload{
+			ExamID:        req.ExamId,
+			ParticipantID: participant.ID,
+		}
+		services.EnqueueAutoEndExam(autoEndPayload, participant.ScheduledEndTime.Time)
 
 		return nil
 	})

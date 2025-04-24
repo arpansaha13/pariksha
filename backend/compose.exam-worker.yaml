@@ -14,7 +14,7 @@ services:
         - action: rebuild
           path: ./workers/exam/cmd
         - action: rebuild
-          path: ./backend/common
+          path: ./common
         - action: rebuild
           path: ./workers/exam/go.mod
         - action: rebuild

@@ -20,7 +20,8 @@ func main() {
 	)
 
 	mux := asynq.NewServeMux()
-	mux.HandleFunc(constants.EXAM_QUEUE_TASK_START_EXAM, handlers.PrepareExamQuestions)
+	mux.HandleFunc(constants.EXAM_QUEUE_TASK_PREPARE_QUESTIONS, handlers.PrepareExamQuestions)
+	mux.HandleFunc(constants.EXAM_QUEUE_TASK_AUTO_END, handlers.AutoEndExam)
 
 	if err := srv.Run(mux); err != nil {
 		utils.FailOnError(err, "Failed to run asynq server")

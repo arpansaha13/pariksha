@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/hibiken/asynq"
 
@@ -47,14 +48,14 @@ func CloseExamQueue() {
 	}
 }
 
-func PushToExamQueue(payload types.ExamQueuePayload) {
+func EnqueuePrepareQuestons(payload types.ExamQueuePayload) {
 	taskBytes, err := json.Marshal(payload)
 	if err != nil {
 		log.Default().Printf("Failed to marshal payload: %v", err)
 		return
 	}
 
-	task := asynq.NewTask(constants.EXAM_QUEUE_TASK_START_EXAM, taskBytes)
+	task := asynq.NewTask(constants.EXAM_QUEUE_TASK_PREPARE_QUESTIONS, taskBytes)
 
 	info, err := asynqClient.Enqueue(task)
 	if err != nil {
@@ -63,4 +64,23 @@ func PushToExamQueue(payload types.ExamQueuePayload) {
 	}
 
 	log.Default().Printf("Enqueued task: id=%s queue=%s", info.ID, info.Queue)
+}
+
+func EnqueueAutoEndExam(payload types.AutoEndExamPayload, scheduledEndTime time.Time) {
+	taskBytes, err := json.Marshal(payload)
+	if err != nil {
+		log.Default().Printf("Failed to marshal auto-end payload: %v", err)
+		return
+	}
+
+	task := asynq.NewTask(constants.EXAM_QUEUE_TASK_AUTO_END, taskBytes)
+
+	// Schedule the task at the exact scheduledEndTime
+	info, err := asynqClient.Enqueue(task, asynq.ProcessAt(scheduledEndTime))
+	if err != nil {
+		log.Default().Printf("Failed to enqueue auto-end task: %v", err)
+		return
+	}
+
+	log.Default().Printf("Enqueued auto-end task: id=%s queue=%s at=%v", info.ID, info.Queue, scheduledEndTime)
 }
