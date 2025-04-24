@@ -23,7 +23,10 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(interceptors.ExamAccessInterceptor()),
+		grpc.ChainUnaryInterceptor(
+			interceptors.ExamAccessInterceptor(),
+			interceptors.EndExamInterceptor(),
+		),
 	)
 	proto.RegisterExamServiceServer(grpcServer, &handlers.ExamServer{})
 
