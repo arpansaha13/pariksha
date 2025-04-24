@@ -14,4 +14,4 @@ require (
 	google.golang.org/protobuf v1.36.6 // indirect
 )
 
-replace pariksha/common => ../common
+replace pariksha/common => ../../common

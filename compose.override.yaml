@@ -35,7 +35,7 @@ services:
         condition: service_healthy
       sessionsDb:
         condition: service_healthy
-      rabbit:
+      mailQueue:
         condition: service_healthy
     networks:
       - backend-network
@@ -59,9 +59,9 @@ services:
       - backend-network
       - exams-network
 
-  mail:
+  mailWorker:
     depends_on:
-      rabbit:
+      mailQueue:
         condition: service_healthy
     networks:
       - mail-network
@@ -73,17 +73,17 @@ services:
     networks:
       - auth-network
 
-  rabbit:
+  mailQueue:
     image: rabbitmq:3-management-alpine
-    container_name: rabbit
+    container_name: mail_queue
     healthcheck:
       test: rabbitmq-diagnostics -q status
       interval: 15s
       timeout: 70s
       retries: 3
     volumes:
-     - ./docker/data/rabbit/:/var/lib/rabbitmq/mnesia/
-     - ./docker/conf/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+     - ./docker/data/mailQueue/:/var/lib/rabbitmq/mnesia/
+     - ./docker/conf/mailQueue/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
     restart: always
     networks:
       - auth-network

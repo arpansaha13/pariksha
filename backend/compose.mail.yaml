@@ -1,21 +1,21 @@
 services:
-  mail:
+  mailWorker:
     build:
       context: .
-      dockerfile: ./mail/Dockerfile
+      dockerfile: ./workers/mail/Dockerfile
     image: pariksha_mail_worker
     container_name: mail_worker
     env_file:
-      - ./mail/.env
+      - ./workers/mail/.env
     develop:
       watch:
         - action: rebuild
-          path: ./mail/internal
+          path: ./workers/mail/internal
         - action: rebuild
-          path: ./mail/cmd
+          path: ./workers/mail/cmd
         - action: rebuild
-          path: ./backend/common
+          path: ./common
         - action: rebuild
-          path: ./mail/go.mod
+          path: ./workers/mail/go.mod
         - action: rebuild
-          path: ./mail/go.sum
+          path: ./workers/mail/go.sum
