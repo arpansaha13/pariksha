@@ -1,3 +1,4 @@
+import { isNullOrUndefined } from '@arpansaha13/utils'
 import { ExamPermission } from '~/types/exam'
 
 export default defineNuxtRouteMiddleware(async (to, _from) => {
@@ -6,7 +7,11 @@ export default defineNuxtRouteMiddleware(async (to, _from) => {
   try {
     const res = await checkExamAccess(examId)
     const nuxtApp = useNuxtApp()
-    nuxtApp.provide('examAccess', res)
+    if (isNullOrUndefined(nuxtApp.$examAccess)) {
+      nuxtApp.provide('examAccess', res)
+    } else {
+      nuxtApp.$examAccess = res
+    }
 
     if (res.access_type === ExamPermission.PARTICIPANT) {
       setPageLayout('blank')

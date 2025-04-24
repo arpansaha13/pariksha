@@ -109,7 +109,7 @@
         <UButton
           color="primary"
           variant="solid"
-          loading-auto
+          :loading="isLoading"
           @click="submitButtonRef?.click()"
         >
           Create exam
@@ -180,14 +180,19 @@ const df = new DateFormatter('en-US', {
   dateStyle: 'medium',
 })
 
+const isLoading = ref(false)
+
 onBeforeUnmount(() => {
-  newExamStore.title = formState.title
-  newExamStore.type = formState.type
-  newExamStore.paper_id = formState.paper_id ?? null
-  newExamStore.startDate = startDate.value
-  newExamStore.endDate = endDate.value
-  newExamStore.duration_hours = formState.duration_hours
-  newExamStore.duration_minutes = formState.duration_minutes
+  // If not submitted, store the form values
+  if (!isLoading.value) {
+    newExamStore.title = formState.title
+    newExamStore.type = formState.type
+    newExamStore.paper_id = formState.paper_id ?? null
+    newExamStore.startDate = startDate.value
+    newExamStore.endDate = endDate.value
+    newExamStore.duration_hours = formState.duration_hours
+    newExamStore.duration_minutes = formState.duration_minutes
+  }
 })
 
 function calcMinutes(hours: number | undefined, minutes: number | undefined) {
@@ -198,6 +203,9 @@ function calcMinutes(hours: number | undefined, minutes: number | undefined) {
 
 const submitButtonRef = useTemplateRef('submitButton')
 async function onSubmit() {
+  // Do not end loading to keep button disabled till navigation
+  isLoading.value = true
+
   // Consider entire day on end date
   const endsAt = endDate.value.add({ hours: 23, minutes: 59, seconds: 59 })
   const createdExam = await createExam({
