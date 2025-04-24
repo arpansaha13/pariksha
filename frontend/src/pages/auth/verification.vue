@@ -85,6 +85,7 @@ async function onSubmit() {
       message = 'Invalid OTP. Please try again.'
     }
 
+    toast.clear()
     toast.add({
       id: ToastId.VERIFY_SIGNUP_FAILED,
       color: 'error',

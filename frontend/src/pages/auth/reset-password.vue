@@ -155,6 +155,7 @@ async function onSubmit() {
       message = 'This email is not registered.'
     }
 
+    toast.clear()
     toast.add({
       id: ToastId.RESET_PASSWORD_FAILED,
       color: 'error',

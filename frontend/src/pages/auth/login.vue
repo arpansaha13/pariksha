@@ -84,6 +84,7 @@ async function onSubmit() {
     await login(loginFormData.value)
     await navigateTo('/')
   } catch {
+    toast.clear()
     toast.add({
       id: ToastId.LOGIN_FAILED,
       color: 'error',

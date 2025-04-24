@@ -79,6 +79,7 @@ async function onSubmit() {
       message = 'This email is not registered.'
     }
 
+    toast.clear()
     toast.add({
       id: ToastId.FORGOT_PASSWORD_FAILED,
       color: 'error',

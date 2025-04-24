@@ -141,6 +141,7 @@ async function onSubmit() {
       message = 'This email is already registered.'
     }
 
+    toast.clear()
     toast.add({
       id: ToastId.SIGNUP_FAILED,
       color: 'error',
