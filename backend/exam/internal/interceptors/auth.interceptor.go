@@ -50,6 +50,7 @@ var (
 		"/proto.ExamService/CheckExamParticipant",
 		"/proto.ExamService/GetExamQuestions",
 		"/proto.ExamService/GetExamCategories",
+		"/proto.ExamService/GetParticipantTiming",
 	}
 )
 
@@ -239,6 +240,8 @@ func ExamAccessInterceptor() grpc.UnaryServerInterceptor {
 		case *proto.UpsertAnswersRequest:
 			examID = r.ExamId
 		case *proto.CheckParticipantRequest:
+			examID = r.ExamId
+		case *proto.GetParticipantTimingRequest:
 			examID = r.ExamId
 		case *proto.UpdateAnswerRequest:
 			// Find exam ID using joins, selecting only exam_id

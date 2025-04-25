@@ -86,3 +86,12 @@ type ExamQuestionResponse struct {
 	Type       string          `json:"type"`
 	MaxScore   int             `json:"max_score"`
 }
+
+type CheckExamParticipantResponse struct {
+	ParticipantStatus int `json:"participant_status"`
+}
+
+type ParticipantTimingResponse struct {
+	StartedAt        time.Time `json:"started_at,omitempty"`
+	ScheduledEndTime time.Time `json:"scheduled_end_time,omitempty"`
+}

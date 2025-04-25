@@ -25,6 +25,7 @@ service ExamService {
   rpc EndExam(EndExamRequest) returns (Empty) {}
   rpc MarkAsEvaluated(ParticipantRequest) returns (EvaluationStatusResponse) {}
   rpc CheckExamParticipant(CheckParticipantRequest) returns (CheckParticipantResponse) {}
+  rpc GetParticipantTiming(GetParticipantTimingRequest) returns (ParticipantTimingResponse) {}
 
   // Answer operations
   rpc GetParticipantAnswers(ParticipantRequest) returns (AnswerList) {}
@@ -174,6 +175,15 @@ message CheckParticipantRequest {
 
 message CheckParticipantResponse {
   int32 participant_status = 1;
+}
+
+message GetParticipantTimingRequest {
+  int64 exam_id = 1;
+}
+
+message ParticipantTimingResponse {
+  optional google.protobuf.Timestamp started_at = 1;
+  optional google.protobuf.Timestamp scheduled_end_time = 2;
 }
 
 message ExamQuestion {

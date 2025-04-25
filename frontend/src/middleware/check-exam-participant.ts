@@ -9,13 +9,16 @@ export default defineNuxtRouteMiddleware(async (to, _from) => {
       const res = await checkParticipantAccess(examId)
 
       if (res.participant_status === ExamParticipantStatus.ENDED) {
+        throw res
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      if (err.participant_status === ExamParticipantStatus.ENDED) {
         return abortNavigation({
           statusCode: HttpStatus.FORBIDDEN,
           message: 'You have already attempted this exam',
         })
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
       if (err.statusCode === HttpStatus.NOT_FOUND) {
         err.message = 'We could not find the exam you are looking for.'
       } else if (err.statusCode === HttpStatus.FORBIDDEN) {

@@ -373,3 +373,97 @@ func TestCheckExamParticipant(t *testing.T) {
 		})
 	}
 }
+
+func TestGetParticipantTiming(t *testing.T) {
+	tests := []struct {
+		name         string
+		setup        func(t *testing.T) *models.Exam
+		userID       int64
+		expectedCode codes.Code
+		validate     func(t *testing.T, resp *proto.ParticipantTimingResponse)
+	}{
+		{
+			name: "Success - Get timing for participant with data",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, 2) // Created by different user
+				startTime := time.Now().Add(-1 * time.Hour)
+				endTime := startTime.Add(2 * time.Hour)
+
+				err := createTestExamParticipants(t, &exam, []struct {
+					UserID int64
+					Status int
+				}{
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
+				})
+				require.NoError(t, err)
+
+				var participant models.ExamParticipant
+				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
+
+				participant.StartedAt.Time = startTime
+				participant.StartedAt.Valid = true
+				participant.ScheduledEndTime.Time = endTime
+				participant.ScheduledEndTime.Valid = true
+				require.NoError(t, db.DB.Save(&participant).Error)
+
+				return &exam
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.ParticipantTimingResponse) {
+				assert.NotNil(t, resp.StartedAt)
+				assert.NotNil(t, resp.ScheduledEndTime)
+			},
+		},
+		{
+			name: "Success - Get timing for participant without timing data",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, 2) // Created by different user
+				err := createTestExamParticipants(t, &exam, []struct {
+					UserID int64
+					Status int
+				}{
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
+				})
+				require.NoError(t, err)
+				return &exam
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.ParticipantTimingResponse) {
+				assert.Nil(t, resp.StartedAt)
+				assert.Nil(t, resp.ScheduledEndTime)
+			},
+		},
+		{
+			name: "Failure - User is not a participant",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, 2)
+				return &exam
+			},
+			userID:       userID,
+			expectedCode: codes.PermissionDenied,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+			exam := tt.setup(t)
+
+			ctx := createContextWithUserID(tt.userID)
+			resp, err := client.GetParticipantTiming(ctx, &proto.GetParticipantTimingRequest{
+				ExamId: exam.ID,
+			})
+
+			if tt.expectedCode != codes.OK {
+				assert.Equal(t, tt.expectedCode, status.Code(err))
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, resp)
+			tt.validate(t, resp)
+		})
+	}
+}

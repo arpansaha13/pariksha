@@ -4,6 +4,10 @@
     <h1 class="text-xl font-semibold">{{ exam.title }}</h1>
   </div>
 
+  <div class="flex items-center justify-end">
+    <ExamTimer @timeout="handleExamTimeout" />
+  </div>
+
   <div class="col-span-2 flex h-full flex-col gap-y-4">
     <ExamCategoryNavigation
       v-if="!isNullOrUndefined(sortedCategories)"
@@ -99,4 +103,8 @@ const { prevQuestionId, nextQuestionId } = useExamQuestionNavigation({
 })
 
 const { data: question } = await useExamQuestion(currentQuestionId)
+
+function handleExamTimeout() {
+  console.log('timeout')
+}
 </script>

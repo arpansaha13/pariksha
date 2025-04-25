@@ -10,3 +10,5 @@ export { useExams } from './api/exams/useExams'
 export { useExamQuestions } from './api/exams/useExamQuestions'
 export { useExamCategories } from './api/exams/useExamCategories'
 export { useExamQuestion } from './api/exams/useExamQuestion'
+
+export { useExamParticipantTiming } from './api/exams/useExamParticipantTiming'

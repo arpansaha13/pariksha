@@ -465,8 +465,12 @@ func CheckExamParticipant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	participantResponse := dtos.CheckExamParticipantResponse{
+		ParticipantStatus: int(response.ParticipantStatus),
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]int{"participant_status": int(response.ParticipantStatus)})
+	json.NewEncoder(w).Encode(participantResponse)
 }
 
 func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
@@ -616,6 +620,38 @@ func GetExamQuestion(w http.ResponseWriter, r *http.Request) {
 		CategoryID: question.CategoryId,
 		Type:       question.Type,
 		MaxScore:   int(question.MaxScore),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// GetParticipantTiming gets the start time and scheduled end time for an exam participant
+func GetParticipantTiming(w http.ResponseWriter, r *http.Request) {
+	examID, err := getInt64FromVars(mux.Vars(r), "examId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	examService := services.GetExamService()
+	ctx := examService.CreateMetadata(userID)
+
+	timing, err := examService.Client().GetParticipantTiming(ctx, &proto.GetParticipantTimingRequest{
+		ExamId: examID,
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	response := dtos.ParticipantTimingResponse{}
+	if timing.StartedAt != nil {
+		response.StartedAt = timing.StartedAt.AsTime()
+	}
+	if timing.ScheduledEndTime != nil {
+		response.ScheduledEndTime = timing.ScheduledEndTime.AsTime()
 	}
 
 	w.Header().Set("Content-Type", "application/json")
