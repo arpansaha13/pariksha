@@ -30,23 +30,14 @@ func endExamShouldIntercept(methodName string) bool {
 }
 
 // updateParticipantCounts updates the participant counts JSON in exam
-func updateParticipantCounts(tx *gorm.DB, exam *models.Exam, oldStatus, newStatus int) error {
+func updateParticipantCounts(tx *gorm.DB, exam *models.Exam) error {
 	counts, err := exam.GetParticipantCounts()
 	if err != nil {
 		return err
 	}
 
-	// Decrement old status count
-	switch oldStatus {
-	case constants.PARTICIPANT_STATUS_STARTED:
-		counts.Started--
-	}
-
-	// Increment new status count
-	switch newStatus {
-	case constants.PARTICIPANT_STATUS_ENDED:
-		counts.Ended++
-	}
+	counts.Started--
+	counts.Ended++
 
 	// Update the exam's participant counts
 	return tx.Model(exam).Update("participant_counts", counts).Error
@@ -71,38 +62,32 @@ func EndExamInterceptor() grpc.UnaryServerInterceptor {
 			return nil, status.Error(codes.Internal, "exam not found in context")
 		}
 
+		now := time.Now()
 		shouldEndExam := participant.Status == constants.PARTICIPANT_STATUS_STARTED &&
 			participant.ScheduledEndTime.Valid &&
-			participant.ScheduledEndTime.Time.Before(time.Now())
+			participant.ScheduledEndTime.Time.Before(now)
 
 		if shouldEndExam {
-			// Start transaction
-			tx := db.DB.Begin()
-			if tx.Error != nil {
-				return nil, status.Error(codes.Internal, "failed to start transaction")
-			}
+			err := db.DB.Transaction(func(tx *gorm.DB) error {
+				participant.Status = constants.PARTICIPANT_STATUS_ENDED
+				participant.EndedAt.Time = now
+				participant.EndedAt.Valid = true
 
-			oldStatus := participant.Status
-			participant.Status = constants.PARTICIPANT_STATUS_ENDED
-			participant.EndedAt.Time = time.Now()
-			participant.EndedAt.Valid = true
+				// Update participant status
+				if err := tx.Save(participant).Error; err != nil {
+					return status.Error(codes.Internal, "failed to update participant status")
+				}
 
-			// Update participant status
-			if err := tx.Save(participant).Error; err != nil {
-				tx.Rollback()
-				return nil, status.Error(codes.Internal, "failed to update participant status")
-			}
+				// Update exam participant counts
+				if err := updateParticipantCounts(tx, exam); err != nil {
+					return status.Error(codes.Internal, "failed to update participant counts")
+				}
 
-			// Update exam participant counts
-			if err := updateParticipantCounts(tx, exam, oldStatus, participant.Status); err != nil {
-				tx.Rollback()
-				return nil, status.Error(codes.Internal, "failed to update participant counts")
-			}
+				return nil
+			})
 
-			// Commit transaction
-			if err := tx.Commit().Error; err != nil {
-				tx.Rollback()
-				return nil, status.Error(codes.Internal, "failed to commit transaction")
+			if err != nil {
+				return nil, err
 			}
 		}
 
