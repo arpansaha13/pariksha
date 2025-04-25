@@ -278,6 +278,11 @@ func (s *ExamServer) EndExam(ctx context.Context, req *proto.EndExamRequest) (*p
 		return nil, status.Error(codes.Internal, "participant not found in context")
 	}
 
+	// Return success if exam is already ended
+	if participant.Status == constants.PARTICIPANT_STATUS_ENDED {
+		return &proto.Empty{}, nil
+	}
+
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		if time.Now().Before(exam.StartsAt) {
 			return status.Error(codes.FailedPrecondition, "exam has not started yet")

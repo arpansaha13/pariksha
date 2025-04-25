@@ -375,7 +375,7 @@ func EndExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func GetExam(w http.ResponseWriter, r *http.Request) {

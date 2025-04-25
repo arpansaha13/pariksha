@@ -1,60 +1,83 @@
 <template>
-  <div v-if="exam" class="col-span-2 flex items-center gap-2">
-    <Icon name="i-heroicons-document-text" size="2rem" />
-    <h1 class="text-xl font-semibold">{{ exam.title }}</h1>
-  </div>
+  <UContainer
+    v-if="isExamEnded"
+    class="col-span-full row-span-full flex flex-col items-center justify-center"
+  >
+    <p class="flex items-center gap-2">
+      Your exam has been submitted.
+      <Icon name="twemoji:party-popper" />
+    </p>
+    <p class="mt-2.5">
+      Redirecting in
+      <span class="font-medium">
+        {{ redirectCountdown === 0 ? 1 : redirectCountdown }}
+      </span>
+      seconds
+    </p>
 
-  <div class="flex items-center justify-end">
-    <ExamTimer @timeout="handleExamTimeout" />
-  </div>
+    <UButton :to="`/exams/${examId}/results`" class="mt-4"
+      >Go to results</UButton
+    >
+  </UContainer>
 
-  <div class="col-span-2 flex h-full flex-col gap-y-4">
-    <ExamCategoryNavigation
-      v-if="!isNullOrUndefined(sortedCategories)"
-      :sorted-categories="sortedCategories"
-      :get-question-id-for-category-id="getQuestionIdForCategoryId"
-    />
-  </div>
+  <template v-else>
+    <div v-if="exam" class="col-span-2 flex items-center gap-2">
+      <Icon name="i-heroicons-document-text" size="2rem" />
+      <h1 class="text-xl font-semibold">{{ exam.title }}</h1>
+    </div>
 
-  <div class="col-start-3 row-span-2 row-start-2">
-    <h2 class="mb-4 text-lg font-semibold">Question Pallet</h2>
+    <div class="flex items-center justify-end">
+      <ExamTimer @timeout="handleExamTimeout" />
+    </div>
 
-    <UCard v-if="currentCategoryQuestions">
-      <ExamQuestionList
-        v-if="!isNullOrUndefined(currentQuestionId)"
-        :current-question-id="currentQuestionId"
-        :current-category-questions="currentCategoryQuestions"
+    <div class="col-span-2 flex h-full flex-col gap-y-4">
+      <ExamCategoryNavigation
+        v-if="!isNullOrUndefined(sortedCategories)"
+        :sorted-categories="sortedCategories"
+        :get-question-id-for-category-id="getQuestionIdForCategoryId"
+      />
+    </div>
+
+    <div class="col-start-3 row-span-2 row-start-2">
+      <h2 class="mb-4 text-lg font-semibold">Question Pallet</h2>
+
+      <UCard v-if="currentCategoryQuestions">
+        <ExamQuestionList
+          v-if="!isNullOrUndefined(currentQuestionId)"
+          :current-question-id="currentQuestionId"
+          :current-category-questions="currentCategoryQuestions"
+        />
+      </UCard>
+    </div>
+
+    <UCard v-if="question" :ui="{ root: 'col-span-2' }">
+      <ExamQuestionMcq
+        v-if="question.type === QuestionType.MCQ"
+        :question="question.question"
+      />
+      <ExamQuestionNonMcq v-else :question="question.question" />
+    </UCard>
+
+    <UCard :ui="{ root: 'col-span-2', body: 'flex' }">
+      <UButton
+        v-if="prevQuestionId"
+        replace
+        label="Previous"
+        color="neutral"
+        variant="outline"
+        :to="{ query: { ...route.query, question: prevQuestionId } }"
+      />
+      <UButton
+        v-if="nextQuestionId"
+        replace
+        label="Next"
+        color="neutral"
+        variant="outline"
+        :to="{ query: { ...route.query, question: nextQuestionId } }"
+        class="ml-auto"
       />
     </UCard>
-  </div>
-
-  <UCard v-if="question" :ui="{ root: 'col-span-2' }">
-    <ExamQuestionMcq
-      v-if="question.type === QuestionType.MCQ"
-      :question="question.question"
-    />
-    <ExamQuestionNonMcq v-else :question="question.question" />
-  </UCard>
-
-  <UCard :ui="{ root: 'col-span-2', body: 'flex' }">
-    <UButton
-      v-if="prevQuestionId"
-      replace
-      label="Previous"
-      color="neutral"
-      variant="outline"
-      :to="{ query: { ...route.query, question: prevQuestionId } }"
-    />
-    <UButton
-      v-if="nextQuestionId"
-      replace
-      label="Next"
-      color="neutral"
-      variant="outline"
-      :to="{ query: { ...route.query, question: nextQuestionId } }"
-      class="ml-auto"
-    />
-  </UCard>
+  </template>
 </template>
 
 <script setup lang="ts">
@@ -104,7 +127,18 @@ const { prevQuestionId, nextQuestionId } = useExamQuestionNavigation({
 
 const { data: question } = await useExamQuestion(currentQuestionId)
 
-function handleExamTimeout() {
-  console.log('timeout')
+// ___________________AUTO-END EXAM ON TIMEOUT____________________
+const isExamEnded = ref(false)
+const { remaining: redirectCountdown, start: startRedirectCountdown } =
+  useCountdown(5, {
+    onComplete() {
+      navigateTo(`/exams/${examId}/results`)
+    },
+  })
+
+async function handleExamTimeout() {
+  isExamEnded.value = true
+  startRedirectCountdown()
+  endExam(examId)
 }
 </script>

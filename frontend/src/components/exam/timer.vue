@@ -1,5 +1,5 @@
 <template>
-  <div class="relative rounded-sm px-2.5 py-2 shadow ring-1 ring-black/5">
+  <div class="relative rounded-sm px-2.5 py-1.5 shadow ring-1 ring-black/5">
     <!-- Progress bar background -->
     <div
       class="bg-primary-100 absolute inset-0 rounded-sm transition-all duration-1000"
