@@ -13,8 +13,8 @@ definePageMeta({
   middleware: ['check-exam-access'],
 })
 
-const nuxtApp = useNuxtApp()
-const examAccess = nuxtApp.$examAccess as Awaited<
+const { payload } = useNuxtApp()
+const examAccess = payload.data.examAccess as Awaited<
   ReturnType<typeof checkExamAccess>
 >
 const isOwner = examAccess.access_type === ExamPermission.OWNER

@@ -38,11 +38,11 @@
 
     <div class="flex items-center gap-2">
       <p class="font-medium">
-        {{ isCalendarBefore(startsAt, now) ? 'Started at:' : 'Starts at:' }}
+        {{ isExamStarted ? 'Started at:' : 'Starts at:' }}
       </p>
 
       <DisplayDate
-        v-if="isCalendarBefore(startsAt, now)"
+        v-if="isExamStarted"
         :date="startsAt"
         :df="df"
         :ui="{ skeleton: 'h-4 w-[11ch] bg-neutral-200' }"
@@ -65,11 +65,11 @@
 
     <div class="flex items-center gap-2">
       <p class="font-medium">
-        {{ isCalendarBefore(endsAt, now) ? 'Ended at:' : 'Ends at:' }}
+        {{ isExamEnded ? 'Ended at:' : 'Ends at:' }}
       </p>
 
       <DisplayDate
-        v-if="isCalendarBefore(endsAt, now)"
+        v-if="isExamEnded"
         :date="endsAt"
         :df="df"
         :ui="{ skeleton: 'h-4 w-[11ch] bg-neutral-200' }"
@@ -117,9 +117,12 @@ const editableExamTitle = ref(exam.value!.title)
 const startsAt = shallowRef(toCalendarDateTime(exam.value!.starts_at))
 const endsAt = shallowRef(toCalendarDateTime(exam.value!.ends_at))
 
+const isExamStarted = isCalendarBefore(startsAt, now)
+const isExamEnded = isCalendarBefore(endsAt, now)
+
 const df = new DateFormatter('en-US', {
-  dateStyle: isCalendarBefore(endsAt, now) ? 'long' : 'medium',
-  timeStyle: isCalendarBefore(endsAt, now) ? undefined : 'short',
+  dateStyle: isExamEnded ? 'long' : 'medium',
+  timeStyle: isExamEnded ? undefined : 'short',
 })
 
 async function updateExamTitle() {
