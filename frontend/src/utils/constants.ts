@@ -47,3 +47,9 @@ export const AsyncDataKeys = {
   EXAM_QUESTION: (questionId?: number | null) =>
     questionId ? `EXAM_QUESTION_${questionId}` : 'EXAM_QUESTION',
 }
+
+export const InjectionKeys = {
+  ConfirmModal: Symbol('ConfirmModal') as InjectionKey<
+    ReturnType<ReturnType<typeof useOverlay>['create']>
+  >,
+}

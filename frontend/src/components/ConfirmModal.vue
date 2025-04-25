@@ -7,7 +7,7 @@
     <template #footer>
       <UButton
         :label="confirmLabel"
-        color="error"
+        :color="variant"
         variant="solid"
         loading-auto
         @click="$emit('close', true)"
@@ -35,6 +35,10 @@ defineProps({
   confirmLabel: {
     type: String,
     default: 'Confirm',
+  },
+  variant: {
+    type: String as PropType<'primary' | 'error'>,
+    default: 'error',
   },
 })
 defineEmits<{

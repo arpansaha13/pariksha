@@ -15,9 +15,9 @@
       seconds
     </p>
 
-    <UButton :to="`/exams/${examId}/results`" class="mt-4"
-      >Go to results</UButton
-    >
+    <UButton :to="`/exams/${examId}/results`" class="mt-4">
+      Go to results
+    </UButton>
   </UContainer>
 
   <template v-else>
@@ -26,8 +26,10 @@
       <h1 class="text-xl font-semibold">{{ exam.title }}</h1>
     </div>
 
-    <div class="flex items-center justify-end">
-      <ExamTimer @timeout="handleExamTimeout" />
+    <div class="flex items-center justify-end gap-2.5">
+      <ExamTimer @timeout="handleExamSubmit" />
+
+      <ExamSubmit @submit="handleExamSubmit" />
     </div>
 
     <div class="col-span-2 flex h-full flex-col gap-y-4">
@@ -82,6 +84,7 @@
 
 <script setup lang="ts">
 import { isNullOrUndefined } from '@arpansaha13/utils'
+import { ConfirmModal } from '#components'
 import { QuestionType } from '~/types'
 
 definePageMeta({
@@ -94,6 +97,10 @@ const examId = parseInt(route.params.examId as string)
 const { data: exam } = await useExam(examId)
 const { data: groupedQuestions } = await useExamQuestions(examId)
 const { data: sortedCategories } = await useExamCategories(examId)
+
+const overlay = useOverlay()
+const confirmModal = overlay.create(ConfirmModal)
+provide(InjectionKeys.ConfirmModal, confirmModal)
 
 const getQuestionIdForCategoryId = useExamQuestionIdForCategoryId({
   groupedQuestions,
@@ -136,7 +143,7 @@ const { remaining: redirectCountdown, start: startRedirectCountdown } =
     },
   })
 
-async function handleExamTimeout() {
+async function handleExamSubmit() {
   isExamEnded.value = true
   startRedirectCountdown()
   endExam(examId)
