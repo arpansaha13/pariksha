@@ -812,8 +812,8 @@ func TestGetExamQuestions(t *testing.T) {
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, 2) // Created by different user
 				questions := []models.ExamQuestion{
-					{ExamID: exam.ID, QuestionID: 1},
-					{ExamID: exam.ID, QuestionID: 2},
+					{ExamID: exam.ID, QuestionID: 1, CategoryID: 10, Order: 1},
+					{ExamID: exam.ID, QuestionID: 2, CategoryID: 10, Order: 2},
 				}
 				require.NoError(t, db.DB.Create(&questions).Error)
 
@@ -830,9 +830,19 @@ func TestGetExamQuestions(t *testing.T) {
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamQuestionsResponse) {
 				require.Equal(t, 2, len(resp.Questions))
-				expectedIDs := []int64{1, 2}
 				for i, q := range resp.Questions {
-					assert.Equal(t, expectedIDs[i], q.QuestionId)
+					expectedQuestion := struct {
+						questionId int64
+						categoryId int64
+						order      int32
+					}{
+						questionId: int64(i + 1),
+						categoryId: 10,
+						order:      int32(i + 1),
+					}
+					assert.Equal(t, expectedQuestion.questionId, q.QuestionId)
+					assert.Equal(t, expectedQuestion.categoryId, q.CategoryId)
+					assert.Equal(t, expectedQuestion.order, q.Order)
 				}
 			},
 		},

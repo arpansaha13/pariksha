@@ -28,7 +28,8 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 
 	// Get all questions for the paper
 	var questions []models.Question
-	if err := papersTx.Where("paper_id = ?", payload.PaperID).Find(&questions).Error; err != nil {
+	err := papersTx.Select("id, category_id, order").Where("paper_id = ?", payload.PaperID).Find(&questions).Error
+	if err != nil {
 		papersTx.Rollback()
 		log.Default().Printf("Failed to fetch questions: %v", err)
 		return err
@@ -36,21 +37,24 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 
 	// Get all categories for the paper
 	var categories []models.QuestionCategory
-	if err := papersTx.Where("paper_id = ?", payload.PaperID).Find(&categories).Error; err != nil {
+	err = papersTx.Select("id").Where("paper_id = ?", payload.PaperID).Find(&categories).Error
+	if err != nil {
 		papersTx.Rollback()
 		log.Default().Printf("Failed to fetch categories: %v", err)
 		return err
 	}
 
 	// Lock all questions
-	if err := papersTx.Model(&models.Question{}).Where("paper_id = ?", payload.PaperID).Update("locked", true).Error; err != nil {
+	err = papersTx.Model(&models.Question{}).Where("paper_id = ?", payload.PaperID).Update("locked", true).Error
+	if err != nil {
 		papersTx.Rollback()
 		log.Default().Printf("Failed to lock questions: %v", err)
 		return err
 	}
 
 	// Lock all categories
-	if err := papersTx.Model(&models.QuestionCategory{}).Where("paper_id = ?", payload.PaperID).Update("locked", true).Error; err != nil {
+	err = papersTx.Model(&models.QuestionCategory{}).Where("paper_id = ?", payload.PaperID).Update("locked", true).Error
+	if err != nil {
 		papersTx.Rollback()
 		log.Default().Printf("Failed to lock categories: %v", err)
 		return err
@@ -69,6 +73,8 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 		examQuestion := models.ExamQuestion{
 			ExamID:     payload.ExamID,
 			QuestionID: q.ID,
+			CategoryID: q.CategoryID,
+			Order:      q.Order,
 		}
 		if err := examsTx.Create(&examQuestion).Error; err != nil {
 			examsTx.Rollback()

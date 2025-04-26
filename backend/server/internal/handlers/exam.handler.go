@@ -493,35 +493,10 @@ func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract question IDs
-	questionIDs := make([]int64, len(questions.Questions))
+	response := make([]dtos.ExamQuestionMinimalResponse, len(questions.Questions))
 	for i, q := range questions.Questions {
-		questionIDs[i] = q.QuestionId
-	}
-
-	// No questions to fetch
-	if len(questionIDs) == 0 {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]dtos.ExamQuestionMinimalResponse{})
-		return
-	}
-
-	// Get question data from paper service
-	paperService := services.GetPaperService()
-	paperCtx := paperService.CreateMetadata(userID)
-
-	questionData, err := paperService.Client().GetQuestionsByIds(paperCtx, &proto.GetQuestionsByIdsRequest{
-		QuestionIds: questionIDs,
-	})
-	if err != nil {
-		http.Error(w, "Failed to retrieve question data", http.StatusInternalServerError)
-		return
-	}
-
-	response := make([]dtos.ExamQuestionMinimalResponse, len(questionData.Questions))
-	for i, q := range questionData.Questions {
 		response[i] = dtos.ExamQuestionMinimalResponse{
-			QuestionID: q.Id,
+			QuestionID: q.QuestionId,
 			CategoryID: q.CategoryId,
 			Order:      int(q.Order),
 		}

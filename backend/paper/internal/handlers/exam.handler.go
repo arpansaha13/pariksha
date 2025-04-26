@@ -25,11 +25,9 @@ func (s *PaperServer) GetQuestionsByIds(ctx context.Context, req *proto.GetQuest
 
 	for i, question := range questions {
 		batchItem := &proto.QuestionBatchItem{
-			Id:         question.ID,
-			MaxScore:   int32(question.MaxScore),
-			Order:      int32(question.Order),
-			Type:       question.Type,
-			CategoryId: question.CategoryID,
+			Id:       question.ID,
+			MaxScore: int32(question.MaxScore),
+			Type:     question.Type,
 		}
 
 		switch question.Type {

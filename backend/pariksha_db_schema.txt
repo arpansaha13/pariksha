@@ -15,57 +15,60 @@ Table exams {
   title varchar
   starts_at timestamp [not null]
   ends_at timestamp [not null]
-  created_by bigint
-  type varchar [note: 'Values can be "LINK" or "INVITE"']
-  max_candidates_count integer [note: 'Maximum number of candidates that can take the exam']
-  paper_id bigint [note: 'Indicates which paper will be used in this exam']
+  created_by bigint [not null]
+  type varchar(16) [default: 'LINK', note: 'Values can be "LINK" or "INVITE"']
+  max_candidates_count integer [not null, note: 'Maximum number of candidates that can take the exam']
+  duration_minutes integer [not null]
+  paper_id bigint [not null, note: 'Indicates which paper will be used in this exam']
+  participant_counts json [default: '{"unattended":0,"invited":0,"started":0,"ended":0}']
 }
 
 Table papers {
   id bigint [primary key]
   title varchar(255) [not null, default: 'Untitled Paper']
-  max_score integer [not null, default: 0, note: 'Maximum score that can be awarded in this paper - Sum of individual scores of each question']
+  max_score integer [default: 0, note: 'Maximum score that can be awarded in this paper - Sum of individual scores of each question']
   duration_minutes integer [not null]
-  question_counts json [not null, default: '{"mcq":0,"short":0,"long":0}', note: 'Count of each question type']
+  question_counts json [default: '{"mcq":0,"short":0,"long":0}', note: 'Count of each question type']
 }
 
 Table paper_ownerships {
   id bigint [primary key]
   user_id bigint [not null]
   paper_id bigint [not null]
-  path text [null]
+  path varchar
   type varchar(10) [not null, note: 'Can be OWNER or SHARED']
 }
 
 Table questions {
   id bigint [primary key]
+  category_id bigint [not null]
   question json [not null]
-  category_id bigint [not null, note: 'Used to group multiple questions']
   order integer [not null]
   type varchar(20) [not null, note: 'MCQ, Short-answer, Long-answer']
-  tags json [not null, default: '[]']
-  paper_id bigint [null]
+  tags json [default: '[]']
+  paper_id bigint
   max_score integer [not null]
-  correct_answer text [null]
+  correct_answer text
   locked boolean [not null, default: false, note: 'Indicates if the question is used in an exam and is locked for editing']
 }
 
 Table exam_participants {
   id bigint [primary key]
+  exam_id bigint [not null]
+  user_id bigint [not null]
+  score_awarded integer [not null, note: 'Total score obtained in this exam by this candidate - Sum of individual scores of each answer']
+  status integer [not null, default: 1]
   started_at timestamp
   ended_at timestamp
   scheduled_end_time timestamp [note: 'We cannot rely on calculating (starts_at + paper.duration) everytime because the paper duration could update during the exam']
-  exam_id bigint
-  user_id bigint [note: 'Which users can take this exam']
-  score_awarded integer [note: 'Total score obtained in this exam by this candidate - Sum of individual scores of each answer']
 }
 
 Table answers {
   id bigint [primary key]
-  exam_participant_id bigint [note: 'Which exam and user this answer-set belongs to']
-  question_id bigint [note: 'This answer is for which question']
+  exam_participant_id bigint [not null]
+  question_id bigint [not null]
   answer text
-  score_awarded integer [note: 'Score awarded on this answer', default: 0]
+  score_awarded integer [not null, default: 0]
   comments text [note: 'Any comments the evaluator might want to add, for e.g. why is the answer wrong']
   evaluated boolean [not null, default: false]
 }
@@ -74,6 +77,8 @@ Table exam_questions {
   id bigint [primary key]
   exam_id bigint [not null]
   question_id bigint [not null]
+  category_id bigint [not null]
+  order integer [not null]
 }
 
 Table exam_categories {
@@ -91,9 +96,9 @@ Table sessions {
 
 Table question_categories {
   id bigint [primary key]
-  paper_id bigint [null]
+  paper_id bigint
   name varchar(255) [not null]
-  order integer [not null, note: 'Used to maintain the order of categories']
+  order integer [not null]
   locked boolean [not null, default: false, note: 'Indicates if the category is used in an exam and is locked for editing']
 }
 
@@ -104,19 +109,19 @@ Table otps {
   purpose integer [not null]
 }
 
-// Ref: exams.created_by > users.id // One user can create many exams
-// Ref: paper_ownerships.user_id > users.id // Which user owns or shares this paper
 Ref: paper_ownerships.paper_id > papers.id // Which paper is owned or shared
 Ref: questions.paper_id > papers.id // One exam can have many questions
 Ref: questions.category_id > question_categories.id // One category can have many questions
 Ref: question_categories.paper_id > papers.id // One paper can have many categories
+// Ref: paper_ownerships.user_id > users.id // Which user owns or shares this paper
 
-// Ref: exams.paper_id > papers.id // Many exams can be created using a single paper
 Ref: exam_participants.exam_id > exams.id // One exam can have many participants
-Ref: exam_participants.user_id > users.id // Which users can take this exam
 Ref: answers.exam_participant_id > exam_participants.id // One participant can have many answers
-// Ref: answers.question_id > questions.id // One question can have many answers
 Ref: exam_questions.exam_id > exams.id // One exam can have many questions
-Ref: exam_questions.question_id > questions.id // Link questions to exam
 Ref: exam_categories.exam_id > exams.id // One exam can have many categories
-Ref: exam_categories.category_id > question_categories.id // Link categories to exam
+// Ref: exams.created_by > users.id // One user can create many exams
+// Ref: exams.paper_id > papers.id // Many exams can be created using a single paper
+// Ref: exam_participants.user_id > users.id // Which users can take this exam
+// Ref: answers.question_id > questions.id // One question can have many answers
+// Ref: exam_questions.question_id > questions.id // Link questions to exam
+// Ref: exam_categories.category_id > question_categories.id // Link categories to exam

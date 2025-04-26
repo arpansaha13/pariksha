@@ -62,8 +62,6 @@ func TestGetQuestionsByIds(t *testing.T) {
 				// Validate MCQ question
 				mcqResp := resp.Questions[0]
 				assert.Equal(t, questions[0].ID, mcqResp.Id)
-				assert.Equal(t, questions[0].CategoryID, mcqResp.CategoryId)
-				assert.Equal(t, int32(questions[0].Order), mcqResp.Order)
 				assert.Equal(t, questions[0].Type, mcqResp.Type)
 				assert.Equal(t, int32(questions[0].MaxScore), mcqResp.MaxScore)
 				assert.Equal(t, "MCQ Question", mcqResp.GetMcq().Statement)
@@ -72,8 +70,6 @@ func TestGetQuestionsByIds(t *testing.T) {
 				// Validate Short question
 				shortResp := resp.Questions[1]
 				assert.Equal(t, questions[1].ID, shortResp.Id)
-				assert.Equal(t, questions[1].CategoryID, shortResp.CategoryId)
-				assert.Equal(t, int32(questions[1].Order), shortResp.Order)
 				assert.Equal(t, questions[1].Type, shortResp.Type)
 				assert.Equal(t, int32(questions[1].MaxScore), shortResp.MaxScore)
 				assert.Equal(t, "Short Question", shortResp.GetGeneral().Statement)
