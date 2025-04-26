@@ -221,6 +221,73 @@ func TestUpdateCategory(t *testing.T) {
 			},
 		},
 		{
+			name: "Success - Update locked category with questions",
+			setup: func(t *testing.T) *models.QuestionCategory {
+				paper := createTestPaper(t, userID)
+				category := models.QuestionCategory{
+					PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
+					Name:    "Original Name",
+					Order:   1,
+					Locked:  true,
+				}
+				require.NoError(t, db.DB.Create(&category).Error)
+
+				// Create some questions in this category
+				questions := []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"Q1","options":["A","B"]}`),
+						MaxScore:   5,
+					},
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_SHORT,
+						Question:   json.RawMessage(`{"statement":"Q2"}`),
+						MaxScore:   10,
+					},
+				}
+				require.NoError(t, db.DB.Create(&questions).Error)
+				return &category
+			},
+			userID:       userID,
+			newName:      "Updated Name",
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, category *models.QuestionCategory) {
+				// Original category should be unlinked from paper
+				var original models.QuestionCategory
+				require.NoError(t, db.DB.First(&original, category.ID).Error)
+				assert.Equal(t, "Original Name", original.Name)
+				assert.True(t, original.Locked)
+				assert.False(t, original.PaperID.Valid) // Should be unlinked
+
+				// New category should be created
+				var newCategory models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ? AND name = ?", category.PaperID, "Updated Name").First(&newCategory).Error)
+				assert.NotEqual(t, category.ID, newCategory.ID)
+				assert.Equal(t, "Updated Name", newCategory.Name)
+				assert.Equal(t, category.Order, newCategory.Order)
+				assert.False(t, newCategory.Locked)
+
+				// Questions should be moved to new category
+				var questions []models.Question
+				require.NoError(t, db.DB.Where("category_id = ?", newCategory.ID).Find(&questions).Error)
+				assert.Equal(t, 2, len(questions))
+				for _, q := range questions {
+					assert.Equal(t, newCategory.ID, q.CategoryID)
+					assert.True(t, q.PaperID.Valid)
+					assert.Equal(t, category.PaperID.Int64, q.PaperID.Int64)
+				}
+
+				// No questions should remain in old category
+				count := int64(0)
+				require.NoError(t, db.DB.Model(&models.Question{}).Where("category_id = ?", category.ID).Count(&count).Error)
+				assert.Equal(t, int64(0), count)
+			},
+		},
+		{
 			name: "Success - Update category",
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, userID)

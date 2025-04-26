@@ -108,6 +108,13 @@ func (s *PaperServer) UpdateCategory(ctx context.Context, req *proto.UpdateCateg
 				return err
 			}
 
+			// Update all questions to point to the new category
+			if err := tx.Model(&models.Question{}).
+				Where("category_id = ?", category.ID).
+				Update("category_id", newCategory.ID).Error; err != nil {
+				return err
+			}
+
 			// Unlink old category from paper
 			if err := tx.Model(models.QuestionCategory{}).
 				Where("id = ?", category.ID).
