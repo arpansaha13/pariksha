@@ -91,7 +91,8 @@ type CheckExamParticipantResponse struct {
 	ParticipantStatus int `json:"participant_status"`
 }
 
-type ParticipantTimingResponse struct {
+type GetExamParticipantResponse struct {
+	ParticipantID    int64     `json:"participant_id"`
 	StartedAt        time.Time `json:"started_at,omitempty"`
 	ScheduledEndTime time.Time `json:"scheduled_end_time,omitempty"`
 }

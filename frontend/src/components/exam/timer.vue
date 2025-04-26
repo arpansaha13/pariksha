@@ -13,6 +13,16 @@
 </template>
 
 <script setup lang="ts">
+const props = defineProps({
+  startedAt: {
+    type: String,
+    required: true,
+  },
+  scheduledEndTime: {
+    type: String,
+    required: true,
+  },
+})
 const emit = defineEmits(['timeout'])
 
 // Time constants in milliseconds
@@ -21,19 +31,14 @@ const MILLISECONDS_PER_MINUTE = MILLISECONDS_PER_SECOND * 60
 const MILLISECONDS_PER_HOUR = MILLISECONDS_PER_MINUTE * 60
 const MILLISECONDS_PER_DAY = MILLISECONDS_PER_HOUR * 24
 
-const route = useRoute()
-const examId = parseInt(route.params.examId as string)
-const { data: participantTiming } = await useExamParticipantTiming(examId)
-
 const hours = ref('00')
 const minutes = ref('00')
 const seconds = ref('00')
-const endTime = new Date(participantTiming.value!.scheduled_end_time).getTime()
-const startTime = new Date(participantTiming.value!.started_at).getTime()
+const endTime = new Date(props.scheduledEndTime).getTime()
+const startTime = new Date(props.startedAt).getTime()
 const remainingPercentage = ref(100)
 let intervalId: NodeJS.Timeout
 
-// Updates the countdown timer
 const updateCountdown = () => {
   const now = new Date().getTime()
   const distance = endTime - now

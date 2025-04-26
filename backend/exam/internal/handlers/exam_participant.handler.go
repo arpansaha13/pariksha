@@ -150,14 +150,16 @@ func (s *ExamServer) CheckExamParticipant(ctx context.Context, req *proto.CheckP
 	}, nil
 }
 
-// GetParticipantTiming returns the start time and scheduled end time for a participant
-func (s *ExamServer) GetParticipantTiming(ctx context.Context, req *proto.GetParticipantTimingRequest) (*proto.ParticipantTimingResponse, error) {
+// GetExamParticipant returns participant data for the current user
+func (s *ExamServer) GetExamParticipant(ctx context.Context, req *proto.GetExamParticipantRequest) (*proto.GetExamParticipantResponse, error) {
 	participant, ok := interceptors.GetParticipantFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.PermissionDenied, "participant not found")
 	}
 
-	response := &proto.ParticipantTimingResponse{}
+	response := &proto.GetExamParticipantResponse{
+		ParticipantId: participant.ID,
+	}
 
 	if participant.StartedAt.Valid {
 		response.StartedAt = timestamppb.New(participant.StartedAt.Time)

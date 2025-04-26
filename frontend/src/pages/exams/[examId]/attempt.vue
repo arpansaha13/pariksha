@@ -27,7 +27,12 @@
     </div>
 
     <div class="flex items-center justify-end gap-2.5">
-      <ExamTimer @timeout="handleExamSubmit" />
+      <ExamTimer
+        v-if="participant"
+        :started-at="participant.started_at"
+        :scheduled-end-time="participant.scheduled_end_time"
+        @timeout="handleExamSubmit"
+      />
 
       <ExamSubmit @submit="handleExamSubmit" />
     </div>
@@ -95,6 +100,7 @@ definePageMeta({
 const route = useRoute()
 const examId = parseInt(route.params.examId as string)
 const { data: exam } = await useExam(examId)
+const { data: participant } = await useExamParticipant(examId)
 const { data: groupedQuestions } = await useExamQuestions(examId)
 const { data: sortedCategories } = await useExamCategories(examId)
 

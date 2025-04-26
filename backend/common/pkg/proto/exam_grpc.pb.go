@@ -33,7 +33,7 @@ const (
 	ExamService_EndExam_FullMethodName                   = "/proto.ExamService/EndExam"
 	ExamService_MarkAsEvaluated_FullMethodName           = "/proto.ExamService/MarkAsEvaluated"
 	ExamService_CheckExamParticipant_FullMethodName      = "/proto.ExamService/CheckExamParticipant"
-	ExamService_GetParticipantTiming_FullMethodName      = "/proto.ExamService/GetParticipantTiming"
+	ExamService_GetExamParticipant_FullMethodName        = "/proto.ExamService/GetExamParticipant"
 	ExamService_GetParticipantAnswers_FullMethodName     = "/proto.ExamService/GetParticipantAnswers"
 	ExamService_GetAnswer_FullMethodName                 = "/proto.ExamService/GetAnswer"
 	ExamService_UpsertAnswer_FullMethodName              = "/proto.ExamService/UpsertAnswer"
@@ -61,7 +61,7 @@ type ExamServiceClient interface {
 	EndExam(ctx context.Context, in *EndExamRequest, opts ...grpc.CallOption) (*Empty, error)
 	MarkAsEvaluated(ctx context.Context, in *ParticipantRequest, opts ...grpc.CallOption) (*EvaluationStatusResponse, error)
 	CheckExamParticipant(ctx context.Context, in *CheckParticipantRequest, opts ...grpc.CallOption) (*CheckParticipantResponse, error)
-	GetParticipantTiming(ctx context.Context, in *GetParticipantTimingRequest, opts ...grpc.CallOption) (*ParticipantTimingResponse, error)
+	GetExamParticipant(ctx context.Context, in *GetExamParticipantRequest, opts ...grpc.CallOption) (*GetExamParticipantResponse, error)
 	// Answer operations
 	GetParticipantAnswers(ctx context.Context, in *ParticipantRequest, opts ...grpc.CallOption) (*AnswerList, error)
 	GetAnswer(ctx context.Context, in *GetAnswerRequest, opts ...grpc.CallOption) (*GetAnswerResponse, error)
@@ -218,10 +218,10 @@ func (c *examServiceClient) CheckExamParticipant(ctx context.Context, in *CheckP
 	return out, nil
 }
 
-func (c *examServiceClient) GetParticipantTiming(ctx context.Context, in *GetParticipantTimingRequest, opts ...grpc.CallOption) (*ParticipantTimingResponse, error) {
+func (c *examServiceClient) GetExamParticipant(ctx context.Context, in *GetExamParticipantRequest, opts ...grpc.CallOption) (*GetExamParticipantResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ParticipantTimingResponse)
-	err := c.cc.Invoke(ctx, ExamService_GetParticipantTiming_FullMethodName, in, out, cOpts...)
+	out := new(GetExamParticipantResponse)
+	err := c.cc.Invoke(ctx, ExamService_GetExamParticipant_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +298,7 @@ type ExamServiceServer interface {
 	EndExam(context.Context, *EndExamRequest) (*Empty, error)
 	MarkAsEvaluated(context.Context, *ParticipantRequest) (*EvaluationStatusResponse, error)
 	CheckExamParticipant(context.Context, *CheckParticipantRequest) (*CheckParticipantResponse, error)
-	GetParticipantTiming(context.Context, *GetParticipantTimingRequest) (*ParticipantTimingResponse, error)
+	GetExamParticipant(context.Context, *GetExamParticipantRequest) (*GetExamParticipantResponse, error)
 	// Answer operations
 	GetParticipantAnswers(context.Context, *ParticipantRequest) (*AnswerList, error)
 	GetAnswer(context.Context, *GetAnswerRequest) (*GetAnswerResponse, error)
@@ -357,8 +357,8 @@ func (UnimplementedExamServiceServer) MarkAsEvaluated(context.Context, *Particip
 func (UnimplementedExamServiceServer) CheckExamParticipant(context.Context, *CheckParticipantRequest) (*CheckParticipantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckExamParticipant not implemented")
 }
-func (UnimplementedExamServiceServer) GetParticipantTiming(context.Context, *GetParticipantTimingRequest) (*ParticipantTimingResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetParticipantTiming not implemented")
+func (UnimplementedExamServiceServer) GetExamParticipant(context.Context, *GetExamParticipantRequest) (*GetExamParticipantResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExamParticipant not implemented")
 }
 func (UnimplementedExamServiceServer) GetParticipantAnswers(context.Context, *ParticipantRequest) (*AnswerList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetParticipantAnswers not implemented")
@@ -648,20 +648,20 @@ func _ExamService_CheckExamParticipant_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_GetParticipantTiming_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetParticipantTimingRequest)
+func _ExamService_GetExamParticipant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetExamParticipantRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).GetParticipantTiming(ctx, in)
+		return srv.(ExamServiceServer).GetExamParticipant(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_GetParticipantTiming_FullMethodName,
+		FullMethod: ExamService_GetExamParticipant_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).GetParticipantTiming(ctx, req.(*GetParticipantTimingRequest))
+		return srv.(ExamServiceServer).GetExamParticipant(ctx, req.(*GetExamParticipantRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -820,8 +820,8 @@ var ExamService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ExamService_CheckExamParticipant_Handler,
 		},
 		{
-			MethodName: "GetParticipantTiming",
-			Handler:    _ExamService_GetParticipantTiming_Handler,
+			MethodName: "GetExamParticipant",
+			Handler:    _ExamService_GetExamParticipant_Handler,
 		},
 		{
 			MethodName: "GetParticipantAnswers",

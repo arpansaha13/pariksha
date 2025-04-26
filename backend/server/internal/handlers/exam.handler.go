@@ -601,8 +601,8 @@ func GetExamQuestion(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// GetParticipantTiming gets the start time and scheduled end time for an exam participant
-func GetParticipantTiming(w http.ResponseWriter, r *http.Request) {
+// GetExamParticipant gets the participant data for the current user
+func GetExamParticipant(w http.ResponseWriter, r *http.Request) {
 	examID, err := getInt64FromVars(mux.Vars(r), "examId")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -613,7 +613,7 @@ func GetParticipantTiming(w http.ResponseWriter, r *http.Request) {
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
-	timing, err := examService.Client().GetParticipantTiming(ctx, &proto.GetParticipantTimingRequest{
+	participant, err := examService.Client().GetExamParticipant(ctx, &proto.GetExamParticipantRequest{
 		ExamId: examID,
 	})
 	if err != nil {
@@ -621,12 +621,15 @@ func GetParticipantTiming(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := dtos.ParticipantTimingResponse{}
-	if timing.StartedAt != nil {
-		response.StartedAt = timing.StartedAt.AsTime()
+	response := dtos.GetExamParticipantResponse{
+		ParticipantID: participant.ParticipantId,
 	}
-	if timing.ScheduledEndTime != nil {
-		response.ScheduledEndTime = timing.ScheduledEndTime.AsTime()
+
+	if participant.StartedAt != nil {
+		response.StartedAt = participant.StartedAt.AsTime()
+	}
+	if participant.ScheduledEndTime != nil {
+		response.ScheduledEndTime = participant.ScheduledEndTime.AsTime()
 	}
 
 	w.Header().Set("Content-Type", "application/json")
