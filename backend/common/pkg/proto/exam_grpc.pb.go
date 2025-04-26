@@ -38,6 +38,7 @@ const (
 	ExamService_GetAnswer_FullMethodName                 = "/proto.ExamService/GetAnswer"
 	ExamService_UpsertAnswer_FullMethodName              = "/proto.ExamService/UpsertAnswer"
 	ExamService_UpdateAnswerForEvaluation_FullMethodName = "/proto.ExamService/UpdateAnswerForEvaluation"
+	ExamService_GetAnswerById_FullMethodName             = "/proto.ExamService/GetAnswerById"
 )
 
 // ExamServiceClient is the client API for ExamService service.
@@ -63,9 +64,10 @@ type ExamServiceClient interface {
 	GetParticipantTiming(ctx context.Context, in *GetParticipantTimingRequest, opts ...grpc.CallOption) (*ParticipantTimingResponse, error)
 	// Answer operations
 	GetParticipantAnswers(ctx context.Context, in *ParticipantRequest, opts ...grpc.CallOption) (*AnswerList, error)
-	GetAnswer(ctx context.Context, in *GetAnswerRequest, opts ...grpc.CallOption) (*AnswerResponse, error)
+	GetAnswer(ctx context.Context, in *GetAnswerRequest, opts ...grpc.CallOption) (*GetAnswerResponse, error)
 	UpsertAnswer(ctx context.Context, in *UpsertAnswersRequest, opts ...grpc.CallOption) (*UpsertAnswersResponse, error)
 	UpdateAnswerForEvaluation(ctx context.Context, in *UpdateAnswerRequest, opts ...grpc.CallOption) (*Empty, error)
+	GetAnswerById(ctx context.Context, in *GetAnswerByIdRequest, opts ...grpc.CallOption) (*AnswerResponse, error)
 }
 
 type examServiceClient struct {
@@ -236,9 +238,9 @@ func (c *examServiceClient) GetParticipantAnswers(ctx context.Context, in *Parti
 	return out, nil
 }
 
-func (c *examServiceClient) GetAnswer(ctx context.Context, in *GetAnswerRequest, opts ...grpc.CallOption) (*AnswerResponse, error) {
+func (c *examServiceClient) GetAnswer(ctx context.Context, in *GetAnswerRequest, opts ...grpc.CallOption) (*GetAnswerResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(AnswerResponse)
+	out := new(GetAnswerResponse)
 	err := c.cc.Invoke(ctx, ExamService_GetAnswer_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -260,6 +262,16 @@ func (c *examServiceClient) UpdateAnswerForEvaluation(ctx context.Context, in *U
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
 	err := c.cc.Invoke(ctx, ExamService_UpdateAnswerForEvaluation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *examServiceClient) GetAnswerById(ctx context.Context, in *GetAnswerByIdRequest, opts ...grpc.CallOption) (*AnswerResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AnswerResponse)
+	err := c.cc.Invoke(ctx, ExamService_GetAnswerById_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -289,9 +301,10 @@ type ExamServiceServer interface {
 	GetParticipantTiming(context.Context, *GetParticipantTimingRequest) (*ParticipantTimingResponse, error)
 	// Answer operations
 	GetParticipantAnswers(context.Context, *ParticipantRequest) (*AnswerList, error)
-	GetAnswer(context.Context, *GetAnswerRequest) (*AnswerResponse, error)
+	GetAnswer(context.Context, *GetAnswerRequest) (*GetAnswerResponse, error)
 	UpsertAnswer(context.Context, *UpsertAnswersRequest) (*UpsertAnswersResponse, error)
 	UpdateAnswerForEvaluation(context.Context, *UpdateAnswerRequest) (*Empty, error)
+	GetAnswerById(context.Context, *GetAnswerByIdRequest) (*AnswerResponse, error)
 	mustEmbedUnimplementedExamServiceServer()
 }
 
@@ -350,7 +363,7 @@ func (UnimplementedExamServiceServer) GetParticipantTiming(context.Context, *Get
 func (UnimplementedExamServiceServer) GetParticipantAnswers(context.Context, *ParticipantRequest) (*AnswerList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetParticipantAnswers not implemented")
 }
-func (UnimplementedExamServiceServer) GetAnswer(context.Context, *GetAnswerRequest) (*AnswerResponse, error) {
+func (UnimplementedExamServiceServer) GetAnswer(context.Context, *GetAnswerRequest) (*GetAnswerResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAnswer not implemented")
 }
 func (UnimplementedExamServiceServer) UpsertAnswer(context.Context, *UpsertAnswersRequest) (*UpsertAnswersResponse, error) {
@@ -358,6 +371,9 @@ func (UnimplementedExamServiceServer) UpsertAnswer(context.Context, *UpsertAnswe
 }
 func (UnimplementedExamServiceServer) UpdateAnswerForEvaluation(context.Context, *UpdateAnswerRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateAnswerForEvaluation not implemented")
+}
+func (UnimplementedExamServiceServer) GetAnswerById(context.Context, *GetAnswerByIdRequest) (*AnswerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAnswerById not implemented")
 }
 func (UnimplementedExamServiceServer) mustEmbedUnimplementedExamServiceServer() {}
 func (UnimplementedExamServiceServer) testEmbeddedByValue()                     {}
@@ -722,6 +738,24 @@ func _ExamService_UpdateAnswerForEvaluation_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ExamService_GetAnswerById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAnswerByIdRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExamServiceServer).GetAnswerById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExamService_GetAnswerById_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExamServiceServer).GetAnswerById(ctx, req.(*GetAnswerByIdRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ExamService_ServiceDesc is the grpc.ServiceDesc for ExamService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -804,6 +838,10 @@ var ExamService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateAnswerForEvaluation",
 			Handler:    _ExamService_UpdateAnswerForEvaluation_Handler,
+		},
+		{
+			MethodName: "GetAnswerById",
+			Handler:    _ExamService_GetAnswerById_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

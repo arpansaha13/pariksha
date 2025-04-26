@@ -54,7 +54,14 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAnswer(w http.ResponseWriter, r *http.Request) {
-	answerID, err := getInt64FromVars(mux.Vars(r), "answerId")
+	vars := mux.Vars(r)
+	participantId, err := getInt64FromVars(vars, "participantId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	questionId, err := getInt64FromVars(vars, "questionId")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -65,20 +72,20 @@ func GetAnswer(w http.ResponseWriter, r *http.Request) {
 	ctx := examService.CreateMetadata(userID)
 
 	resp, err := examService.Client().GetAnswer(ctx, &proto.GetAnswerRequest{
-		AnswerId: answerID,
+		ParticipantId: participantId,
+		QuestionId:    questionId,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
 		return
 	}
 
-	response := dtos.AnswerResponse{
-		ID:                resp.Id,
-		ExamParticipantID: resp.ExamParticipantId,
-		QuestionID:        resp.QuestionId,
-		Answer:            resp.Answer,
-		Comments:          resp.Comments,
-		ScoreAwarded:      int(resp.ScoreAwarded),
+	response := struct {
+		ID     int64  `json:"id"`
+		Answer string `json:"answer"`
+	}{
+		ID:     resp.Id,
+		Answer: resp.Answer,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -143,7 +150,7 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
-	answerResp, err := examService.Client().GetAnswer(ctx, &proto.GetAnswerRequest{
+	answerResp, err := examService.Client().GetAnswerById(ctx, &proto.GetAnswerByIdRequest{
 		AnswerId: updateDTO.AnswerID,
 	})
 	if err != nil {

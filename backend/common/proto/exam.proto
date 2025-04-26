@@ -29,9 +29,10 @@ service ExamService {
 
   // Answer operations
   rpc GetParticipantAnswers(ParticipantRequest) returns (AnswerList) {}
-  rpc GetAnswer(GetAnswerRequest) returns (AnswerResponse) {}
+  rpc GetAnswer(GetAnswerRequest) returns (GetAnswerResponse) {}
   rpc UpsertAnswer(UpsertAnswersRequest) returns (UpsertAnswersResponse) {}
   rpc UpdateAnswerForEvaluation(UpdateAnswerRequest) returns (Empty) {}
+  rpc GetAnswerById(GetAnswerByIdRequest) returns (AnswerResponse) {}
 }
 
 // Exam messages
@@ -161,7 +162,13 @@ message UpdateAnswerRequest {
 }
 
 message GetAnswerRequest {
-  int64 answer_id = 1;
+  int64 participant_id = 1;
+  int64 question_id = 2;
+}
+
+message GetAnswerResponse {
+  int64 id = 1;
+  string answer = 2;
 }
 
 message ExamAccessResponse {
@@ -202,6 +209,10 @@ message ExamCategory {
 
 message ExamCategoriesResponse {
   repeated ExamCategory categories = 1;
+}
+
+message GetAnswerByIdRequest {
+  int64 answer_id = 1;
 }
 
 enum ExamAccessType {

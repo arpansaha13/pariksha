@@ -118,14 +118,14 @@ func TestGetParticipantAnswers(t *testing.T) {
 func TestGetAnswer(t *testing.T) {
 	tests := []struct {
 		name         string
-		setup        func(t *testing.T) *models.Answer
+		setup        func(t *testing.T) (*models.ExamParticipant, int64)
 		metadata     map[string]string
 		expectedCode codes.Code
-		validate     func(t *testing.T, resp *proto.AnswerResponse)
+		validate     func(t *testing.T, resp *proto.GetAnswerResponse)
 	}{
 		{
 			name: "Success - Get single answer",
-			setup: func(t *testing.T) *models.Answer {
+			setup: func(t *testing.T) (*models.ExamParticipant, int64) {
 				exam := createTestExam(t, userID)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
@@ -137,23 +137,31 @@ func TestGetAnswer(t *testing.T) {
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 
 				answer := createTestAnswer(t, &participant, 1)
-				return &answer
+				return &participant, answer.QuestionID
 			},
 			metadata: map[string]string{
 				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
 			},
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, resp *proto.AnswerResponse) {
+			validate: func(t *testing.T, resp *proto.GetAnswerResponse) {
 				assert.Equal(t, "Test Answer", resp.Answer)
-				assert.Equal(t, "Test Comment", resp.Comments)
-				assert.Equal(t, int32(5), resp.ScoreAwarded)
+				assert.NotZero(t, resp.Id)
 			},
 		},
 		{
 			name: "Fail - Answer not found",
-			setup: func(t *testing.T) *models.Answer {
-				return &models.Answer{ID: 9999}
+			setup: func(t *testing.T) (*models.ExamParticipant, int64) {
+				exam := createTestExam(t, userID)
+				err := createTestExamParticipants(t, &exam, []struct {
+					UserID int64
+					Status int
+				}{{UserID: userID, Status: 1}})
+				require.NoError(t, err)
+
+				var participant models.ExamParticipant
+				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
+				return &participant, 9999 // Non-existent question ID
 			},
 			metadata: map[string]string{
 				"user_id":        strconv.FormatInt(userID, 10),
@@ -166,11 +174,12 @@ func TestGetAnswer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
-			answer := tt.setup(t)
+			participant, questionId := tt.setup(t)
 
 			ctx := createContextWithMetadata(tt.metadata)
 			resp, err := client.GetAnswer(ctx, &proto.GetAnswerRequest{
-				AnswerId: answer.ID,
+				ParticipantId: participant.ID,
+				QuestionId:    questionId,
 			})
 
 			if tt.expectedCode != codes.OK {
@@ -333,29 +342,25 @@ func TestUpsertAnswer(t *testing.T) {
 			expectedCode: codes.FailedPrecondition,
 		},
 		{
-			name: "Fail - Scheduled end time passed",
+			name: "Fail - Exam ended",
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
 					Status int
 				}{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
 
-				// Set scheduled end time to 1 hour in the past
-				participant.ScheduledEndTime = sql.NullTime{Time: time.Now().Add(-1 * time.Hour), Valid: true}
-				require.NoError(t, db.DB.Save(&participant).Error)
-
 				return &participant, &proto.UpsertAnswersRequest{
 					ExamId: exam.ID,
 					Answer: &proto.Answer{
 						QuestionId:  1,
-						Answer:      "Test answer after end time",
+						Answer:      "Test answer after exam ended",
 						SubmittedAt: timestamppb.Now(),
 					},
 				}
@@ -688,6 +693,79 @@ func TestMarkAsEvaluated(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, resp)
 			tt.validate(t, participant, resp)
+		})
+	}
+}
+
+func TestGetAnswerById(t *testing.T) {
+	tests := []struct {
+		name         string
+		setup        func(t *testing.T) *models.Answer
+		metadata     map[string]string
+		expectedCode codes.Code
+		validate     func(t *testing.T, resp *proto.AnswerResponse)
+	}{
+		{
+			name: "Success - Get answer by ID",
+			setup: func(t *testing.T) *models.Answer {
+				exam := createTestExam(t, userID)
+				err := createTestExamParticipants(t, &exam, []struct {
+					UserID int64
+					Status int
+				}{{UserID: userID, Status: 1}})
+				require.NoError(t, err)
+
+				var participant models.ExamParticipant
+				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
+
+				answer := createTestAnswer(t, &participant, 1)
+				return &answer
+			},
+			metadata: map[string]string{
+				"user_id":        strconv.FormatInt(userID, 10),
+				"question_score": "10",
+			},
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.AnswerResponse) {
+				assert.Equal(t, "Test Answer", resp.Answer)
+				assert.Equal(t, "Test Comment", resp.Comments)
+				assert.Equal(t, int32(5), resp.ScoreAwarded)
+				assert.NotZero(t, resp.Id)
+				assert.NotZero(t, resp.ExamParticipantId)
+				assert.NotZero(t, resp.QuestionId)
+			},
+		},
+		{
+			name: "Fail - Answer not found",
+			setup: func(t *testing.T) *models.Answer {
+				return &models.Answer{ID: 9999} // Non-existent answer ID
+			},
+			metadata: map[string]string{
+				"user_id":        strconv.FormatInt(userID, 10),
+				"question_score": "10",
+			},
+			expectedCode: codes.NotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+			answer := tt.setup(t)
+
+			ctx := createContextWithMetadata(tt.metadata)
+			resp, err := client.GetAnswerById(ctx, &proto.GetAnswerByIdRequest{
+				AnswerId: answer.ID,
+			})
+
+			if tt.expectedCode != codes.OK {
+				assert.Equal(t, tt.expectedCode, status.Code(err))
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, resp)
+			tt.validate(t, resp)
 		})
 	}
 }

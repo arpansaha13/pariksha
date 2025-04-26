@@ -45,7 +45,24 @@ func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.Parti
 	return response, nil
 }
 
-func (s *ExamServer) GetAnswer(ctx context.Context, req *proto.GetAnswerRequest) (*proto.AnswerResponse, error) {
+// GetAnswer finds an answer using participant ID and question ID and returns minimal info
+func (s *ExamServer) GetAnswer(ctx context.Context, req *proto.GetAnswerRequest) (*proto.GetAnswerResponse, error) {
+	var answer models.Answer
+	if err := db.DB.Where("exam_participant_id = ? AND question_id = ?", req.ParticipantId, req.QuestionId).Take(&answer).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.NotFound, "answer not found")
+		}
+		return nil, status.Error(codes.Internal, "database error")
+	}
+
+	return &proto.GetAnswerResponse{
+		Id:     answer.ID,
+		Answer: answer.Answer.String,
+	}, nil
+}
+
+// GetAnswerById finds an answer using its ID
+func (s *ExamServer) GetAnswerById(ctx context.Context, req *proto.GetAnswerByIdRequest) (*proto.AnswerResponse, error) {
 	var answer models.Answer
 	if err := db.DB.Take(&answer, req.AnswerId).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -71,11 +88,11 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 	}
 
 	if participant.Status != constants.PARTICIPANT_STATUS_STARTED {
-		return nil, status.Error(codes.FailedPrecondition, "exam has not started")
+		return nil, status.Error(codes.FailedPrecondition, "participant has not started the exam")
 	}
 
-	if req.Answer.SubmittedAt.AsTime().After(participant.ScheduledEndTime.Time) {
-		return nil, status.Error(codes.FailedPrecondition, "cannot submit answer after scheduled end time")
+	if participant.Status == constants.PARTICIPANT_STATUS_ENDED {
+		return nil, status.Error(codes.FailedPrecondition, "participant has ended the exam")
 	}
 
 	var answer models.Answer
