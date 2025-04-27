@@ -14,7 +14,7 @@ services:
         - action: rebuild
           path: ./exam/cmd
         - action: rebuild
-          path: ./common
+          path: ./common/pkg
         - action: rebuild
           path: ./exam/go.mod
         - action: rebuild

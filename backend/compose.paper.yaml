@@ -14,7 +14,7 @@ services:
         - action: rebuild
           path: ./paper/cmd
         - action: rebuild
-          path: ./common
+          path: ./common/pkg
         - action: rebuild
           path: ./paper/go.mod
         - action: rebuild

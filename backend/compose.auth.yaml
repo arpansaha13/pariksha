@@ -14,7 +14,7 @@ services:
         - action: rebuild
           path: ./auth/cmd
         - action: rebuild
-          path: ./common
+          path: ./common/pkg
         - action: rebuild
           path: ./auth/go.mod
         - action: rebuild
@@ -35,7 +35,7 @@ services:
         - action: rebuild
           path: ./cron/sessions/cmd
         - action: rebuild
-          path: ./common
+          path: ./common/pkg
         - action: rebuild
           path: ./cron/sessions/go.mod
         - action: rebuild

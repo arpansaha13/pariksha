@@ -16,7 +16,7 @@ services:
         - action: rebuild
           path: ./server/cmd
         - action: rebuild
-          path: ./common
+          path: ./common/pkg
         - action: rebuild
           path: ./server/go.mod
         - action: rebuild
