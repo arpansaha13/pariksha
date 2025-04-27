@@ -55,7 +55,7 @@ func (s *PaperServer) CreateCategory(ctx context.Context, req *proto.CreateCateg
 		}
 
 		// Get max order
-		var maxOrder struct{ MaxOrder int }
+		var maxOrder struct{ MaxOrder int16 }
 		err = tx.Model(&models.QuestionCategory{}).
 			Where("paper_id = ?", req.PaperId).
 			Select("COALESCE(MAX(\"order\"), 0) as max_order").

@@ -10,13 +10,13 @@ import (
 )
 
 type Question struct {
-	ID            int64           `gorm:"primaryKey"`
-	CategoryID    int64           `gorm:"not null"`
-	Question      json.RawMessage `gorm:"type:json;not null"`
-	Order         int             `gorm:"not null"`
-	Type          string          `gorm:"type:varchar(20);not null;check:type IN ('MCQ', 'SHORT', 'LONG')"`
-	Tags          json.RawMessage `gorm:"type:json;default:'[]'"`
-	PaperID       sql.NullInt64
+	ID            int64            `gorm:"primaryKey;type:bigint"`
+	CategoryID    int64            `gorm:"type:bigint;not null"`
+	Question      json.RawMessage  `gorm:"type:json;not null"`
+	Order         int16            `gorm:"type:smallint;not null"`
+	Type          string           `gorm:"type:varchar(20);not null;check:type IN ('MCQ', 'SHORT', 'LONG')"`
+	Tags          json.RawMessage  `gorm:"type:json;default:'[]'"`
+	PaperID       sql.NullInt64    `gorm:"type:bigint"`
 	MaxScore      int              `gorm:"not null"`
 	CorrectAnswer sql.NullString   `gorm:"type:text"`
 	Locked        bool             `gorm:"not null;default:false"`

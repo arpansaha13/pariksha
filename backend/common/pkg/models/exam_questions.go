@@ -1,11 +1,11 @@
 package models
 
 type ExamQuestion struct {
-	ID         int64 `gorm:"primaryKey"`
-	ExamID     int64 `gorm:"not null"`
-	QuestionID int64 `gorm:"not null"`
-	CategoryID int64 `gorm:"not null"`
-	Order      int   `gorm:"not null"`
+	ID         int64 `gorm:"primaryKey;type:bigint"`
+	ExamID     int64 `gorm:"type:bigint;not null"`
+	QuestionID int64 `gorm:"type:bigint;not null"`
+	CategoryID int64 `gorm:"type:bigint;not null"`
+	Order      int16 `gorm:"type:smallint;not null"`
 	Exam       Exam  `gorm:"foreignKey:ExamID"`
 }
 

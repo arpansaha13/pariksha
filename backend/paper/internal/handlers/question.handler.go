@@ -101,7 +101,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 	var question models.Question
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		// Get max order for this category
-		var maxOrder struct{ MaxOrder int }
+		var maxOrder struct{ MaxOrder int16 }
 		err := tx.Model(&models.Question{}).
 			Where("category_id = ?", req.CategoryId).
 			Select("COALESCE(MAX(\"order\"), 0) as max_order").

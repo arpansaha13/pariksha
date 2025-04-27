@@ -14,15 +14,15 @@ type ParticipantCount struct {
 }
 
 type Exam struct {
-	ID                 int64 `gorm:"primaryKey"`
+	ID                 int64 `gorm:"primaryKey;type:bigint"`
 	Title              string
-	StartsAt           time.Time `gorm:"column:starts_at;not null"`
-	EndsAt             time.Time `gorm:"column:ends_at;not null"`
-	CreatedBy          int64
-	Type               string `gorm:"type:varchar(16);default:LINK"`
-	MaxCandidatesCount int32  `gorm:"not null"`
-	DurationMinutes    int32  `gorm:"not null"`
-	PaperID            int64
+	StartsAt           time.Time         `gorm:"column:starts_at;not null"`
+	EndsAt             time.Time         `gorm:"column:ends_at;not null"`
+	CreatedBy          int64             `gorm:"type:bigint"`
+	Type               string            `gorm:"type:varchar(16);default:LINK"`
+	MaxCandidatesCount int32             `gorm:"not null"`
+	DurationMinutes    int32             `gorm:"not null"`
+	PaperID            int64             `gorm:"type:bigint"`
 	ParticipantCounts  json.RawMessage   `gorm:"type:json;default:'{\"unattended\":0,\"invited\":0,\"started\":0,\"ended\":0}'"`
 	Participants       []ExamParticipant `gorm:"foreignKey:ExamID"`
 }

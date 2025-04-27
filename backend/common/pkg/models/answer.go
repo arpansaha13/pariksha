@@ -7,9 +7,9 @@ import (
 )
 
 type Answer struct {
-	ID                int64 `gorm:"primaryKey"`
-	ExamParticipantID int64
-	QuestionID        int64
+	ID                int64           `gorm:"primaryKey;type:bigint"`
+	ExamParticipantID int64           `gorm:"type:bigint"`
+	QuestionID        int64           `gorm:"type:bigint"`
 	Answer            json.RawMessage `gorm:"type:json"`
 	ScoreAwarded      int             `gorm:"default:0;not null"`
 	Comments          sql.NullString  `gorm:"type:text"`
