@@ -242,7 +242,7 @@ func createTestAnswer(t *testing.T, examParticipant *models.ExamParticipant, que
 	answer := models.Answer{
 		ExamParticipantID: examParticipant.ID,
 		QuestionID:        questionID,
-		Answer:            sql.NullString{String: "Test Answer", Valid: true},
+		Answer:            []byte(`{"text": "Test Answer"}`),
 		Comments:          sql.NullString{String: "Test Comment", Valid: true},
 		ScoreAwarded:      5,
 		Evaluated:         true,

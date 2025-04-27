@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"strconv"
 	"testing"
 	"time"
@@ -54,7 +55,11 @@ func TestGetParticipantAnswers(t *testing.T) {
 			validate: func(t *testing.T, resp *proto.AnswerList) {
 				assert.Equal(t, 2, len(resp.Answers))
 				for _, answer := range resp.Answers {
-					assert.Equal(t, "Test Answer", answer.Answer)
+					var answerData struct {
+						Text string `json:"text"`
+					}
+					require.NoError(t, json.Unmarshal(answer.Answer, &answerData))
+					assert.Equal(t, "Test Answer", answerData.Text)
 					assert.Equal(t, "Test Comment", answer.Comments)
 					assert.Equal(t, int32(5), answer.ScoreAwarded)
 				}
@@ -118,26 +123,26 @@ func TestGetParticipantAnswers(t *testing.T) {
 func TestGetAnswer(t *testing.T) {
 	tests := []struct {
 		name         string
-		setup        func(t *testing.T) (*models.ExamParticipant, int64)
+		setup        func(t *testing.T) (*models.Exam, int64)
 		metadata     map[string]string
 		expectedCode codes.Code
 		validate     func(t *testing.T, resp *proto.GetAnswerResponse)
 	}{
 		{
 			name: "Success - Get single answer",
-			setup: func(t *testing.T) (*models.ExamParticipant, int64) {
-				exam := createTestExam(t, userID)
+			setup: func(t *testing.T) (*models.Exam, int64) {
+				exam := createTestExam(t, 2) // Created by different user
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
 					Status int
-				}{{UserID: userID, Status: 1}})
+				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED}})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 
 				answer := createTestAnswer(t, &participant, 1)
-				return &participant, answer.QuestionID
+				return &exam, answer.QuestionID
 			},
 			metadata: map[string]string{
 				"user_id":        strconv.FormatInt(userID, 10),
@@ -145,23 +150,24 @@ func TestGetAnswer(t *testing.T) {
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.GetAnswerResponse) {
-				assert.Equal(t, "Test Answer", resp.Answer)
+				var answerData struct {
+					Text string `json:"text"`
+				}
+				require.NoError(t, json.Unmarshal(resp.Answer, &answerData))
+				assert.Equal(t, "Test Answer", answerData.Text)
 				assert.NotZero(t, resp.Id)
 			},
 		},
 		{
 			name: "Fail - Answer not found",
-			setup: func(t *testing.T) (*models.ExamParticipant, int64) {
-				exam := createTestExam(t, userID)
+			setup: func(t *testing.T) (*models.Exam, int64) {
+				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
 					Status int
-				}{{UserID: userID, Status: 1}})
+				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED}})
 				require.NoError(t, err)
-
-				var participant models.ExamParticipant
-				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
-				return &participant, 9999 // Non-existent question ID
+				return &exam, 9999 // Non-existent question ID
 			},
 			metadata: map[string]string{
 				"user_id":        strconv.FormatInt(userID, 10),
@@ -169,17 +175,29 @@ func TestGetAnswer(t *testing.T) {
 			},
 			expectedCode: codes.NotFound,
 		},
+		{
+			name: "Fail - User not a participant",
+			setup: func(t *testing.T) (*models.Exam, int64) {
+				exam := createTestExam(t, 2)
+				return &exam, 1
+			},
+			metadata: map[string]string{
+				"user_id":        strconv.FormatInt(userID, 10),
+				"question_score": "10",
+			},
+			expectedCode: codes.PermissionDenied,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
-			participant, questionId := tt.setup(t)
+			exam, questionId := tt.setup(t)
 
 			ctx := createContextWithMetadata(tt.metadata)
 			resp, err := client.GetAnswer(ctx, &proto.GetAnswerRequest{
-				ParticipantId: participant.ID,
-				QuestionId:    questionId,
+				ExamId:     exam.ID,
+				QuestionId: questionId,
 			})
 
 			if tt.expectedCode != codes.OK {
@@ -226,7 +244,7 @@ func TestUpsertAnswer(t *testing.T) {
 					ExamId: exam.ID,
 					Answer: &proto.Answer{
 						QuestionId:  1,
-						Answer:      "Test answer content",
+						Answer:      []byte(`{"text": "Test answer content"}`),
 						SubmittedAt: timestamppb.Now(),
 					},
 				}
@@ -235,6 +253,7 @@ func TestUpsertAnswer(t *testing.T) {
 			metadata: map[string]string{
 				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
+				"question_type":  constants.QUESTION_TYPE_LONG,
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.UpsertAnswersResponse) {
@@ -243,7 +262,11 @@ func TestUpsertAnswer(t *testing.T) {
 				// Verify answer in database
 				var answer models.Answer
 				require.NoError(t, db.DB.First(&answer, resp.AnswerId).Error)
-				assert.Equal(t, "Test answer content", answer.Answer.String)
+				var answerData struct {
+					Text string `json:"text"`
+				}
+				require.NoError(t, json.Unmarshal(answer.Answer, &answerData))
+				assert.Equal(t, "Test answer content", answerData.Text)
 				assert.Equal(t, int64(1), answer.QuestionID)
 			},
 		},
@@ -273,7 +296,7 @@ func TestUpsertAnswer(t *testing.T) {
 					ExamId: exam.ID,
 					Answer: &proto.Answer{
 						QuestionId:  answer.QuestionID,
-						Answer:      "Updated answer content",
+						Answer:      []byte(`{"text": "Updated answer content"}`),
 						SubmittedAt: timestamppb.Now(),
 					},
 				}
@@ -282,6 +305,7 @@ func TestUpsertAnswer(t *testing.T) {
 			metadata: map[string]string{
 				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
+				"question_type":  constants.QUESTION_TYPE_LONG,
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.UpsertAnswersResponse) {
@@ -290,7 +314,11 @@ func TestUpsertAnswer(t *testing.T) {
 				// Verify updated answer in database
 				var answer models.Answer
 				require.NoError(t, db.DB.First(&answer, resp.AnswerId).Error)
-				assert.Equal(t, "Updated answer content", answer.Answer.String)
+				var answerData struct {
+					Text string `json:"text"`
+				}
+				require.NoError(t, json.Unmarshal(answer.Answer, &answerData))
+				assert.Equal(t, "Updated answer content", answerData.Text)
 			},
 		},
 		{
@@ -301,7 +329,7 @@ func TestUpsertAnswer(t *testing.T) {
 					ExamId: exam.ID,
 					Answer: &proto.Answer{
 						QuestionId:  1,
-						Answer:      "Test answer",
+						Answer:      []byte(`{"text": "Test answer"}`),
 						SubmittedAt: timestamppb.Now(),
 					},
 				}
@@ -310,6 +338,7 @@ func TestUpsertAnswer(t *testing.T) {
 			metadata: map[string]string{
 				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
+				"question_type":  constants.QUESTION_TYPE_LONG,
 			},
 			expectedCode: codes.PermissionDenied,
 		},
@@ -329,7 +358,7 @@ func TestUpsertAnswer(t *testing.T) {
 					ExamId: exam.ID,
 					Answer: &proto.Answer{
 						QuestionId:  1,
-						Answer:      "Test answer",
+						Answer:      []byte(`{"text": "Test answer"}`),
 						SubmittedAt: timestamppb.Now(),
 					},
 				}
@@ -338,6 +367,7 @@ func TestUpsertAnswer(t *testing.T) {
 			metadata: map[string]string{
 				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
+				"question_type":  constants.QUESTION_TYPE_LONG,
 			},
 			expectedCode: codes.FailedPrecondition,
 		},
@@ -360,7 +390,7 @@ func TestUpsertAnswer(t *testing.T) {
 					ExamId: exam.ID,
 					Answer: &proto.Answer{
 						QuestionId:  1,
-						Answer:      "Test answer after exam ended",
+						Answer:      []byte(`{"text": "Test answer after exam ended"}`),
 						SubmittedAt: timestamppb.Now(),
 					},
 				}
@@ -369,6 +399,7 @@ func TestUpsertAnswer(t *testing.T) {
 			metadata: map[string]string{
 				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
+				"question_type":  constants.QUESTION_TYPE_LONG,
 			},
 			expectedCode: codes.FailedPrecondition,
 		},
@@ -727,7 +758,11 @@ func TestGetAnswerById(t *testing.T) {
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.AnswerResponse) {
-				assert.Equal(t, "Test Answer", resp.Answer)
+				var answerData struct {
+					Text string `json:"text"`
+				}
+				require.NoError(t, json.Unmarshal(resp.Answer, &answerData))
+				assert.Equal(t, "Test Answer", answerData.Text)
 				assert.Equal(t, "Test Comment", resp.Comments)
 				assert.Equal(t, int32(5), resp.ScoreAwarded)
 				assert.NotZero(t, resp.Id)

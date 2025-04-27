@@ -61,7 +61,7 @@ var (
 	defaultMethods = []string{
 		"/proto.ExamService/GetExam",
 		"/proto.ExamService/CheckExamAccess",
-		"/proto.ExamService/GetAnswerById",
+		// "/proto.ExamService/GetAnswerById",
 	}
 )
 

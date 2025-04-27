@@ -383,8 +383,8 @@ func TestReorderCategories(t *testing.T) {
 				assert.Equal(t, len(categories), len(updated))
 				assert.Equal(t, categories[1].ID, updated[0].ID) // Category 2 should be first
 				assert.Equal(t, categories[0].ID, updated[1].ID) // Default category should be second
-				assert.Equal(t, 1, updated[0].Order)
-				assert.Equal(t, 2, updated[1].Order)
+				assert.Equal(t, int16(1), updated[0].Order)
+				assert.Equal(t, int16(2), updated[1].Order)
 			},
 		},
 	}
