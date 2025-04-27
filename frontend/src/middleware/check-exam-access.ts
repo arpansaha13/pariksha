@@ -1,16 +1,19 @@
 import { ExamPermission } from '~/types/exam'
 
 export default defineNuxtRouteMiddleware(async (to, _from) => {
-  const examId = parseInt(to.params.examId as string)
-
   try {
-    const res = await checkExamAccess(examId)
-    const { payload } = useNuxtApp()
-    payload.data['examAccess'] = res
+    await callOnce(
+      async () => {
+        const examId = parseInt(to.params.examId as string)
 
-    if (res.access_type === ExamPermission.PARTICIPANT) {
-      setPageLayout('blank')
-    }
+        const { data } = await useExamCheckAccess(examId)
+
+        if (data.value!.access_type === ExamPermission.PARTICIPANT) {
+          setPageLayout('blank')
+        }
+      },
+      { mode: 'navigation' }
+    )
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     if (err.statusCode === HttpStatus.NOT_FOUND) {

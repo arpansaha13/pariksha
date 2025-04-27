@@ -5,12 +5,12 @@ interface CheckExamAccessResponse {
   participant_status: ExamParticipantStatus
 }
 
-export async function checkExamAccess(examId: number) {
+export function useExamCheckAccess(examId: number) {
   const fetchOptions = getFetchOptions()
   fetchOptions.cache = 'no-cache'
 
-  return $fetch<CheckExamAccessResponse>(
-    `/api/exams/${examId}/check`,
-    fetchOptions
+  return useAsyncData<CheckExamAccessResponse>(
+    AsyncDataKeys.EXAM_ACCESS(examId),
+    () => $fetch(`/api/exams/${examId}/check`, fetchOptions)
   )
 }

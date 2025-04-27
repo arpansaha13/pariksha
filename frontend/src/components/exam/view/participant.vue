@@ -68,14 +68,19 @@
 import { DateFormatter } from '@internationalized/date'
 import { ExamParticipantStatus } from '~/types'
 
-const { payload } = useNuxtApp()
-const examAccess = payload.data.examAccess as Awaited<
-  ReturnType<typeof checkExamAccess>
->
+const props = defineProps({
+  examAccess: {
+    type: Object as PropType<
+      NonNullable<ReturnType<typeof useExamCheckAccess>['data']['value']>
+    >,
+    required: true,
+  },
+})
+
 const isParticipantExamStarted =
-  examAccess.participant_status === ExamParticipantStatus.STARTED
+  props.examAccess.participant_status === ExamParticipantStatus.STARTED
 const isParticipantExamEnded =
-  examAccess.participant_status === ExamParticipantStatus.ENDED
+  props.examAccess.participant_status === ExamParticipantStatus.ENDED
 
 const route = useRoute()
 const examId = parseInt(route.params.examId as string)
