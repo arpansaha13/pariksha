@@ -1,4 +1,4 @@
-package types
+package structs
 
 type MailRequestVerification struct {
 	To               string

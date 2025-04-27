@@ -22,7 +22,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/utils"
 )
 
@@ -148,7 +148,7 @@ func (s *AuthServer) InitiateLoginWithOtp(ctx context.Context, req *proto.LoginW
 		return nil, status.Error(codes.Internal, "failed to create OTP")
 	}
 
-	services.MailService.SendLoginOtpMail(&types.MailRequestLoginOtp{
+	services.MailService.SendLoginOtpMail(&structs.MailRequestLoginOtp{
 		To:               req.Email,
 		Otp:              otp,
 		ExpiresInMinutes: otpExpiresInMinutes,
@@ -213,7 +213,7 @@ func (s *AuthServer) SignUp(ctx context.Context, req *proto.SignUpRequest) (*pro
 			return err
 		}
 
-		services.MailService.SendVerificationMail(&types.MailRequestVerification{
+		services.MailService.SendVerificationMail(&structs.MailRequestVerification{
 			To:               req.Email,
 			Otp:              otp,
 			ExpiresInMinutes: env.OTP_EXPIRES_IN_MINUTES,
@@ -365,7 +365,7 @@ func (s *AuthServer) ForgotPassword(ctx context.Context, req *proto.ForgotPasswo
 		return nil, status.Error(codes.Internal, "failed to create OTP")
 	}
 
-	services.MailService.SendForgotPasswordMail(&types.MailRequestForgotPassword{
+	services.MailService.SendForgotPasswordMail(&structs.MailRequestForgotPassword{
 		To:               req.Email,
 		Otp:              otp,
 		ExpiresInMinutes: env.OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD,
@@ -412,7 +412,7 @@ func (s *AuthServer) ResetPassword(ctx context.Context, req *proto.ResetPassword
 			return err
 		}
 
-		services.MailService.SendResetPasswordMail(&types.MailRequestResetPassword{To: req.Email})
+		services.MailService.SendResetPasswordMail(&structs.MailRequestResetPassword{To: req.Email})
 		return nil
 	})
 

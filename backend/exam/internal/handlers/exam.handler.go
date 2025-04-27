@@ -12,7 +12,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/interceptors"
@@ -97,7 +97,7 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 		return nil, status.Error(codes.Internal, "failed to create exam")
 	}
 
-	services.EnqueuePrepareQuestons(types.ExamQueuePayload{
+	services.EnqueuePrepareQuestons(structs.PrepareQuestionsPayload{
 		ExamID:  exam.ID,
 		PaperID: exam.PaperID,
 	})
@@ -250,7 +250,7 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 
 		// After successfully creating/updating participant
 		// Add delayed task for auto-ending exam
-		autoEndPayload := types.AutoEndExamPayload{
+		autoEndPayload := structs.AutoEndExamPayload{
 			ExamID:        req.ExamId,
 			ParticipantID: participant.ID,
 		}

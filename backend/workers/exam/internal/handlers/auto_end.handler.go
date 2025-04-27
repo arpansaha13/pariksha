@@ -12,13 +12,13 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
-	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/structs"
 	"pariksha/workers/exam/internal/config/db"
 )
 
 // AutoEndExam handles the automatic ending of an exam after its duration expires
 func AutoEndExam(ctx context.Context, task *asynq.Task) error {
-	var payload types.AutoEndExamPayload
+	var payload structs.AutoEndExamPayload
 	if err := json.Unmarshal(task.Payload(), &payload); err != nil {
 		log.Default().Printf("Failed to unmarshal auto-end payload: %v", err)
 		return err

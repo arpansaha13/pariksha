@@ -1,6 +1,6 @@
-package types
+package structs
 
-type ExamQueuePayload struct {
+type PrepareQuestionsPayload struct {
 	ExamID  int64 `json:"examId"`
 	PaperID int64 `json:"paperId"`
 }

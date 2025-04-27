@@ -9,7 +9,7 @@ import (
 	"github.com/hibiken/asynq"
 
 	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/env"
 )
@@ -48,7 +48,7 @@ func CloseExamQueue() {
 	}
 }
 
-func EnqueuePrepareQuestons(payload types.ExamQueuePayload) {
+func EnqueuePrepareQuestons(payload structs.PrepareQuestionsPayload) {
 	taskBytes, err := json.Marshal(payload)
 	if err != nil {
 		log.Default().Printf("Failed to marshal payload: %v", err)
@@ -66,7 +66,7 @@ func EnqueuePrepareQuestons(payload types.ExamQueuePayload) {
 	log.Default().Printf("Enqueued task: id=%s queue=%s", info.ID, info.Queue)
 }
 
-func EnqueueAutoEndExam(payload types.AutoEndExamPayload, scheduledEndTime time.Time) {
+func EnqueueAutoEndExam(payload structs.AutoEndExamPayload, scheduledEndTime time.Time) {
 	taskBytes, err := json.Marshal(payload)
 	if err != nil {
 		log.Default().Printf("Failed to marshal auto-end payload: %v", err)

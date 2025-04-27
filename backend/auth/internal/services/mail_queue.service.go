@@ -11,7 +11,7 @@ import (
 
 	"pariksha/auth/internal/config/env"
 	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/utils"
 )
 
@@ -75,19 +75,19 @@ type mailService struct{}
 
 var MailService mailService
 
-func (*mailService) SendVerificationMail(payload *types.MailRequestVerification) {
+func (*mailService) SendVerificationMail(payload *structs.MailRequestVerification) {
 	pushToMailQueue(constants.MAIL_TYPE_VERIFICATION, payload)
 }
 
-func (*mailService) SendLoginOtpMail(payload *types.MailRequestLoginOtp) {
+func (*mailService) SendLoginOtpMail(payload *structs.MailRequestLoginOtp) {
 	pushToMailQueue(constants.MAIL_TYPE_LOGIN_OTP, payload)
 }
 
-func (*mailService) SendForgotPasswordMail(payload *types.MailRequestForgotPassword) {
+func (*mailService) SendForgotPasswordMail(payload *structs.MailRequestForgotPassword) {
 	pushToMailQueue(constants.MAIL_TYPE_FORGOT_PASSWORD, payload)
 }
 
-func (*mailService) SendResetPasswordMail(payload *types.MailRequestResetPassword) {
+func (*mailService) SendResetPasswordMail(payload *structs.MailRequestResetPassword) {
 	pushToMailQueue(constants.MAIL_TYPE_RESET_PASSWORD, payload)
 }
 

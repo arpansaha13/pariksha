@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"log"
 
-	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/structs"
 	"pariksha/mail/internal/config/env"
 )
 
 func SendVerificationMail(body []byte) {
-	var payload types.MailRequestVerification
+	var payload structs.MailRequestVerification
 	err := json.Unmarshal(body, &payload)
 
 	if err != nil {
@@ -46,7 +46,7 @@ func SendVerificationMail(body []byte) {
 }
 
 func SendLoginOtpMail(body []byte) {
-	var payload types.MailRequestLoginOtp
+	var payload structs.MailRequestLoginOtp
 	err := json.Unmarshal(body, &payload)
 
 	if err != nil {
@@ -82,7 +82,7 @@ func SendLoginOtpMail(body []byte) {
 }
 
 func SendForgotPasswordMail(body []byte) {
-	var payload types.MailRequestLoginOtp
+	var payload structs.MailRequestLoginOtp
 	err := json.Unmarshal(body, &payload)
 
 	if err != nil {
@@ -118,7 +118,7 @@ func SendForgotPasswordMail(body []byte) {
 }
 
 func SendResetPasswordMail(body []byte) {
-	var payload types.MailRequestResetPassword
+	var payload structs.MailRequestResetPassword
 	err := json.Unmarshal(body, &payload)
 
 	if err != nil {
