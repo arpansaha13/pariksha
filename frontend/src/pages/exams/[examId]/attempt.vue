@@ -60,12 +60,20 @@
     <UCard v-if="question" :ui="{ root: 'col-span-2' }">
       <ExamQuestionMcq
         v-if="question.type === QuestionType.MCQ"
+        v-model:answer="answerStates[question.id]"
         :question="question.question"
       />
-      <ExamQuestionNonMcq v-else :question="question.question" />
+      <ExamQuestionNonMcq
+        v-else
+        v-model:answer="answerStates[question.id]"
+        :question="question.question"
+      />
     </UCard>
 
-    <UCard :ui="{ root: 'col-span-2', body: 'flex' }">
+    <UCard
+      v-if="currentCategoryQuestions.length > 0"
+      :ui="{ root: 'col-span-2', body: 'flex' }"
+    >
       <UButton
         v-if="prevQuestionId"
         replace
@@ -76,12 +84,9 @@
       />
       <UButton
         v-if="nextQuestionId"
-        replace
-        label="Next"
-        color="neutral"
-        variant="outline"
-        :to="{ query: { ...route.query, question: nextQuestionId } }"
+        label="Save and next"
         class="ml-auto"
+        :to="{ query: { ...route.query, question: nextQuestionId } }"
       />
     </UCard>
   </template>
@@ -99,10 +104,18 @@ definePageMeta({
 
 const route = useRoute()
 const examId = parseInt(route.params.examId as string)
-const { data: exam } = await useExam(examId)
-const { data: participant } = await useExamParticipant(examId)
-const { data: groupedQuestions } = await useExamQuestions(examId)
-const { data: sortedCategories } = await useExamCategories(examId)
+
+const [
+  { data: exam },
+  { data: participant },
+  { data: groupedQuestions },
+  { data: sortedCategories },
+] = await Promise.all([
+  useExam(examId),
+  useExamParticipant(examId),
+  useExamQuestions(examId),
+  useExamCategories(examId),
+])
 
 const overlay = useOverlay()
 const confirmModal = overlay.create(ConfirmModal)
@@ -138,7 +151,18 @@ const { prevQuestionId, nextQuestionId } = useExamQuestionNavigation({
   currentCategoryQuestions,
 })
 
-const { data: question } = await useExamQuestion(currentQuestionId)
+const [{ data: question }, { data: answer }] = await Promise.all([
+  useExamQuestion(currentQuestionId),
+  useExamAnswer(examId, currentQuestionId),
+])
+
+//__________________________SAVE ANSWER___________________________
+const { answerStates, saveAnswer } = useExamSaveAnswer({
+  examId,
+  answer,
+  question,
+  groupedQuestions,
+})
 
 // ___________________AUTO-END EXAM ON TIMEOUT____________________
 const isExamEnded = ref(false)
@@ -150,8 +174,9 @@ const { remaining: redirectCountdown, start: startRedirectCountdown } =
   })
 
 async function handleExamSubmit() {
+  await saveAnswer(question.value!)
+  await endExam(examId)
   isExamEnded.value = true
   startRedirectCountdown()
-  endExam(examId)
 }
 </script>

@@ -19,8 +19,9 @@ type AnswerResponse struct {
 }
 
 type PartialAnswerResponse struct {
-	ID     int64           `json:"id"`
-	Answer json.RawMessage `json:"answer"`
+	ID         int64           `json:"id"`
+	Answer     json.RawMessage `json:"answer"`
+	QuestionID int64           `json:"question_id"`
 }
 
 type UpdateAnswerForEvaluationDTO struct {

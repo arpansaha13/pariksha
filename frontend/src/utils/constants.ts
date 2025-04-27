@@ -45,7 +45,12 @@ export const AsyncDataKeys = {
 
   EXAM_QUESTION: (questionId?: number | null) =>
     questionId ? `EXAM_QUESTION_${questionId}` : 'EXAM_QUESTION',
-}
+
+  EXAM_ANSWER: (examId?: number, questionId?: number) =>
+    examId && questionId
+      ? `EXAM_${examId}_${questionId}_ANSWER`
+      : 'EXAM_ANSWER',
+} as const
 
 export const InjectionKeys = {
   ConfirmModal: Symbol('ConfirmModal') as InjectionKey<

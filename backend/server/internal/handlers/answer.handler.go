@@ -55,13 +55,13 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 
 func GetAnswer(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	participantId, err := getInt64FromVars(vars, "participantId")
+	examID, err := getInt64FromVars(vars, "examId")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	questionId, err := getInt64FromVars(vars, "questionId")
+	questionID, err := getInt64FromVars(vars, "questionId")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -72,8 +72,8 @@ func GetAnswer(w http.ResponseWriter, r *http.Request) {
 	ctx := examService.CreateMetadata(userID)
 
 	resp, err := examService.Client().GetAnswer(ctx, &proto.GetAnswerRequest{
-		ParticipantId: participantId,
-		QuestionId:    questionId,
+		ExamId:     examID,
+		QuestionId: questionID,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -81,8 +81,9 @@ func GetAnswer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := dtos.PartialAnswerResponse{
-		ID:     resp.Id,
-		Answer: resp.Answer,
+		ID:         resp.Id,
+		Answer:     resp.Answer,
+		QuestionID: resp.QuestionId,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

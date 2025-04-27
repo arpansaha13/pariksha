@@ -7,7 +7,7 @@
     <USeparator :ui="{ root: 'my-4' }" />
 
     <UTextarea
-      v-model="answer"
+      v-model="generalAnswer.text"
       autoresize
       placeholder="Write your answer here..."
       :ui="{ root: 'flex' }"
@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import type { PropType } from 'vue'
-import type { QuestionLong, QuestionShort } from '~/types'
+import type { GeneralAnswer, QuestionLong, QuestionShort } from '~/types'
 
 type QuestionNonMcq = QuestionShort | QuestionLong
 
@@ -28,5 +28,7 @@ defineProps({
   },
 })
 
-const answer = ref('')
+const generalAnswer = defineModel<GeneralAnswer>('answer', {
+  required: true,
+})
 </script>

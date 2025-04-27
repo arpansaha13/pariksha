@@ -3,7 +3,7 @@
     <p class="mb-4">{{ question.statement }}</p>
 
     <URadioGroup
-      v-model="selected"
+      v-model="mcqAnswer.optionIndex"
       :items="options"
       :ui="{
         wrapper: 'ml-3',
@@ -13,7 +13,7 @@
 
     <UButton
       variant="ghost"
-      :disabled="isNullOrUndefined(selected)"
+      :disabled="isNullOrUndefined(mcqAnswer.optionIndex)"
       :ui="{
         base: 'mt-5',
       }"
@@ -27,13 +27,17 @@
 <script setup lang="ts">
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { PropType } from 'vue'
-import type { QuestionMcq } from '~/types'
+import type { MCQAnswer, QuestionMcq } from '~/types'
 
 const props = defineProps({
   question: {
     type: Object as PropType<QuestionMcq['question']>,
     required: true,
   },
+})
+
+const mcqAnswer = defineModel<MCQAnswer>('answer', {
+  required: true,
 })
 
 const options = computed(() =>
@@ -43,9 +47,7 @@ const options = computed(() =>
   }))
 )
 
-const selected = ref<number>()
-
 function clearSelection() {
-  selected.value = undefined
+  mcqAnswer.value.optionIndex = undefined
 }
 </script>

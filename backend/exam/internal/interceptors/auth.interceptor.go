@@ -272,16 +272,7 @@ func ExamAccessInterceptor() grpc.UnaryServerInterceptor {
 		case *proto.GetExamParticipantRequest:
 			examID = r.ExamId
 		case *proto.GetAnswerRequest:
-			err := db.DB.Model(&models.ExamParticipant{}).
-				Select("exam_id").
-				Where("id = ?", r.ParticipantId).
-				Take(&examID).Error
-			if err != nil {
-				if err == gorm.ErrRecordNotFound {
-					return nil, status.Error(codes.NotFound, "participant not found")
-				}
-				return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
-			}
+			examID = r.ExamId
 		case *proto.UpdateAnswerRequest:
 			// Find exam ID using joins, selecting only exam_id
 			err := db.DB.Model(&models.ExamParticipant{}).
