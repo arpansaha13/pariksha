@@ -622,7 +622,7 @@ func GetExamParticipant(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := dtos.GetExamParticipantResponse{
-		ParticipantID: participant.ParticipantId,
+		ID: participant.ParticipantId,
 	}
 
 	if participant.StartedAt != nil {

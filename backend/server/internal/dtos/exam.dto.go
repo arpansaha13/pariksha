@@ -92,7 +92,7 @@ type CheckExamParticipantResponse struct {
 }
 
 type GetExamParticipantResponse struct {
-	ParticipantID    int64     `json:"participant_id"`
+	ID               int64     `json:"id"`
 	StartedAt        time.Time `json:"started_at,omitempty"`
 	ScheduledEndTime time.Time `json:"scheduled_end_time,omitempty"`
 }

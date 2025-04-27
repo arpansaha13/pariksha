@@ -80,10 +80,7 @@ func GetAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := struct {
-		ID     int64  `json:"id"`
-		Answer string `json:"answer"`
-	}{
+	response := dtos.PartialAnswerResponse{
 		ID:     resp.Id,
 		Answer: resp.Answer,
 	}
@@ -111,14 +108,31 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	// Fetch question from paper service to get question type
+	paperService := services.GetPaperService()
+	paperCtx := paperService.CreateMetadata(userID)
 
+	questionResp, err := paperService.Client().GetExamQuestion(paperCtx, &proto.QuestionRequest{
+		QuestionId: answerDTO.QuestionID,
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	// Create metadata with question type
+	md := metadata.New(map[string]string{
+		"user_id":       strconv.FormatInt(userID, 10),
+		"question_type": questionResp.Type,
+	})
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+
+	examService := services.GetExamService()
 	resp, err := examService.Client().UpsertAnswer(ctx, &proto.UpsertAnswersRequest{
 		ExamId: examID,
 		Answer: &proto.Answer{
 			Answer:      answerDTO.Answer,
-			SubmittedAt: timestamppb.New(answerDTO.SubmittedAt),
+			SubmittedAt: timestamppb.Now(),
 			QuestionId:  answerDTO.QuestionID,
 		},
 	})

@@ -32,7 +32,9 @@ var (
 		"/proto.ExamService/GetExamParticipants",
 		"/proto.ExamService/AddExamParticipant",
 		"/proto.ExamService/RemoveExamParticipant",
+		// "/proto.ExamService/GetParticipantAnswers",
 		// "/proto.ExamService/UpdateAnswerForEvaluation",
+		// "/proto.ExamService/MarkAsEvaluated",
 	}
 
 	notOwnerMethods = []string{
@@ -42,6 +44,7 @@ var (
 		"/proto.ExamService/CheckExamParticipant",
 		"/proto.ExamService/GetExamQuestions",
 		"/proto.ExamService/GetExamCategories",
+		"/proto.ExamService/UpsertAnswer",
 	}
 
 	participantMethods = []string{
@@ -51,8 +54,32 @@ var (
 		"/proto.ExamService/GetExamQuestions",
 		"/proto.ExamService/GetExamCategories",
 		"/proto.ExamService/GetExamParticipant",
+		"/proto.ExamService/GetAnswer",
+		"/proto.ExamService/UpsertAnswer",
+	}
+
+	defaultMethods = []string{
+		"/proto.ExamService/GetExam",
+		"/proto.ExamService/CheckExamAccess",
+		"/proto.ExamService/GetAnswerById",
 	}
 )
+
+func shouldIntercept(methodName string) bool {
+	// Merge all method arrays once
+	allMethods := make([]string, 0, len(ownerMethods)+len(notOwnerMethods)+len(participantMethods)+len(defaultMethods))
+	allMethods = append(allMethods, ownerMethods...)
+	allMethods = append(allMethods, notOwnerMethods...)
+	allMethods = append(allMethods, participantMethods...)
+	allMethods = append(allMethods, defaultMethods...)
+
+	for _, method := range allMethods {
+		if strings.HasSuffix(methodName, method) {
+			return true
+		}
+	}
+	return false
+}
 
 type AuthorizationRule interface {
 	Authorize(ctx context.Context, methodName string, exam *models.Exam, userID int64) (context.Context, error)
@@ -146,6 +173,7 @@ func (r *ParticipantRule) ShouldStopOnSuccess() bool {
 type DefaultRule struct{}
 
 func (r *DefaultRule) Authorize(ctx context.Context, methodName string, exam *models.Exam, userID int64) (context.Context, error) {
+	// Allow owner
 	if exam.CreatedBy == userID {
 		return ctx, nil
 	}
@@ -243,9 +271,19 @@ func ExamAccessInterceptor() grpc.UnaryServerInterceptor {
 			examID = r.ExamId
 		case *proto.GetExamParticipantRequest:
 			examID = r.ExamId
+		case *proto.GetAnswerRequest:
+			err := db.DB.Model(&models.ExamParticipant{}).
+				Select("exam_id").
+				Where("id = ?", r.ParticipantId).
+				Take(&examID).Error
+			if err != nil {
+				if err == gorm.ErrRecordNotFound {
+					return nil, status.Error(codes.NotFound, "participant not found")
+				}
+				return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
+			}
 		case *proto.UpdateAnswerRequest:
 			// Find exam ID using joins, selecting only exam_id
-			var examID int64
 			err := db.DB.Model(&models.ExamParticipant{}).
 				Select("exam_participants.exam_id").
 				Joins("INNER JOIN answers ON answers.exam_participant_id = exam_participants.id").
@@ -278,27 +316,6 @@ func ExamAccessInterceptor() grpc.UnaryServerInterceptor {
 
 		return handler(ctx, req)
 	}
-}
-
-func shouldIntercept(methodName string) bool {
-	otherMethodsToIntercept := []string{
-		"/proto.ExamService/GetExam",
-		"/proto.ExamService/CheckExamAccess",
-	}
-
-	// Merge all method arrays once
-	allMethods := make([]string, 0, len(ownerMethods)+len(notOwnerMethods)+len(participantMethods)+len(otherMethodsToIntercept))
-	allMethods = append(allMethods, ownerMethods...)
-	allMethods = append(allMethods, notOwnerMethods...)
-	allMethods = append(allMethods, participantMethods...)
-	allMethods = append(allMethods, otherMethodsToIntercept...)
-
-	for _, method := range allMethods {
-		if strings.HasSuffix(methodName, method) {
-			return true
-		}
-	}
-	return false
 }
 
 func fetchExam(examID int64) (*models.Exam, error) {

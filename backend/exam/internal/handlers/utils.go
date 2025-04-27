@@ -83,3 +83,30 @@ func createExamResponse(exam *models.Exam) (*proto.ExamResponse, error) {
 		},
 	}, nil
 }
+
+// validateAnswerJSON validates the answer JSON based on question type
+func validateAnswerJSON(answerJSON []byte, questionType string) error {
+	switch questionType {
+	case constants.QUESTION_TYPE_MCQ:
+		var mcqAnswer models.MCQAnswer
+		if err := json.Unmarshal(answerJSON, &mcqAnswer); err != nil {
+			return status.Error(codes.InvalidArgument, "invalid MCQ answer format")
+		}
+		// Validate that optionIndex is non-negative
+		if mcqAnswer.OptionIndex < 0 {
+			return status.Error(codes.InvalidArgument, "option index cannot be negative")
+		}
+	case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
+		var textAnswer models.GeneralAnswer
+		if err := json.Unmarshal(answerJSON, &textAnswer); err != nil {
+			return status.Error(codes.InvalidArgument, "invalid text answer format")
+		}
+		// Validate that text is not empty
+		if textAnswer.Text == "" {
+			return status.Error(codes.InvalidArgument, "answer text cannot be empty")
+		}
+	default:
+		return status.Error(codes.InvalidArgument, "invalid question type")
+	}
+	return nil
+}

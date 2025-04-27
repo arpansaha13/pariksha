@@ -36,7 +36,7 @@ func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.Parti
 			Id:                answer.ID,
 			ExamParticipantId: answer.ExamParticipantID,
 			QuestionId:        answer.QuestionID,
-			Answer:            answer.Answer.String,
+			Answer:            answer.Answer,
 			Comments:          answer.Comments.String,
 			ScoreAwarded:      int32(answer.ScoreAwarded),
 		}
@@ -57,7 +57,7 @@ func (s *ExamServer) GetAnswer(ctx context.Context, req *proto.GetAnswerRequest)
 
 	return &proto.GetAnswerResponse{
 		Id:     answer.ID,
-		Answer: answer.Answer.String,
+		Answer: answer.Answer,
 	}, nil
 }
 
@@ -75,7 +75,7 @@ func (s *ExamServer) GetAnswerById(ctx context.Context, req *proto.GetAnswerById
 		Id:                answer.ID,
 		ExamParticipantId: answer.ExamParticipantID,
 		QuestionId:        answer.QuestionID,
-		Answer:            answer.Answer.String,
+		Answer:            answer.Answer,
 		Comments:          answer.Comments.String,
 		ScoreAwarded:      int32(answer.ScoreAwarded),
 	}, nil
@@ -95,6 +95,23 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 		return nil, status.Error(codes.FailedPrecondition, "participant has ended the exam")
 	}
 
+	// Get question type from metadata
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "missing metadata")
+	}
+
+	questionTypes := md.Get("question_type")
+	if len(questionTypes) == 0 {
+		return nil, status.Error(codes.Internal, "missing question type in metadata")
+	}
+	questionType := questionTypes[0]
+
+	// Validate answer JSON based on question type
+	if err := validateAnswerJSON(req.Answer.Answer, questionType); err != nil {
+		return nil, err
+	}
+
 	var answer models.Answer
 	if err := db.DB.Where("exam_participant_id = ? AND question_id = ?", participant.ID, req.Answer.QuestionId).Take(&answer).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -102,7 +119,7 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 			answer = models.Answer{
 				ExamParticipantID: participant.ID,
 				QuestionID:        req.Answer.QuestionId,
-				Answer:            sql.NullString{String: req.Answer.Answer, Valid: true},
+				Answer:            req.Answer.Answer,
 			}
 			if err := db.DB.Create(&answer).Error; err != nil {
 				return nil, status.Error(codes.Internal, "failed to create answer")
@@ -112,7 +129,7 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 		}
 	} else {
 		// Update existing answer
-		answer.Answer = sql.NullString{String: req.Answer.Answer, Valid: true}
+		answer.Answer = req.Answer.Answer
 		if err := db.DB.Save(&answer).Error; err != nil {
 			return nil, status.Error(codes.Internal, "failed to update answer")
 		}
