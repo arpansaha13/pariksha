@@ -2,24 +2,19 @@
   <main>
     <h1 class="heading mb-6">Papers</h1>
 
-    <UCard
-      v-if="papers !== null"
-      :ui="{
-        body: 'p-0 sm:p-0',
-      }"
-    >
+    <UCard v-if="papers !== null" :ui="{ body: 'p-0 sm:p-0' }">
       <ul class="divide-y divide-gray-200">
         <li
           v-for="paper in papers"
           :key="paper.id"
-          class="group flex items-center justify-between px-4 py-3"
+          class="group grid grid-cols-[1fr_1fr_auto] items-center px-4 py-3"
         >
           <div>
             <h2 class="text-sm font-medium">{{ paper.title }}</h2>
           </div>
 
           <div class="text-sm text-gray-500">
-            <p>{{ totalQuestionCount(paper.question_counts) }} questions</p>
+            <p>{{ countTotalQuestions(paper.question_counts) }} questions</p>
             <p>{{ paper.duration_minutes ?? 0 }} minutes</p>
           </div>
 
@@ -43,7 +38,7 @@
                 color="neutral"
                 square
                 variant="outline"
-                @click="createExamWithPaper(paper.id)"
+                @click="createExamWithPaper(paper)"
               />
             </UTooltip>
           </div>
@@ -54,22 +49,18 @@
 </template>
 
 <script setup lang="ts">
-import type { PaperQuestionCounts } from '~/types'
+import type { Paper } from '~/types'
 
 const { data: papers } = await usePapers()
 const newExamStore = useNewExamStore()
 
-function createExamWithPaper(paperId: number) {
+function createExamWithPaper(paper: Paper) {
   newExamStore.clear()
-  newExamStore.paper_id = paperId
+  newExamStore.paper_id = paper.id
+  newExamStore.duration_hours = calcHours(paper.duration_minutes ?? 0)
+  newExamStore.duration_minutes = calcRemainderMinutes(
+    paper.duration_minutes ?? 0
+  )
   return navigateTo(`/exams/new`)
-}
-
-function totalQuestionCount(question_counts: PaperQuestionCounts) {
-  let count = 0
-  count += question_counts.mcq ?? 0
-  count += question_counts.short ?? 0
-  count += question_counts.long ?? 0
-  return count
 }
 </script>

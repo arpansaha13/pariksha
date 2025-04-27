@@ -27,8 +27,27 @@
             value-key="id"
             label-key="title"
             required
-            class="w-48"
-          />
+            class="w-52"
+          >
+            <template #item-label="{ item }">
+              <div class="px-1">
+                <p class="font-medium">{{ item.title }}</p>
+
+                <p class="space-x-1 text-gray-500">
+                  <span class="inline-block">
+                    {{ getTotalQuestionsCountText(item.question_counts) }}
+                  </span>
+
+                  <template v-if="item.duration_minutes > 0">
+                    <Dot />
+                    <span class="inline-block">
+                      {{ item.duration_minutes }} minutes
+                    </span>
+                  </template>
+                </p>
+              </div>
+            </template>
+          </USelectMenu>
         </UFormField>
 
         <UFormField
@@ -126,8 +145,7 @@ import {
   DateFormatter,
   getLocalTimeZone,
 } from '@internationalized/date'
-import { type Exam, ExamAccessType } from '~/types/exam'
-import { isNullOrUndefined } from '@arpansaha13/utils'
+import { type Exam, ExamAccessType, type PaperQuestionCounts } from '~/types'
 
 const newExamStore = useNewExamStore()
 
@@ -162,7 +180,6 @@ watch(startDate, newValue => {
   }
 })
 
-// Add paper duration watch
 watch(
   () => formState.paper_id,
   paperId => {
@@ -195,12 +212,6 @@ onBeforeUnmount(() => {
   }
 })
 
-function calcMinutes(hours: number | undefined, minutes: number | undefined) {
-  if (isNullOrUndefined(hours)) return minutes ?? 0
-  if (isNullOrUndefined(minutes)) return hours * 60
-  return hours * 60 + minutes
-}
-
 const submitButtonRef = useTemplateRef('submitButton')
 async function onSubmit() {
   // Do not end loading to keep button disabled till navigation
@@ -214,7 +225,7 @@ async function onSubmit() {
     paper_id: formState.paper_id!,
     starts_at: startDate.value.toDate(getLocalTimeZone()),
     ends_at: endsAt.toDate(getLocalTimeZone()),
-    duration_minutes: calcMinutes(
+    duration_minutes: convertToMinutes(
       formState.duration_hours,
       formState.duration_minutes
     ),
@@ -234,7 +245,9 @@ function validate(formState: Partial<ExamFormState>): FormError[] {
     })
   }
 
-  if (calcMinutes(formState.duration_hours, formState.duration_minutes) === 0) {
+  if (
+    convertToMinutes(formState.duration_hours, formState.duration_minutes) === 0
+  ) {
     errors.push({
       name: 'duration',
       message: 'Please set a duration for the exam',
@@ -242,5 +255,11 @@ function validate(formState: Partial<ExamFormState>): FormError[] {
   }
 
   return errors
+}
+
+function getTotalQuestionsCountText(counts: PaperQuestionCounts) {
+  const count = countTotalQuestions(counts)
+
+  return `${count} ${count === 1 ? 'question' : 'questions'}`
 }
 </script>
