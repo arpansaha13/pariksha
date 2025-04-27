@@ -97,7 +97,6 @@
 
 <script setup lang="ts">
 import Draggable from 'vuedraggable'
-import { ConfirmModal } from '#components'
 import type { QuestionCategory, QuestionId, QuestionMinimal } from '~/types'
 
 const props = defineProps({
@@ -122,10 +121,9 @@ const props = defineProps({
 const route = useRoute()
 const paperId = parseInt(route.params.paperId as string)
 
-const overlay = useOverlay()
-const confirmModal = overlay.create(ConfirmModal)
-
 const isDragging = ref(false)
+const sortedCategories = toRef(props, 'sortedCategories')
+const confirmModal = inject(InjectionKeys.ConfirmModal)!
 
 // ________________________UPDATE CATEGORY_________________________
 const categoryNames = ref<Record<number, string>>({})
@@ -139,7 +137,7 @@ async function handleUpdateCategory(category: QuestionCategory) {
     await updateCategory(category.id, paperId, { name })
   }
 }
-watchImmediate(props.sortedCategories, newCategories => {
+watchImmediate(sortedCategories, newCategories => {
   if (!newCategories) return
 
   newCategories.forEach(category => {
@@ -189,7 +187,6 @@ async function handleDeleteCategory(category: QuestionCategory) {
  */
 
 const categoriesCopyForReorder = shallowRef<QuestionCategory[]>([])
-const sortedCategories = toRef(props, 'sortedCategories')
 
 watchImmediate(
   sortedCategories,

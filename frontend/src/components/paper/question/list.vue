@@ -68,7 +68,6 @@
 <script setup lang="ts">
 import Draggable from 'vuedraggable'
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import { ConfirmModal } from '#components'
 import { QuestionId, type QuestionMinimal } from '~/types'
 
 const props = defineProps({
@@ -99,6 +98,8 @@ const props = defineProps({
 
 const route = useRoute()
 const paperId = parseInt(route.params.paperId as string)
+
+const confirmModal = inject(InjectionKeys.ConfirmModal)!
 
 // ________________________REORDER QUESTIONS________________________
 const isDragging = ref(false)
@@ -140,9 +141,6 @@ function onQuestionsReorderEnd() {
 }
 
 // ________________________DELETE QUESTION________________________
-const overlay = useOverlay()
-const confirmModal = overlay.create(ConfirmModal)
-
 async function handleDeleteQuestion(questionId: number) {
   if (!props.currentCategoryId) return
 

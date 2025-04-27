@@ -156,7 +156,7 @@
 <script setup lang="ts">
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { ComponentExposed } from 'vue-component-type-helpers'
-import { PaperQuestionForm } from '#components'
+import { ConfirmModal, PaperQuestionForm } from '#components'
 import { QuestionId, QuestionType } from '~/types'
 
 definePageMeta({
@@ -166,9 +166,20 @@ definePageMeta({
 
 const route = useRoute()
 const paperId = parseInt(route.params.paperId as string)
-const { data: paper } = await usePaper(paperId)
-const { data: groupedQuestions } = await usePaperQuestions(paperId)
-const { data: sortedCategories } = await usePaperCategories(paperId)
+
+const overlay = useOverlay()
+const confirmModal = overlay.create(ConfirmModal)
+provide(InjectionKeys.ConfirmModal, confirmModal)
+
+const [
+  { data: paper },
+  { data: groupedQuestions },
+  { data: sortedCategories },
+] = await Promise.all([
+  usePaper(paperId),
+  usePaperQuestions(paperId),
+  usePaperCategories(paperId),
+])
 
 const getQuestionIdForCategoryId = usePaperQuestionIdForCategoryId({
   groupedQuestions,
