@@ -1,16 +1,9 @@
-import { ExamPermission } from '~/types/exam'
-
 export default defineNuxtRouteMiddleware(async (to, _from) => {
   try {
     await callOnce(
       async () => {
         const examId = parseInt(to.params.examId as string)
-
-        const { data } = await useExamCheckAccess(examId)
-
-        if (data.value!.access_type === ExamPermission.PARTICIPANT) {
-          setPageLayout('blank')
-        }
+        await useExamCheckAccess(examId)
       },
       { mode: 'navigation' }
     )
