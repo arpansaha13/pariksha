@@ -73,9 +73,8 @@ func (s *PaperServer) GetCategoriesByIds(ctx context.Context, req *proto.GetCate
 
 	for i, category := range categories {
 		response.Categories[i] = &proto.CategoryBatchItem{
-			Id:    category.ID,
-			Name:  category.Name,
-			Order: int32(category.Order),
+			Id:   category.ID,
+			Name: category.Name,
 		}
 	}
 

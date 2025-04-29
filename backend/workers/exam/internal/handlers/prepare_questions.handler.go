@@ -37,7 +37,7 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 
 	// Get all categories for the paper
 	var categories []models.QuestionCategory
-	err = papersTx.Select("id").Where("paper_id = ?", payload.PaperID).Find(&categories).Error
+	err = papersTx.Select("id", "order").Where("paper_id = ?", payload.PaperID).Find(&categories).Error
 	if err != nil {
 		papersTx.Rollback()
 		log.Default().Printf("Failed to fetch categories: %v", err)
@@ -89,6 +89,7 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 		examCategory := models.ExamCategory{
 			ExamID:     payload.ExamID,
 			CategoryID: c.ID,
+			Order:      c.Order,
 		}
 		if err := examsTx.Create(&examCategory).Error; err != nil {
 			examsTx.Rollback()

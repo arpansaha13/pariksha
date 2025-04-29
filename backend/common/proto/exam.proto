@@ -207,6 +207,7 @@ message ExamQuestionsResponse {
 
 message ExamCategory {
   int64 category_id = 1;
+  int32 order = 2;
 }
 
 message ExamCategoriesResponse {

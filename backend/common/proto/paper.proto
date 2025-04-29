@@ -175,7 +175,6 @@ message CategoryBatchResponse {
 message CategoryBatchItem {
   int64 id = 1;
   string name = 2;
-  int32 order = 3;
 }
 
 message CategoryRequest {

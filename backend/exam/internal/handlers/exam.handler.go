@@ -391,7 +391,7 @@ func (s *ExamServer) GetExamQuestions(ctx context.Context, req *proto.ExamReques
 func (s *ExamServer) GetExamCategories(ctx context.Context, req *proto.ExamRequest) (*proto.ExamCategoriesResponse, error) {
 	var examCategories []models.ExamCategory
 	if err := db.DB.Model(&models.ExamCategory{}).
-		Select("category_id").
+		Select("category_id", "order").
 		Where("exam_id = ?", req.ExamId).
 		Find(&examCategories).Error; err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch categories")
@@ -401,6 +401,7 @@ func (s *ExamServer) GetExamCategories(ctx context.Context, req *proto.ExamReque
 	for i, ec := range examCategories {
 		categories[i] = &proto.ExamCategory{
 			CategoryId: ec.CategoryID,
+			Order:      int32(ec.Order),
 		}
 	}
 

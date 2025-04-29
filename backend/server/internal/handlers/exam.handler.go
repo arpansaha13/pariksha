@@ -551,13 +551,19 @@ func GetExamCategories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Convert to response format
-	response := make([]dtos.ExamCategoriesResponse, len(categoryData.Categories))
-	for i, c := range categoryData.Categories {
+	// Create a map of category data
+	categoryMap := make(map[int64]*proto.CategoryBatchItem)
+	for _, c := range categoryData.Categories {
+		categoryMap[c.Id] = c
+	}
+
+	// Convert to response format using order from exam categories
+	response := make([]dtos.ExamCategoriesResponse, len(categories.Categories))
+	for i, c := range categories.Categories {
 		response[i] = dtos.ExamCategoriesResponse{
-			CategoryID: c.Id,
-			Name:       c.Name,
-			Order:      int(c.Order),
+			CategoryID: c.CategoryId,
+			Name:       categoryMap[c.CategoryId].Name,
+			Order:      c.Order,
 		}
 	}
 

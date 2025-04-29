@@ -76,7 +76,7 @@ type ExamQuestionMinimalResponse struct {
 type ExamCategoriesResponse struct {
 	CategoryID int64  `json:"id"`
 	Name       string `json:"name"`
-	Order      int    `json:"order"`
+	Order      int32  `json:"order"`
 }
 
 type ExamQuestionResponse struct {
