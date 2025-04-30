@@ -89,6 +89,13 @@
         </template>
       </UPopover>
     </div>
+
+    <UTable
+      v-if="!isNullOrUndefined(participantsTableData)"
+      :data="participantsTableData"
+      :columns="participantsTableColumns"
+      class="flex-1"
+    />
   </UCard>
 </template>
 
@@ -99,10 +106,15 @@ import {
   getLocalTimeZone,
 } from '@internationalized/date'
 import { debounceFilter } from '@vueuse/core'
+import { isNullOrUndefined } from '@arpansaha13/utils'
 
 const route = useRoute()
 const examId = parseInt(route.params.examId as string)
-const { data: exam } = await useExam(examId)
+
+const [
+  { data: exam },
+  { data: participantsTableData, columns: participantsTableColumns },
+] = await Promise.all([useExam(examId), useExamParticipantsTableData(examId)])
 
 const fullCurrentUrl = ref('')
 const { copy, copied, isSupported } = useClipboard({ source: fullCurrentUrl })

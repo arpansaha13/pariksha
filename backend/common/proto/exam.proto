@@ -95,6 +95,7 @@ message ParticipantResponse {
   int32 score_awarded = 7;
   optional google.protobuf.Timestamp started_at = 8;
   optional google.protobuf.Timestamp ended_at = 9;
+  optional google.protobuf.Timestamp scheduled_end_time = 10;
 }
 
 message ParticipantList {

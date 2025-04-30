@@ -41,6 +41,7 @@ export const AsyncDataKeys = {
   EXAM: (examId: number) => `EXAM_${examId}`,
   EXAM_ACCESS: (examId: number) => `EXAM_${examId}_ACCESS`,
   EXAM_PARTICIPANT: (examId: number) => `EXAM_${examId}_PARTICIPANT`,
+  EXAM_PARTICIPANTS: (examId: number) => `EXAM_${examId}_PARTICIPANTS`,
   EXAM_QUESTIONS: (examId: number) => `EXAM_${examId}_QUESTIONS`,
   EXAM_CATEGORIES: (examId: number) => `EXAM_${examId}_CATEGORIES`,
 

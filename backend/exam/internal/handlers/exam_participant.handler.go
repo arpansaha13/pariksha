@@ -39,6 +39,9 @@ func (s *ExamServer) GetExamParticipants(ctx context.Context, req *proto.ExamReq
 		if p.EndedAt.Valid {
 			response.Participants[i].EndedAt = timestamppb.New(p.EndedAt.Time)
 		}
+		if p.ScheduledEndTime.Valid {
+			response.Participants[i].ScheduledEndTime = timestamppb.New(p.ScheduledEndTime.Time)
+		}
 	}
 
 	return response, nil

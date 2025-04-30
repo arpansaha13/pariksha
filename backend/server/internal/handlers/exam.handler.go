@@ -128,6 +128,10 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 	}
 
 	examID, err := getInt64FromVars(mux.Vars(r), "examId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	examService := services.GetExamService()
@@ -218,10 +222,16 @@ func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if p.StartedAt != nil {
-			response[i].StartedAt = p.StartedAt.AsTime()
+			startedAt := p.StartedAt.AsTime()
+			response[i].StartedAt = &startedAt
 		}
 		if p.EndedAt != nil {
-			response[i].EndedAt = p.EndedAt.AsTime()
+			endedAt := p.EndedAt.AsTime()
+			response[i].EndedAt = &endedAt
+		}
+		if p.ScheduledEndTime != nil {
+			scheduledEndTime := p.ScheduledEndTime.AsTime()
+			response[i].ScheduledEndTime = &scheduledEndTime
 		}
 	}
 

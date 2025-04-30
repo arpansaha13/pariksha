@@ -47,3 +47,16 @@ export interface ExamParticipant {
   started_at: string
   scheduled_end_time: string
 }
+
+export interface ExamParticipantResponse {
+  id: number
+  user_id: number
+  status: number
+  score_awarded: number
+  started_at?: string
+  ended_at?: string
+  scheduled_end_time?: string
+  first_name?: string
+  last_name?: string
+  email?: string
+}

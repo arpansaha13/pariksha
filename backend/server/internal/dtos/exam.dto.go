@@ -35,12 +35,13 @@ type ExamResponse struct {
 }
 
 type ExamParticipantResponse struct {
-	ID           int64     `json:"id"`
-	UserID       int64     `json:"user_id"`
-	Status       int       `json:"status"`
-	ScoreAwarded int       `json:"score_awarded"`
-	StartedAt    time.Time `json:"started_at,omitempty"`
-	EndedAt      time.Time `json:"ended_at,omitempty"`
+	ID               int64      `json:"id"`
+	UserID           int64      `json:"user_id"`
+	Status           int        `json:"status"`
+	ScoreAwarded     int        `json:"score_awarded"`
+	StartedAt        *time.Time `json:"started_at,omitempty"`
+	EndedAt          *time.Time `json:"ended_at,omitempty"`
+	ScheduledEndTime *time.Time `json:"scheduled_end_time,omitempty"`
 
 	// From auth service
 	FirstName string `json:"first_name,omitempty"`
