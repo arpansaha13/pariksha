@@ -11,7 +11,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/utils"
+	"pariksha/common/pkg/utils/ptr"
 	"pariksha/paper/internal/config/db"
 )
 
@@ -158,7 +158,7 @@ func TestUpdatePaper(t *testing.T) {
 			},
 			userID: userID,
 			request: &proto.UpdatePaperRequest{
-				Title: utils.String("Updated Title"),
+				Title: ptr.String("Updated Title"),
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, paper *models.Paper) {
@@ -177,7 +177,7 @@ func TestUpdatePaper(t *testing.T) {
 			},
 			userID: userID,
 			request: &proto.UpdatePaperRequest{
-				DurationMinutes: utils.Int32(90),
+				DurationMinutes: ptr.Int32(90),
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, paper *models.Paper) {
@@ -196,8 +196,8 @@ func TestUpdatePaper(t *testing.T) {
 			},
 			userID: userID,
 			request: &proto.UpdatePaperRequest{
-				Title:           utils.String("New Title"),
-				DurationMinutes: utils.Int32(120),
+				Title:           ptr.String("New Title"),
+				DurationMinutes: ptr.Int32(120),
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, paper *models.Paper) {
@@ -215,7 +215,7 @@ func TestUpdatePaper(t *testing.T) {
 			},
 			userID: userID,
 			request: &proto.UpdatePaperRequest{
-				Title: utils.String("Updated Title"),
+				Title: ptr.String("Updated Title"),
 			},
 			expectedCode: codes.NotFound,
 		},
@@ -227,7 +227,7 @@ func TestUpdatePaper(t *testing.T) {
 			},
 			userID: 0,
 			request: &proto.UpdatePaperRequest{
-				Title: utils.String("Updated Title"),
+				Title: ptr.String("Updated Title"),
 			},
 			expectedCode: codes.InvalidArgument,
 		},

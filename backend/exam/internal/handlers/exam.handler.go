@@ -14,6 +14,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/utils"
+	"pariksha/common/pkg/utils/ptr"
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/interceptors"
 	"pariksha/exam/internal/services"
@@ -353,13 +354,13 @@ func (s *ExamServer) CheckExamAccess(ctx context.Context, req *proto.ExamRequest
 	if !ok {
 		return &proto.ExamAccessResponse{
 			AccessType:        proto.ExamAccessType_PARTICIPANT,
-			ParticipantStatus: utils.Int32(constants.PARTICIPANT_STATUS_INVITED),
+			ParticipantStatus: ptr.Int32(constants.PARTICIPANT_STATUS_INVITED),
 		}, nil
 	}
 
 	return &proto.ExamAccessResponse{
 		AccessType:        proto.ExamAccessType_PARTICIPANT,
-		ParticipantStatus: utils.Int32(int32(participant.Status)),
+		ParticipantStatus: ptr.Int32(int32(participant.Status)),
 	}, nil
 }
 

@@ -13,7 +13,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/utils"
+	"pariksha/common/pkg/utils/ptr"
 	"pariksha/exam/internal/config/db"
 )
 
@@ -129,7 +129,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               utils.String(constants.EXAM_ACCESS_TYPE_LINK),
+				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_LINK),
 				PaperId:            1,
 				DurationMinutes:    90,
 			},
@@ -152,7 +152,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               utils.String(constants.EXAM_ACCESS_TYPE_INVITE),
+				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_INVITE),
 				PaperId:            1,
 				DurationMinutes:    60,
 			},
@@ -175,7 +175,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(48 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(24 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               utils.String(constants.EXAM_ACCESS_TYPE_INVITE),
+				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_INVITE),
 				PaperId:            1,
 				DurationMinutes:    60,
 			},
@@ -189,7 +189,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(-24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(24 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               utils.String(constants.EXAM_ACCESS_TYPE_INVITE),
+				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_INVITE),
 				PaperId:            1,
 				DurationMinutes:    60,
 			},
@@ -203,7 +203,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 0,
-				Type:               utils.String(constants.EXAM_ACCESS_TYPE_INVITE),
+				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_INVITE),
 				PaperId:            1,
 				DurationMinutes:    60,
 			},
@@ -217,7 +217,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               utils.String("UNKNOWN"),
+				Type:               ptr.String("UNKNOWN"),
 				PaperId:            1,
 				DurationMinutes:    60,
 			},
@@ -231,7 +231,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               utils.String(constants.EXAM_ACCESS_TYPE_LINK),
+				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_LINK),
 				PaperId:            1,
 				DurationMinutes:    0,
 			},
@@ -245,7 +245,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               utils.String(constants.EXAM_ACCESS_TYPE_LINK),
+				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_LINK),
 				PaperId:            1,
 			},
 			userID:       userID,
@@ -258,7 +258,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
-				Type:               utils.String(constants.EXAM_ACCESS_TYPE_LINK),
+				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_LINK),
 				PaperId:            1,
 				DurationMinutes:    -30,
 			},
@@ -386,7 +386,7 @@ func TestUpdateExam(t *testing.T) {
 			},
 			request: &proto.UpdateExamRequest{
 				ExamId:          0, // Will be set in test
-				DurationMinutes: utils.Int32(180),
+				DurationMinutes: ptr.Int32(180),
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
@@ -429,7 +429,7 @@ func TestUpdateExam(t *testing.T) {
 			},
 			request: &proto.UpdateExamRequest{
 				Title:           &title,
-				DurationMinutes: utils.Int32(180),
+				DurationMinutes: ptr.Int32(180),
 			},
 			userID:       userID,
 			expectedCode: codes.OK,

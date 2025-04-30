@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/utils"
+	"pariksha/common/pkg/utils/ptr"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
@@ -74,7 +74,7 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if paperDto.DurationMinutes > 0 {
-		updatePaperRequest.DurationMinutes = utils.Int32(paperDto.DurationMinutes)
+		updatePaperRequest.DurationMinutes = ptr.Int32(paperDto.DurationMinutes)
 	}
 
 	ctx := paperService.CreateMetadata(userID)
