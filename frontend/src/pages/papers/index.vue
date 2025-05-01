@@ -1,58 +1,31 @@
 <template>
   <main>
-    <h1 class="heading mb-6">Papers</h1>
+    <UCard :ui="{ body: '!py-2' }">
+      <template #header>
+        <h1 class="heading">Papers</h1>
+      </template>
 
-    <UCard v-if="papers !== null" :ui="{ body: 'p-0 sm:p-0' }">
-      <ul class="divide-y divide-gray-200">
-        <li
-          v-for="paper in papers"
-          :key="paper.id"
-          class="group grid grid-cols-[1fr_1fr_auto] items-center px-4 py-3"
-        >
-          <div>
-            <h2 class="text-sm font-medium">{{ paper.title }}</h2>
-          </div>
-
-          <div class="text-sm text-gray-500">
-            <p>{{ countTotalQuestions(paper.question_counts) }} questions</p>
-            <p>{{ paper.duration_minutes ?? 0 }} minutes</p>
-          </div>
-
-          <div class="invisible space-x-1.5 group-hover:visible">
-            <UTooltip text="Open">
-              <UButton
-                :to="`/papers/${paper.id}`"
-                icon="i-heroicons-arrow-right-end-on-rectangle"
-                size="sm"
-                color="neutral"
-                square
-                variant="outline"
-                no-prefetch
-              />
-            </UTooltip>
-
-            <UTooltip text="Create exam">
-              <UButton
-                icon="i-lucide-bookmark-plus"
-                size="sm"
-                color="neutral"
-                square
-                variant="outline"
-                @click="createExamWithPaper(paper)"
-              />
-            </UTooltip>
-          </div>
-        </li>
-      </ul>
+      <UTable
+        v-if="!isNullOrUndefined(papers)"
+        :data="papers"
+        :columns="columns"
+        class="flex-1"
+      />
     </UCard>
   </main>
 </template>
 
 <script setup lang="ts">
-import type { Paper } from '~/types'
+import { isNullOrUndefined } from '@arpansaha13/utils'
+
+const UButton = resolveComponent('UButton')
+const UDropdownMenu = resolveComponent('UDropdownMenu')
 
 const { data: papers } = await usePapers()
+
+const toast = useToast()
 const newExamStore = useNewExamStore()
+const { copy, isSupported } = useClipboard()
 
 function createExamWithPaper(paper: Paper) {
   newExamStore.clear()
@@ -62,5 +35,128 @@ function createExamWithPaper(paper: Paper) {
     paper.duration_minutes ?? 0
   )
   return navigateTo(`/exams/new`)
+}
+
+const columns: TableColumn<Paper>[] = [
+  {
+    accessorKey: 'title',
+    header: 'Title',
+    cell: ({ row }) => {
+      const title = row.getValue('title') as string
+
+      return h(UButton, {
+        label: title,
+        variant: 'link',
+        to: getLinkToPaper(row.original.id),
+        ui: { base: 'px-0' },
+      })
+    },
+  },
+  {
+    accessorKey: 'question_counts',
+    header: 'No. of questions',
+    cell: ({ row }) => {
+      const questionCounts = row.getValue(
+        'question_counts'
+      ) as PaperQuestionCounts
+      return getQuestionCountsText(questionCounts)
+    },
+  },
+  {
+    accessorKey: 'duration_minutes',
+    header: 'Duration',
+    cell: ({ row }) => {
+      const durationMinutes = row.getValue('duration_minutes') as number
+      return getDurationMinutesText(durationMinutes)
+    },
+  },
+  {
+    accessorKey: 'max_score',
+    header: 'Max score',
+    cell: ({ row }) => {
+      const maxScore = row.getValue('max_score') as number
+      return maxScore ?? 0
+    },
+  },
+  {
+    id: 'actions',
+    enableHiding: false,
+    cell: ({ row }) => {
+      const items = [
+        {
+          label: 'Create exam',
+          icon: 'i-lucide-bookmark-plus',
+          onSelect() {
+            createExamWithPaper(row.original)
+          },
+        },
+      ]
+
+      if (isSupported) {
+        items.push({
+          label: 'Copy link',
+          icon: 'i-lucide-link',
+          onSelect() {
+            copy(getLinkToPaper(row.original.id))
+
+            toast.add({
+              id: ToastId.COPIED_TO_CLIPBOARD,
+              title: 'Paper link copied!',
+              color: 'success',
+              icon: 'i-lucide-clipboard-copy',
+            })
+          },
+        })
+      }
+
+      return h(
+        'div',
+        { class: 'text-right' },
+        h(
+          UDropdownMenu,
+          {
+            'content': {
+              align: 'end',
+            },
+            items,
+            'aria-label': 'Actions dropdown',
+          },
+          () =>
+            h(UButton, {
+              'icon': 'i-lucide-ellipsis-vertical',
+              'color': 'neutral',
+              'variant': 'ghost',
+              'class': 'ml-auto',
+              'aria-label': 'Actions dropdown',
+            })
+        )
+      )
+    },
+  },
+]
+
+function getLinkToPaper(paperId: number) {
+  return `/papers/${paperId}`
+}
+
+function getQuestionCountsText(questionCounts: PaperQuestionCounts) {
+  const totalCount = countTotalQuestions(questionCounts)
+
+  if (totalCount === 1) return `${totalCount} question`
+  return `${totalCount} questions`
+}
+
+function getDurationMinutesText(durationMinutes: number) {
+  if (isNullOrUndefined(durationMinutes)) return '0 minutes'
+
+  const hours = calcHours(durationMinutes)
+  const remainingMinutes = calcRemainderMinutes(durationMinutes)
+
+  if (hours === 0) return `${remainingMinutes} minutes`
+  if (remainingMinutes === 0)
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'}`
+  if (hours === 1)
+    return `${hours} hour ${remainingMinutes} ${remainingMinutes === 1 ? 'minute' : 'minutes'}`
+  return `${hours} hours  ${remainingMinutes} minutes`
 }
 </script>

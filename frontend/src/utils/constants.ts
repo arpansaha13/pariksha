@@ -4,6 +4,7 @@ export enum ToastId {
   VERIFY_SIGNUP_FAILED = 'verify_signup_failed',
   FORGOT_PASSWORD_FAILED = 'forgot_password_failed',
   RESET_PASSWORD_FAILED = 'reset_password_failed',
+  COPIED_TO_CLIPBOARD = 'copied_to_clipboard',
 }
 
 export enum HeaderNames {
