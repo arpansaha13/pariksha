@@ -19,4 +19,7 @@ COPY . .
 
 EXPOSE 3000
 
+# https://github.com/nitrojs/nitro/issues/885#issuecomment-1404897317
+RUN rm -rf /tmp/nitro/worker-*
+
 CMD [ "pnpm", "dev" ]
