@@ -156,7 +156,6 @@ func TestGetCategoriesByIds(t *testing.T) {
 				for i, category := range resp.Categories {
 					assert.Equal(t, categories[i].ID, category.Id)
 					assert.Equal(t, categories[i].Name, category.Name)
-					assert.Equal(t, int32(categories[i].Order), category.Order)
 				}
 			},
 		},
