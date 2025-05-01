@@ -23,3 +23,5 @@ export { checkParticipantAccess } from './api/exams/checkParticipantAccess'
 export { startExam } from './api/exams/startExam'
 export { endExam } from './api/exams/endExam'
 export { upsertAnswer } from './api/exams/upsertAnswer'
+
+export { updateAuthUser } from './api/user/update-auth-user'

@@ -18,3 +18,7 @@ body {
 h1.heading {
   @apply text-2xl font-bold;
 }
+
+h2.heading {
+  @apply text-xl font-bold;
+}

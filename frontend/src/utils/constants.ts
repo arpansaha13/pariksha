@@ -52,6 +52,8 @@ export const AsyncDataKeys = {
     examId && questionId
       ? `EXAM_${examId}_${questionId}_ANSWER`
       : 'EXAM_ANSWER',
+
+  AUTH_USER: 'AUTH_USER',
 } as const
 
 export const InjectionKeys = {

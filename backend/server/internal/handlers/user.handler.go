@@ -5,14 +5,45 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
+	"pariksha/server/internal/middlewares"
 	"pariksha/server/internal/services"
 )
+
+func mapUserProfileToDto(profile *proto.UserProfileResponse) dtos.UserResponseDto {
+	return dtos.UserResponseDto{
+		ID:        profile.Id,
+		Username:  profile.Username,
+		Email:     profile.Email,
+		FirstName: profile.FirstName,
+		LastName:  profile.LastName,
+	}
+}
+
+func GetAuthUser(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	resp, err := services.GetAuthService().Client().GetUser(r.Context(), &proto.GetUserRequest{
+		UserId: userID,
+	})
+
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	userDto := mapUserProfileToDto(resp)
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(userDto)
+}
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	userID, err := getInt64FromVars(mux.Vars(r), "userId")
@@ -26,24 +57,17 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			switch st.Code() {
-			case codes.NotFound:
-				http.Error(w, st.Message(), http.StatusNotFound)
-			default:
-				http.Error(w, st.Message(), http.StatusInternalServerError)
-			}
-		} else {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-		}
+		handleGRPCError(w, err)
 		return
 	}
 
+	userDto := mapUserProfileToDto(resp)
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(resp)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(userDto)
 }
 
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
+func UpdateAuthUser(w http.ResponseWriter, r *http.Request) {
 	var userDto dtos.UpdateUserDto
 	if err := json.NewDecoder(r.Body).Decode(&userDto); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -56,12 +80,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := getInt64FromVars(mux.Vars(r), "userId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	req := &proto.UpdateUserRequest{
 		UserId: userID,
 	}
@@ -77,20 +96,13 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := services.GetAuthService().Client().UpdateUser(r.Context(), req)
+
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			switch st.Code() {
-			case codes.NotFound:
-				http.Error(w, st.Message(), http.StatusNotFound)
-			default:
-				http.Error(w, st.Message(), http.StatusInternalServerError)
-			}
-		} else {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-		}
+		handleGRPCError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }

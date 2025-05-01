@@ -9,5 +9,6 @@
 </template>
 
 <script setup lang="ts">
-const { data: examsTableData, columns: examsTableColumns } = await useExamsTableData()
+const { data: examsTableData, columns: examsTableColumns } =
+  await useExamsTableData()
 </script>
