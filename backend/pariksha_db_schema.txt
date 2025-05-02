@@ -31,12 +31,10 @@ Table papers {
   question_counts json [default: '{"mcq":0,"short":0,"long":0}', note: 'Count of each question type']
 }
 
-Table paper_ownerships {
-  id bigint [primary key]
-  user_id bigint [not null]
-  paper_id bigint [not null]
-  path varchar
-  type varchar(10) [not null, note: 'Can be OWNER or SHARED']
+Table permissions {
+  paper_id bigint [primary key]
+  user_id bigint [primary key]
+  permissions smallint [not null, note: 'Bit flags for READ and WRITE permissions']
 }
 
 Table questions {
@@ -109,11 +107,11 @@ Table otps {
   purpose integer [not null]
 }
 
-Ref: paper_ownerships.paper_id > papers.id // Which paper is owned or shared
+Ref: permissions.paper_id > papers.id // Which paper is accessed
 Ref: questions.paper_id > papers.id // One exam can have many questions
 Ref: questions.category_id > question_categories.id // One category can have many questions
 Ref: question_categories.paper_id > papers.id // One paper can have many categories
-// Ref: paper_ownerships.user_id > users.id // Which user owns or shares this paper
+// Ref: permissions.user_id > users.id // Which user has access to this paper
 
 Ref: exam_participants.exam_id > exams.id // One exam can have many participants
 Ref: answers.exam_participant_id > exam_participants.id // One participant can have many answers
@@ -125,3 +123,4 @@ Ref: exam_categories.exam_id > exams.id // One exam can have many categories
 // Ref: answers.question_id > questions.id // One question can have many answers
 // Ref: exam_questions.question_id > questions.id // Link questions to exam
 // Ref: exam_categories.category_id > question_categories.id // Link categories to exam
+// Ref: papers.created_by > users.id // Which user created this paper

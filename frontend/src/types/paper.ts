@@ -1,8 +1,3 @@
-enum PaperOwnership {
-  OWNER = 'OWNER',
-  SHARED = 'SHARED',
-}
-
 export interface PaperQuestionCounts {
   mcq: number
   short: number
@@ -15,9 +10,4 @@ export interface Paper {
   max_score: number
   question_counts: PaperQuestionCounts
   duration_minutes: number
-  ownership: {
-    id: number
-    path: string
-    type: PaperOwnership
-  }
 }

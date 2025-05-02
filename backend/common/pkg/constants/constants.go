@@ -22,11 +22,6 @@ const (
 )
 
 const (
-	PAPER_OWNERSHIP_TYPE_OWNER  string = "OWNER"
-	PAPER_OWNERSHIP_TYPE_SHARED string = "SHARED"
-)
-
-const (
 	QUESTION_TYPE_MCQ   string = "MCQ"
 	QUESTION_TYPE_SHORT string = "SHORT"
 	QUESTION_TYPE_LONG  string = "LONG"

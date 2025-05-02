@@ -8,7 +8,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils/ptr"
@@ -102,7 +101,6 @@ func TestCreatePaper(t *testing.T) {
 			validate: func(t *testing.T, resp *proto.PaperResponse) {
 				assert.NotZero(t, resp.Id)
 				assert.Equal(t, "Untitled Paper", resp.Title)
-				assert.Equal(t, constants.PAPER_OWNERSHIP_TYPE_OWNER, resp.Ownership.Type)
 
 				// Verify default category was created
 				var categories []models.QuestionCategory
@@ -110,6 +108,12 @@ func TestCreatePaper(t *testing.T) {
 				require.NoError(t, err)
 				assert.Equal(t, 1, len(categories))
 				assert.Equal(t, "Category 1", categories[0].Name)
+
+				// Verify paper permissions
+				var permissions models.PaperPermissions
+				err = db.DB.Where("paper_id = ? AND user_id = ?", resp.Id, userID).Take(&permissions).Error
+				require.NoError(t, err)
+				assert.True(t, permissions.CanWrite(), "User should have write access to the paper")
 			},
 		},
 		{
@@ -276,7 +280,6 @@ func TestGetPaper(t *testing.T) {
 			validate: func(t *testing.T, resp *proto.PaperResponse) {
 				assert.NotZero(t, resp.Id)
 				assert.Equal(t, "Test Paper", resp.Title)
-				assert.Equal(t, constants.PAPER_OWNERSHIP_TYPE_OWNER, resp.Ownership.Type)
 				assert.Equal(t, int32(60), resp.DurationMinutes)
 
 				// Validate question counts
@@ -284,6 +287,12 @@ func TestGetPaper(t *testing.T) {
 				assert.Equal(t, int32(2), resp.QuestionCounts.Mcq)
 				assert.Equal(t, int32(1), resp.QuestionCounts.Short)
 				assert.Equal(t, int32(1), resp.QuestionCounts.Long)
+
+				// Verify paper permissions
+				var permissions models.PaperPermissions
+				err := db.DB.Where("paper_id = ? AND user_id = ?", resp.Id, userID).Take(&permissions).Error
+				require.NoError(t, err)
+				assert.True(t, permissions.CanWrite(), "User should have write access to the paper")
 			},
 		},
 		{
@@ -291,21 +300,29 @@ func TestGetPaper(t *testing.T) {
 			setup: func(t *testing.T) *models.Paper {
 				// Create paper owned by user 2
 				paper := createTestPaper(t, 2)
-				// Add shared access for test user
-				ownership := models.PaperOwnership{
+
+				// Create read-only permissions for test user
+				permissions := models.PaperPermissions{
 					UserID:  userID,
 					PaperID: paper.ID,
-					Type:    constants.PAPER_OWNERSHIP_TYPE_SHARED,
 				}
-				err := db.DB.Create(&ownership).Error
+				permissions.SetRead()
+				err := db.DB.Create(&permissions).Error
 				require.NoError(t, err)
+
 				return &paper
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.PaperResponse) {
 				assert.NotZero(t, resp.Id)
-				assert.Equal(t, constants.PAPER_OWNERSHIP_TYPE_SHARED, resp.Ownership.Type)
+
+				// Verify paper permissions
+				var permissions models.PaperPermissions
+				err := db.DB.Where("paper_id = ? AND user_id = ?", resp.Id, userID).Take(&permissions).Error
+				require.NoError(t, err)
+				assert.True(t, permissions.CanRead(), "User should have read access to the paper")
+				assert.False(t, permissions.CanWrite(), "User should not have write access to the paper")
 			},
 		},
 		{
@@ -384,22 +401,23 @@ func TestCheckPaperAccess(t *testing.T) {
 			expectedCode: codes.NotFound,
 		},
 		{
-			name: "Not owner of paper",
+			name: "Has shared access to paper",
 			setup: func(t *testing.T) *models.Paper {
 				// Create paper owned by user 2
 				paper := createTestPaper(t, 2)
-				// Add shared access for test user
-				ownership := models.PaperOwnership{
-					UserID:  userID,
+
+				// Create read-only permissions for test user
+				permissions := models.PaperPermissions{
 					PaperID: paper.ID,
-					Type:    constants.PAPER_OWNERSHIP_TYPE_SHARED,
+					UserID:  userID,
 				}
-				err := db.DB.Create(&ownership).Error
+				permissions.SetRead()
+				err := db.DB.Create(&permissions).Error
 				require.NoError(t, err)
 				return &paper
 			},
 			userID:       userID,
-			expectedCode: codes.PermissionDenied,
+			expectedCode: codes.OK,
 		},
 		{
 			name: "No access to paper",

@@ -17,7 +17,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/test/bufconn"
 
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/db"
@@ -87,7 +86,7 @@ func clearTables(t *testing.T) {
 	tables := []string{
 		"questions",
 		"question_categories",
-		"paper_ownerships",
+		"permissions",
 		"papers",
 	}
 
@@ -106,12 +105,13 @@ func createTestPaper(t *testing.T, userID int64) models.Paper {
 	err := db.DB.Create(&paper).Error
 	require.NoError(t, err)
 
-	ownership := models.PaperOwnership{
+	// Create permissions entry with write access
+	permissions := models.PaperPermissions{
 		UserID:  userID,
 		PaperID: paper.ID,
-		Type:    constants.PAPER_OWNERSHIP_TYPE_OWNER,
 	}
-	err = db.DB.Create(&ownership).Error
+	permissions.SetWrite()
+	err = db.DB.Create(&permissions).Error
 	require.NoError(t, err)
 
 	category := models.QuestionCategory{
@@ -139,7 +139,7 @@ func createContextWithUserID(userID int64) context.Context {
 func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 	lis = bufconn.Listen(bufSize)
 	srv := grpc.NewServer(
-		grpc.UnaryInterceptor(interceptors.PaperAccessInterceptor()),
+		grpc.UnaryInterceptor(interceptors.PaperAuthInterceptor()),
 	)
 	proto.RegisterPaperServiceServer(srv, &PaperServer{})
 

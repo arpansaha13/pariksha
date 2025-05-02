@@ -26,11 +26,6 @@ func paperToProto(paper models.Paper) *proto.PaperResponse {
 		MaxScore:        int32(paper.MaxScore),
 		DurationMinutes: int32(paper.DurationMinutes),
 		QuestionCounts:  &questionCounts,
-		Ownership: &proto.PaperOwnership{
-			Id:   paper.PaperOwnership.ID,
-			Path: paper.PaperOwnership.Path,
-			Type: paper.PaperOwnership.Type,
-		},
 	}
 }
 

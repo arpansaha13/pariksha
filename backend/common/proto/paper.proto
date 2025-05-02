@@ -46,7 +46,6 @@ message PaperResponse {
   int32 max_score = 3;
   int32 duration_minutes = 4;
   QuestionCount question_counts = 5;
-  PaperOwnership ownership = 6;
 }
 
 message PaperList {
@@ -63,12 +62,6 @@ message QuestionCount {
   int32 mcq = 1;
   int32 short = 2;
   int32 long = 3;
-}
-
-message PaperOwnership {
-  int64 id = 1;
-  string path = 2;
-  string type = 3;
 }
 
 // Question messages

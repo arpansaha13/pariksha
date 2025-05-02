@@ -22,7 +22,7 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(interceptors.PaperAccessInterceptor()),
+		grpc.UnaryInterceptor(interceptors.PaperAuthInterceptor()),
 	)
 	proto.RegisterPaperServiceServer(grpcServer, &handlers.PaperServer{})
 

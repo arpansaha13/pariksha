@@ -13,7 +13,6 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
-	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/interceptors"
 )
@@ -277,29 +276,18 @@ func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionReq
 }
 
 func (s *PaperServer) ReorderQuestions(ctx context.Context, req *proto.ReorderQuestionsRequest) (*proto.Empty, error) {
-	userID, err := utils.GetUserIDFromMetadata(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		// Verify all questions belong to the category and user has access
-		var questions []models.Question
-		err := tx.Preload("Paper.PaperOwnership", "user_id = ?", userID).
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		// Verify all questions belong to the category
+		var categoryQuestionsCount int64
+		err := tx.Model(&models.Question{}).
 			Where("category_id = ? AND id IN ?", req.CategoryId, req.QuestionIds).
-			Find(&questions).Error
+			Count(&categoryQuestionsCount).Error
 		if err != nil {
 			return err
 		}
 
-		if len(questions) != len(req.QuestionIds) {
+		if int(categoryQuestionsCount) != len(req.QuestionIds) {
 			return status.Error(codes.InvalidArgument, "invalid question ids")
-		}
-
-		// Verify ownership
-		if len(questions) > 0 && (questions[0].Paper.PaperOwnership.ID == 0 ||
-			questions[0].Paper.PaperOwnership.Type != constants.PAPER_OWNERSHIP_TYPE_OWNER) {
-			return status.Error(codes.PermissionDenied, "only owner can reorder questions")
 		}
 
 		// Update orders

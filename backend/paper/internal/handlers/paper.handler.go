@@ -8,7 +8,6 @@ import (
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
@@ -27,9 +26,9 @@ func (s *PaperServer) GetUserPapers(ctx context.Context, _ *proto.Empty) (*proto
 
 	var papers []models.Paper
 	err = db.DB.
-		Joins("INNER JOIN paper_ownerships ON paper_ownerships.paper_id = papers.id").
-		Where("paper_ownerships.user_id = ?", userID).
-		Preload("PaperOwnership", "user_id = ?", userID).
+		Select("papers.id, papers.title, papers.max_score, papers.duration_minutes, papers.question_counts").
+		Joins("INNER JOIN permissions ON permissions.paper_id = papers.id").
+		Where("permissions.user_id = ?", userID).
 		Find(&papers).Error
 
 	if err != nil {
@@ -54,22 +53,11 @@ func (s *PaperServer) CreatePaper(ctx context.Context, _ *proto.Empty) (*proto.P
 	}
 
 	var paper models.Paper
-	var paperOwnership models.PaperOwnership
 
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
 		paper = models.Paper{} // Will use database default for Title
 
 		if err := tx.Create(&paper).Error; err != nil {
-			return err
-		}
-
-		paperOwnership = models.PaperOwnership{
-			UserID:  userID,
-			PaperID: paper.ID,
-			Type:    constants.PAPER_OWNERSHIP_TYPE_OWNER,
-		}
-
-		if err := tx.Create(&paperOwnership).Error; err != nil {
 			return err
 		}
 
@@ -83,6 +71,17 @@ func (s *PaperServer) CreatePaper(ctx context.Context, _ *proto.Empty) (*proto.P
 			return err
 		}
 
+		// Create permissions entry with write access
+		permissions := models.PaperPermissions{
+			PaperID: paper.ID,
+			UserID:  userID,
+		}
+		permissions.SetWrite()
+
+		if err := tx.Create(&permissions).Error; err != nil {
+			return err
+		}
+
 		return nil
 	})
 
@@ -90,14 +89,12 @@ func (s *PaperServer) CreatePaper(ctx context.Context, _ *proto.Empty) (*proto.P
 		return nil, status.Error(codes.Internal, "failed to create paper")
 	}
 
-	paper.PaperOwnership = paperOwnership // For creating response object in `paperToProto`
 	return paperToProto(paper), nil
 }
 
 func (s *PaperServer) GetPaper(ctx context.Context, req *proto.PaperRequest) (*proto.PaperResponse, error) {
 	var paper models.Paper
-	err := db.DB.Preload("PaperOwnership").Take(&paper, req.PaperId).Error
-	if err != nil {
+	if err := db.DB.Take(&paper, req.PaperId).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, status.Error(codes.NotFound, "paper not found")
 		}

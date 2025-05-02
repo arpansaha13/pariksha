@@ -2,14 +2,11 @@ package interceptors
 
 import (
 	"context"
-	"database/sql"
-	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
@@ -21,30 +18,39 @@ import (
 type CategoryCtxKey struct{}
 type QuestionCtxKey struct{}
 
-func PaperAccessInterceptor() grpc.UnaryServerInterceptor {
+var requiresRead = map[string]bool{
+	"/proto.PaperService/GetPaper":           true,
+	"/proto.PaperService/CheckPaperAccess":   true,
+	"/proto.PaperService/GetPaperCategories": true,
+	"/proto.PaperService/GetPaperQuestions":  true,
+	"/proto.PaperService/GetQuestion":        true,
+}
+
+var requiresWrite = map[string]bool{
+	"/proto.PaperService/UpdatePaper":       true,
+	"/proto.PaperService/CreateCategory":    true,
+	"/proto.PaperService/UpdateCategory":    true,
+	"/proto.PaperService/DeleteCategory":    true,
+	"/proto.PaperService/ReorderCategories": true,
+	"/proto.PaperService/UpdateQuestion":    true,
+	"/proto.PaperService/DeleteQuestion":    true,
+	"/proto.PaperService/CreateQuestion":    true,
+}
+
+func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		// Only intercept specific methods
+		// Check if the method needs to be intercepted
 		methodName := info.FullMethod
-		if !shouldIntercept(methodName) {
+		if !requiresRead[methodName] && !requiresWrite[methodName] {
 			return handler(ctx, req)
 		}
 
-		userID, err := utils.GetUserIDFromMetadata(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		// Get paper ID and required ownership type based on the request type and method
+		// Get paper ID based on the request type and method
 		var paperID int64
-		ownershipType := constants.PAPER_OWNERSHIP_TYPE_OWNER
 
 		switch r := req.(type) {
 		case *proto.PaperRequest:
 			paperID = r.PaperId
-
-			if methodName != "/proto.PaperService/CheckPaperAccess" {
-				ownershipType = ""
-			}
 		case *proto.UpdatePaperRequest:
 			paperID = r.PaperId
 		case *proto.CreateCategoryRequest:
@@ -73,7 +79,6 @@ func PaperAccessInterceptor() grpc.UnaryServerInterceptor {
 				return nil, err
 			}
 			paperID = question.PaperID.Int64
-			ownershipType = ""
 			ctx = context.WithValue(ctx, QuestionCtxKey{}, question)
 		case *proto.UpdateQuestionRequest:
 			question, err := fetchQuestionData(r.QuestionId)
@@ -81,46 +86,49 @@ func PaperAccessInterceptor() grpc.UnaryServerInterceptor {
 				return nil, err
 			}
 			paperID = question.PaperID.Int64
-			ownershipType = constants.PAPER_OWNERSHIP_TYPE_OWNER
 			ctx = context.WithValue(ctx, QuestionCtxKey{}, question)
 		case *proto.CreateQuestionRequest:
 			paperID = r.PaperId
-			ownershipType = constants.PAPER_OWNERSHIP_TYPE_OWNER
 		}
 
-		// Verify paper access with ownership type check when required
-		if err := verifyPaperAccess(nil, paperID, userID, ownershipType); err != nil {
+		userID, err := utils.GetUserIDFromMetadata(ctx)
+		if err != nil {
 			return nil, err
+		}
+
+		// Check if paper exists
+		var exists bool
+		if err := db.DB.Model(&models.Paper{}).
+			Select("1").
+			Where("id = ?", paperID).
+			Find(&exists).Error; err != nil {
+			return nil, status.Error(codes.Internal, "failed to check paper existence")
+		}
+		if !exists {
+			return nil, status.Error(codes.NotFound, "paper not found")
+		}
+
+		permissions, err := fetchPaperPermissions(paperID, userID)
+		if err != nil {
+			return nil, err
+		}
+
+		// Check if the method requires READ permission
+		if requiresRead[methodName] {
+			if !permissions.CanRead() {
+				return nil, status.Error(codes.PermissionDenied, "READ permission required")
+			}
+		}
+
+		// Check if the method requires WRITE permission
+		if requiresWrite[methodName] {
+			if !permissions.CanWrite() {
+				return nil, status.Error(codes.PermissionDenied, "WRITE permission required")
+			}
 		}
 
 		return handler(ctx, req)
 	}
-}
-
-func shouldIntercept(methodName string) bool {
-	methodsToIntercept := []string{
-		"/proto.PaperService/GetPaper",
-		"/proto.PaperService/UpdatePaper",
-		"/proto.PaperService/CheckPaperAccess",
-		"/proto.PaperService/GetPaperCategories",
-		"/proto.PaperService/CreateCategory",
-		"/proto.PaperService/UpdateCategory",
-		"/proto.PaperService/DeleteCategory",
-		"/proto.PaperService/ReorderCategories",
-		"/proto.PaperService/GetPaperQuestions",
-		"/proto.PaperService/GetQuestion",
-		"/proto.PaperService/UpdateQuestion",
-		"/proto.PaperService/DeleteQuestion",
-		"/proto.PaperService/CreateQuestion",
-		// "/proto.PaperService/TestGetQuestionsByIds",
-	}
-
-	for _, method := range methodsToIntercept {
-		if strings.HasSuffix(methodName, method) {
-			return true
-		}
-	}
-	return false
 }
 
 // Helper function to fetch category data
@@ -148,60 +156,14 @@ func fetchQuestionData(questionID int64) (models.Question, error) {
 	return question, nil
 }
 
-// Helper function to verify paper access
-func verifyPaperAccess(tx *gorm.DB, paperID any, userID int64, ownershipType string) error {
-	if tx == nil {
-		tx = db.DB
-	}
-
-	var actualPaperID int64
-	switch v := paperID.(type) {
-	case sql.NullInt64:
-		if !v.Valid {
-			return status.Error(codes.InvalidArgument, "invalid paper id")
+// fetchPaperPermissions fetches the PaperPermissions entry for the given paperId and userId.
+func fetchPaperPermissions(paperId int64, userId int64) (models.PaperPermissions, error) {
+	var permissions models.PaperPermissions
+	if err := db.DB.Where("paper_id = ? AND user_id = ?", paperId, userId).Take(&permissions).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return permissions, status.Error(codes.PermissionDenied, "No permission to access this paper")
 		}
-		actualPaperID = v.Int64
-	case int64:
-		actualPaperID = v
-	default:
-		return status.Error(codes.InvalidArgument, "invalid paper id type")
+		return permissions, status.Error(codes.Internal, "failed to fetch permissions")
 	}
-
-	// Check if paper exists first
-	var exists bool
-	err := tx.Raw(`SELECT EXISTS (SELECT 1 FROM papers WHERE id = ?)`, actualPaperID).
-		Scan(&exists).Error
-	if err != nil {
-		return status.Error(codes.Internal, "failed to check paper existence")
-	}
-	if !exists {
-		return status.Error(codes.NotFound, "paper not found")
-	}
-
-	// Check paper access
-	var condition string
-	var args []any
-
-	args = append(args, actualPaperID, userID)
-	condition = "po.paper_id = ? AND po.user_id = ?"
-
-	if ownershipType != "" {
-		condition += " AND po.type = ?"
-		args = append(args, ownershipType)
-	}
-
-	err = tx.Raw(`SELECT EXISTS (
-			SELECT 1 FROM paper_ownerships po
-			WHERE `+condition+`)`, args...).
-		Scan(&exists).Error
-
-	if err != nil {
-		return status.Error(codes.Internal, "failed to check paper access")
-	}
-
-	if !exists {
-		return status.Error(codes.PermissionDenied, "no permission to perform this action")
-	}
-
-	return nil
+	return permissions, nil
 }
