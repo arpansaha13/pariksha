@@ -119,14 +119,22 @@ func (s *PaperServer) UpdatePaper(ctx context.Context, req *proto.UpdatePaperReq
 
 	isUpdated := false
 
-	if req.Title != nil && req.GetTitle() != paper.Title {
+	if req.Title != nil && req.GetTitle() != "" && req.GetTitle() != paper.Title {
 		paper.Title = req.GetTitle()
 		isUpdated = true
 	}
 
-	if req.DurationMinutes != nil && int(req.GetDurationMinutes()) != paper.DurationMinutes {
-		paper.DurationMinutes = int(req.GetDurationMinutes())
-		isUpdated = true
+	if req.DurationMinutes != nil {
+		if req.GetDurationMinutes() < 0 {
+			return nil, status.Error(codes.InvalidArgument, "duration must be positive")
+		}
+		if req.GetDurationMinutes() > 1440 { // 24 hours = 1440 minutes
+			return nil, status.Error(codes.InvalidArgument, "duration cannot exceed 24 hours")
+		}
+		if int(req.GetDurationMinutes()) != paper.DurationMinutes {
+			paper.DurationMinutes = int(req.GetDurationMinutes())
+			isUpdated = true
+		}
 	}
 
 	if isUpdated {

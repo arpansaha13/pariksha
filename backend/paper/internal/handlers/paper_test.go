@@ -235,6 +235,66 @@ func TestUpdatePaper(t *testing.T) {
 			},
 			expectedCode: codes.InvalidArgument,
 		},
+		{
+			name: "Failure - Empty paper title",
+			setup: func(t *testing.T) *models.Paper {
+				paper := createTestPaper(t, userID)
+				return &paper
+			},
+			userID: userID,
+			request: &proto.UpdatePaperRequest{
+				Title: ptr.String(""), // Empty title
+			},
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, paper *models.Paper) {
+				var updated models.Paper
+				err := db.DB.Take(&updated, paper.ID).Error
+				require.NoError(t, err)
+				assert.Equal(t, "Test Paper", updated.Title) // Unchanged title
+			},
+		},
+		{
+			name: "Failure - Negative duration",
+			setup: func(t *testing.T) *models.Paper {
+				paper := createTestPaper(t, userID)
+				return &paper
+			},
+			userID: userID,
+			request: &proto.UpdatePaperRequest{
+				DurationMinutes: ptr.Int32(-30), // Negative duration
+			},
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name: "Failure - Zero duration",
+			setup: func(t *testing.T) *models.Paper {
+				paper := createTestPaper(t, userID)
+				return &paper
+			},
+			userID: userID,
+			request: &proto.UpdatePaperRequest{
+				DurationMinutes: ptr.Int32(0), // Zero duration
+			},
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, paper *models.Paper) {
+				var updated models.Paper
+				err := db.DB.Take(&updated, paper.ID).Error
+				require.NoError(t, err)
+				assert.Equal(t, 0, updated.DurationMinutes) // Updates to zero
+			},
+		},
+		{
+			name: "Failure - Extremely large duration",
+			setup: func(t *testing.T) *models.Paper {
+				paper := createTestPaper(t, userID)
+				return &paper
+			},
+			userID: userID,
+			request: &proto.UpdatePaperRequest{
+				DurationMinutes: ptr.Int32(1441), // More than 24 hours
+			},
+			expectedCode: codes.InvalidArgument,
+		},
 	}
 
 	for _, tt := range tests {
