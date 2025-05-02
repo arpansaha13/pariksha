@@ -3,7 +3,6 @@ package interceptors
 import (
 	"context"
 	"log"
-	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -27,219 +26,76 @@ const (
 )
 
 var (
-	ownerMethods = []string{
-		"/proto.ExamService/UpdateExam",
-		"/proto.ExamService/GetExamParticipants",
-		"/proto.ExamService/AddExamParticipant",
-		"/proto.ExamService/RemoveExamParticipant",
-		// "/proto.ExamService/GetParticipantAnswers",
-		// "/proto.ExamService/UpdateAnswerForEvaluation",
-		// "/proto.ExamService/MarkAsEvaluated",
+	requiresRead = map[string]bool{
+		"/proto.ExamService/GetExam":         true,
+		"/proto.ExamService/CheckExamAccess": true,
+		// "/proto.ExamService/GetAnswerById": true,
 	}
 
-	notOwnerMethods = []string{
-		"/proto.ExamService/StartExam",
-		"/proto.ExamService/EndExam",
-		"/proto.ExamService/UpsertAnswer",
-		"/proto.ExamService/CheckExamParticipant",
-		"/proto.ExamService/GetExamQuestions",
-		"/proto.ExamService/GetExamCategories",
-		"/proto.ExamService/UpsertAnswer",
+	requiresWrite = map[string]bool{
+		"/proto.ExamService/UpdateExam":            true,
+		"/proto.ExamService/GetExamParticipants":   true,
+		"/proto.ExamService/AddExamParticipant":    true,
+		"/proto.ExamService/RemoveExamParticipant": true,
 	}
 
-	participantMethods = []string{
-		"/proto.ExamService/EndExam",
-		"/proto.ExamService/UpsertAnswer",
-		"/proto.ExamService/CheckExamParticipant",
-		"/proto.ExamService/GetExamQuestions",
-		"/proto.ExamService/GetExamCategories",
-		"/proto.ExamService/GetExamParticipant",
-		"/proto.ExamService/GetAnswer",
-		"/proto.ExamService/UpsertAnswer",
+	requiresParticipate = map[string]bool{
+		"/proto.ExamService/EndExam":              true,
+		"/proto.ExamService/UpsertAnswer":         true,
+		"/proto.ExamService/CheckExamParticipant": true,
+		"/proto.ExamService/GetExamQuestions":     true,
+		"/proto.ExamService/GetExamCategories":    true,
+		"/proto.ExamService/GetExamParticipant":   true,
+		"/proto.ExamService/GetAnswer":            true,
 	}
 
-	defaultMethods = []string{
-		"/proto.ExamService/GetExam",
-		"/proto.ExamService/CheckExamAccess",
-		// "/proto.ExamService/GetAnswerById",
+	requiresEvaluate = map[string]bool{
+		// "/proto.ExamService/GetParticipantAnswers":       true,
+		// "/proto.ExamService/UpdateAnswerForEvaluation":   true,
+		// "/proto.ExamService/MarkAsEvaluated":            true,
+	}
+
+	// In case of LINK exam, allow access to these handlers even without a permission entry in db
+	allowInLinkExam = map[string]bool{
+		"/proto.ExamService/StartExam":            true,
+		"/proto.ExamService/CheckExamAccess":      true,
+		"/proto.ExamService/CheckExamParticipant": true,
 	}
 )
 
 func shouldIntercept(methodName string) bool {
-	// Merge all method arrays once
-	allMethods := make([]string, 0, len(ownerMethods)+len(notOwnerMethods)+len(participantMethods)+len(defaultMethods))
-	allMethods = append(allMethods, ownerMethods...)
-	allMethods = append(allMethods, notOwnerMethods...)
-	allMethods = append(allMethods, participantMethods...)
-	allMethods = append(allMethods, defaultMethods...)
-
-	for _, method := range allMethods {
-		if strings.HasSuffix(methodName, method) {
-			return true
-		}
-	}
-	return false
+	return requiresRead[methodName] || requiresWrite[methodName] || requiresEvaluate[methodName] || requiresParticipate[methodName] || allowInLinkExam[methodName]
 }
 
-type AuthorizationRule interface {
-	Authorize(ctx context.Context, methodName string, exam *models.Exam, userID int64) (context.Context, error)
-	ShouldApply(methodName string) bool
-	ShouldStopOnError() bool
-	ShouldStopOnSuccess() bool
+func checkPermissions(permission *models.ExamPermissions, methodName string) error {
+	if requiresRead[methodName] && !permission.CanRead() {
+		return status.Error(codes.PermissionDenied, PERMISSION_DENIED_MESSAGE)
+	}
+	if requiresWrite[methodName] && !permission.CanWrite() {
+		return status.Error(codes.PermissionDenied, PERMISSION_DENIED_MESSAGE)
+	}
+	if requiresParticipate[methodName] && !permission.CanParticipate() {
+		return status.Error(codes.PermissionDenied, PERMISSION_DENIED_MESSAGE)
+	}
+	if requiresEvaluate[methodName] && !permission.CanEvaluate() {
+		return status.Error(codes.PermissionDenied, PERMISSION_DENIED_MESSAGE)
+	}
+	return nil
 }
 
-type OwnerRule struct{}
-
-func (r *OwnerRule) Authorize(ctx context.Context, methodName string, exam *models.Exam, userID int64) (context.Context, error) {
-	if exam.CreatedBy != userID {
-		return ctx, status.Error(codes.PermissionDenied, PERMISSION_DENIED_MESSAGE)
+func addParticipantToContext(ctx context.Context, examID int64, userID int64) (context.Context, error) {
+	participant, err := fetchParticipant(examID, userID)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
 	}
+	if participant != nil {
+		ctx = context.WithValue(ctx, participantContextKey, participant)
+	}
+
 	return ctx, nil
 }
 
-func (r *OwnerRule) ShouldApply(methodName string) bool {
-	for _, method := range ownerMethods {
-		if strings.HasSuffix(methodName, method) {
-			return true
-		}
-	}
-	return false
-}
-
-func (r *OwnerRule) ShouldStopOnError() bool {
-	return true
-}
-
-func (r *OwnerRule) ShouldStopOnSuccess() bool {
-	return true
-}
-
-type NotOwnerRule struct{}
-
-func (r *NotOwnerRule) Authorize(ctx context.Context, methodName string, exam *models.Exam, userID int64) (context.Context, error) {
-	if exam.CreatedBy == userID {
-		return ctx, status.Error(codes.PermissionDenied, PERMISSION_DENIED_MESSAGE)
-	}
-	return ctx, nil
-}
-
-func (r *NotOwnerRule) ShouldApply(methodName string) bool {
-	for _, method := range notOwnerMethods {
-		if strings.HasSuffix(methodName, method) {
-			return true
-		}
-	}
-	return false
-}
-
-func (r *NotOwnerRule) ShouldStopOnError() bool {
-	return true
-}
-
-func (r *NotOwnerRule) ShouldStopOnSuccess() bool {
-	return false
-}
-
-type ParticipantRule struct{}
-
-func (r *ParticipantRule) Authorize(ctx context.Context, methodName string, exam *models.Exam, userID int64) (context.Context, error) {
-	participant, err := fetchParticipant(exam.ID, userID)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return ctx, status.Error(codes.PermissionDenied, PERMISSION_DENIED_MESSAGE)
-		}
-		return ctx, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
-	}
-	return context.WithValue(ctx, participantContextKey, participant), nil
-}
-
-func (r *ParticipantRule) ShouldApply(methodName string) bool {
-	for _, method := range participantMethods {
-		if strings.HasSuffix(methodName, method) {
-			return true
-		}
-	}
-	return false
-}
-
-func (r *ParticipantRule) ShouldStopOnError() bool {
-	return true
-}
-
-func (r *ParticipantRule) ShouldStopOnSuccess() bool {
-	return true
-}
-
-type DefaultRule struct{}
-
-func (r *DefaultRule) Authorize(ctx context.Context, methodName string, exam *models.Exam, userID int64) (context.Context, error) {
-	// Allow owner
-	if exam.CreatedBy == userID {
-		return ctx, nil
-	}
-
-	participant, err := fetchParticipant(exam.ID, userID)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			if exam.Type != constants.EXAM_ACCESS_TYPE_LINK {
-				return ctx, status.Error(codes.PermissionDenied, PERMISSION_DENIED_MESSAGE)
-			}
-			return ctx, nil
-		}
-		return ctx, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
-	}
-	return context.WithValue(ctx, participantContextKey, participant), nil
-}
-
-func (r *DefaultRule) ShouldApply(methodName string) bool {
-	return true
-}
-
-func (r *DefaultRule) ShouldStopOnError() bool {
-	return true
-}
-
-func (r *DefaultRule) ShouldStopOnSuccess() bool {
-	return true
-}
-
-type AuthorizationChain struct {
-	rules []AuthorizationRule
-}
-
-func NewAuthorizationChain() *AuthorizationChain {
-	return &AuthorizationChain{
-		rules: []AuthorizationRule{
-			&OwnerRule{},
-			&NotOwnerRule{},
-			&ParticipantRule{},
-			&DefaultRule{},
-		},
-	}
-}
-
-func (c *AuthorizationChain) Authorize(ctx context.Context, methodName string, exam *models.Exam, userID int64) (context.Context, error) {
-	for _, rule := range c.rules {
-		if rule.ShouldApply(methodName) {
-			newCtx, err := rule.Authorize(ctx, methodName, exam, userID)
-			if err != nil {
-				if rule.ShouldStopOnError() {
-					return ctx, err
-				}
-				continue
-			}
-			ctx = newCtx
-			if rule.ShouldStopOnSuccess() {
-				return ctx, nil
-			}
-		}
-	}
-	return ctx, nil
-}
-
-func ExamAccessInterceptor() grpc.UnaryServerInterceptor {
-	authChain := NewAuthorizationChain()
-
+func ExamAuthInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		methodName := info.FullMethod
 		if !shouldIntercept(methodName) {
@@ -251,56 +107,33 @@ func ExamAccessInterceptor() grpc.UnaryServerInterceptor {
 			return nil, err
 		}
 
-		var examID int64
-		switch r := req.(type) {
-		case *proto.ExamRequest:
-			examID = r.ExamId
-		case *proto.UpdateExamRequest:
-			examID = r.ExamId
-		case *proto.StartExamRequest:
-			examID = r.ExamId
-		case *proto.EndExamRequest:
-			examID = r.ExamId
-		case *proto.AddParticipantRequest:
-			examID = r.ExamId
-		case *proto.RemoveParticipantRequest:
-			examID = r.ExamId
-		case *proto.UpsertAnswersRequest:
-			examID = r.ExamId
-		case *proto.CheckParticipantRequest:
-			examID = r.ExamId
-		case *proto.GetExamParticipantRequest:
-			examID = r.ExamId
-		case *proto.GetAnswerRequest:
-			examID = r.ExamId
-		case *proto.UpdateAnswerRequest:
-			// Find exam ID using joins, selecting only exam_id
-			err := db.DB.Model(&models.ExamParticipant{}).
-				Select("exam_participants.exam_id").
-				Joins("INNER JOIN answers ON answers.exam_participant_id = exam_participants.id").
-				Where("answers.id = ?", r.AnswerId).
-				Take(&examID).Error
-			if err != nil {
-				if err == gorm.ErrRecordNotFound {
-					return nil, status.Error(codes.NotFound, "answer not found")
-				}
-				return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
-			}
-		default:
-			log.Printf("Unhandled exam request type: %T", req)
-			return nil, status.Error(codes.Internal, "unhandled request type in exam access interceptor")
-		}
-
-		exam, err := fetchExam(examID)
+		examID, err := getExamIdFromRequest(req)
 		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				return nil, status.Error(codes.NotFound, "exam not found")
-			}
-			return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
+			return nil, err
 		}
 
+		exam, err := fetchExam(*examID)
+		if err != nil {
+			return nil, err
+		}
 		ctx = context.WithValue(ctx, examContextKey, exam)
-		ctx, err = authChain.Authorize(ctx, methodName, exam, userID)
+
+		permission, err := fetchExamPermission(*examID, userID)
+		if err == gorm.ErrRecordNotFound {
+			if exam.Type == constants.EXAM_ACCESS_TYPE_LINK && allowInLinkExam[methodName] {
+				return handler(ctx, req)
+			}
+			return nil, status.Error(codes.PermissionDenied, "No permission to access this exam")
+		}
+		if err != nil {
+			return nil, status.Error(codes.Internal, "failed to fetch permissions")
+		}
+
+		if err := checkPermissions(permission, methodName); err != nil {
+			return nil, err
+		}
+
+		ctx, err = addParticipantToContext(ctx, *examID, userID)
 		if err != nil {
 			return nil, err
 		}
@@ -311,9 +144,11 @@ func ExamAccessInterceptor() grpc.UnaryServerInterceptor {
 
 func fetchExam(examID int64) (*models.Exam, error) {
 	var exam models.Exam
-	err := db.DB.Take(&exam, examID).Error
-	if err != nil {
-		return nil, err
+	if err := db.DB.Take(&exam, examID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.NotFound, "exam not found")
+		}
+		return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
 	}
 	return &exam, nil
 }
@@ -325,6 +160,60 @@ func fetchParticipant(examID int64, userID int64) (*models.ExamParticipant, erro
 		return nil, err
 	}
 	return &participant, nil
+}
+
+func fetchExamPermission(examID int64, userID int64) (*models.ExamPermissions, error) {
+	var permission models.ExamPermissions
+	err := db.DB.Where("exam_id = ? AND user_id = ?", examID, userID).Take(&permission).Error
+	if err != nil {
+		return nil, err
+	}
+	return &permission, nil
+}
+
+func getExamIdFromRequest(req any) (*int64, error) {
+	var examID int64
+
+	switch r := req.(type) {
+	case *proto.ExamRequest:
+		examID = r.ExamId
+	case *proto.UpdateExamRequest:
+		examID = r.ExamId
+	case *proto.StartExamRequest:
+		examID = r.ExamId
+	case *proto.EndExamRequest:
+		examID = r.ExamId
+	case *proto.AddParticipantRequest:
+		examID = r.ExamId
+	case *proto.RemoveParticipantRequest:
+		examID = r.ExamId
+	case *proto.UpsertAnswersRequest:
+		examID = r.ExamId
+	case *proto.CheckParticipantRequest:
+		examID = r.ExamId
+	case *proto.GetExamParticipantRequest:
+		examID = r.ExamId
+	case *proto.GetAnswerRequest:
+		examID = r.ExamId
+	case *proto.UpdateAnswerRequest:
+		// Find exam ID using joins, selecting only exam_id
+		err := db.DB.Model(&models.ExamParticipant{}).
+			Select("exam_participants.exam_id").
+			Joins("INNER JOIN answers ON answers.exam_participant_id = exam_participants.id").
+			Where("answers.id = ?", r.AnswerId).
+			Take(&examID).Error
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return nil, status.Error(codes.NotFound, "answer not found")
+			}
+			return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
+		}
+	default:
+		log.Printf("Unhandled exam request type: %T", req)
+		return nil, status.Error(codes.Internal, "unhandled request type in exam access interceptor")
+	}
+
+	return &examID, nil
 }
 
 // Getter function to safely access exam from context

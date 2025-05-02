@@ -31,7 +31,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 		{
 			name: "Success - Get multiple answers",
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, 2) // Created by different user
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
 					Status int
@@ -79,7 +79,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 		{
 			name: "Fail - No answers found",
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, 2) // Created by different user
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
 					Status int
@@ -443,7 +443,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 		{
 			name: "Success - Update all fields",
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
 					Status int
@@ -489,7 +489,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 		{
 			name: "Success - Update only comments",
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
 					Status int
@@ -521,7 +521,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 		{
 			name: "Fail - Score exceeds max score",
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
 					Status int
@@ -561,7 +561,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 		{
 			name: "Fail - Missing question score metadata",
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
 					Status int
@@ -615,7 +615,7 @@ func TestMarkAsEvaluated(t *testing.T) {
 		{
 			name: "Success - All answers evaluated",
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
 					Status int
@@ -650,7 +650,7 @@ func TestMarkAsEvaluated(t *testing.T) {
 		{
 			name: "Success - Some answers unevaluated",
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
 					Status int
@@ -692,7 +692,7 @@ func TestMarkAsEvaluated(t *testing.T) {
 		{
 			name: "Fail - Exam not ended",
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
 					Status int
@@ -739,7 +739,7 @@ func TestGetAnswerById(t *testing.T) {
 		{
 			name: "Success - Get answer by ID",
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
 					Status int

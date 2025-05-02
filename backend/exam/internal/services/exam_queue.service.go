@@ -63,7 +63,9 @@ func EnqueuePrepareQuestons(payload structs.PrepareQuestionsPayload) {
 		return
 	}
 
-	log.Default().Printf("Enqueued task: id=%s queue=%s", info.ID, info.Queue)
+	if env.GO_ENV != constants.GO_ENV_TEST {
+		log.Default().Printf("Enqueued task: id=%s queue=%s", info.ID, info.Queue)
+	}
 }
 
 func EnqueueAutoEndExam(payload structs.AutoEndExamPayload, scheduledEndTime time.Time) {

@@ -72,17 +72,31 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 		UserID: req.UserId,
 	}
 
-	if err := db.DB.Create(&participant).Error; err != nil {
-		return nil, status.Error(codes.Internal, "failed to add participant")
-	}
+	err = db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&participant).Error; err != nil {
+			return status.Error(codes.Internal, "failed to add participant")
+		}
 
-	exam.ParticipantCounts, err = updateParticipantCounts(&counts, 0, constants.PARTICIPANT_STATUS_INVITED)
+		permission := models.ExamPermissions{
+			ExamID: req.ExamId,
+			UserID: req.UserId,
+		}
+		permission.SetParticipate()
+
+		if err := tx.Create(&permission).Error; err != nil {
+			return status.Error(codes.Internal, "failed to create participant permissions")
+		}
+
+		exam.ParticipantCounts, err = updateParticipantCounts(&counts, 0, constants.PARTICIPANT_STATUS_INVITED)
+		if err != nil {
+			return err
+		}
+
+		return tx.Save(&exam).Error
+	})
+
 	if err != nil {
-		return nil, err
-	}
-
-	if err := db.DB.Save(&exam).Error; err != nil {
-		return nil, status.Error(codes.Internal, "failed to update exam")
+		return nil, status.Error(codes.Internal, "failed to add exam participant")
 	}
 
 	return &proto.ParticipantResponse{
@@ -125,6 +139,12 @@ func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.Remov
 		if err := tx.Save(&exam).Error; err != nil {
 			return err
 		}
+
+		// Delete the participant's permissions
+		if err := tx.Where("exam_id = ? AND user_id = ?", exam.ID, participant.UserID).Delete(&models.ExamPermissions{}).Error; err != nil {
+			return err
+		}
+
 		if err := tx.Delete(&participant).Error; err != nil {
 			return err
 		}

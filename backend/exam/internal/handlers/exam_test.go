@@ -758,6 +758,44 @@ func TestStartExam(t *testing.T) {
 			duration:     60,
 			expectedCode: codes.PermissionDenied,
 		},
+		{
+			name: "Success - Start LINK exam with existing participant entry",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, 2) // Created by different user
+				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
+				exam.StartsAt = time.Now().Add(-1 * time.Hour)
+				exam.EndsAt = time.Now().Add(1 * time.Hour)
+				require.NoError(t, db.DB.Save(&exam).Error)
+
+				err := createTestExamParticipants(t, &exam, []struct {
+					UserID int64
+					Status int
+				}{
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
+				})
+				require.NoError(t, err)
+				return &exam
+			},
+			userID:       userID,
+			duration:     60,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, exam *models.Exam) {
+				var updated models.Exam
+				require.NoError(t, db.DB.First(&updated, exam.ID).Error)
+				counts, err := updated.GetParticipantCounts()
+				require.NoError(t, err)
+
+				assert.Equal(t, 0, counts.Invited)
+				assert.Equal(t, 1, counts.Started)
+				assert.Equal(t, 0, counts.Ended)
+
+				var participant models.ExamParticipant
+				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
+				assert.Equal(t, constants.PARTICIPANT_STATUS_STARTED, participant.Status)
+				assert.True(t, participant.StartedAt.Valid)
+				assert.True(t, participant.ScheduledEndTime.Valid)
+			},
+		},
 	}
 
 	for _, tt := range tests {

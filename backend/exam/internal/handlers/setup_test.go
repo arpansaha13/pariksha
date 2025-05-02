@@ -111,6 +111,10 @@ func clearTables(t *testing.T) {
 	tables := []string{
 		"exam_participants",
 		"exams",
+		"permissions",
+		"exam_questions",
+		"exam_categories",
+		"answers",
 	}
 
 	for _, table := range tables {
@@ -140,7 +144,7 @@ func createContextWithMetadata(mdMap map[string]string) context.Context {
 func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 	lis = bufconn.Listen(bufSize)
 	srv := grpc.NewServer(
-		grpc.UnaryInterceptor(interceptors.ExamAccessInterceptor()),
+		grpc.UnaryInterceptor(interceptors.ExamAuthInterceptor()),
 	)
 	proto.RegisterExamServiceServer(srv, &ExamServer{})
 
@@ -190,6 +194,15 @@ func createTestExam(t *testing.T, createdBy int64) models.Exam {
 		ParticipantCounts:  []byte(`{"unattended":0,"invited":0,"started":0,"ended":0}`),
 	}
 	require.NoError(t, db.DB.Create(&exam).Error)
+
+	permission := models.ExamPermissions{
+		ExamID: exam.ID,
+		UserID: createdBy,
+	}
+	permission.SetWrite()
+	permission.SetEvaluate()
+	require.NoError(t, db.DB.Create(&permission).Error)
+
 	return exam
 }
 
@@ -226,6 +239,20 @@ func createTestExamParticipants(t *testing.T, exam *models.Exam, participants []
 
 	// Save participants
 	if err := db.DB.Create(&examParticipants).Error; err != nil {
+		return err
+	}
+
+	// Create permissions for all participants
+	permissions := make([]models.ExamPermissions, len(participants))
+	for i, p := range participants {
+		permissions[i] = models.ExamPermissions{
+			ExamID: exam.ID,
+			UserID: p.UserID,
+		}
+		permissions[i].SetParticipate()
+	}
+
+	if err := db.DB.Create(&permissions).Error; err != nil {
 		return err
 	}
 

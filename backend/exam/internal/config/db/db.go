@@ -41,6 +41,7 @@ func autoMigrateDB() error {
 		&models.Exam{},
 		&models.Answer{},
 		&models.ExamParticipant{},
+		&models.ExamPermissions{},
 		&models.ExamQuestion{},
 		&models.ExamCategory{},
 	)

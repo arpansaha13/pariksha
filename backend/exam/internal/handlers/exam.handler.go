@@ -86,7 +86,7 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 		DurationMinutes:    req.DurationMinutes,
 	}
 
-	// Only set Type if it's not LINK
+	// Only set Type if it's not LINK - will use database default
 	if req.Type != nil && req.GetType() != constants.EXAM_ACCESS_TYPE_LINK {
 		if req.GetType() != constants.EXAM_ACCESS_TYPE_INVITE {
 			return nil, status.Error(codes.InvalidArgument, "exam type must be either LINK or INVITE")
@@ -94,8 +94,27 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 		exam.Type = req.GetType()
 	}
 
-	if err := db.DB.Create(&exam).Error; err != nil {
-		return nil, status.Error(codes.Internal, "failed to create exam")
+	err = db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&exam).Error; err != nil {
+			return status.Error(codes.Internal, "failed to create exam")
+		}
+
+		permission := models.ExamPermissions{
+			ExamID: exam.ID,
+			UserID: userID,
+		}
+		permission.SetWrite()
+		permission.SetEvaluate()
+
+		if err := tx.Create(&permission).Error; err != nil {
+			return status.Error(codes.Internal, "failed to create exam permissions")
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	services.EnqueuePrepareQuestons(structs.PrepareQuestionsPayload{
@@ -217,6 +236,16 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 			}
 			if err := tx.Create(&participant).Error; err != nil {
 				return status.Error(codes.Internal, "failed to create participant")
+			}
+
+			// Create permissions for the new participant
+			permission := models.ExamPermissions{
+				ExamID: req.ExamId,
+				UserID: userID,
+			}
+			permission.SetParticipate()
+			if err := tx.Create(&permission).Error; err != nil {
+				return status.Error(codes.Internal, "failed to create participant permissions")
 			}
 		} else if participant.Status != constants.PARTICIPANT_STATUS_INVITED {
 			return status.Error(codes.FailedPrecondition, "participant has already started the exam")

@@ -44,7 +44,7 @@ func updateParticipantCounts(tx *gorm.DB, exam *models.Exam) error {
 }
 
 // EndExamInterceptor is a fallback for the delayed-job for ending exam if the examWorker or examQueue fails.
-// EndExamInterceptor should come after ExamAccessInterceptor. It uses participant data from context
+// EndExamInterceptor should come after ExamAuthInterceptor. It uses participant data from context
 func EndExamInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		methodName := info.FullMethod
