@@ -17,6 +17,7 @@ type Paper struct {
 	MaxScore        int             `gorm:"default:0"`
 	DurationMinutes int             `gorm:"not null"`
 	QuestionCounts  json.RawMessage `gorm:"type:json;default:'{\"mcq\":0,\"short\":0,\"long\":0}'"`
+	CreatedBy       int64           `gorm:"type:bigint;not null"`
 
 	Questions  []Question         `gorm:"foreignKey:PaperID"`
 	Categories []QuestionCategory `gorm:"foreignKey:PaperID"`

@@ -46,6 +46,7 @@ message PaperResponse {
   int32 max_score = 3;
   int32 duration_minutes = 4;
   QuestionCount question_counts = 5;
+  int64 created_by = 6;
 }
 
 message PaperList {

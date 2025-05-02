@@ -26,7 +26,7 @@ func (s *PaperServer) GetUserPapers(ctx context.Context, _ *proto.Empty) (*proto
 
 	var papers []models.Paper
 	err = db.DB.
-		Select("papers.id, papers.title, papers.max_score, papers.duration_minutes, papers.question_counts").
+		Select("papers.id, papers.title, papers.max_score, papers.duration_minutes, papers.question_counts, papers.created_by").
 		Joins("INNER JOIN permissions ON permissions.paper_id = papers.id").
 		Where("permissions.user_id = ?", userID).
 		Find(&papers).Error
@@ -55,7 +55,10 @@ func (s *PaperServer) CreatePaper(ctx context.Context, _ *proto.Empty) (*proto.P
 	var paper models.Paper
 
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		paper = models.Paper{} // Will use database default for Title
+		// Will use database default for Title
+		paper = models.Paper{
+			CreatedBy: userID,
+		}
 
 		if err := tx.Create(&paper).Error; err != nil {
 			return err

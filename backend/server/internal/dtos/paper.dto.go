@@ -15,6 +15,7 @@ type PaperResponse struct {
 	MaxScore        int             `json:"max_score"`
 	DurationMinutes int             `json:"duration_minutes"`
 	QuestionCounts  json.RawMessage `json:"question_counts"`
+	CreatedBy       int64           `json:"created_by"`
 }
 
 type UpdatePaperResponse struct {
@@ -23,4 +24,5 @@ type UpdatePaperResponse struct {
 	MaxScore        int             `json:"max_score"`
 	DurationMinutes int             `json:"duration_minutes"`
 	QuestionCounts  json.RawMessage `json:"question_counts"`
+	CreatedBy       int64           `json:"created_by"`
 }

@@ -29,6 +29,7 @@ Table papers {
   max_score integer [default: 0, note: 'Maximum score that can be awarded in this paper - Sum of individual scores of each question']
   duration_minutes integer [not null]
   question_counts json [default: '{"mcq":0,"short":0,"long":0}', note: 'Count of each question type']
+  created_by bigint [not null]
 }
 
 Table permissions {

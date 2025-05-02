@@ -101,6 +101,7 @@ func createTestPaper(t *testing.T, userID int64) models.Paper {
 		Title:           "Test Paper",
 		MaxScore:        0,
 		DurationMinutes: 60,
+		CreatedBy:       userID,
 	}
 	err := db.DB.Create(&paper).Error
 	require.NoError(t, err)
