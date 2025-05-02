@@ -13,16 +13,16 @@ interface ExamParticipantTableData {
 const participantStatusColors = {
   [ExamParticipantStatus.UNATTENDED]: 'error',
   [ExamParticipantStatus.INVITED]: 'info',
-  [ExamParticipantStatus.STARTED]: 'warning',
-  [ExamParticipantStatus.ENDED]: 'success',
-  [ExamParticipantStatus.EVALUATED]: 'neutral',
+  [ExamParticipantStatus.STARTED]: 'success',
+  [ExamParticipantStatus.ENDED]: 'warning',
+  [ExamParticipantStatus.EVALUATED]: 'success',
 } as const
 
 const participantStatusText = {
   [ExamParticipantStatus.UNATTENDED]: 'Unattended',
   [ExamParticipantStatus.INVITED]: 'Invited',
   [ExamParticipantStatus.STARTED]: 'Started',
-  [ExamParticipantStatus.ENDED]: 'Ended',
+  [ExamParticipantStatus.ENDED]: 'Pending evaluation',
   [ExamParticipantStatus.EVALUATED]: 'Evaluated',
 } as const
 

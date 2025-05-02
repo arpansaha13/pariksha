@@ -21,15 +21,12 @@ export async function useExamsTableData() {
         const examId = row.original.id
         const title = row.getValue('title') as string
 
-        return h(
-          UButton,
-          {
-            to: `/exams/${examId}`,
-            variant: 'link',
-            ui: { base: 'px-0' },
-          },
-          title
-        )
+        return h(UButton, {
+          label: title,
+          to: `/exams/${examId}`,
+          variant: 'link',
+          ui: { base: 'px-0' },
+        })
       },
     },
     {

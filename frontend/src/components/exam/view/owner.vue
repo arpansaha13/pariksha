@@ -1,102 +1,113 @@
 <template>
-  <UCard
-    v-if="exam"
-    :ui="{
-      header: 'flex items-center gap-2 justify-between',
-      body: 'space-y-4',
-    }"
-  >
-    <template #header>
-      <EditableRoot
-        v-model="editableExamTitle"
-        name="exam-title"
-        activation-mode="focus"
-        submit-mode="both"
-        placeholder=""
-        @submit="updateExamTitle"
-      >
-        <EditableArea
-          class="rounded-sm px-1 focus-within:outline hover:outline"
+  <main class="space-y-6">
+    <UCard
+      v-if="exam"
+      :ui="{
+        header: 'flex items-center justify-between',
+        body: 'space-y-4',
+      }"
+    >
+      <template #header>
+        <EditableRoot
+          v-model="editableExamTitle"
+          name="exam-title"
+          activation-mode="focus"
+          submit-mode="both"
+          placeholder=""
+          @submit="updateExamTitle"
         >
-          <EditablePreview as="h1" class="heading" />
-          <EditableInput class="heading outline-none" />
-        </EditableArea>
-      </EditableRoot>
+          <EditableArea class="rounded-sm focus-within:outline hover:outline">
+            <EditablePreview as="h1" class="heading" />
+            <EditableInput class="text-2xl font-bold outline-none" />
+          </EditableArea>
+        </EditableRoot>
 
-      <ClientOnly>
-        <UTooltip v-if="isSupported" text="Copy link to exam">
-          <UButton
-            :icon="copied ? 'i-lucide-copy-check' : 'i-lucide-link'"
-            size="sm"
-            variant="outline"
-            :color="copied ? 'primary' : 'neutral'"
-            @click="() => copy()"
-          />
-        </UTooltip>
-      </ClientOnly>
-    </template>
+        <ClientOnly>
+          <UTooltip v-if="isSupported" text="Copy link to exam">
+            <UButton
+              :icon="copied ? 'i-lucide-copy-check' : 'i-lucide-link'"
+              size="sm"
+              variant="outline"
+              :color="copied ? 'primary' : 'neutral'"
+              @click="() => copy()"
+            />
+          </UTooltip>
+        </ClientOnly>
+      </template>
 
-    <div class="flex items-center gap-2">
-      <p class="font-medium">
-        {{ isExamStarted ? 'Started at:' : 'Starts at:' }}
-      </p>
+      <div class="flex items-center gap-2">
+        <p class="font-medium">
+          {{ isExamStarted ? 'Started at:' : 'Starts at:' }}
+        </p>
 
-      <DisplayDate
-        v-if="isExamStarted"
-        :date="startsAt"
-        :df="df"
-        :ui="{ skeleton: 'h-4 w-[11ch] bg-neutral-200' }"
+        <DisplayDate
+          v-if="isExamStarted"
+          :date="startsAt"
+          :df="df"
+          :ui="{ skeleton: 'h-4 w-[11ch] bg-neutral-200' }"
+        />
+
+        <UPopover v-else>
+          <UButton color="neutral" variant="subtle" icon="i-lucide-calendar">
+            <DisplayDate
+              :date="startsAt"
+              :df="df"
+              :ui="{ skeleton: 'h-4 w-[11ch] bg-neutral-200' }"
+            />
+          </UButton>
+
+          <template #content>
+            <UCalendar v-model="startsAt" :min-value="now" class="p-2" />
+          </template>
+        </UPopover>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <p class="font-medium">
+          {{ isExamEnded ? 'Ended at:' : 'Ends at:' }}
+        </p>
+
+        <DisplayDate
+          v-if="isExamEnded"
+          :date="endsAt"
+          :df="df"
+          :ui="{ skeleton: 'h-4 w-[11ch] bg-neutral-200' }"
+        />
+
+        <UPopover v-else>
+          <UButton color="neutral" variant="subtle" icon="i-lucide-calendar">
+            <DisplayDate
+              :date="endsAt"
+              :df="df"
+              :ui="{ skeleton: 'h-4 w-[11ch] bg-neutral-200' }"
+            />
+          </UButton>
+
+          <template #content>
+            <UCalendar v-model="endsAt" :min-value="startsAt" class="p-2" />
+          </template>
+        </UPopover>
+      </div>
+    </UCard>
+
+    <UCard
+      :ui="{
+        header: 'flex items-center justify-between',
+        body: '!py-2',
+      }"
+    >
+      <template #header>
+        <h2 class="heading">Participants</h2>
+      </template>
+
+      <UTable
+        v-if="!isNullOrUndefined(participantsTableData)"
+        :data="participantsTableData"
+        :columns="participantsTableColumns"
+        class="flex-1"
       />
-
-      <UPopover v-else>
-        <UButton color="neutral" variant="subtle" icon="i-lucide-calendar">
-          <DisplayDate
-            :date="startsAt"
-            :df="df"
-            :ui="{ skeleton: 'h-4 w-[11ch] bg-neutral-200' }"
-          />
-        </UButton>
-
-        <template #content>
-          <UCalendar v-model="startsAt" :min-value="now" class="p-2" />
-        </template>
-      </UPopover>
-    </div>
-
-    <div class="flex items-center gap-2">
-      <p class="font-medium">
-        {{ isExamEnded ? 'Ended at:' : 'Ends at:' }}
-      </p>
-
-      <DisplayDate
-        v-if="isExamEnded"
-        :date="endsAt"
-        :df="df"
-        :ui="{ skeleton: 'h-4 w-[11ch] bg-neutral-200' }"
-      />
-
-      <UPopover v-else>
-        <UButton color="neutral" variant="subtle" icon="i-lucide-calendar">
-          <DisplayDate
-            :date="endsAt"
-            :df="df"
-            :ui="{ skeleton: 'h-4 w-[11ch] bg-neutral-200' }"
-          />
-        </UButton>
-
-        <template #content>
-          <UCalendar v-model="endsAt" :min-value="startsAt" class="p-2" />
-        </template>
-      </UPopover>
-    </div>
-
-    <UTable
-      v-if="!isNullOrUndefined(participantsTableData)"
-      :data="participantsTableData"
-      :columns="participantsTableColumns"
-      class="flex-1"
-    />
-  </UCard>
+    </UCard>
+  </main>
 </template>
 
 <script setup lang="ts">
