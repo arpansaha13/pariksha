@@ -110,28 +110,22 @@ message GeneralQuestion {
 
 message CreateQuestionRequest {
   int64 paper_id = 1;
-  oneof question {
-    McqQuestion mcq = 2;
-    GeneralQuestion general = 3;
-  }
-  int64 category_id = 4;
-  string type = 5;
-  repeated string tags = 6;
-  int32 max_score = 7;
-  optional string correct_answer = 8;
+  bytes raw_question = 2;
+  int64 category_id = 3;
+  string type = 4;
+  repeated string tags = 5;
+  int32 max_score = 6;
+  optional string correct_answer = 7;
 }
 
 message UpdateQuestionRequest {
   int64 question_id = 1;
   optional string type = 2;
-  oneof question {
-    McqQuestion mcq = 3;
-    GeneralQuestion general = 4;
-  }
-  optional int64 category_id = 5;
-  optional int32 max_score = 6;
-  repeated string tags = 7;
-  optional string correct_answer = 8;
+  optional bytes raw_question = 3;
+  optional int64 category_id = 4;
+  optional int32 max_score = 5;
+  repeated string tags = 6;
+  optional string correct_answer = 7;
 }
 
 message ReorderQuestionsRequest {

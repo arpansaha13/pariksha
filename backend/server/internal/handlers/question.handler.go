@@ -6,9 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/structs"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
@@ -133,9 +131,16 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get raw question bytes
+	questionBytes, err := questionDto.Question.MarshalJSON()
+	if err != nil {
+		http.Error(w, "Invalid question data", http.StatusBadRequest)
+		return
+	}
+
 	requestObj := proto.CreateQuestionRequest{
 		PaperId:       paperID,
-		Question:      nil,
+		RawQuestion:   questionBytes,
 		CategoryId:    questionDto.CategoryID,
 		Type:          questionDto.Type,
 		Tags:          tags,
@@ -143,34 +148,7 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 		CorrectAnswer: &questionDto.CorrectAnswer,
 	}
 
-	switch questionDto.Type {
-	case constants.QUESTION_TYPE_MCQ:
-		var mcq structs.MCQQuestion
-		if err := json.Unmarshal(questionDto.Question, &mcq); err != nil {
-			http.Error(w, "Invalid question data", http.StatusBadRequest)
-			return
-		}
-		requestObj.Question = &proto.CreateQuestionRequest_Mcq{
-			Mcq: &proto.McqQuestion{
-				Statement: mcq.Statement,
-				Options:   mcq.Options,
-			},
-		}
-	default:
-		var general structs.GeneralQuestion
-		if err := json.Unmarshal(questionDto.Question, &general); err != nil {
-			http.Error(w, "Invalid question data", http.StatusBadRequest)
-			return
-		}
-		requestObj.Question = &proto.CreateQuestionRequest_General{
-			General: &proto.GeneralQuestion{
-				Statement: general.Statement,
-			},
-		}
-	}
-
 	response, err := paperService.Client().CreateQuestion(ctx, &requestObj)
-
 	if err != nil {
 		handleGRPCError(w, err)
 		return
@@ -207,31 +185,12 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if updateDto.Question != nil {
-		switch updateDto.Type {
-		case constants.QUESTION_TYPE_MCQ:
-			var mcq structs.MCQQuestion
-			if err := json.Unmarshal(updateDto.Question, &mcq); err != nil {
-				http.Error(w, "Invalid question data", http.StatusBadRequest)
-				return
-			}
-			request.Question = &proto.UpdateQuestionRequest_Mcq{
-				Mcq: &proto.McqQuestion{
-					Statement: mcq.Statement,
-					Options:   mcq.Options,
-				},
-			}
-		default:
-			var general structs.GeneralQuestion
-			if err := json.Unmarshal(updateDto.Question, &general); err != nil {
-				http.Error(w, "Invalid question data", http.StatusBadRequest)
-				return
-			}
-			request.Question = &proto.UpdateQuestionRequest_General{
-				General: &proto.GeneralQuestion{
-					Statement: general.Statement,
-				},
-			}
+		questionBytes, err := updateDto.Question.MarshalJSON()
+		if err != nil {
+			http.Error(w, "Invalid question data", http.StatusBadRequest)
+			return
 		}
+		request.RawQuestion = questionBytes
 	}
 
 	if updateDto.CategoryID != 0 {

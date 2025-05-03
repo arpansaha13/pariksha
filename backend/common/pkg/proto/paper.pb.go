@@ -752,18 +752,14 @@ func (x *GeneralQuestion) GetStatement() string {
 }
 
 type CreateQuestionRequest struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	PaperId int64                  `protobuf:"varint,1,opt,name=paper_id,json=paperId,proto3" json:"paper_id,omitempty"`
-	// Types that are valid to be assigned to Question:
-	//
-	//	*CreateQuestionRequest_Mcq
-	//	*CreateQuestionRequest_General
-	Question      isCreateQuestionRequest_Question `protobuf_oneof:"question"`
-	CategoryId    int64                            `protobuf:"varint,4,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	Type          string                           `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
-	Tags          []string                         `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty"`
-	MaxScore      int32                            `protobuf:"varint,7,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
-	CorrectAnswer *string                          `protobuf:"bytes,8,opt,name=correct_answer,json=correctAnswer,proto3,oneof" json:"correct_answer,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PaperId       int64                  `protobuf:"varint,1,opt,name=paper_id,json=paperId,proto3" json:"paper_id,omitempty"`
+	RawQuestion   []byte                 `protobuf:"bytes,2,opt,name=raw_question,json=rawQuestion,proto3" json:"raw_question,omitempty"` // Changed from oneof to raw bytes
+	CategoryId    int64                  `protobuf:"varint,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	Type          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	Tags          []string               `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
+	MaxScore      int32                  `protobuf:"varint,6,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
+	CorrectAnswer *string                `protobuf:"bytes,7,opt,name=correct_answer,json=correctAnswer,proto3,oneof" json:"correct_answer,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -805,27 +801,9 @@ func (x *CreateQuestionRequest) GetPaperId() int64 {
 	return 0
 }
 
-func (x *CreateQuestionRequest) GetQuestion() isCreateQuestionRequest_Question {
+func (x *CreateQuestionRequest) GetRawQuestion() []byte {
 	if x != nil {
-		return x.Question
-	}
-	return nil
-}
-
-func (x *CreateQuestionRequest) GetMcq() *McqQuestion {
-	if x != nil {
-		if x, ok := x.Question.(*CreateQuestionRequest_Mcq); ok {
-			return x.Mcq
-		}
-	}
-	return nil
-}
-
-func (x *CreateQuestionRequest) GetGeneral() *GeneralQuestion {
-	if x != nil {
-		if x, ok := x.Question.(*CreateQuestionRequest_General); ok {
-			return x.General
-		}
+		return x.RawQuestion
 	}
 	return nil
 }
@@ -865,35 +843,15 @@ func (x *CreateQuestionRequest) GetCorrectAnswer() string {
 	return ""
 }
 
-type isCreateQuestionRequest_Question interface {
-	isCreateQuestionRequest_Question()
-}
-
-type CreateQuestionRequest_Mcq struct {
-	Mcq *McqQuestion `protobuf:"bytes,2,opt,name=mcq,proto3,oneof"`
-}
-
-type CreateQuestionRequest_General struct {
-	General *GeneralQuestion `protobuf:"bytes,3,opt,name=general,proto3,oneof"`
-}
-
-func (*CreateQuestionRequest_Mcq) isCreateQuestionRequest_Question() {}
-
-func (*CreateQuestionRequest_General) isCreateQuestionRequest_Question() {}
-
 type UpdateQuestionRequest struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
-	QuestionId int64                  `protobuf:"varint,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
-	Type       *string                `protobuf:"bytes,2,opt,name=type,proto3,oneof" json:"type,omitempty"`
-	// Types that are valid to be assigned to Question:
-	//
-	//	*UpdateQuestionRequest_Mcq
-	//	*UpdateQuestionRequest_General
-	Question      isUpdateQuestionRequest_Question `protobuf_oneof:"question"`
-	CategoryId    *int64                           `protobuf:"varint,5,opt,name=category_id,json=categoryId,proto3,oneof" json:"category_id,omitempty"`
-	MaxScore      *int32                           `protobuf:"varint,6,opt,name=max_score,json=maxScore,proto3,oneof" json:"max_score,omitempty"`
-	Tags          []string                         `protobuf:"bytes,7,rep,name=tags,proto3" json:"tags,omitempty"`
-	CorrectAnswer *string                          `protobuf:"bytes,8,opt,name=correct_answer,json=correctAnswer,proto3,oneof" json:"correct_answer,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	QuestionId    int64                  `protobuf:"varint,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	Type          *string                `protobuf:"bytes,2,opt,name=type,proto3,oneof" json:"type,omitempty"`
+	RawQuestion   []byte                 `protobuf:"bytes,3,opt,name=raw_question,json=rawQuestion,proto3,oneof" json:"raw_question,omitempty"` // Changed from oneof to raw bytes
+	CategoryId    *int64                 `protobuf:"varint,4,opt,name=category_id,json=categoryId,proto3,oneof" json:"category_id,omitempty"`
+	MaxScore      *int32                 `protobuf:"varint,5,opt,name=max_score,json=maxScore,proto3,oneof" json:"max_score,omitempty"`
+	Tags          []string               `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty"`
+	CorrectAnswer *string                `protobuf:"bytes,7,opt,name=correct_answer,json=correctAnswer,proto3,oneof" json:"correct_answer,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -942,27 +900,9 @@ func (x *UpdateQuestionRequest) GetType() string {
 	return ""
 }
 
-func (x *UpdateQuestionRequest) GetQuestion() isUpdateQuestionRequest_Question {
+func (x *UpdateQuestionRequest) GetRawQuestion() []byte {
 	if x != nil {
-		return x.Question
-	}
-	return nil
-}
-
-func (x *UpdateQuestionRequest) GetMcq() *McqQuestion {
-	if x != nil {
-		if x, ok := x.Question.(*UpdateQuestionRequest_Mcq); ok {
-			return x.Mcq
-		}
-	}
-	return nil
-}
-
-func (x *UpdateQuestionRequest) GetGeneral() *GeneralQuestion {
-	if x != nil {
-		if x, ok := x.Question.(*UpdateQuestionRequest_General); ok {
-			return x.General
-		}
+		return x.RawQuestion
 	}
 	return nil
 }
@@ -994,22 +934,6 @@ func (x *UpdateQuestionRequest) GetCorrectAnswer() string {
 	}
 	return ""
 }
-
-type isUpdateQuestionRequest_Question interface {
-	isUpdateQuestionRequest_Question()
-}
-
-type UpdateQuestionRequest_Mcq struct {
-	Mcq *McqQuestion `protobuf:"bytes,3,opt,name=mcq,proto3,oneof"`
-}
-
-type UpdateQuestionRequest_General struct {
-	General *GeneralQuestion `protobuf:"bytes,4,opt,name=general,proto3,oneof"`
-}
-
-func (*UpdateQuestionRequest_Mcq) isUpdateQuestionRequest_Question() {}
-
-func (*UpdateQuestionRequest_General) isUpdateQuestionRequest_Question() {}
 
 type ReorderQuestionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1754,34 +1678,29 @@ const file_paper_proto_rawDesc = "" +
 	"\tstatement\x18\x01 \x01(\tR\tstatement\x12\x18\n" +
 	"\aoptions\x18\x02 \x03(\tR\aoptions\"/\n" +
 	"\x0fGeneralQuestion\x12\x1c\n" +
-	"\tstatement\x18\x01 \x01(\tR\tstatement\"\xbf\x02\n" +
+	"\tstatement\x18\x01 \x01(\tR\tstatement\"\xfa\x01\n" +
 	"\x15CreateQuestionRequest\x12\x19\n" +
-	"\bpaper_id\x18\x01 \x01(\x03R\apaperId\x12&\n" +
-	"\x03mcq\x18\x02 \x01(\v2\x12.proto.McqQuestionH\x00R\x03mcq\x122\n" +
-	"\ageneral\x18\x03 \x01(\v2\x16.proto.GeneralQuestionH\x00R\ageneral\x12\x1f\n" +
-	"\vcategory_id\x18\x04 \x01(\x03R\n" +
+	"\bpaper_id\x18\x01 \x01(\x03R\apaperId\x12!\n" +
+	"\fraw_question\x18\x02 \x01(\fR\vrawQuestion\x12\x1f\n" +
+	"\vcategory_id\x18\x03 \x01(\x03R\n" +
 	"categoryId\x12\x12\n" +
-	"\x04type\x18\x05 \x01(\tR\x04type\x12\x12\n" +
-	"\x04tags\x18\x06 \x03(\tR\x04tags\x12\x1b\n" +
-	"\tmax_score\x18\a \x01(\x05R\bmaxScore\x12*\n" +
-	"\x0ecorrect_answer\x18\b \x01(\tH\x01R\rcorrectAnswer\x88\x01\x01B\n" +
-	"\n" +
-	"\bquestionB\x11\n" +
-	"\x0f_correct_answer\"\xfb\x02\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\x12\x12\n" +
+	"\x04tags\x18\x05 \x03(\tR\x04tags\x12\x1b\n" +
+	"\tmax_score\x18\x06 \x01(\x05R\bmaxScore\x12*\n" +
+	"\x0ecorrect_answer\x18\a \x01(\tH\x00R\rcorrectAnswer\x88\x01\x01B\x11\n" +
+	"\x0f_correct_answer\"\xcc\x02\n" +
 	"\x15UpdateQuestionRequest\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\x03R\n" +
 	"questionId\x12\x17\n" +
-	"\x04type\x18\x02 \x01(\tH\x01R\x04type\x88\x01\x01\x12&\n" +
-	"\x03mcq\x18\x03 \x01(\v2\x12.proto.McqQuestionH\x00R\x03mcq\x122\n" +
-	"\ageneral\x18\x04 \x01(\v2\x16.proto.GeneralQuestionH\x00R\ageneral\x12$\n" +
-	"\vcategory_id\x18\x05 \x01(\x03H\x02R\n" +
+	"\x04type\x18\x02 \x01(\tH\x00R\x04type\x88\x01\x01\x12&\n" +
+	"\fraw_question\x18\x03 \x01(\fH\x01R\vrawQuestion\x88\x01\x01\x12$\n" +
+	"\vcategory_id\x18\x04 \x01(\x03H\x02R\n" +
 	"categoryId\x88\x01\x01\x12 \n" +
-	"\tmax_score\x18\x06 \x01(\x05H\x03R\bmaxScore\x88\x01\x01\x12\x12\n" +
-	"\x04tags\x18\a \x03(\tR\x04tags\x12*\n" +
-	"\x0ecorrect_answer\x18\b \x01(\tH\x04R\rcorrectAnswer\x88\x01\x01B\n" +
-	"\n" +
-	"\bquestionB\a\n" +
-	"\x05_typeB\x0e\n" +
+	"\tmax_score\x18\x05 \x01(\x05H\x03R\bmaxScore\x88\x01\x01\x12\x12\n" +
+	"\x04tags\x18\x06 \x03(\tR\x04tags\x12*\n" +
+	"\x0ecorrect_answer\x18\a \x01(\tH\x04R\rcorrectAnswer\x88\x01\x01B\a\n" +
+	"\x05_typeB\x0f\n" +
+	"\r_raw_questionB\x0e\n" +
 	"\f_category_idB\f\n" +
 	"\n" +
 	"_max_scoreB\x11\n" +
@@ -1902,58 +1821,54 @@ var file_paper_proto_depIdxs = []int32{
 	8,  // 4: proto.QuestionList.questions:type_name -> proto.QuestionMinimal
 	9,  // 5: proto.QuestionMinimal.mcq:type_name -> proto.McqQuestion
 	10, // 6: proto.QuestionMinimal.general:type_name -> proto.GeneralQuestion
-	9,  // 7: proto.CreateQuestionRequest.mcq:type_name -> proto.McqQuestion
-	10, // 8: proto.CreateQuestionRequest.general:type_name -> proto.GeneralQuestion
-	9,  // 9: proto.UpdateQuestionRequest.mcq:type_name -> proto.McqQuestion
-	10, // 10: proto.UpdateQuestionRequest.general:type_name -> proto.GeneralQuestion
-	16, // 11: proto.QuestionBatchResponse.questions:type_name -> proto.QuestionBatchItem
-	9,  // 12: proto.QuestionBatchItem.mcq:type_name -> proto.McqQuestion
-	10, // 13: proto.QuestionBatchItem.general:type_name -> proto.GeneralQuestion
-	19, // 14: proto.CategoryBatchResponse.categories:type_name -> proto.CategoryBatchItem
-	21, // 15: proto.CategoryList.categories:type_name -> proto.CategoryResponse
-	26, // 16: proto.PaperService.GetUserPapers:input_type -> proto.Empty
-	0,  // 17: proto.PaperService.GetPaper:input_type -> proto.PaperRequest
-	26, // 18: proto.PaperService.CreatePaper:input_type -> proto.Empty
-	3,  // 19: proto.PaperService.UpdatePaper:input_type -> proto.UpdatePaperRequest
-	0,  // 20: proto.PaperService.CheckPaperAccess:input_type -> proto.PaperRequest
-	0,  // 21: proto.PaperService.GetPaperQuestions:input_type -> proto.PaperRequest
-	5,  // 22: proto.PaperService.GetQuestion:input_type -> proto.QuestionRequest
-	11, // 23: proto.PaperService.CreateQuestion:input_type -> proto.CreateQuestionRequest
-	12, // 24: proto.PaperService.UpdateQuestion:input_type -> proto.UpdateQuestionRequest
-	5,  // 25: proto.PaperService.DeleteQuestion:input_type -> proto.QuestionRequest
-	13, // 26: proto.PaperService.ReorderQuestions:input_type -> proto.ReorderQuestionsRequest
-	0,  // 27: proto.PaperService.GetPaperCategories:input_type -> proto.PaperRequest
-	23, // 28: proto.PaperService.CreateCategory:input_type -> proto.CreateCategoryRequest
-	24, // 29: proto.PaperService.UpdateCategory:input_type -> proto.UpdateCategoryRequest
-	20, // 30: proto.PaperService.DeleteCategory:input_type -> proto.CategoryRequest
-	25, // 31: proto.PaperService.ReorderCategories:input_type -> proto.ReorderCategoriesRequest
-	14, // 32: proto.PaperService.GetQuestionsByIds:input_type -> proto.GetQuestionsByIdsRequest
-	17, // 33: proto.PaperService.GetCategoriesByIds:input_type -> proto.GetCategoriesByIdsRequest
-	5,  // 34: proto.PaperService.GetExamQuestion:input_type -> proto.QuestionRequest
-	2,  // 35: proto.PaperService.GetUserPapers:output_type -> proto.PaperList
-	1,  // 36: proto.PaperService.GetPaper:output_type -> proto.PaperResponse
-	1,  // 37: proto.PaperService.CreatePaper:output_type -> proto.PaperResponse
-	26, // 38: proto.PaperService.UpdatePaper:output_type -> proto.Empty
-	26, // 39: proto.PaperService.CheckPaperAccess:output_type -> proto.Empty
-	7,  // 40: proto.PaperService.GetPaperQuestions:output_type -> proto.QuestionList
-	6,  // 41: proto.PaperService.GetQuestion:output_type -> proto.QuestionResponse
-	6,  // 42: proto.PaperService.CreateQuestion:output_type -> proto.QuestionResponse
-	26, // 43: proto.PaperService.UpdateQuestion:output_type -> proto.Empty
-	26, // 44: proto.PaperService.DeleteQuestion:output_type -> proto.Empty
-	26, // 45: proto.PaperService.ReorderQuestions:output_type -> proto.Empty
-	22, // 46: proto.PaperService.GetPaperCategories:output_type -> proto.CategoryList
-	21, // 47: proto.PaperService.CreateCategory:output_type -> proto.CategoryResponse
-	26, // 48: proto.PaperService.UpdateCategory:output_type -> proto.Empty
-	26, // 49: proto.PaperService.DeleteCategory:output_type -> proto.Empty
-	26, // 50: proto.PaperService.ReorderCategories:output_type -> proto.Empty
-	15, // 51: proto.PaperService.GetQuestionsByIds:output_type -> proto.QuestionBatchResponse
-	18, // 52: proto.PaperService.GetCategoriesByIds:output_type -> proto.CategoryBatchResponse
-	6,  // 53: proto.PaperService.GetExamQuestion:output_type -> proto.QuestionResponse
-	35, // [35:54] is the sub-list for method output_type
-	16, // [16:35] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	16, // 7: proto.QuestionBatchResponse.questions:type_name -> proto.QuestionBatchItem
+	9,  // 8: proto.QuestionBatchItem.mcq:type_name -> proto.McqQuestion
+	10, // 9: proto.QuestionBatchItem.general:type_name -> proto.GeneralQuestion
+	19, // 10: proto.CategoryBatchResponse.categories:type_name -> proto.CategoryBatchItem
+	21, // 11: proto.CategoryList.categories:type_name -> proto.CategoryResponse
+	26, // 12: proto.PaperService.GetUserPapers:input_type -> proto.Empty
+	0,  // 13: proto.PaperService.GetPaper:input_type -> proto.PaperRequest
+	26, // 14: proto.PaperService.CreatePaper:input_type -> proto.Empty
+	3,  // 15: proto.PaperService.UpdatePaper:input_type -> proto.UpdatePaperRequest
+	0,  // 16: proto.PaperService.CheckPaperAccess:input_type -> proto.PaperRequest
+	0,  // 17: proto.PaperService.GetPaperQuestions:input_type -> proto.PaperRequest
+	5,  // 18: proto.PaperService.GetQuestion:input_type -> proto.QuestionRequest
+	11, // 19: proto.PaperService.CreateQuestion:input_type -> proto.CreateQuestionRequest
+	12, // 20: proto.PaperService.UpdateQuestion:input_type -> proto.UpdateQuestionRequest
+	5,  // 21: proto.PaperService.DeleteQuestion:input_type -> proto.QuestionRequest
+	13, // 22: proto.PaperService.ReorderQuestions:input_type -> proto.ReorderQuestionsRequest
+	0,  // 23: proto.PaperService.GetPaperCategories:input_type -> proto.PaperRequest
+	23, // 24: proto.PaperService.CreateCategory:input_type -> proto.CreateCategoryRequest
+	24, // 25: proto.PaperService.UpdateCategory:input_type -> proto.UpdateCategoryRequest
+	20, // 26: proto.PaperService.DeleteCategory:input_type -> proto.CategoryRequest
+	25, // 27: proto.PaperService.ReorderCategories:input_type -> proto.ReorderCategoriesRequest
+	14, // 28: proto.PaperService.GetQuestionsByIds:input_type -> proto.GetQuestionsByIdsRequest
+	17, // 29: proto.PaperService.GetCategoriesByIds:input_type -> proto.GetCategoriesByIdsRequest
+	5,  // 30: proto.PaperService.GetExamQuestion:input_type -> proto.QuestionRequest
+	2,  // 31: proto.PaperService.GetUserPapers:output_type -> proto.PaperList
+	1,  // 32: proto.PaperService.GetPaper:output_type -> proto.PaperResponse
+	1,  // 33: proto.PaperService.CreatePaper:output_type -> proto.PaperResponse
+	26, // 34: proto.PaperService.UpdatePaper:output_type -> proto.Empty
+	26, // 35: proto.PaperService.CheckPaperAccess:output_type -> proto.Empty
+	7,  // 36: proto.PaperService.GetPaperQuestions:output_type -> proto.QuestionList
+	6,  // 37: proto.PaperService.GetQuestion:output_type -> proto.QuestionResponse
+	6,  // 38: proto.PaperService.CreateQuestion:output_type -> proto.QuestionResponse
+	26, // 39: proto.PaperService.UpdateQuestion:output_type -> proto.Empty
+	26, // 40: proto.PaperService.DeleteQuestion:output_type -> proto.Empty
+	26, // 41: proto.PaperService.ReorderQuestions:output_type -> proto.Empty
+	22, // 42: proto.PaperService.GetPaperCategories:output_type -> proto.CategoryList
+	21, // 43: proto.PaperService.CreateCategory:output_type -> proto.CategoryResponse
+	26, // 44: proto.PaperService.UpdateCategory:output_type -> proto.Empty
+	26, // 45: proto.PaperService.DeleteCategory:output_type -> proto.Empty
+	26, // 46: proto.PaperService.ReorderCategories:output_type -> proto.Empty
+	15, // 47: proto.PaperService.GetQuestionsByIds:output_type -> proto.QuestionBatchResponse
+	18, // 48: proto.PaperService.GetCategoriesByIds:output_type -> proto.CategoryBatchResponse
+	6,  // 49: proto.PaperService.GetExamQuestion:output_type -> proto.QuestionResponse
+	31, // [31:50] is the sub-list for method output_type
+	12, // [12:31] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_paper_proto_init() }
@@ -1971,14 +1886,8 @@ func file_paper_proto_init() {
 		(*QuestionMinimal_Mcq)(nil),
 		(*QuestionMinimal_General)(nil),
 	}
-	file_paper_proto_msgTypes[11].OneofWrappers = []any{
-		(*CreateQuestionRequest_Mcq)(nil),
-		(*CreateQuestionRequest_General)(nil),
-	}
-	file_paper_proto_msgTypes[12].OneofWrappers = []any{
-		(*UpdateQuestionRequest_Mcq)(nil),
-		(*UpdateQuestionRequest_General)(nil),
-	}
+	file_paper_proto_msgTypes[11].OneofWrappers = []any{}
+	file_paper_proto_msgTypes[12].OneofWrappers = []any{}
 	file_paper_proto_msgTypes[16].OneofWrappers = []any{
 		(*QuestionBatchItem_Mcq)(nil),
 		(*QuestionBatchItem_General)(nil),

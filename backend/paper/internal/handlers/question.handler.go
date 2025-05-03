@@ -13,6 +13,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/interceptors"
 )
@@ -73,26 +74,26 @@ func (s *PaperServer) GetQuestion(ctx context.Context, req *proto.QuestionReques
 }
 
 func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuestionRequest) (*proto.QuestionResponse, error) {
-	// Validate question data
-	switch q := req.Question.(type) {
-	case *proto.CreateQuestionRequest_Mcq:
-		if err := validateQuestionData(req.Type, q.Mcq); err != nil {
+	// Validate question data based on type
+	switch req.Type {
+	case constants.QUESTION_TYPE_MCQ:
+		var mcq structs.MCQQuestion
+		if err := utils.StrictUnmarshal(req.RawQuestion, &mcq); err != nil {
+			return nil, status.Error(codes.InvalidArgument, "invalid MCQ question format")
+		}
+		if err := validateQuestionData(req.Type, &mcq); err != nil {
 			return nil, err
 		}
-	case *proto.CreateQuestionRequest_General:
-		if err := validateQuestionData(req.Type, q.General); err != nil {
+	case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
+		var general structs.GeneralQuestion
+		if err := utils.StrictUnmarshal(req.RawQuestion, &general); err != nil {
+			return nil, status.Error(codes.InvalidArgument, "invalid general question format")
+		}
+		if err := validateQuestionData(req.Type, &general); err != nil {
 			return nil, err
 		}
 	default:
 		return nil, status.Error(codes.InvalidArgument, "invalid question type")
-	}
-
-	var questionData json.RawMessage
-	switch q := req.Question.(type) {
-	case *proto.CreateQuestionRequest_Mcq:
-		questionData, _ = json.Marshal(q.Mcq)
-	case *proto.CreateQuestionRequest_General:
-		questionData, _ = json.Marshal(q.General)
 	}
 
 	tags, _ := json.Marshal(req.Tags)
@@ -113,7 +114,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 			PaperID:    sql.NullInt64{Int64: req.PaperId, Valid: true},
 			CategoryID: req.CategoryId,
 			Order:      maxOrder.MaxOrder + 1,
-			Question:   questionData,
+			Question:   json.RawMessage(req.RawQuestion),
 			Type:       req.Type,
 			Tags:       tags,
 			MaxScore:   int(req.MaxScore),

@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -13,6 +14,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/utils"
 )
 
 // Helper function to convert Paper model to proto response
@@ -101,7 +103,7 @@ func updateQuestionCounts(rawCounts json.RawMessage, questionType string, delta 
 func validateQuestionData(questionType string, question interface{}) error {
 	switch questionType {
 	case constants.QUESTION_TYPE_MCQ:
-		mcq, ok := question.(*proto.McqQuestion)
+		mcq, ok := question.(*structs.MCQQuestion)
 		if !ok {
 			return status.Error(codes.InvalidArgument, "invalid MCQ question format")
 		}
@@ -117,7 +119,8 @@ func validateQuestionData(questionType string, question interface{}) error {
 		}
 
 	case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
-		general, ok := question.(*proto.GeneralQuestion)
+		general, ok := question.(*structs.GeneralQuestion)
+		log.Println(general)
 		if !ok {
 			return status.Error(codes.InvalidArgument, "invalid general question format")
 		}
@@ -133,33 +136,38 @@ func validateQuestionData(questionType string, question interface{}) error {
 // Helper function to apply updates to a question
 func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionRequest) (models.Question, error) {
 	if req.Type != nil {
-		if req.Question == nil {
+		if req.RawQuestion == nil {
 			return question, status.Error(codes.InvalidArgument, "question content must be provided when changing question type")
 		}
 		question.Type = req.GetType()
 	}
 
-	if req.Question != nil {
-		questionType := question.Type
-		switch q := req.Question.(type) {
-		case *proto.UpdateQuestionRequest_Mcq:
-			if err := validateQuestionData(questionType, q.Mcq); err != nil {
+	if req.RawQuestion != nil {
+		switch question.Type {
+		case constants.QUESTION_TYPE_MCQ:
+			var mcq structs.MCQQuestion
+			if err := utils.StrictUnmarshal(req.RawQuestion, &mcq); err != nil {
+				return question, status.Error(codes.InvalidArgument, "invalid MCQ question format")
+			}
+			if err := validateQuestionData(question.Type, &mcq); err != nil {
 				return question, err
 			}
-			questionData, _ := json.Marshal(q.Mcq)
-			question.Question = questionData
-		case *proto.UpdateQuestionRequest_General:
-			if err := validateQuestionData(questionType, q.General); err != nil {
+		default:
+			var general structs.GeneralQuestion
+			if err := utils.StrictUnmarshal(req.RawQuestion, &general); err != nil {
+				return question, status.Error(codes.InvalidArgument, "invalid general question format")
+			}
+			if err := validateQuestionData(question.Type, &general); err != nil {
 				return question, err
 			}
-			questionData, _ := json.Marshal(q.General)
-			question.Question = questionData
 		}
+		question.Question = json.RawMessage(req.RawQuestion)
 	}
 
-	if req.CategoryId != nil {
-		question.CategoryID = req.GetCategoryId()
-	}
+	// TODO: Disable category updating for now
+	// if req.CategoryId != nil {
+	// 	question.CategoryID = req.GetCategoryId()
+	// }
 
 	if req.MaxScore != nil {
 		question.MaxScore = int(req.GetMaxScore())

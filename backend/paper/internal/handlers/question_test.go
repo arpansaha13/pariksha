@@ -121,15 +121,10 @@ func TestCreateQuestion(t *testing.T) {
 			},
 			userID: userID,
 			request: &proto.CreateQuestionRequest{
-				Question: &proto.CreateQuestionRequest_Mcq{
-					Mcq: &proto.McqQuestion{
-						Statement: "Test MCQ",
-						Options:   []string{"A", "B", "C"},
-					},
-				},
-				Type:       constants.QUESTION_TYPE_MCQ,
-				MaxScore:   5,
-				CategoryId: 1,
+				RawQuestion: []byte(`{"statement":"Test MCQ","options":["A","B","C"]}`),
+				Type:        constants.QUESTION_TYPE_MCQ,
+				MaxScore:    5,
+				CategoryId:  1,
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, paper *models.Paper, resp *proto.QuestionResponse) {
@@ -158,14 +153,10 @@ func TestCreateQuestion(t *testing.T) {
 			},
 			userID: userID,
 			request: &proto.CreateQuestionRequest{
-				Question: &proto.CreateQuestionRequest_General{
-					General: &proto.GeneralQuestion{
-						Statement: "Test Short Answer",
-					},
-				},
-				Type:       constants.QUESTION_TYPE_SHORT,
-				MaxScore:   10,
-				CategoryId: 1,
+				RawQuestion: []byte(`{"statement":"Test Short Answer"}`),
+				Type:        constants.QUESTION_TYPE_SHORT,
+				MaxScore:    10,
+				CategoryId:  1,
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, paper *models.Paper, resp *proto.QuestionResponse) {
@@ -194,14 +185,10 @@ func TestCreateQuestion(t *testing.T) {
 			},
 			userID: userID,
 			request: &proto.CreateQuestionRequest{
-				Question: &proto.CreateQuestionRequest_General{
-					General: &proto.GeneralQuestion{
-						Statement: "Test Long Answer",
-					},
-				},
-				Type:       constants.QUESTION_TYPE_LONG,
-				MaxScore:   15,
-				CategoryId: 1,
+				RawQuestion: []byte(`{"statement":"Test Long Answer"}`),
+				Type:        constants.QUESTION_TYPE_LONG,
+				MaxScore:    15,
+				CategoryId:  1,
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, paper *models.Paper, resp *proto.QuestionResponse) {
@@ -278,13 +265,8 @@ func TestUpdateQuestion(t *testing.T) {
 				return &paper, &question
 			},
 			request: &proto.UpdateQuestionRequest{
-				Question: &proto.UpdateQuestionRequest_Mcq{
-					Mcq: &proto.McqQuestion{
-						Statement: "Updated MCQ",
-						Options:   []string{"X", "Y", "Z"},
-					},
-				},
-				MaxScore: &maxScore,
+				RawQuestion: []byte(`{"statement":"Updated MCQ","options":["X","Y","Z"]}`),
+				MaxScore:    &maxScore,
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
@@ -330,13 +312,9 @@ func TestUpdateQuestion(t *testing.T) {
 				return &paper, &question
 			},
 			request: &proto.UpdateQuestionRequest{
-				Type: &questionTypeShort,
-				Question: &proto.UpdateQuestionRequest_General{
-					General: &proto.GeneralQuestion{
-						Statement: "Updated to Short",
-					},
-				},
-				MaxScore: &maxScore,
+				Type:        &questionTypeShort,
+				RawQuestion: []byte(`{"statement":"Updated to Short"}`),
+				MaxScore:    &maxScore,
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
@@ -376,13 +354,8 @@ func TestUpdateQuestion(t *testing.T) {
 				return &paper, &question
 			},
 			request: &proto.UpdateQuestionRequest{
-				Question: &proto.UpdateQuestionRequest_Mcq{
-					Mcq: &proto.McqQuestion{
-						Statement: "Updated MCQ",
-						Options:   []string{"X", "Y", "Z"},
-					},
-				},
-				MaxScore: &maxScore,
+				RawQuestion: []byte(`{"statement":"Updated MCQ","options":["X","Y","Z"]}`),
+				MaxScore:    &maxScore,
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
@@ -448,18 +421,95 @@ func TestUpdateQuestion(t *testing.T) {
 				return &paper, &question
 			},
 			request: &proto.UpdateQuestionRequest{
-				Type: &questionTypeShort, // Changing to SHORT type
-				Question: &proto.UpdateQuestionRequest_Mcq{ // But providing MCQ content
-					Mcq: &proto.McqQuestion{
-						Statement: "Wrong content type",
-						Options:   []string{"X", "Y", "Z"},
-					},
-				},
+				Type:        &questionTypeShort,                                                   // Changing to SHORT type
+				RawQuestion: []byte(`{"statement":"Wrong content type","options":["X","Y","Z"]}`), // But providing MCQ content
 			},
 			userID:       userID,
 			expectedCode: codes.InvalidArgument,
 		},
-		// Add more test cases for other scenarios
+		{
+			name: "Success - Update MCQ question",
+			setup: func(t *testing.T) (*models.Paper, *models.Question) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				question := models.Question{
+					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+					CategoryID: category.ID,
+					Order:      1,
+					Type:       constants.QUESTION_TYPE_MCQ,
+					Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
+					MaxScore:   5,
+					Tags:       json.RawMessage(`["old"]`),
+				}
+				require.NoError(t, db.DB.Create(&question).Error)
+				return &paper, &question
+			},
+			request: &proto.UpdateQuestionRequest{
+				MaxScore:    &maxScore,
+				Tags:        []string{"updated", "mcq"},
+				RawQuestion: []byte(`{"statement":"Updated MCQ Question","options":["X","Y","Z","W"]}`),
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, paper *models.Paper, question *models.Question) {
+				var updated models.Question
+				require.NoError(t, db.DB.First(&updated, question.ID).Error)
+
+				// Verify question content
+				var mcq structs.MCQQuestion
+				require.NoError(t, json.Unmarshal(updated.Question, &mcq))
+				assert.Equal(t, "Updated MCQ Question", mcq.Statement)
+				assert.Equal(t, []string{"X", "Y", "Z", "W"}, mcq.Options)
+
+				// Verify other fields
+				assert.Equal(t, 10, updated.MaxScore)
+				var tags []string
+				require.NoError(t, json.Unmarshal(updated.Tags, &tags))
+				assert.ElementsMatch(t, []string{"updated", "mcq"}, tags)
+			},
+		},
+		{
+			name: "Success - Update Short question",
+			setup: func(t *testing.T) (*models.Paper, *models.Question) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				question := models.Question{
+					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+					CategoryID: category.ID,
+					Order:      1,
+					Type:       constants.QUESTION_TYPE_SHORT,
+					Question:   json.RawMessage(`{"statement":"Old Short Question"}`),
+					MaxScore:   5,
+				}
+				require.NoError(t, db.DB.Create(&question).Error)
+				return &paper, &question
+			},
+			request: &proto.UpdateQuestionRequest{
+				MaxScore:      &maxScore,
+				RawQuestion:   []byte(`{"statement":"Updated Short Question"}`),
+				CorrectAnswer: &[]string{"Expected answer"}[0],
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, paper *models.Paper, question *models.Question) {
+				var updated models.Question
+				require.NoError(t, db.DB.First(&updated, question.ID).Error)
+
+				// Verify question content
+				var general structs.GeneralQuestion
+				require.NoError(t, json.Unmarshal(updated.Question, &general))
+				assert.Equal(t, "Updated Short Question", general.Statement)
+
+				// Verify other fields
+				assert.Equal(t, 10, updated.MaxScore)
+				assert.Equal(t, "Expected answer", updated.CorrectAnswer.String)
+				assert.True(t, updated.CorrectAnswer.Valid)
+			},
+		},
 	}
 
 	for _, tt := range tests {
