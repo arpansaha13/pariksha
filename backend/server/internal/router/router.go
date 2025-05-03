@@ -56,7 +56,7 @@ func SetupRouter() *mux.Router {
 	protectedRouter.HandleFunc("/exams", handlers.CreateExam).Methods("POST", "OPTIONS")
 	protectedRouter.HandleFunc("/exams/{examId}", handlers.GetExam).Methods("GET", "OPTIONS")
 	protectedRouter.HandleFunc("/exams/{examId}", handlers.UpdateExam).Methods("PATCH", "OPTIONS")
-	protectedRouter.HandleFunc("/exams/{examId}/check", handlers.CheckExamAccess).Methods("GET", "OPTIONS")
+	protectedRouter.HandleFunc("/exams/{examId}/permission", handlers.GetExamPermission).Methods("GET", "OPTIONS")
 	protectedRouter.HandleFunc("/exams/{examId}/start", handlers.StartExam).Methods("PATCH", "OPTIONS")
 	protectedRouter.HandleFunc("/exams/{examId}/end", handlers.EndExam).Methods("PATCH", "OPTIONS")
 	protectedRouter.HandleFunc("/exams/{examId}/questions", handlers.GetExamQuestions).Methods("GET", "OPTIONS")
@@ -67,7 +67,6 @@ func SetupRouter() *mux.Router {
 	protectedRouter.HandleFunc("/exams/{examId}/participants", handlers.GetExamParticipants).Methods("GET", "OPTIONS")
 	protectedRouter.HandleFunc("/exams/{examId}/participants", handlers.AddExamParticipant).Methods("POST", "OPTIONS")
 	protectedRouter.HandleFunc("/exams/{examId}/participants/{participantId}", handlers.RemoveExamParticipant).Methods("DELETE", "OPTIONS")
-	protectedRouter.HandleFunc("/exams/{examId}/participants/check", handlers.CheckExamParticipant).Methods("GET", "OPTIONS")
 	protectedRouter.HandleFunc("/exams/{examId}/participants/current", handlers.GetExamParticipant).Methods("GET", "OPTIONS")
 	protectedRouter.HandleFunc("/participants/{participantId}/evaluate", handlers.MarkAsEvaluated).Methods("PATCH", "OPTIONS")
 

@@ -63,11 +63,6 @@ type AddExamParticipantResponse struct {
 	ScoreAwarded int   `json:"score_awarded"`
 }
 
-type ExamAccessResponse struct {
-	AccessType        string `json:"access_type"` // "OWNER" or "PARTICIPANT"
-	ParticipantStatus *int   `json:"participant_status,omitempty"`
-}
-
 type ExamQuestionMinimalResponse struct {
 	QuestionID int64 `json:"id"`
 	CategoryID int64 `json:"category_id"`
@@ -88,12 +83,16 @@ type ExamQuestionResponse struct {
 	MaxScore   int             `json:"max_score"`
 }
 
-type CheckExamParticipantResponse struct {
-	ParticipantStatus int `json:"participant_status"`
-}
-
 type GetExamParticipantResponse struct {
 	ID               int64     `json:"id"`
 	StartedAt        time.Time `json:"started_at,omitempty"`
 	ScheduledEndTime time.Time `json:"scheduled_end_time,omitempty"`
+}
+
+type ExamPermissionResponse struct {
+	CanRead           bool `json:"can_read"`
+	CanWrite          bool `json:"can_write"`
+	CanParticipate    bool `json:"can_participate"`
+	CanEvaluate       bool `json:"can_evaluate"`
+	ParticipantStatus *int `json:"participant_status,omitempty"`
 }

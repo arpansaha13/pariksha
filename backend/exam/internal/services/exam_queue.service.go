@@ -84,5 +84,7 @@ func EnqueueAutoEndExam(payload structs.AutoEndExamPayload, scheduledEndTime tim
 		return
 	}
 
-	log.Default().Printf("Enqueued auto-end task: id=%s queue=%s at=%v", info.ID, info.Queue, scheduledEndTime)
+	if env.GO_ENV != constants.GO_ENV_TEST {
+		log.Default().Printf("Enqueued auto-end task: id=%s queue=%s at=%v", info.ID, info.Queue, scheduledEndTime)
+	}
 }

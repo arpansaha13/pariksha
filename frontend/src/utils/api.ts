@@ -19,7 +19,6 @@ export { reorderQuestions } from './api/papers/reorder-questions'
 
 export { createExam } from './api/exams/createExam'
 export { updateExam } from './api/exams/updateExam'
-export { checkParticipantAccess } from './api/exams/checkParticipantAccess'
 export { startExam } from './api/exams/startExam'
 export { endExam } from './api/exams/endExam'
 export { upsertAnswer } from './api/exams/upsertAnswer'

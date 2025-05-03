@@ -87,18 +87,18 @@ import type { ComponentExposed } from 'vue-component-type-helpers'
 import { ExamParticipantStatus } from '~/types'
 
 const props = defineProps({
-  examAccess: {
+  examPermission: {
     type: Object as PropType<
-      NonNullable<ReturnType<typeof useExamCheckAccess>['data']['value']>
+      NonNullable<ReturnType<typeof useExamPermission>['data']['value']>
     >,
     required: true,
   },
 })
 
 const isParticipantExamStarted =
-  props.examAccess.participant_status === ExamParticipantStatus.STARTED
+  props.examPermission.participant_status === ExamParticipantStatus.STARTED
 const isParticipantExamEnded =
-  props.examAccess.participant_status === ExamParticipantStatus.ENDED
+  props.examPermission.participant_status === ExamParticipantStatus.ENDED
 
 const route = useRoute()
 const examId = parseInt(route.params.examId as string)

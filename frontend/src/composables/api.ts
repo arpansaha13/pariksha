@@ -13,6 +13,6 @@ export { useExamQuestion } from './api/exams/useExamQuestion'
 export { useExamParticipant } from './api/exams/useExamParticipant'
 export { useExamParticipants } from './api/exams/useExamParticipants'
 export { useExamAnswer } from './api/exams/useExamAnswer'
-export { useExamCheckAccess } from './api/exams/useExamCheckAccess'
+export { useExamPermission } from './api/exams/useExamPermission'
 
 export { useAuthUser } from './api/user/useAuthUser'

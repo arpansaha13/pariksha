@@ -423,66 +423,6 @@ func GetExam(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func CheckExamAccess(w http.ResponseWriter, r *http.Request) {
-	examID, err := getInt64FromVars(mux.Vars(r), "examId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
-
-	access, err := examService.Client().CheckExamAccess(ctx, &proto.ExamRequest{
-		ExamId: examID,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	response := dtos.ExamAccessResponse{
-		AccessType: access.AccessType.String(),
-	}
-
-	if access.ParticipantStatus != nil {
-		status := int(access.GetParticipantStatus())
-		response.ParticipantStatus = &status
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
-}
-
-// CheckExamParticipant checks if the current user is a participant of the exam
-func CheckExamParticipant(w http.ResponseWriter, r *http.Request) {
-	examID, err := getInt64FromVars(mux.Vars(r), "examId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
-
-	response, err := examService.Client().CheckExamParticipant(ctx, &proto.CheckParticipantRequest{
-		ExamId: examID,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	participantResponse := dtos.CheckExamParticipantResponse{
-		ParticipantStatus: int(response.ParticipantStatus),
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(participantResponse)
-}
-
 func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
 	examID, err := getInt64FromVars(mux.Vars(r), "examId")
 	if err != nil {
@@ -646,6 +586,41 @@ func GetExamParticipant(w http.ResponseWriter, r *http.Request) {
 	}
 	if participant.ScheduledEndTime != nil {
 		response.ScheduledEndTime = participant.ScheduledEndTime.AsTime()
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func GetExamPermission(w http.ResponseWriter, r *http.Request) {
+	examID, err := getInt64FromVars(mux.Vars(r), "examId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	examService := services.GetExamService()
+	ctx := examService.CreateMetadata(userID)
+
+	permission, err := examService.Client().GetExamPermission(ctx, &proto.ExamRequest{
+		ExamId: examID,
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	response := dtos.ExamPermissionResponse{
+		CanRead:        permission.CanRead,
+		CanWrite:       permission.CanWrite,
+		CanParticipate: permission.CanParticipate,
+		CanEvaluate:    permission.CanEvaluate,
+	}
+
+	if permission.ParticipantStatus != nil {
+		status := int(permission.GetParticipantStatus())
+		response.ParticipantStatus = &status
 	}
 
 	w.Header().Set("Content-Type", "application/json")

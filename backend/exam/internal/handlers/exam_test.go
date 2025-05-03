@@ -1030,29 +1030,32 @@ func TestGetExamCategories(t *testing.T) {
 	}
 }
 
-func TestCheckExamAccess(t *testing.T) {
+func TestGetExamPermission(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T) *models.Exam
 		userID       int64
 		expectedCode codes.Code
-		validate     func(t *testing.T, resp *proto.ExamAccessResponse)
+		validate     func(t *testing.T, resp *proto.ExamPermissionResponse)
 	}{
 		{
-			name: "Success - Owner access",
+			name: "Success - Owner permissions",
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, userID)
 				return &exam
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, resp *proto.ExamAccessResponse) {
-				assert.Equal(t, proto.ExamAccessType_OWNER, resp.AccessType)
+			validate: func(t *testing.T, resp *proto.ExamPermissionResponse) {
+				assert.True(t, resp.CanRead)
+				assert.True(t, resp.CanWrite)
+				assert.False(t, resp.CanParticipate)
+				assert.True(t, resp.CanEvaluate)
 				assert.Nil(t, resp.ParticipantStatus)
 			},
 		},
 		{
-			name: "Success - Invited participant access",
+			name: "Success - Participant permissions",
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, 2) // Created by different user
 				err := createTestExamParticipants(t, &exam, []struct {
@@ -1066,47 +1069,49 @@ func TestCheckExamAccess(t *testing.T) {
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, resp *proto.ExamAccessResponse) {
-				assert.Equal(t, proto.ExamAccessType_PARTICIPANT, resp.AccessType)
-				assert.NotNil(t, resp.ParticipantStatus)
+			validate: func(t *testing.T, resp *proto.ExamPermissionResponse) {
+				assert.True(t, resp.CanRead)
+				assert.False(t, resp.CanWrite)
+				assert.True(t, resp.CanParticipate)
+				assert.False(t, resp.CanEvaluate)
+				require.NotNil(t, resp.ParticipantStatus)
 				assert.Equal(t, int32(constants.PARTICIPANT_STATUS_INVITED), *resp.ParticipantStatus)
 			},
 		},
 		{
-			name: "Success - Started participant access",
+			name: "Success - Non-owners and uninvited users get participate permission in LINK exam",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int
-				}{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
-				})
-				require.NoError(t, err)
-				return &exam
-			},
-			userID:       userID,
-			expectedCode: codes.OK,
-			validate: func(t *testing.T, resp *proto.ExamAccessResponse) {
-				assert.Equal(t, proto.ExamAccessType_PARTICIPANT, resp.AccessType)
-				assert.NotNil(t, resp.ParticipantStatus)
-				assert.Equal(t, int32(constants.PARTICIPANT_STATUS_STARTED), *resp.ParticipantStatus)
-			},
-		},
-		{
-			name: "Success - LINK exam new participant access",
-			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, 2)
+				exam := createTestExam(t, 2) // Created by different user
 				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
 				require.NoError(t, db.DB.Save(&exam).Error)
 				return &exam
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, resp *proto.ExamAccessResponse) {
-				assert.Equal(t, proto.ExamAccessType_PARTICIPANT, resp.AccessType)
-				assert.NotNil(t, resp.ParticipantStatus)
-				assert.Equal(t, int32(constants.PARTICIPANT_STATUS_INVITED), *resp.ParticipantStatus)
+			validate: func(t *testing.T, resp *proto.ExamPermissionResponse) {
+				assert.True(t, resp.CanRead)
+				assert.False(t, resp.CanWrite)
+				assert.True(t, resp.CanParticipate)
+				assert.False(t, resp.CanEvaluate)
+				assert.Nil(t, resp.ParticipantStatus)
+			},
+		},
+		{
+			name: "Success - LINK exam owner has normal permissions",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, userID) // Created by test user
+				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
+				require.NoError(t, db.DB.Save(&exam).Error)
+				return &exam
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.ExamPermissionResponse) {
+				assert.True(t, resp.CanRead)
+				assert.True(t, resp.CanWrite)
+				assert.False(t, resp.CanParticipate)
+				assert.True(t, resp.CanEvaluate)
+				assert.Nil(t, resp.ParticipantStatus)
 			},
 		},
 		{
@@ -1118,59 +1123,31 @@ func TestCheckExamAccess(t *testing.T) {
 			expectedCode: codes.NotFound,
 		},
 		{
-			name: "Fail - No access to INVITE exam",
+			name: "Success - Check participant status in response",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, 2)
-				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
-				require.NoError(t, db.DB.Save(&exam).Error)
-				return &exam
-			},
-			userID:       userID,
-			expectedCode: codes.PermissionDenied,
-		},
-		{
-			name: "Success - Ended participant access",
-			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, 2)
+				exam := createTestExam(t, 2) // Created by different user
+				// Add participants with different statuses
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
 					Status int
 				}{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED},
+					{UserID: 3, Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED}, // Our test user
+					{UserID: 4, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
 				require.NoError(t, err)
+
 				return &exam
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, resp *proto.ExamAccessResponse) {
-				assert.Equal(t, proto.ExamAccessType_PARTICIPANT, resp.AccessType)
-				assert.NotNil(t, resp.ParticipantStatus)
-				assert.Equal(t, int32(constants.PARTICIPANT_STATUS_ENDED), *resp.ParticipantStatus)
-			},
-		},
-		{
-			name: "Success - Access after exam has ended",
-			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, 2)
-				exam.StartsAt = time.Now().Add(-2 * time.Hour)
-				exam.EndsAt = time.Now().Add(-1 * time.Hour)
-				require.NoError(t, db.DB.Save(&exam).Error)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int
-				}{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED},
-				})
-				require.NoError(t, err)
-				return &exam
-			},
-			userID:       userID,
-			expectedCode: codes.OK,
-			validate: func(t *testing.T, resp *proto.ExamAccessResponse) {
-				assert.Equal(t, proto.ExamAccessType_PARTICIPANT, resp.AccessType)
-				assert.NotNil(t, resp.ParticipantStatus)
-				assert.Equal(t, int32(constants.PARTICIPANT_STATUS_ENDED), *resp.ParticipantStatus)
+			validate: func(t *testing.T, resp *proto.ExamPermissionResponse) {
+				assert.True(t, resp.CanRead)
+				assert.False(t, resp.CanWrite)
+				assert.True(t, resp.CanParticipate)
+				assert.False(t, resp.CanEvaluate)
+				require.NotNil(t, resp.ParticipantStatus)
+				assert.Equal(t, int32(constants.PARTICIPANT_STATUS_STARTED), *resp.ParticipantStatus)
 			},
 		},
 	}
@@ -1181,7 +1158,7 @@ func TestCheckExamAccess(t *testing.T) {
 			exam := tt.setup(t)
 
 			ctx := createContextWithUserID(tt.userID)
-			resp, err := client.CheckExamAccess(ctx, &proto.ExamRequest{
+			resp, err := client.GetExamPermission(ctx, &proto.ExamRequest{
 				ExamId: exam.ID,
 			})
 

@@ -95,11 +95,37 @@
 <script setup lang="ts">
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import { ConfirmModal } from '#components'
-import { QuestionType } from '~/types'
+import {
+  ExamParticipantStatus,
+  QuestionType,
+  type ExamPermission,
+} from '~/types'
 
 definePageMeta({
   layout: 'paper',
-  middleware: ['check-exam-participant'],
+  middleware: [
+    'check-exam-permission',
+    to => {
+      const examId = parseInt(to.params.examId as string)
+      const { data: examPermission } = useNuxtData<ExamPermission>(
+        AsyncDataKeys.EXAM_ACCESS(examId)
+      )
+      if (!examPermission.value!.can_participate) {
+        return abortNavigation({
+          statusCode: HttpStatus.FORBIDDEN,
+          message: 'You are not registered as a participant for this exam.',
+        })
+      }
+      if (
+        examPermission.value!.participant_status === ExamParticipantStatus.ENDED
+      ) {
+        return abortNavigation({
+          statusCode: HttpStatus.FORBIDDEN,
+          message: 'You have already attempted this exam',
+        })
+      }
+    },
+  ],
 })
 
 const route = useRoute()

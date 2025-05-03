@@ -358,41 +358,6 @@ func (s *ExamServer) GetExam(ctx context.Context, req *proto.ExamRequest) (*prot
 	return createExamResponse(exam)
 }
 
-// CheckExamAccess determines whether the user has access to this exam with access-level as owner or participant
-func (s *ExamServer) CheckExamAccess(ctx context.Context, req *proto.ExamRequest) (*proto.ExamAccessResponse, error) {
-	userID, err := utils.GetUserIDFromMetadata(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	exam, ok := interceptors.GetExamFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "exam not found in context")
-	}
-
-	if exam.CreatedBy == userID {
-		return &proto.ExamAccessResponse{
-			AccessType: proto.ExamAccessType_OWNER,
-		}, nil
-	}
-
-	participant, ok := interceptors.GetParticipantFromContext(ctx)
-
-	// If the execution reached till here then we know that the participant
-	// can access this exam because auth-interceptor does the validation.
-	if !ok {
-		return &proto.ExamAccessResponse{
-			AccessType:        proto.ExamAccessType_PARTICIPANT,
-			ParticipantStatus: ptr.Int32(constants.PARTICIPANT_STATUS_INVITED),
-		}, nil
-	}
-
-	return &proto.ExamAccessResponse{
-		AccessType:        proto.ExamAccessType_PARTICIPANT,
-		ParticipantStatus: ptr.Int32(int32(participant.Status)),
-	}, nil
-}
-
 // GetExamQuestions retrieves all questions associated with an exam
 func (s *ExamServer) GetExamQuestions(ctx context.Context, req *proto.ExamRequest) (*proto.ExamQuestionsResponse, error) {
 	var examQuestions []models.ExamQuestion
@@ -438,4 +403,51 @@ func (s *ExamServer) GetExamCategories(ctx context.Context, req *proto.ExamReque
 	return &proto.ExamCategoriesResponse{
 		Categories: categories,
 	}, nil
+}
+
+func (s *ExamServer) GetExamPermission(ctx context.Context, req *proto.ExamRequest) (*proto.ExamPermissionResponse, error) {
+	userID, err := utils.GetUserIDFromMetadata(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get exam to check type
+	exam, ok := interceptors.GetExamFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "exam not found in context")
+	}
+
+	var permission models.ExamPermissions
+	err = db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&permission).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			// For LINK type exams, grant participate permission
+			if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
+				return &proto.ExamPermissionResponse{
+					CanRead:        true,
+					CanWrite:       false,
+					CanParticipate: true,
+					CanEvaluate:    false,
+				}, nil
+			}
+			return &proto.ExamPermissionResponse{}, nil
+		}
+		return nil, status.Error(codes.Internal, "failed to fetch permissions")
+	}
+
+	response := &proto.ExamPermissionResponse{
+		CanRead:        permission.CanRead(),
+		CanWrite:       permission.CanWrite(),
+		CanParticipate: permission.CanParticipate(),
+		CanEvaluate:    permission.CanEvaluate(),
+	}
+
+	// Check if user is a participant and add status if found
+	var participant models.ExamParticipant
+	err = db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error
+	if err == nil {
+		response.ParticipantStatus = ptr.Int32(int32(participant.Status))
+	}
+
+	return response, nil
 }

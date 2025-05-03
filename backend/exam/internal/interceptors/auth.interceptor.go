@@ -27,8 +27,8 @@ const (
 
 var (
 	requiresRead = map[string]bool{
-		"/proto.ExamService/GetExam":         true,
-		"/proto.ExamService/CheckExamAccess": true,
+		"/proto.ExamService/GetExam":           true,
+		"/proto.ExamService/GetExamPermission": true,
 		// "/proto.ExamService/GetAnswerById": true,
 	}
 
@@ -40,13 +40,12 @@ var (
 	}
 
 	requiresParticipate = map[string]bool{
-		"/proto.ExamService/EndExam":              true,
-		"/proto.ExamService/UpsertAnswer":         true,
-		"/proto.ExamService/CheckExamParticipant": true,
-		"/proto.ExamService/GetExamQuestions":     true,
-		"/proto.ExamService/GetExamCategories":    true,
-		"/proto.ExamService/GetExamParticipant":   true,
-		"/proto.ExamService/GetAnswer":            true,
+		"/proto.ExamService/EndExam":            true,
+		"/proto.ExamService/UpsertAnswer":       true,
+		"/proto.ExamService/GetExamQuestions":   true,
+		"/proto.ExamService/GetExamCategories":  true,
+		"/proto.ExamService/GetExamParticipant": true,
+		"/proto.ExamService/GetAnswer":          true,
 	}
 
 	requiresEvaluate = map[string]bool{
@@ -57,10 +56,9 @@ var (
 
 	// In case of LINK exam, allow access to these handlers even without a permission entry in db
 	allowInLinkExam = map[string]bool{
-		"/proto.ExamService/GetExam":              true,
-		"/proto.ExamService/StartExam":            true,
-		"/proto.ExamService/CheckExamAccess":      true,
-		"/proto.ExamService/CheckExamParticipant": true,
+		"/proto.ExamService/GetExam":           true,
+		"/proto.ExamService/StartExam":         true,
+		"/proto.ExamService/GetExamPermission": true,
 	}
 )
 

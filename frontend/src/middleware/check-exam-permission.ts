@@ -3,9 +3,12 @@ export default defineNuxtRouteMiddleware(async (to, _from) => {
     await callOnce(
       async () => {
         const examId = parseInt(to.params.examId as string)
-        const { error, status } = await useExamCheckAccess(examId)
+        const { data, error, status } = await useExamPermission(examId)
         if (status.value === 'error') {
           throw error.value
+        }
+        if (!data.value!.can_read) {
+          throw createError({ statusCode: HttpStatus.FORBIDDEN })
         }
       },
       { mode: 'navigation' }

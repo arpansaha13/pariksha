@@ -1,23 +1,23 @@
 <template>
-  <ExamViewOwner v-if="isOwner" />
-
-  <UContainer v-else class="max-w-3xl py-6">
-    <ExamViewParticipant :exam-access="examAccess!" />
+  <UContainer v-if="isParticipant" class="max-w-3xl py-6">
+    <ExamViewParticipant :exam-permission="examPermission!" />
   </UContainer>
+
+  <ExamViewOwner v-else />
 </template>
 
 <script setup lang="ts">
-import { ExamPermission } from '~/types/exam'
+import type { ExamPermission } from '~/types/exam'
 
 definePageMeta({
   middleware: [
-    'check-exam-access',
+    'check-exam-permission',
     to => {
       const examId = parseInt(to.params.examId as string)
-      const { data: examAccess } = useNuxtData(
+      const { data: examPermission } = useNuxtData<ExamPermission>(
         AsyncDataKeys.EXAM_ACCESS(examId)
       )
-      if (examAccess.value.access_type === ExamPermission.PARTICIPANT) {
+      if (examPermission.value!.can_participate) {
         setPageLayout('blank')
       }
     },
@@ -27,7 +27,9 @@ definePageMeta({
 const route = useRoute()
 const examId = parseInt(route.params.examId as string)
 
-const { data: examAccess } = useNuxtData(AsyncDataKeys.EXAM_ACCESS(examId))
+const { data: examPermission } = useNuxtData<ExamPermission>(
+  AsyncDataKeys.EXAM_ACCESS(examId)
+)
 
-const isOwner = examAccess.value!.access_type === ExamPermission.OWNER
+const isParticipant = examPermission.value!.can_participate
 </script>

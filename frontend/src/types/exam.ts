@@ -25,9 +25,12 @@ export interface Exam {
   duration_minutes: number
 }
 
-export enum ExamPermission {
-  OWNER = 'OWNER',
-  PARTICIPANT = 'PARTICIPANT',
+export interface ExamPermission {
+  can_read: boolean
+  can_write: boolean
+  can_participate: boolean
+  can_evaluate: boolean
+  participant_status?: ExamParticipantStatus
 }
 
 export type ExamQuestion = Pick<

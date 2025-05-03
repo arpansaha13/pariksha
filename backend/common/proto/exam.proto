@@ -13,9 +13,9 @@ service ExamService {
   rpc CreateExam(CreateExamRequest) returns (ExamResponse) {}
   rpc UpdateExam(UpdateExamRequest) returns (ExamResponse) {}
   rpc GetExam(ExamRequest) returns (ExamResponse) {}
-  rpc CheckExamAccess(ExamRequest) returns (ExamAccessResponse) {}
   rpc GetExamQuestions(ExamRequest) returns (ExamQuestionsResponse) {}
   rpc GetExamCategories(ExamRequest) returns (ExamCategoriesResponse) {}
+  rpc GetExamPermission(ExamRequest) returns (ExamPermissionResponse) {}
 
   // Participant operations
   rpc GetExamParticipants(ExamRequest) returns (ParticipantList) {}
@@ -24,7 +24,6 @@ service ExamService {
   rpc StartExam(StartExamRequest) returns (Empty) {}
   rpc EndExam(EndExamRequest) returns (Empty) {}
   rpc MarkAsEvaluated(ParticipantRequest) returns (EvaluationStatusResponse) {}
-  rpc CheckExamParticipant(CheckParticipantRequest) returns (CheckParticipantResponse) {}
   rpc GetExamParticipant(GetExamParticipantRequest) returns (GetExamParticipantResponse) {}
 
   // Answer operations
@@ -173,17 +172,8 @@ message GetAnswerResponse {
   int64 question_id = 3;
 }
 
-message ExamAccessResponse {
-  ExamAccessType access_type = 1;
-  optional int32 participant_status = 2;
-}
-
 message CheckParticipantRequest {
   int64 exam_id = 1;
-}
-
-message CheckParticipantResponse {
-  int32 participant_status = 1;
 }
 
 message GetExamParticipantRequest {
@@ -222,4 +212,12 @@ message GetAnswerByIdRequest {
 enum ExamAccessType {
   OWNER = 0;
   PARTICIPANT = 1;
+}
+
+message ExamPermissionResponse {
+  bool can_read = 1;
+  bool can_write = 2;
+  bool can_participate = 3;
+  bool can_evaluate = 4;
+  optional int32 participant_status = 5;
 }

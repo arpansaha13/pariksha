@@ -161,18 +161,6 @@ func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.Remov
 	return &proto.Empty{}, nil
 }
 
-// CheckExamParticipant checks if a user is a participant of an exam
-func (s *ExamServer) CheckExamParticipant(ctx context.Context, req *proto.CheckParticipantRequest) (*proto.CheckParticipantResponse, error) {
-	participant, ok := interceptors.GetParticipantFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.PermissionDenied, "participant not found")
-	}
-
-	return &proto.CheckParticipantResponse{
-		ParticipantStatus: int32(participant.Status),
-	}, nil
-}
-
 // GetExamParticipant returns participant data for the current user
 func (s *ExamServer) GetExamParticipant(ctx context.Context, req *proto.GetExamParticipantRequest) (*proto.GetExamParticipantResponse, error) {
 	participant, ok := interceptors.GetParticipantFromContext(ctx)
