@@ -1,26 +1,7 @@
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import { QuestionType, type Question, type QuestionMinimal } from '~/types'
+import type { Question, QuestionMcq, QuestionMinimal } from '~/types'
 
-export interface UpdateMcqQuestionBody
-  extends Pick<Question, 'max_score' | 'tags' | 'correct_answer'> {
-  type: QuestionType.MCQ
-  category_id: number | null
-  question: {
-    statement: string
-    options: string[]
-  }
-}
-
-export interface UpdateGeneralQuestionBody
-  extends Pick<Question, 'max_score' | 'tags' | 'correct_answer'> {
-  type: QuestionType.SHORT | QuestionType.LONG
-  category_id: number | null
-  question: {
-    statement: string
-  }
-}
-
-type UpdateQuestionBody = UpdateMcqQuestionBody | UpdateGeneralQuestionBody
+type UpdateQuestionBody = Partial<Question>
 
 export async function updateQuestion(
   questionId: number,
@@ -43,14 +24,14 @@ export async function updateQuestion(
   // Store minimal data for rollback
   const rollbackData = {
     id: questionId,
-    categoryId: previousQuestion.category.id,
+    categoryId: previousQuestion.category_id,
     question: previousQuestion.question,
   }
 
   // Optimistically update the full question
   question.value = {
     ...question.value!,
-    ...newData,
+    ...(newData as (typeof question)['value']),
   }
 
   // Update the particular question in paperQuestions
@@ -71,12 +52,9 @@ export async function updateQuestion(
       refreshNuxtData(AsyncDataKeys.QUESTION(questionId)),
     ]
 
-    const isMaxScoreUpdated =
-      !isNullOrUndefined(requestBody.max_score) &&
-      requestBody.max_score !== previousQuestion.max_score
-    const isTypeUpdated =
-      !isNullOrUndefined(requestBody.type) &&
-      requestBody.type !== previousQuestion.type
+    // requestBody will only have the updated fields
+    const isMaxScoreUpdated = !isNullOrUndefined(requestBody.max_score)
+    const isTypeUpdated = !isNullOrUndefined(requestBody.type)
 
     // Refresh paper data if max_score or type changed
     if (isMaxScoreUpdated || isTypeUpdated) {
@@ -107,36 +85,47 @@ function getRequestBody(
   previousQuestion: Readonly<Question>,
   newData: UpdateQuestionBody
 ) {
-  const requestBody: Partial<UpdateQuestionBody> = {}
+  const requestBody: UpdateQuestionBody = {}
 
-  if (newData.type !== previousQuestion.type) {
-    requestBody.type = newData.type
-    // Must include question data when type changes
-    requestBody.question = newData.question
-  } else if (
-    // Only check question data if type hasn't changed
-    newData.type === QuestionType.MCQ &&
-    previousQuestion.type === QuestionType.MCQ
-  ) {
-    const oldQ = previousQuestion.question
-    const newQ = newData.question
-    if (
-      oldQ.statement !== newQ.statement ||
-      !arrayEquals(oldQ.options, newQ.options)
-    ) {
-      requestBody.question = newQ
-    }
-  } else if (
-    previousQuestion.question.statement !== newData.question.statement
-  ) {
-    requestBody.question = newData.question
+  /** Compares options assuming MCQ question */
+  const areOpionsEqual = (a: Question['question'], b: Question['question']) => {
+    return arrayEquals(
+      (a as QuestionMcq['question']).options ?? [],
+      (b as QuestionMcq['question']).options ?? []
+    )
   }
 
-  if (newData.max_score !== previousQuestion.max_score) {
+  if (
+    !isNullOrUndefined(newData.type) &&
+    newData.type !== previousQuestion.type
+  ) {
+    requestBody.type = newData.type
+    if (isNullOrUndefined(newData.question)) {
+      throw new Error('Must include question data when type changes')
+    }
+  }
+
+  if (!isNullOrUndefined(newData.question)) {
+    const oldQ = previousQuestion.question
+    const newQ = newData.question
+    console.log(oldQ)
+    console.log(newQ)
+    if (oldQ.statement !== newQ.statement || !areOpionsEqual(newQ, oldQ)) {
+      requestBody.question = newQ
+    }
+  }
+
+  if (
+    !isNullOrUndefined(newData.max_score) &&
+    newData.max_score !== previousQuestion.max_score
+  ) {
     requestBody.max_score = newData.max_score
   }
 
-  if (!arrayEquals(newData.tags, previousQuestion.tags)) {
+  if (
+    !isNullOrUndefined(newData.tags) &&
+    !arrayEquals(newData.tags, previousQuestion.tags)
+  ) {
     requestBody.tags = newData.tags
   }
 
@@ -145,8 +134,8 @@ function getRequestBody(
   // }
 
   if (
-    (newData.correct_answer ?? null) !==
-    (previousQuestion.correct_answer ?? null)
+    !isNullOrUndefined(newData.correct_answer) &&
+    newData.correct_answer !== previousQuestion.correct_answer
   ) {
     requestBody.correct_answer = newData.correct_answer
   }

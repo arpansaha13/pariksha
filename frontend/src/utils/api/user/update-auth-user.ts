@@ -6,7 +6,7 @@ export interface UpdateUserPayload {
   last_name?: string
 }
 
-export async function updateAuthUser(body: UpdateUserPayload): Promise<User> {
+export async function updateAuthUser(body: UpdateUserPayload) {
   await $fetch<User>(`/api/users/me`, {
     method: 'PATCH',
     body,
