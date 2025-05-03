@@ -118,7 +118,7 @@ const [
 ])
 
 const overlay = useOverlay()
-const confirmModal = overlay.create(ConfirmModal)
+const confirmModal = overlay.create(ConfirmModal as Component)
 provide(InjectionKeys.ConfirmModal, confirmModal)
 
 const getQuestionIdForCategoryId = useExamQuestionIdForCategoryId({

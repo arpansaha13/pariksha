@@ -152,11 +152,12 @@ async function handleDeleteCategory(category: QuestionCategory) {
   // If category has questions, then show a confirmation modal
   const categoryQuestions = props.groupedQuestions[category.id]
   if (categoryQuestions && categoryQuestions.length > 0) {
-    shouldDelete = await confirmModal.open({
+    const instance = confirmModal.open({
       title: 'Confirm category deletion',
       description: `This category "${category.name}" has ${categoryQuestions.length} questions which will be deleted along with it.`,
       confirmLabel: 'Delete category',
     })
+    shouldDelete = await instance.result
   }
 
   if (shouldDelete) {

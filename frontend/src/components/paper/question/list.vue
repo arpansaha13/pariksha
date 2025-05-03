@@ -144,13 +144,14 @@ function onQuestionsReorderEnd() {
 async function handleDeleteQuestion(questionId: number) {
   if (!props.currentCategoryId) return
 
-  const shouldDelete = await confirmModal.open({
+  const instance = confirmModal.open({
     title: 'Confirm question deletion',
     description:
       'Are you sure you want to delete this question? This action cannot be undone.',
     confirmLabel: 'Delete question',
   })
 
+  const shouldDelete = await instance.result
   if (!shouldDelete) return
 
   // If deleting current question, switch to another one first

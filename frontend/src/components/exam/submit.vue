@@ -8,13 +8,14 @@ const emit = defineEmits(['submit'])
 const confirmModal = inject(InjectionKeys.ConfirmModal)!
 
 async function showConfirmDialog() {
-  const shouldSubmit = await confirmModal.open({
+  const instance = confirmModal.open({
     title: 'Submit and end exam',
     description: 'Are you sure you want to submit and end the exam?',
     confirmLabel: 'Submit',
     variant: 'primary',
   })
 
+  const shouldSubmit = await instance.result
   if (shouldSubmit) {
     emit('submit')
   }
