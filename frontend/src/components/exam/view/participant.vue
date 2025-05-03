@@ -17,7 +17,7 @@
               size="sm"
               variant="outline"
               :color="copied ? 'primary' : 'neutral'"
-              @click="copy"
+              @click="() => copy()"
             />
           </UTooltip>
         </ClientOnly>

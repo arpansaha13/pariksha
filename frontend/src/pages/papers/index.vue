@@ -17,6 +17,8 @@
 
 <script setup lang="ts">
 import { isNullOrUndefined } from '@arpansaha13/utils'
+import type { TableColumn } from '@nuxt/ui'
+import type { Paper, PaperQuestionCounts } from '~/types'
 
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')

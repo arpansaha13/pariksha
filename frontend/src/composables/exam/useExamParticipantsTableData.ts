@@ -2,13 +2,7 @@
 
 import { UBadge } from '#components'
 import type { TableColumn } from '@nuxt/ui'
-import { ExamParticipantStatus } from '~/types'
-
-interface ExamParticipantTableData {
-  name: string
-  email: string
-  status: ExamParticipantStatus
-}
+import { ExamParticipantStatus, type ExamParticipantResponse } from '~/types'
 
 const participantStatusColors = {
   [ExamParticipantStatus.UNATTENDED]: 'error',
@@ -36,21 +30,13 @@ export async function useExamParticipantsTableData(examId: number) {
   //   return `${now > date ? 'Ended' : 'Ends'} ${formatTimeAgo(date)}`
   // }
 
-  const data = computed(() => {
-    if (!participants.value) return null
-    return participants.value.map(participant => ({
-      name: participant.first_name + ' ' + participant.last_name,
-      email: participant.email,
-      status: participant.status,
-      // started_at: showEndTime(participant.started_at),
-      // ended_at: showEndTime(participant.ended_at),
-    }))
-  })
-
-  const columns: TableColumn<ExamParticipantTableData>[] = [
+  const columns: TableColumn<ExamParticipantResponse>[] = [
     {
-      accessorKey: 'name',
       header: 'Name',
+      cell: ({ row }) => {
+        const name = row.original.first_name + ' ' + row.original.last_name
+        return name
+      },
     },
     {
       accessorKey: 'email',
@@ -73,7 +59,7 @@ export async function useExamParticipantsTableData(examId: number) {
   ]
 
   return {
-    data,
+    data: participants,
     columns,
   }
 }

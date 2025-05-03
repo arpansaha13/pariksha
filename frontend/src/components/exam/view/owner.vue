@@ -101,8 +101,8 @@
       </template>
 
       <UTable
-        v-if="!isNullOrUndefined(participantsTableData)"
-        :data="participantsTableData"
+        v-if="!isNullOrUndefined(participants)"
+        :data="participants"
         :columns="participantsTableColumns"
         class="flex-1"
       />
@@ -124,7 +124,7 @@ const examId = parseInt(route.params.examId as string)
 
 const [
   { data: exam },
-  { data: participantsTableData, columns: participantsTableColumns },
+  { data: participants, columns: participantsTableColumns },
 ] = await Promise.all([useExam(examId), useExamParticipantsTableData(examId)])
 
 const fullCurrentUrl = ref('')
