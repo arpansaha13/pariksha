@@ -16,9 +16,8 @@ const (
 )
 
 const (
-	VERIFICATION_OTP_LENGTH  int = 6
-	VERIFICATION_HASH_LENGTH int = 10
-	CSRF_TOKEN_LENGTH        int = 32
+	VERIFICATION_OTP_LENGTH int16 = 6
+	CSRF_TOKEN_LENGTH       int16 = 32
 )
 
 const (
@@ -41,9 +40,9 @@ const (
 )
 
 const (
-	OTP_PURPOSE_SIGNUP          = 1
-	OTP_PURPOSE_LOGIN           = 2
-	OTP_PURPOSE_FORGOT_PASSWORD = 3
+	OTP_PURPOSE_SIGNUP          int16 = 1
+	OTP_PURPOSE_LOGIN           int16 = 2
+	OTP_PURPOSE_FORGOT_PASSWORD int16 = 3
 )
 
 const (

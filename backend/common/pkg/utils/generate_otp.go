@@ -5,11 +5,12 @@ import (
 	"math/big"
 )
 
-func GenerateOTP(length int) (string, error) {
+func GenerateOTP(length int16) (string, error) {
 	digits := "0123456789"
 	otp := ""
 
-	for i := 0; i < length; i++ {
+	var i int16
+	for i = 0; i < length; i++ {
 		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(digits))))
 		if err != nil {
 			return "", err

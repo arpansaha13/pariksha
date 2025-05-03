@@ -220,7 +220,7 @@ func createTestUser(t *testing.T, email string, verified bool) models.User {
 	return user
 }
 
-func createTestOTP(t *testing.T, email string, purpose int, expired bool) {
+func createTestOTP(t *testing.T, email string, purpose int16, expired bool) {
 	duration := 15 * time.Minute
 	if expired {
 		duration = -15 * time.Minute

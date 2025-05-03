@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 )
 
-func GenerateBase64String(length int) (string, error) {
+func GenerateBase64String(length int16) (string, error) {
 	bytes := make([]byte, length)
 	if _, err := rand.Read(bytes); err != nil {
 		return "", err
