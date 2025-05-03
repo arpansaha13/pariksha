@@ -57,6 +57,7 @@ var (
 
 	// In case of LINK exam, allow access to these handlers even without a permission entry in db
 	allowInLinkExam = map[string]bool{
+		"/proto.ExamService/GetExam":              true,
 		"/proto.ExamService/StartExam":            true,
 		"/proto.ExamService/CheckExamAccess":      true,
 		"/proto.ExamService/CheckExamParticipant": true,

@@ -1196,3 +1196,112 @@ func TestCheckExamAccess(t *testing.T) {
 		})
 	}
 }
+
+func TestGetExam(t *testing.T) {
+	tests := []struct {
+		name         string
+		setup        func(t *testing.T) *models.Exam
+		userID       int64
+		expectedCode codes.Code
+		validate     func(t *testing.T, resp *proto.ExamResponse)
+	}{
+		{
+			name: "Success - Get exam as owner",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, userID)
+				return &exam
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.ExamResponse) {
+				assert.Equal(t, "Test Exam", resp.Title)
+				assert.Equal(t, userID, resp.CreatedBy)
+				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
+				assert.Equal(t, int32(10), resp.MaxCandidatesCount)
+				assert.Equal(t, int64(1), resp.PaperId)
+				assert.Equal(t, int32(60), resp.DurationMinutes)
+
+				// Validate participant counts
+				assert.NotNil(t, resp.ParticipantCounts)
+				assert.Equal(t, int32(0), resp.ParticipantCounts.Invited)
+				assert.Equal(t, int32(0), resp.ParticipantCounts.Started)
+				assert.Equal(t, int32(0), resp.ParticipantCounts.Ended)
+			},
+		},
+		{
+			name: "Success - Get exam as participant",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, 2) // Created by different user
+				err := createTestExamParticipants(t, &exam, []struct {
+					UserID int64
+					Status int
+				}{
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
+				})
+				require.NoError(t, err)
+				return &exam
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.ExamResponse) {
+				assert.Equal(t, int64(2), resp.CreatedBy) // Created by different user
+				assert.NotNil(t, resp.ParticipantCounts)
+				assert.Equal(t, int32(1), resp.ParticipantCounts.Invited)
+			},
+		},
+		{
+			name: "Success - Get LINK exam as new participant",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, 2)
+				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
+				require.NoError(t, db.DB.Save(&exam).Error)
+				return &exam
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.ExamResponse) {
+				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
+			},
+		},
+		{
+			name: "Fail - Exam not found",
+			setup: func(t *testing.T) *models.Exam {
+				return &models.Exam{ID: 9999}
+			},
+			userID:       userID,
+			expectedCode: codes.NotFound,
+		},
+		{
+			name: "Fail - No permission to access INVITE exam",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, 2)
+				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
+				require.NoError(t, db.DB.Save(&exam).Error)
+				return &exam
+			},
+			userID:       userID,
+			expectedCode: codes.PermissionDenied,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+			exam := tt.setup(t)
+
+			ctx := createContextWithUserID(tt.userID)
+			resp, err := client.GetExam(ctx, &proto.ExamRequest{
+				ExamId: exam.ID,
+			})
+
+			if tt.expectedCode != codes.OK {
+				assert.Equal(t, tt.expectedCode, status.Code(err))
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, resp)
+			tt.validate(t, resp)
+		})
+	}
+}
