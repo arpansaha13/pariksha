@@ -7,7 +7,7 @@ type ExamParticipant struct {
 	ExamID           int64 `gorm:"type:bigint"`
 	UserID           int64 `gorm:"type:bigint"`
 	ScoreAwarded     int
-	Status           int `gorm:"default:1;not null"` // 1 = INVITED
+	Status           int16 `gorm:"type:smallint;default:1;not null"` // 1 = INVITED
 	StartedAt        sql.NullTime
 	EndedAt          sql.NullTime
 	ScheduledEndTime sql.NullTime

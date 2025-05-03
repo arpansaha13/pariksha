@@ -208,7 +208,7 @@ func createTestExam(t *testing.T, createdBy int64) models.Exam {
 
 func createTestExamParticipants(t *testing.T, exam *models.Exam, participants []struct {
 	UserID int64
-	Status int
+	Status int16
 }) error {
 	examParticipants := make([]models.ExamParticipant, len(participants))
 	counts, err := exam.GetParticipantCounts()

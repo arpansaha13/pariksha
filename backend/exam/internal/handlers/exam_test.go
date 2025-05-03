@@ -513,7 +513,7 @@ func TestEndExam(t *testing.T) {
 
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
@@ -568,7 +568,7 @@ func TestEndExam(t *testing.T) {
 
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
@@ -626,7 +626,7 @@ func TestStartExam(t *testing.T) {
 
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
@@ -691,7 +691,7 @@ func TestStartExam(t *testing.T) {
 
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
@@ -712,7 +712,7 @@ func TestStartExam(t *testing.T) {
 
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
@@ -733,7 +733,7 @@ func TestStartExam(t *testing.T) {
 
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
@@ -769,7 +769,7 @@ func TestStartExam(t *testing.T) {
 
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
@@ -857,7 +857,7 @@ func TestGetExamQuestions(t *testing.T) {
 
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
@@ -966,7 +966,7 @@ func TestGetExamCategories(t *testing.T) {
 
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
@@ -1060,7 +1060,7 @@ func TestGetExamPermission(t *testing.T) {
 				exam := createTestExam(t, 2) // Created by different user
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
@@ -1129,7 +1129,7 @@ func TestGetExamPermission(t *testing.T) {
 				// Add participants with different statuses
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: 3, Status: constants.PARTICIPANT_STATUS_INVITED},
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED}, // Our test user
@@ -1211,7 +1211,7 @@ func TestGetExam(t *testing.T) {
 				exam := createTestExam(t, 2) // Created by different user
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})

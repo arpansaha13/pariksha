@@ -34,7 +34,7 @@ func validateExamEndTiming(startsAt time.Time, endsAt time.Time) error {
 }
 
 // updateParticipantCounts updates the exam's participant counts and returns marshaled counts
-func updateParticipantCounts(counts *models.ParticipantCount, fromStatus int, toStatus int) (json.RawMessage, error) {
+func updateParticipantCounts(counts *models.ParticipantCount, fromStatus int16, toStatus int16) (json.RawMessage, error) {
 	switch fromStatus {
 	case constants.PARTICIPANT_STATUS_INVITED:
 		counts.Invited--

@@ -29,7 +29,7 @@ func TestGetExamParticipants(t *testing.T) {
 				exam := createTestExam(t, userID)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_INVITED},
 					{UserID: 3, Status: constants.PARTICIPANT_STATUS_STARTED},
@@ -136,7 +136,7 @@ func TestAddExamParticipant(t *testing.T) {
 
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: 3, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
@@ -214,7 +214,7 @@ func TestRemoveExamParticipant(t *testing.T) {
 
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
@@ -241,7 +241,7 @@ func TestRemoveExamParticipant(t *testing.T) {
 
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
@@ -317,7 +317,7 @@ func TestGetExamParticipant(t *testing.T) {
 
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
@@ -348,7 +348,7 @@ func TestGetExamParticipant(t *testing.T) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})

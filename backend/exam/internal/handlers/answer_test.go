@@ -34,7 +34,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 				exam := createTestExam(t, 2) // Created by different user
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{{UserID: userID, Status: 1}})
 				require.NoError(t, err)
 
@@ -82,7 +82,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 				exam := createTestExam(t, 2) // Created by different user
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{{UserID: userID, Status: 1}})
 				require.NoError(t, err)
 
@@ -134,7 +134,7 @@ func TestGetAnswer(t *testing.T) {
 				exam := createTestExam(t, 2) // Created by different user
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED}})
 				require.NoError(t, err)
 
@@ -164,7 +164,7 @@ func TestGetAnswer(t *testing.T) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED}})
 				require.NoError(t, err)
 				return &exam, 9999 // Non-existent question ID
@@ -227,7 +227,7 @@ func TestUpsertAnswer(t *testing.T) {
 				exam := createTestExam(t, 2) // Created by different user
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
@@ -276,7 +276,7 @@ func TestUpsertAnswer(t *testing.T) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
@@ -348,7 +348,7 @@ func TestUpsertAnswer(t *testing.T) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
@@ -377,7 +377,7 @@ func TestUpsertAnswer(t *testing.T) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
@@ -446,7 +446,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED}})
 				require.NoError(t, err)
 
@@ -492,7 +492,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED}})
 				require.NoError(t, err)
 
@@ -524,7 +524,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED}})
 				require.NoError(t, err)
 
@@ -564,7 +564,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED}})
 				require.NoError(t, err)
 
@@ -618,7 +618,7 @@ func TestMarkAsEvaluated(t *testing.T) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED}})
 				require.NoError(t, err)
 
@@ -653,7 +653,7 @@ func TestMarkAsEvaluated(t *testing.T) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED}})
 				require.NoError(t, err)
 
@@ -695,7 +695,7 @@ func TestMarkAsEvaluated(t *testing.T) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED}})
 				require.NoError(t, err)
 
@@ -742,7 +742,7 @@ func TestGetAnswerById(t *testing.T) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
 					UserID int64
-					Status int
+					Status int16
 				}{{UserID: userID, Status: 1}})
 				require.NoError(t, err)
 
