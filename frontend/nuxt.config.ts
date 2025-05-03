@@ -22,6 +22,7 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    env: '',
     apiBaseUrl: '',
   },
 

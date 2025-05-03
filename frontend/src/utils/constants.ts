@@ -1,3 +1,5 @@
+export const NUXT_ENV_DEVELOPMENT = 'development'
+
 export enum ToastId {
   LOGIN_FAILED = 'login_failed',
   SIGNUP_FAILED = 'signup_failed',

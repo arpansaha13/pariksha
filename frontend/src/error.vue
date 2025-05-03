@@ -16,10 +16,20 @@
 <script setup lang="ts">
 import type { NuxtError } from '#app'
 
-defineProps({
+const props = defineProps({
   error: {
     type: Object as PropType<NuxtError>,
     default: null,
   },
 })
+
+const runtimeConfig = useRuntimeConfig()
+if (import.meta.server && runtimeConfig.env === NUXT_ENV_DEVELOPMENT) {
+  console.error(
+    props.error.statusCode,
+    props.error.statusMessage,
+    '\n',
+    props.error.message
+  )
+}
 </script>
