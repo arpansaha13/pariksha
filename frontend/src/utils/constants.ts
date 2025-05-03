@@ -37,7 +37,7 @@ export const AsyncDataKeys = {
   PAPERS_PAPER_CATEGORIES: (paperId: number) =>
     `PAPERS_PAPER_${paperId}_CATEGORIES`,
 
-  QUESTION: (questionId?: number | null) =>
+  QUESTION: (questionId: number | null) =>
     questionId ? `QUESTION_${questionId}` : 'QUESTION',
 
   EXAMS: 'EXAMS',
@@ -48,7 +48,7 @@ export const AsyncDataKeys = {
   EXAM_QUESTIONS: (examId: number) => `EXAM_${examId}_QUESTIONS`,
   EXAM_CATEGORIES: (examId: number) => `EXAM_${examId}_CATEGORIES`,
 
-  EXAM_QUESTION: (questionId?: number | null) =>
+  EXAM_QUESTION: (questionId: number | null) =>
     questionId ? `EXAM_QUESTION_${questionId}` : 'EXAM_QUESTION',
 
   EXAM_ANSWER: (examId?: number, questionId?: number) =>
