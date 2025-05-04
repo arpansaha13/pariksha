@@ -19,10 +19,12 @@ import (
 type contextKey string
 
 const (
-	examContextKey            contextKey = "exam"
-	participantContextKey     contextKey = "participant"
-	PERMISSION_DENIED_MESSAGE string     = "no permission to perform this action"
-	DATABASE_ERROR_MESSAGE    string     = "database error"
+	examContextKey        contextKey = "exam"
+	participantContextKey contextKey = "participant"
+	permissionContextKey  contextKey = "permission"
+
+	PERMISSION_DENIED_MESSAGE string = "no permission to perform this action"
+	DATABASE_ERROR_MESSAGE    string = "database error"
 )
 
 var (
@@ -126,14 +128,17 @@ func ExamAuthInterceptor() grpc.UnaryServerInterceptor {
 		if err != nil {
 			return nil, status.Error(codes.Internal, "failed to fetch permissions")
 		}
+		ctx = context.WithValue(ctx, permissionContextKey, permission)
 
 		if err := checkPermissions(permission, methodName); err != nil {
 			return nil, err
 		}
 
-		ctx, err = addParticipantToContext(ctx, *examID, userID)
-		if err != nil {
-			return nil, err
+		if permission.CanParticipate() {
+			ctx, err = addParticipantToContext(ctx, *examID, userID)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		return handler(ctx, req)
@@ -224,4 +229,10 @@ func GetExamFromContext(ctx context.Context) (*models.Exam, bool) {
 func GetParticipantFromContext(ctx context.Context) (*models.ExamParticipant, bool) {
 	participant, ok := ctx.Value(participantContextKey).(*models.ExamParticipant)
 	return participant, ok
+}
+
+// Getter function to safely access permission from context
+func GetPermissionFromContext(ctx context.Context) (*models.ExamPermissions, bool) {
+	permission, ok := ctx.Value(permissionContextKey).(*models.ExamPermissions)
+	return permission, ok
 }

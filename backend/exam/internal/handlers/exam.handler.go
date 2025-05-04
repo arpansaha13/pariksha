@@ -412,28 +412,24 @@ func (s *ExamServer) GetExamPermission(ctx context.Context, req *proto.ExamReque
 		return nil, err
 	}
 
-	// Get exam to check type
 	exam, ok := interceptors.GetExamFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
 
-	var permission models.ExamPermissions
-	err = db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&permission).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			// For LINK type exams, grant participate permission
-			if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
-				return &proto.ExamPermissionResponse{
-					CanRead:        true,
-					CanWrite:       false,
-					CanParticipate: true,
-					CanEvaluate:    false,
-				}, nil
-			}
-			return &proto.ExamPermissionResponse{}, nil
+	permission, ok := interceptors.GetPermissionFromContext(ctx)
+	if !ok {
+		// For LINK type exams, grant participate permission
+		if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
+			return &proto.ExamPermissionResponse{
+				CanRead:           true,
+				CanWrite:          false,
+				CanParticipate:    true,
+				CanEvaluate:       false,
+				ParticipantStatus: ptr.Int32(int32(constants.PARTICIPANT_STATUS_INVITED)),
+			}, nil
 		}
-		return nil, status.Error(codes.Internal, "failed to fetch permissions")
+		return &proto.ExamPermissionResponse{}, nil
 	}
 
 	response := &proto.ExamPermissionResponse{
@@ -444,10 +440,12 @@ func (s *ExamServer) GetExamPermission(ctx context.Context, req *proto.ExamReque
 	}
 
 	// Check if user is a participant and add status if found
-	var participant models.ExamParticipant
-	err = db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error
-	if err == nil {
-		response.ParticipantStatus = ptr.Int32(int32(participant.Status))
+	if permission.CanParticipate() {
+		var participant models.ExamParticipant
+		err = db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error
+		if err == nil {
+			response.ParticipantStatus = ptr.Int32(int32(participant.Status))
+		}
 	}
 
 	return response, nil

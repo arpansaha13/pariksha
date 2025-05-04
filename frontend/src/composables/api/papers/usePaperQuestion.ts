@@ -1,7 +1,7 @@
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import { QuestionId, type Question } from '~/types'
 
-export function useQuestion(questionId: ComputedRef<number | null>) {
+export function usePaperQuestion(questionId: ComputedRef<number | null>) {
   const fetchOptions = getFetchOptions()
 
   const useQuestionKey = computed(() =>

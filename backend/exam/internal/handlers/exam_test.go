@@ -1081,7 +1081,7 @@ func TestGetExamPermission(t *testing.T) {
 			},
 		},
 		{
-			name: "Success - Non-owners and uninvited users get participate permission in LINK exam",
+			name: "Success - Non-owners and uninvited users get participate permission with INVITED status in LINK exam",
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, 2) // Created by different user
 				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
@@ -1095,7 +1095,7 @@ func TestGetExamPermission(t *testing.T) {
 				assert.False(t, resp.CanWrite)
 				assert.True(t, resp.CanParticipate)
 				assert.False(t, resp.CanEvaluate)
-				assert.Nil(t, resp.ParticipantStatus)
+				assert.Equal(t, int32(constants.PARTICIPANT_STATUS_INVITED), *resp.ParticipantStatus)
 			},
 		},
 		{

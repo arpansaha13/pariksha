@@ -15,7 +15,7 @@ definePageMeta({
     to => {
       const examId = parseInt(to.params.examId as string)
       const { data: examPermission } = useNuxtData<ExamPermission>(
-        AsyncDataKeys.EXAM_ACCESS(examId)
+        AsyncDataKeys.EXAM_PERMISSION(examId)
       )
       if (examPermission.value!.can_participate) {
         setPageLayout('blank')
@@ -28,7 +28,7 @@ const route = useRoute()
 const examId = parseInt(route.params.examId as string)
 
 const { data: examPermission } = useNuxtData<ExamPermission>(
-  AsyncDataKeys.EXAM_ACCESS(examId)
+  AsyncDataKeys.EXAM_PERMISSION(examId)
 )
 
 const isParticipant = examPermission.value!.can_participate

@@ -214,7 +214,7 @@ const { questionNavigation } = usePaperQuestionNavigation({
   currentCategoryQuestions,
 })
 
-const { data: question } = await useQuestion(currentQuestionId)
+const { data: question } = await usePaperQuestion(currentQuestionId)
 
 // ________________CREATE/EDIT QUESTION PREREQUISITES_______________
 const defaultCreateQuestionFormState = {
