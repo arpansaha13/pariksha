@@ -33,6 +33,13 @@ var (
 		"/proto.ExamService/GetExamPermission": true,
 	}
 
+	// In case of LINK exam, allow access to these handlers even without a permission entry in db
+	allowInLinkExam = map[string]bool{
+		"/proto.ExamService/GetExam":           true,
+		"/proto.ExamService/StartExam":         true,
+		"/proto.ExamService/GetExamPermission": true,
+	}
+
 	requiresWrite = map[string]bool{
 		"/proto.ExamService/UpdateExam":            true,
 		"/proto.ExamService/GetExamParticipants":   true,
@@ -43,8 +50,6 @@ var (
 	requiresParticipate = map[string]bool{
 		"/proto.ExamService/EndExam":            true,
 		"/proto.ExamService/UpsertAnswer":       true,
-		"/proto.ExamService/GetExamQuestions":   true,
-		"/proto.ExamService/GetExamCategories":  true,
 		"/proto.ExamService/GetExamParticipant": true,
 		"/proto.ExamService/GetAnswer":          true,
 	}
@@ -55,16 +60,23 @@ var (
 		// "/proto.ExamService/MarkAsEvaluated":            true,
 	}
 
-	// In case of LINK exam, allow access to these handlers even without a permission entry in db
-	allowInLinkExam = map[string]bool{
-		"/proto.ExamService/GetExam":           true,
-		"/proto.ExamService/StartExam":         true,
-		"/proto.ExamService/GetExamPermission": true,
+	handlerSpecificPermissionChecks = map[string]func(*models.ExamPermissions) bool{
+		"/proto.ExamService/GetExamQuestions": func(p *models.ExamPermissions) bool {
+			return p.CanParticipate() || p.CanEvaluate()
+		},
+		"/proto.ExamService/GetExamCategories": func(p *models.ExamPermissions) bool {
+			return p.CanParticipate() || p.CanEvaluate()
+		},
 	}
 )
 
 func shouldIntercept(methodName string) bool {
-	return requiresRead[methodName] || requiresWrite[methodName] || requiresEvaluate[methodName] || requiresParticipate[methodName] || allowInLinkExam[methodName]
+	return requiresRead[methodName] ||
+		requiresWrite[methodName] ||
+		requiresEvaluate[methodName] ||
+		requiresParticipate[methodName] ||
+		allowInLinkExam[methodName] ||
+		handlerSpecificPermissionChecks[methodName] != nil
 }
 
 func checkPermissions(permission *models.ExamPermissions, methodName string) error {
@@ -130,7 +142,13 @@ func ExamAuthInterceptor() grpc.UnaryServerInterceptor {
 		}
 		ctx = context.WithValue(ctx, permissionContextKey, permission)
 
-		if err := checkPermissions(permission, methodName); err != nil {
+		// Check if there's a handler-specific permission check for this method
+		if permissionCheckFn, exists := handlerSpecificPermissionChecks[methodName]; exists {
+			if !permissionCheckFn(permission) {
+				return nil, status.Error(codes.PermissionDenied, PERMISSION_DENIED_MESSAGE)
+			}
+			// Fall back to standard permission checking
+		} else if err := checkPermissions(permission, methodName); err != nil {
 			return nil, err
 		}
 

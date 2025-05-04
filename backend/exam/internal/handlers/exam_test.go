@@ -831,21 +831,6 @@ func TestGetExamQuestions(t *testing.T) {
 		validate     func(t *testing.T, resp *proto.ExamQuestionsResponse)
 	}{
 		{
-			name: "Fail - Cannot get questions as exam owner",
-			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, userID)
-				questions := []models.ExamQuestion{
-					{ExamID: exam.ID, QuestionID: 1, MaxScore: 10},
-					{ExamID: exam.ID, QuestionID: 2, MaxScore: 5},
-					{ExamID: exam.ID, QuestionID: 3, MaxScore: 8},
-				}
-				require.NoError(t, db.DB.Create(&questions).Error)
-				return &exam
-			},
-			userID:       userID,
-			expectedCode: codes.PermissionDenied,
-		},
-		{
 			name: "Success - Get questions as registered participant",
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, 2) // Created by different user
@@ -909,6 +894,48 @@ func TestGetExamQuestions(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.NotFound,
 		},
+		{
+			name: "Success - Get questions as evaluator",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, 2) // Created by different user
+				questions := []models.ExamQuestion{
+					{ExamID: exam.ID, QuestionID: 1, CategoryID: 10, Order: 1, MaxScore: 10},
+					{ExamID: exam.ID, QuestionID: 2, CategoryID: 10, Order: 2, MaxScore: 5},
+				}
+				require.NoError(t, db.DB.Create(&questions).Error)
+
+				// Create evaluator permission
+				permission := models.ExamPermissions{
+					ExamID: exam.ID,
+					UserID: userID,
+				}
+				permission.SetEvaluate()
+				require.NoError(t, db.DB.Create(&permission).Error)
+
+				return &exam
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.ExamQuestionsResponse) {
+				require.Equal(t, 2, len(resp.Questions))
+				expectedQuestions := []struct {
+					questionId int64
+					categoryId int64
+					order      int32
+					maxScore   int32
+				}{
+					{questionId: 1, categoryId: 10, order: 1, maxScore: 10},
+					{questionId: 2, categoryId: 10, order: 2, maxScore: 5},
+				}
+				for i, q := range resp.Questions {
+					expected := expectedQuestions[i]
+					assert.Equal(t, expected.questionId, q.QuestionId)
+					assert.Equal(t, expected.categoryId, q.CategoryId)
+					assert.Equal(t, expected.order, q.Order)
+					assert.Equal(t, expected.maxScore, q.MaxScore)
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -941,21 +968,6 @@ func TestGetExamCategories(t *testing.T) {
 		expectedCode codes.Code
 		validate     func(t *testing.T, resp *proto.ExamCategoriesResponse)
 	}{
-		{
-			name: "Fail - Cannot get categories as exam owner",
-			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, userID)
-				categories := []models.ExamCategory{
-					{ExamID: exam.ID, CategoryID: 1},
-					{ExamID: exam.ID, CategoryID: 2},
-					{ExamID: exam.ID, CategoryID: 3},
-				}
-				require.NoError(t, db.DB.Create(&categories).Error)
-				return &exam
-			},
-			userID:       userID,
-			expectedCode: codes.PermissionDenied,
-		},
 		{
 			name: "Success - Get categories as registered participant",
 			setup: func(t *testing.T) *models.Exam {
@@ -1007,6 +1019,36 @@ func TestGetExamCategories(t *testing.T) {
 			},
 			userID:       userID,
 			expectedCode: codes.NotFound,
+		},
+		{
+			name: "Success - Get categories as evaluator",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, 2) // Created by different user
+				categories := []models.ExamCategory{
+					{ExamID: exam.ID, CategoryID: 1},
+					{ExamID: exam.ID, CategoryID: 2},
+				}
+				require.NoError(t, db.DB.Create(&categories).Error)
+
+				// Create evaluator permission
+				permission := models.ExamPermissions{
+					ExamID: exam.ID,
+					UserID: userID,
+				}
+				permission.SetEvaluate()
+				require.NoError(t, db.DB.Create(&permission).Error)
+
+				return &exam
+			},
+			userID:       userID,
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.ExamCategoriesResponse) {
+				require.Equal(t, 2, len(resp.Categories))
+				expectedIDs := []int64{1, 2}
+				for i, c := range resp.Categories {
+					assert.Equal(t, expectedIDs[i], c.CategoryId)
+				}
+			},
 		},
 	}
 
