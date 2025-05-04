@@ -51,13 +51,13 @@ var (
 		"/proto.ExamService/EndExam":            true,
 		"/proto.ExamService/UpsertAnswer":       true,
 		"/proto.ExamService/GetExamParticipant": true,
-		"/proto.ExamService/GetAnswer":          true,
+		"/proto.ExamService/GetAnswerForExam":   true,
 	}
 
 	requiresEvaluate = map[string]bool{
 		// "/proto.ExamService/GetParticipantAnswers":       true,
 		// "/proto.ExamService/UpdateAnswerForEvaluation":   true,
-		// "/proto.ExamService/MarkAsEvaluated":            true,
+		// "/proto.ExamService/MarkParticipantAsEvaluated":            true,
 	}
 
 	handlerSpecificPermissionChecks = map[string]func(*models.ExamPermissions) bool{

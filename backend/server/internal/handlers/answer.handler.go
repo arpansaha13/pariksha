@@ -53,7 +53,7 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func GetAnswer(w http.ResponseWriter, r *http.Request) {
+func GetAnswerForExam(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	examID, err := getInt64FromVars(vars, "examId")
 	if err != nil {
@@ -71,7 +71,7 @@ func GetAnswer(w http.ResponseWriter, r *http.Request) {
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
-	resp, err := examService.Client().GetAnswer(ctx, &proto.GetAnswerRequest{
+	resp, err := examService.Client().GetAnswerForExam(ctx, &proto.GetAnswerRequest{
 		ExamId:     examID,
 		QuestionId: questionID,
 	})
@@ -188,7 +188,7 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func MarkAsEvaluated(w http.ResponseWriter, r *http.Request) {
+func MarkParticipantAsEvaluated(w http.ResponseWriter, r *http.Request) {
 	participantID, err := getInt64FromVars(mux.Vars(r), "participantId")
 	if err != nil {
 		http.Error(w, "Invalid participant ID", http.StatusBadRequest)
@@ -199,7 +199,7 @@ func MarkAsEvaluated(w http.ResponseWriter, r *http.Request) {
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
-	resp, err := examService.Client().MarkAsEvaluated(ctx, &proto.ParticipantRequest{
+	resp, err := examService.Client().MarkParticipantAsEvaluated(ctx, &proto.ParticipantRequest{
 		ParticipantId: participantID,
 	})
 	if err != nil {

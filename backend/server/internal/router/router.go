@@ -68,12 +68,12 @@ func SetupRouter() *mux.Router {
 	protectedRouter.HandleFunc("/exams/{examId}/participants", handlers.AddExamParticipant).Methods("POST", "OPTIONS")
 	protectedRouter.HandleFunc("/exams/{examId}/participants/{participantId}", handlers.RemoveExamParticipant).Methods("DELETE", "OPTIONS")
 	protectedRouter.HandleFunc("/exams/{examId}/participants/current", handlers.GetExamParticipant).Methods("GET", "OPTIONS")
-	protectedRouter.HandleFunc("/participants/{participantId}/evaluate", handlers.MarkAsEvaluated).Methods("PATCH", "OPTIONS")
+	protectedRouter.HandleFunc("/participants/{participantId}/evaluate", handlers.MarkParticipantAsEvaluated).Methods("PATCH", "OPTIONS")
 
 	// Answer Routes
 	protectedRouter.HandleFunc("/exams/{examId}/answers", handlers.UpsertAnswer).Methods("POST", "OPTIONS")
 	protectedRouter.HandleFunc("/exams/{examId}/participants/{participantId}/answers", handlers.GetParticipantAnswers).Methods("GET", "OPTIONS")
-	protectedRouter.HandleFunc("/exams/{examId}/questions/{questionId}/answer", handlers.GetAnswer).Methods("GET", "OPTIONS")
+	protectedRouter.HandleFunc("/exams/{examId}/questions/{questionId}/answer", handlers.GetAnswerForExam).Methods("GET", "OPTIONS")
 
 	// Answer Evaluation Routes
 	protectedRouter.HandleFunc("/answers", handlers.UpdateAnswerForEvaluation).Methods("PATCH", "OPTIONS")
