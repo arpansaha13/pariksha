@@ -28,7 +28,7 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 
 	// Get all questions for the paper
 	var questions []models.Question
-	err := papersTx.Select("id", "category_id", "order").Where("paper_id = ?", payload.PaperID).Find(&questions).Error
+	err := papersTx.Select("id", "category_id", "order", "max_score").Where("paper_id = ?", payload.PaperID).Find(&questions).Error
 	if err != nil {
 		papersTx.Rollback()
 		log.Default().Printf("Failed to fetch questions: %v", err)
@@ -75,6 +75,7 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 			QuestionID: q.ID,
 			CategoryID: q.CategoryID,
 			Order:      q.Order,
+			MaxScore:   q.MaxScore,
 		}
 		if err := examsTx.Create(&examQuestion).Error; err != nil {
 			examsTx.Rollback()

@@ -277,3 +277,15 @@ func createTestAnswer(t *testing.T, examParticipant *models.ExamParticipant, que
 	require.NoError(t, db.DB.Create(&answer).Error)
 	return answer
 }
+
+func createTestExamQuestion(t *testing.T, exam *models.Exam, questionID int64, maxScore int16) models.ExamQuestion {
+	examQuestion := models.ExamQuestion{
+		ExamID:     exam.ID,
+		QuestionID: questionID,
+		CategoryID: 1,
+		Order:      1,
+		MaxScore:   maxScore,
+	}
+	require.NoError(t, db.DB.Create(&examQuestion).Error)
+	return examQuestion
+}

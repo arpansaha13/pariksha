@@ -41,8 +41,8 @@ func TestGetExamParticipants(t *testing.T) {
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ParticipantList) {
 				assert.Equal(t, 2, len(resp.Participants))
-				assert.Equal(t, constants.PARTICIPANT_STATUS_INVITED, int(resp.Participants[0].Status))
-				assert.Equal(t, constants.PARTICIPANT_STATUS_STARTED, int(resp.Participants[1].Status))
+				assert.Equal(t, constants.PARTICIPANT_STATUS_INVITED, int16(resp.Participants[0].Status))
+				assert.Equal(t, constants.PARTICIPANT_STATUS_STARTED, int16(resp.Participants[1].Status))
 			},
 		},
 		{

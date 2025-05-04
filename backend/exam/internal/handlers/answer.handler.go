@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"database/sql"
-	"strconv"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -67,26 +66,6 @@ func (s *ExamServer) GetAnswer(ctx context.Context, req *proto.GetAnswerRequest)
 	}, nil
 }
 
-// GetAnswerById finds an answer using its ID
-func (s *ExamServer) GetAnswerById(ctx context.Context, req *proto.GetAnswerByIdRequest) (*proto.AnswerResponse, error) {
-	var answer models.Answer
-	if err := db.DB.Take(&answer, req.AnswerId).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, status.Error(codes.NotFound, "answer not found")
-		}
-		return nil, status.Error(codes.Internal, "database error")
-	}
-
-	return &proto.AnswerResponse{
-		Id:                answer.ID,
-		ExamParticipantId: answer.ExamParticipantID,
-		QuestionId:        answer.QuestionID,
-		Answer:            answer.Answer,
-		Comments:          answer.Comments.String,
-		ScoreAwarded:      int32(answer.ScoreAwarded),
-	}, nil
-}
-
 func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersRequest) (*proto.UpsertAnswersResponse, error) {
 	participant, ok := interceptors.GetParticipantFromContext(ctx)
 	if !ok {
@@ -147,27 +126,25 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 }
 
 func (s *ExamServer) UpdateAnswerForEvaluation(ctx context.Context, req *proto.UpdateAnswerRequest) (*proto.Empty, error) {
-	// Get max score from metadata
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "missing metadata")
-	}
-
-	scores := md.Get("question_score")
-	if len(scores) == 0 {
-		return nil, status.Error(codes.Internal, "missing question score")
-	}
-
-	maxScore, err := strconv.Atoi(scores[0])
-	if err != nil {
-		return nil, status.Error(codes.Internal, "invalid question score")
+	// Get max score from exam_questions using joins
+	var maxScore int16
+	if err := db.DB.Table("answers").
+		Joins("INNER JOIN exam_participants ON exam_participants.id = answers.exam_participant_id").
+		Joins("INNER JOIN exam_questions ON exam_questions.exam_id = exam_participants.exam_id AND exam_questions.question_id = answers.question_id").
+		Where("answers.id = ?", req.AnswerId).
+		Select("exam_questions.max_score").
+		Take(&maxScore).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.NotFound, "answer not found")
+		}
+		return nil, status.Error(codes.Internal, "failed to get max score")
 	}
 
 	if req.NewScore != nil && req.GetNewScore() > int32(maxScore) {
 		return nil, status.Error(codes.InvalidArgument, "new score exceeds max score for the question")
 	}
 
-	err = db.DB.Transaction(func(tx *gorm.DB) error {
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		var answer models.Answer
 		if err := tx.Take(&answer, req.AnswerId).Error; err != nil {
 			if err == gorm.ErrRecordNotFound {

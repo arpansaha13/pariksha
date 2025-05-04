@@ -29,7 +29,6 @@ var (
 	requiresRead = map[string]bool{
 		"/proto.ExamService/GetExam":           true,
 		"/proto.ExamService/GetExamPermission": true,
-		// "/proto.ExamService/GetAnswerById": true,
 	}
 
 	requiresWrite = map[string]bool{

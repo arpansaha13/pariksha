@@ -362,7 +362,7 @@ func (s *ExamServer) GetExam(ctx context.Context, req *proto.ExamRequest) (*prot
 func (s *ExamServer) GetExamQuestions(ctx context.Context, req *proto.ExamRequest) (*proto.ExamQuestionsResponse, error) {
 	var examQuestions []models.ExamQuestion
 	if err := db.DB.Model(&models.ExamQuestion{}).
-		Select("question_id", "category_id", "order").
+		Select("question_id", "category_id", "order", "max_score").
 		Where("exam_id = ?", req.ExamId).
 		Find(&examQuestions).Error; err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch questions")
@@ -374,6 +374,7 @@ func (s *ExamServer) GetExamQuestions(ctx context.Context, req *proto.ExamReques
 			QuestionId: eq.QuestionID,
 			CategoryId: eq.CategoryID,
 			Order:      int32(eq.Order),
+			MaxScore:   int32(eq.MaxScore),
 		}
 	}
 

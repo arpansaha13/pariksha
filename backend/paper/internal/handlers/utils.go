@@ -170,7 +170,7 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 	// }
 
 	if req.MaxScore != nil {
-		question.MaxScore = int(req.GetMaxScore())
+		question.MaxScore = int16(req.GetMaxScore())
 	}
 
 	if len(req.Tags) > 0 {
@@ -189,7 +189,7 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 }
 
 // Helper function to update paper stats when question type or max score changes
-func updatePaperStats(tx *gorm.DB, paper models.Paper, oldType, newType string, oldScore, newScore int) error {
+func updatePaperStats(tx *gorm.DB, paper models.Paper, oldType, newType string, oldScore int32, newScore int32) error {
 	if oldScore != newScore {
 		scoreDiff := newScore - oldScore
 		if err := tx.Model(&paper).

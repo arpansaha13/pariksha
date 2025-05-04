@@ -66,7 +66,8 @@ type AddExamParticipantResponse struct {
 type ExamQuestionMinimalResponse struct {
 	QuestionID int64 `json:"id"`
 	CategoryID int64 `json:"category_id"`
-	Order      int   `json:"order"`
+	Order      int32 `json:"order"`
+	MaxScore   int32 `json:"max_score"`
 }
 
 type ExamCategoriesResponse struct {
@@ -80,7 +81,6 @@ type ExamQuestionResponse struct {
 	Question   json.RawMessage `json:"question"`
 	CategoryID int64           `json:"category_id"`
 	Type       string          `json:"type"`
-	MaxScore   int             `json:"max_score"`
 }
 
 type GetExamParticipantResponse struct {

@@ -84,17 +84,14 @@ func (s *PaperServer) GetCategoriesByIds(ctx context.Context, req *proto.GetCate
 // GetExamQuestion retrieves minimal question data needed for exam taking
 func (s *PaperServer) GetExamQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.QuestionResponse, error) {
 	var question models.Question
-	if err := db.DB.Select("id, question, type, max_score, category_id").
+	if err := db.DB.Select("id, question, type").
 		Take(&question, req.QuestionId).Error; err != nil {
 		return nil, status.Error(codes.NotFound, "question not found")
 	}
 
 	response := &proto.QuestionResponse{
-		Id:       question.ID,
-		Type:     question.Type,
-		MaxScore: int32(question.MaxScore),
-
-		CategoryId: question.CategoryID,
+		Id:   question.ID,
+		Type: question.Type,
 	}
 
 	switch question.Type {

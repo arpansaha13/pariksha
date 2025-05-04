@@ -426,19 +426,18 @@ func TestUpsertAnswer(t *testing.T) {
 }
 
 func TestUpdateAnswerForEvaluation(t *testing.T) {
-	maxScore := int32(10)
 	newScore := int32(8)
 	evaluated := true
 	comments := "Good attempt"
+	exceedingScore := int32(15) // Exceeds max_score in exam_questions
 
 	tests := []struct {
-		name          string
-		setup         func(t *testing.T) *models.Answer
-		request       *proto.UpdateAnswerRequest
-		metadata      map[string]string
-		expectedCode  codes.Code
-		validate      func(t *testing.T, answerId int64)
-		questionScore int
+		name         string
+		setup        func(t *testing.T) *models.Answer
+		request      *proto.UpdateAnswerRequest
+		metadata     map[string]string
+		expectedCode codes.Code
+		validate     func(t *testing.T, answerId int64)
 	}{
 		{
 			name: "Success - Update all fields",
@@ -455,6 +454,9 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				participant.ScoreAwarded = 5 // Initial score
 				require.NoError(t, db.DB.Save(&participant).Error)
 
+				// Create exam question with max score of 10
+				createTestExamQuestion(t, &exam, 1, 10)
+
 				answer := createTestAnswer(t, &participant, 1)
 				answer.ScoreAwarded = 5 // Initial score
 				answer.Evaluated = false
@@ -468,8 +470,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				Comments:  &comments,
 			},
 			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
+				"user_id": strconv.FormatInt(userID, 10),
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, answerId int64) {
@@ -484,7 +485,6 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				require.NoError(t, db.DB.First(&participant, answer.ExamParticipantID).Error)
 				assert.Equal(t, int(newScore), participant.ScoreAwarded)
 			},
-			questionScore: 10,
 		},
 		{
 			name: "Success - Update only comments",
@@ -499,6 +499,9 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 
+				// Create exam question with max score of 10
+				createTestExamQuestion(t, &exam, 1, 10)
+
 				answer := createTestAnswer(t, &participant, 1)
 				return &answer
 			},
@@ -506,8 +509,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				Comments: &comments,
 			},
 			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
+				"user_id": strconv.FormatInt(userID, 10),
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, answerId int64) {
@@ -516,7 +518,22 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				assert.Equal(t, comments, answer.Comments.String)
 				assert.Equal(t, 5, answer.ScoreAwarded) // Original score unchanged
 			},
-			questionScore: 10,
+		},
+		{
+			name: "Fail - Answer not found",
+			setup: func(t *testing.T) *models.Answer {
+				exam := createTestExam(t, 2)
+				// Create exam question even for non-existent answer to maintain consistency
+				createTestExamQuestion(t, &exam, 1, 10)
+				return &models.Answer{ID: 9999}
+			},
+			request: &proto.UpdateAnswerRequest{
+				NewScore: &newScore,
+			},
+			metadata: map[string]string{
+				"user_id": strconv.FormatInt(userID, 10),
+			},
+			expectedCode: codes.NotFound,
 		},
 		{
 			name: "Fail - Score exceeds max score",
@@ -531,55 +548,19 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 
-				answer := createTestAnswer(t, &participant, 1)
-				return &answer
-			},
-			request: &proto.UpdateAnswerRequest{
-				NewScore: &maxScore,
-			},
-			metadata: map[string]string{
-				"question_score": "5", // Max score less than requested score
-			},
-			expectedCode:  codes.InvalidArgument,
-			questionScore: 5,
-		},
-		{
-			name: "Fail - Answer not found",
-			setup: func(t *testing.T) *models.Answer {
-				return &models.Answer{ID: 9999}
-			},
-			request: &proto.UpdateAnswerRequest{
-				NewScore: &newScore,
-			},
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-			},
-			expectedCode:  codes.NotFound,
-			questionScore: 10,
-		},
-		{
-			name: "Fail - Missing question score metadata",
-			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED}})
-				require.NoError(t, err)
-
-				var participant models.ExamParticipant
-				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
+				// Create exam question with max score of 10
+				createTestExamQuestion(t, &exam, 1, 10)
 
 				answer := createTestAnswer(t, &participant, 1)
 				return &answer
 			},
 			request: &proto.UpdateAnswerRequest{
-				NewScore: &newScore,
+				NewScore: &exceedingScore, // Try to set score higher than max_score
 			},
-			metadata:      map[string]string{},
-			expectedCode:  codes.Internal,
-			questionScore: 10,
+			metadata: map[string]string{
+				"user_id": strconv.FormatInt(userID, 10),
+			},
+			expectedCode: codes.InvalidArgument,
 		},
 	}
 
@@ -724,83 +705,6 @@ func TestMarkAsEvaluated(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, resp)
 			tt.validate(t, participant, resp)
-		})
-	}
-}
-
-func TestGetAnswerById(t *testing.T) {
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T) *models.Answer
-		metadata     map[string]string
-		expectedCode codes.Code
-		validate     func(t *testing.T, resp *proto.AnswerResponse)
-	}{
-		{
-			name: "Success - Get answer by ID",
-			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: userID, Status: 1}})
-				require.NoError(t, err)
-
-				var participant models.ExamParticipant
-				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
-
-				answer := createTestAnswer(t, &participant, 1)
-				return &answer
-			},
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-			},
-			expectedCode: codes.OK,
-			validate: func(t *testing.T, resp *proto.AnswerResponse) {
-				var answerData struct {
-					Text string `json:"text"`
-				}
-				require.NoError(t, json.Unmarshal(resp.Answer, &answerData))
-				assert.Equal(t, "Test Answer", answerData.Text)
-				assert.Equal(t, "Test Comment", resp.Comments)
-				assert.Equal(t, int32(5), resp.ScoreAwarded)
-				assert.NotZero(t, resp.Id)
-				assert.NotZero(t, resp.ExamParticipantId)
-				assert.NotZero(t, resp.QuestionId)
-			},
-		},
-		{
-			name: "Fail - Answer not found",
-			setup: func(t *testing.T) *models.Answer {
-				return &models.Answer{ID: 9999} // Non-existent answer ID
-			},
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-			},
-			expectedCode: codes.NotFound,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			clearTables(t)
-			answer := tt.setup(t)
-
-			ctx := createContextWithMetadata(tt.metadata)
-			resp, err := client.GetAnswerById(ctx, &proto.GetAnswerByIdRequest{
-				AnswerId: answer.ID,
-			})
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			require.NotNil(t, resp)
-			tt.validate(t, resp)
 		})
 	}
 }

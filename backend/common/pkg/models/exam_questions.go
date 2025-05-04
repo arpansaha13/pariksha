@@ -6,6 +6,7 @@ type ExamQuestion struct {
 	QuestionID int64 `gorm:"type:bigint;not null"`
 	CategoryID int64 `gorm:"type:bigint;not null"`
 	Order      int16 `gorm:"type:smallint;not null"`
+	MaxScore   int16 `gorm:"type:smallint;not null"`
 	Exam       Exam  `gorm:"foreignKey:ExamID"`
 }
 

@@ -184,7 +184,7 @@ func (s *PaperServer) DeleteCategory(ctx context.Context, req *proto.CategoryReq
 			if err != nil {
 				return err
 			}
-			paper.MaxScore -= q.MaxScore
+			paper.MaxScore -= int32(q.MaxScore)
 		}
 
 		paper.QuestionCounts = questionCounts

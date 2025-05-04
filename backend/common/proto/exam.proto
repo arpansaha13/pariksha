@@ -31,7 +31,6 @@ service ExamService {
   rpc GetAnswer(GetAnswerRequest) returns (GetAnswerResponse) {}
   rpc UpsertAnswer(UpsertAnswersRequest) returns (UpsertAnswersResponse) {}
   rpc UpdateAnswerForEvaluation(UpdateAnswerRequest) returns (Empty) {}
-  rpc GetAnswerById(GetAnswerByIdRequest) returns (AnswerResponse) {}
 }
 
 // Exam messages
@@ -190,6 +189,7 @@ message ExamQuestion {
   int64 question_id = 1;
   int64 category_id = 2;
   int32 order = 3;
+  int32 max_score = 4;
 }
 
 message ExamQuestionsResponse {
@@ -203,10 +203,6 @@ message ExamCategory {
 
 message ExamCategoriesResponse {
   repeated ExamCategory categories = 1;
-}
-
-message GetAnswerByIdRequest {
-  int64 answer_id = 1;
 }
 
 enum ExamAccessType {

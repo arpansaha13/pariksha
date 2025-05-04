@@ -448,7 +448,8 @@ func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
 		response[i] = dtos.ExamQuestionMinimalResponse{
 			QuestionID: q.QuestionId,
 			CategoryID: q.CategoryId,
-			Order:      int(q.Order),
+			Order:      q.Order,
+			MaxScore:   q.MaxScore,
 		}
 	}
 
@@ -546,11 +547,9 @@ func GetExamQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := dtos.ExamQuestionResponse{
-		ID:         question.Id,
-		Question:   questionContent,
-		CategoryID: question.CategoryId,
-		Type:       question.Type,
-		MaxScore:   int(question.MaxScore),
+		ID:       question.Id,
+		Question: questionContent,
+		Type:     question.Type,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -21,6 +21,7 @@ export interface QuestionMcq {
     statement: string
     options: string[]
   }
+  order: number
   category_id: number
   type: QuestionType.MCQ
   tags: string[]
@@ -34,6 +35,7 @@ export interface QuestionShort {
   question: {
     statement: string
   }
+  order: number
   category_id: number
   type: QuestionType.SHORT
   tags: string[]
@@ -47,6 +49,7 @@ export interface QuestionLong {
   question: {
     statement: string
   }
+  order: number
   category_id: number
   type: QuestionType.LONG
   tags: string[]

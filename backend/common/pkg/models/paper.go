@@ -14,7 +14,7 @@ type QuestionCount struct {
 type Paper struct {
 	ID              int64           `gorm:"primaryKey;type:bigint"`
 	Title           string          `gorm:"type:varchar(255);not null;default:'Untitled Paper'"`
-	MaxScore        int             `gorm:"default:0"`
+	MaxScore        int32           `gorm:"default:0"`
 	DurationMinutes int             `gorm:"not null;check:duration_minutes >= 0 AND duration_minutes <= 1440"`
 	QuestionCounts  json.RawMessage `gorm:"type:json;default:'{\"mcq\":0,\"short\":0,\"long\":0}'"`
 	CreatedBy       int64           `gorm:"type:bigint;not null"`

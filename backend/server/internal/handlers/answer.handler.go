@@ -160,36 +160,8 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-
-	// Fetch answer to get question ID
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
-
-	answerResp, err := examService.Client().GetAnswerById(ctx, &proto.GetAnswerByIdRequest{
-		AnswerId: updateDTO.AnswerID,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	// Fetch question details
-	paperService := services.GetPaperService()
-	paperCtx := paperService.CreateMetadata(userID)
-	questionResp, err := paperService.Client().GetQuestion(paperCtx, &proto.QuestionRequest{
-		QuestionId: answerResp.QuestionId,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	// Create metadata with question max score
-	md := metadata.New(map[string]string{
-		"user_id":        strconv.FormatInt(userID, 10),
-		"question_score": strconv.Itoa(int(questionResp.MaxScore)),
-	})
-	ctx = metadata.NewOutgoingContext(context.Background(), md)
 
 	req := &proto.UpdateAnswerRequest{
 		AnswerId: updateDTO.AnswerID,
@@ -207,7 +179,7 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send update request to exam service
-	_, err = examService.Client().UpdateAnswerForEvaluation(ctx, req)
+	_, err := examService.Client().UpdateAnswerForEvaluation(ctx, req)
 	if err != nil {
 		handleGRPCError(w, err)
 		return

@@ -117,7 +117,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 			Question:   json.RawMessage(req.RawQuestion),
 			Type:       req.Type,
 			Tags:       tags,
-			MaxScore:   int(req.MaxScore),
+			MaxScore:   int16(req.MaxScore),
 			CorrectAnswer: sql.NullString{
 				String: req.GetCorrectAnswer(),
 				Valid:  req.CorrectAnswer != nil,
@@ -197,7 +197,7 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 				return err
 			}
 
-			transactionErr = updatePaperStats(tx, question.Paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
+			transactionErr = updatePaperStats(tx, question.Paper, oldType, updatedQuestion.Type, int32(oldMaxScore), int32(updatedQuestion.MaxScore))
 			return transactionErr
 		}
 
@@ -212,7 +212,7 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 			return err
 		}
 
-		transactionErr = updatePaperStats(tx, updatedQuestion.Paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
+		transactionErr = updatePaperStats(tx, updatedQuestion.Paper, oldType, updatedQuestion.Type, int32(oldMaxScore), int32(updatedQuestion.MaxScore))
 		return transactionErr
 	})
 

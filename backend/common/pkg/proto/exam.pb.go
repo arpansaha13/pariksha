@@ -1561,6 +1561,7 @@ type ExamQuestion struct {
 	QuestionId    int64                  `protobuf:"varint,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
 	CategoryId    int64                  `protobuf:"varint,2,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	Order         int32                  `protobuf:"varint,3,opt,name=order,proto3" json:"order,omitempty"`
+	MaxScore      int32                  `protobuf:"varint,4,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1612,6 +1613,13 @@ func (x *ExamQuestion) GetCategoryId() int64 {
 func (x *ExamQuestion) GetOrder() int32 {
 	if x != nil {
 		return x.Order
+	}
+	return 0
+}
+
+func (x *ExamQuestion) GetMaxScore() int32 {
+	if x != nil {
+		return x.MaxScore
 	}
 	return 0
 }
@@ -2009,13 +2017,14 @@ const file_exam_proto_rawDesc = "" +
 	"started_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\tstartedAt\x88\x01\x01\x12M\n" +
 	"\x12scheduled_end_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\x10scheduledEndTime\x88\x01\x01B\r\n" +
 	"\v_started_atB\x15\n" +
-	"\x13_scheduled_end_time\"f\n" +
+	"\x13_scheduled_end_time\"\x83\x01\n" +
 	"\fExamQuestion\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\x03R\n" +
 	"questionId\x12\x1f\n" +
 	"\vcategory_id\x18\x02 \x01(\x03R\n" +
 	"categoryId\x12\x14\n" +
-	"\x05order\x18\x03 \x01(\x05R\x05order\"J\n" +
+	"\x05order\x18\x03 \x01(\x05R\x05order\x12\x1b\n" +
+	"\tmax_score\x18\x04 \x01(\x05R\bmaxScore\"J\n" +
 	"\x15ExamQuestionsResponse\x121\n" +
 	"\tquestions\x18\x01 \x03(\v2\x13.proto.ExamQuestionR\tquestions\"E\n" +
 	"\fExamCategory\x12\x1f\n" +
