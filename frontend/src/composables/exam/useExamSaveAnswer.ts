@@ -20,7 +20,6 @@ type MergedAnswer = MCQAnswer & GeneralAnswer
 export function useExamSaveAnswer(args: UseExamSaveAnswerArgs) {
   const { examId, question, groupedQuestions, answer } = args
 
-  const { payload } = useNuxtApp()
   const answerStates = reactive<Record<number, MergedAnswer>>({})
 
   for (const questionMinimals of Object.values(groupedQuestions.value!)) {
@@ -46,18 +45,18 @@ export function useExamSaveAnswer(args: UseExamSaveAnswerArgs) {
   // Save answer for a specific question
   function saveAnswer(questionToSave: Question) {
     const answerState = answerStates[questionToSave.id]
-    const currentAnswer = payload.data[
+    const { data: currentAnswer } = useNuxtData<AnswerMinimal | null>(
       AsyncDataKeys.EXAM_ANSWER(examId, questionToSave.id)
-    ] as AnswerMinimal | null
+    )
 
     const upsertAnswerBody = {} as MergedAnswer
 
     if (questionToSave.type === QuestionType.MCQ) {
       const isEmpty = isNullOrUndefined(answerState.optionIndex)
       const isUnchanged =
-        !isNullOrUndefined(currentAnswer) &&
+        !isNullOrUndefined(currentAnswer.value) &&
         answerState.optionIndex ===
-          (currentAnswer.answer as MCQAnswer).optionIndex
+          (currentAnswer.value.answer as MCQAnswer).optionIndex
 
       if (isEmpty || isUnchanged) return
 
@@ -65,8 +64,8 @@ export function useExamSaveAnswer(args: UseExamSaveAnswerArgs) {
     } else {
       const isEmpty = !answerState.text
       const isUnchanged =
-        !isNullOrUndefined(currentAnswer) &&
-        answerState.text === (currentAnswer.answer as GeneralAnswer).text
+        !isNullOrUndefined(currentAnswer.value) &&
+        answerState.text === (currentAnswer.value.answer as GeneralAnswer).text
 
       if (isEmpty || isUnchanged) return
 

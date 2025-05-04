@@ -88,6 +88,12 @@
         class="ml-auto"
         :to="{ query: { ...route.query, question: nextQuestionId } }"
       />
+      <UButton
+        v-else
+        label="Save"
+        class="ml-auto"
+        @click="saveAnswer(question!)"
+      />
     </UCard>
   </template>
 </template>

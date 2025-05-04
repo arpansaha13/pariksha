@@ -6,9 +6,10 @@ interface UpsertAnswerBody {
 }
 
 export async function upsertAnswer(examId: number, body: UpsertAnswerBody) {
-  return $fetch(`/api/exams/${examId}/answers`, {
+  await $fetch(`/api/exams/${examId}/answers`, {
     method: 'POST',
     body,
     ...getFetchOptions(),
   })
+  return refreshNuxtData(AsyncDataKeys.EXAM_ANSWER(examId, body.question_id))
 }
