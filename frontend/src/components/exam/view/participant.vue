@@ -25,43 +25,100 @@
 
       <div class="flex items-center gap-2">
         <p class="font-medium">
-          {{ isCalendarBefore(startsAt, now) ? 'Started at:' : 'Starts at:' }}
+          {{ isExamStarted ? 'Started at:' : 'Starts at:' }}
         </p>
 
         <DisplayDate
           :date="startsAt"
           :df="df"
-          :ui="{ skeleton: 'h-4 w-[26ch]' }"
+          :ui="{ skeleton: 'h-4 w-[24ch]' }"
         />
       </div>
 
       <div class="flex items-center gap-2">
         <p class="font-medium">
-          {{ isCalendarBefore(endsAt, now) ? 'Ended at:' : 'Ends at:' }}
+          {{ isExamEnded ? 'Ended at:' : 'Ends at:' }}
         </p>
 
         <DisplayDate
           :date="endsAt"
           :df="df"
-          :ui="{ skeleton: 'h-4 w-[26ch]' }"
+          :ui="{ skeleton: 'h-4 w-[24ch]' }"
         />
       </div>
     </UCard>
 
+    <!-- If participant has already started the exam, then do not show this form -->
     <ExamViewUpdateUserForm
-      v-if="!isParticipantExamStarted && !isParticipantExamEnded"
+      v-if="isParticipantInvited && isExamStarted && !isExamEnded"
       ref="updateUserForm"
       v-model:form-data="updateUserFormData"
       @submit="onStartExamSubmit"
     />
 
     <UCard>
-      <template
-        v-if="isCalendarBefore(startsAt, now) && isCalendarAfter(endsAt, now)"
-      >
-        <p v-if="isParticipantExamEnded">
-          You have already attempted this exam
-        </p>
+      <p v-if="!isExamStarted">
+        The exam starts
+        {{ formatTimeAgo(startsAt.toDate(getLocalTimeZone())) }}.
+      </p>
+
+      <template v-else-if="isExamEnded">
+        <!-- If participant has started the exam before the exam ended, then let them continue -->
+        <UButton
+          v-if="isParticipantExamStarted"
+          label="Continue"
+          :to="`/exams/${examId}/attempt`"
+        />
+
+        <!-- If participant's exam has ended, then show them a link to results page -->
+        <div
+          v-else-if="isParticipantExamEnded"
+          class="flex flex-col items-center"
+        >
+          <div class="mb-1">
+            <Icon name="twemoji:party-popper" size="2.5rem" />
+          </div>
+          <p class="inline-flex items-center">The exam is over!</p>
+          <p>
+            Check your results
+            <ULink
+              :to="`/exams/${examId}/results`"
+              class="text-primary-500 hover:text-primary-600 font-semibold"
+            >
+              here
+            </ULink>
+            .
+          </p>
+        </div>
+
+        <p v-else>The exam is over!</p>
+      </template>
+
+      <!-- Exam is ongoing -->
+      <template v-else>
+        <!-- If participant's exam has ended, then show them a link to results page -->
+        <div v-if="isParticipantExamEnded" class="flex flex-col items-center">
+          <div class="mb-1">
+            <Icon
+              name="i-lucide-circle-check-big"
+              size="2.5rem"
+              class="text-primary-500"
+            />
+          </div>
+          <p class="inline-flex items-center">
+            You have already attempted this exam.
+          </p>
+          <p>
+            Check your results
+            <ULink
+              :to="`/exams/${examId}/results`"
+              class="text-primary-500 hover:text-primary-600 font-semibold"
+            >
+              here
+            </ULink>
+            .
+          </p>
+        </div>
 
         <UButton
           v-else-if="isParticipantExamStarted"
@@ -82,7 +139,8 @@
 
 <script setup lang="ts">
 import { ExamViewUpdateUserForm } from '#components'
-import { DateFormatter } from '@internationalized/date'
+import { formatTimeAgo } from '@vueuse/core'
+import { DateFormatter, getLocalTimeZone } from '@internationalized/date'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import { ExamParticipantStatus } from '~/types'
 
@@ -95,6 +153,8 @@ const props = defineProps({
   },
 })
 
+const isParticipantInvited =
+  props.examPermission.participant_status === ExamParticipantStatus.INVITED
 const isParticipantExamStarted =
   props.examPermission.participant_status === ExamParticipantStatus.STARTED
 const isParticipantExamEnded =
@@ -108,6 +168,13 @@ const [{ data: exam }, { data: user }] = await Promise.all([
   useAuthUser(),
 ])
 
+const now = toCalendarDateTime(new Date())
+const startsAt = toCalendarDateTime(exam.value!.starts_at)
+const endsAt = toCalendarDateTime(exam.value!.ends_at)
+
+const isExamStarted = isCalendarBefore(startsAt, now)
+const isExamEnded = isCalendarAfter(now, endsAt)
+
 const fullCurrentUrl = ref('')
 const { copy, copied, isSupported } = useClipboard({ source: fullCurrentUrl })
 
@@ -120,10 +187,6 @@ const df = new DateFormatter('en-US', {
   dateStyle: 'long',
   timeStyle: 'short',
 })
-
-const now = toCalendarDateTime(new Date())
-const startsAt = toCalendarDateTime(exam.value!.starts_at)
-const endsAt = toCalendarDateTime(exam.value!.ends_at)
 
 // _________________________UPDATE USER_________________________
 const updateUserFormRef =
