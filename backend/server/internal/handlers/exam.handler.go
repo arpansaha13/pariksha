@@ -1,15 +1,12 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"gorm.io/gorm"
 
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
@@ -29,9 +26,9 @@ func GetUserExams(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := make([]dtos.ExamResponse, len(examList.Exams))
+	response := make([]dtos.ExamResponseDto, len(examList.Exams))
 	for i, exam := range examList.Exams {
-		response[i] = dtos.ExamResponse{
+		response[i] = dtos.ExamResponseDto{
 			ID:                 exam.Id,
 			Title:              exam.Title,
 			StartsAt:           exam.StartsAt.AsTime(),
@@ -51,13 +48,13 @@ func GetUserExams(w http.ResponseWriter, r *http.Request) {
 func CreateExam(w http.ResponseWriter, r *http.Request) {
 	var examDto dtos.CreateExamDto
 	if err := json.NewDecoder(r.Body).Decode(&examDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
 	errs := validate.Do.Struct(examDto)
 	if errs != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
@@ -98,7 +95,7 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := dtos.ExamResponse{
+	response := dtos.ExamResponseDto{
 		ID:                 exam.Id,
 		Title:              exam.Title,
 		StartsAt:           exam.StartsAt.AsTime(),
@@ -117,13 +114,13 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 func UpdateExam(w http.ResponseWriter, r *http.Request) {
 	var examDto dtos.UpdateExamDto
 	if err := json.NewDecoder(r.Body).Decode(&examDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
 	errs := validate.Do.Struct(examDto)
 	if errs != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
@@ -163,7 +160,7 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := dtos.ExamResponse{
+	response := dtos.ExamResponseDto{
 		ID:                 exam.Id,
 		Title:              exam.Title,
 		StartsAt:           exam.StartsAt.AsTime(),
@@ -177,170 +174,6 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
-}
-
-func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
-	examID, err := getInt64FromVars(mux.Vars(r), "examId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
-
-	participants, err := examService.Client().GetExamParticipants(ctx, &proto.ExamRequest{
-		ExamId: examID,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	authService := services.GetAuthService()
-	authCtx := context.Background()
-
-	response := make([]dtos.ExamParticipantResponse, len(participants.Participants))
-	for i, p := range participants.Participants {
-		// Get user details from auth service
-		userResp, err := authService.Client().GetUser(authCtx, &proto.GetUserRequest{
-			UserId: p.UserId,
-		})
-
-		response[i] = dtos.ExamParticipantResponse{
-			ID:           p.Id,
-			UserID:       p.UserId,
-			Status:       int(p.Status),
-			ScoreAwarded: int(p.ScoreAwarded),
-		}
-
-		if err == nil {
-			response[i].FirstName = userResp.FirstName
-			response[i].LastName = userResp.LastName
-			response[i].Email = userResp.Email
-		}
-
-		if p.StartedAt != nil {
-			startedAt := p.StartedAt.AsTime()
-			response[i].StartedAt = &startedAt
-		}
-		if p.EndedAt != nil {
-			endedAt := p.EndedAt.AsTime()
-			response[i].EndedAt = &endedAt
-		}
-		if p.ScheduledEndTime != nil {
-			scheduledEndTime := p.ScheduledEndTime.AsTime()
-			response[i].ScheduledEndTime = &scheduledEndTime
-		}
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
-}
-
-func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
-	examID, err := getInt64FromVars(mux.Vars(r), "examId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	var participantDto dtos.AddExamParticipantDto
-	if err := json.NewDecoder(r.Body).Decode(&participantDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	errs := validate.Do.Struct(participantDto)
-	if errs != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
-
-	// First create/update user if email is provided
-	if participantDto.Email != "" {
-		authService := services.GetAuthService()
-		authCtx := context.Background()
-
-		userResp, err := authService.Client().UpsertUser(authCtx, &proto.UpsertUserRequest{
-			Email:     participantDto.Email,
-			FirstName: &participantDto.FirstName,
-			LastName:  &participantDto.LastName,
-		})
-		if err != nil {
-			http.Error(w, "Failed to create/update user", http.StatusInternalServerError)
-			return
-		}
-		participantDto.UserID = userResp.Id
-	}
-
-	// Add participant
-	participant, err := examService.Client().AddExamParticipant(ctx, &proto.AddParticipantRequest{
-		ExamId: examID,
-		UserId: participantDto.UserID,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	response := dtos.AddExamParticipantResponse{
-		ID:           participant.Id,
-		UserID:       participant.UserId,
-		Status:       int(participant.Status),
-		ScoreAwarded: int(participant.ScoreAwarded),
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
-}
-
-func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	examID, err := getInt64FromVars(vars, "examId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	participantID, err := getInt64FromVars(vars, "participantId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
-
-	_, err = examService.Client().RemoveExamParticipant(ctx, &proto.RemoveParticipantRequest{
-		ExamId:        examID,
-		ParticipantId: participantID,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
-// Helper function to create a new exam participant
-func createExamParticipant(tx *gorm.DB, examID int64, userID int64) (*models.ExamParticipant, error) {
-	participant := models.ExamParticipant{
-		ExamID: examID,
-		UserID: userID,
-	}
-
-	if err := tx.Create(&participant).Error; err != nil {
-		return nil, err
-	}
-	return &participant, nil
 }
 
 func StartExam(w http.ResponseWriter, r *http.Request) {
@@ -407,7 +240,7 @@ func GetExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := dtos.ExamResponse{
+	response := dtos.ExamResponseDto{
 		ID:                 exam.Id,
 		Title:              exam.Title,
 		StartsAt:           exam.StartsAt.AsTime(),
@@ -417,174 +250,6 @@ func GetExam(w http.ResponseWriter, r *http.Request) {
 		MaxCandidatesCount: int(exam.MaxCandidatesCount),
 		PaperID:            exam.PaperId,
 		DurationMinutes:    exam.DurationMinutes,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
-}
-
-func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
-	examID, err := getInt64FromVars(mux.Vars(r), "examId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
-
-	// Get question IDs from exam service
-	questions, err := examService.Client().GetExamQuestions(ctx, &proto.ExamRequest{
-		ExamId: examID,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	response := make([]dtos.ExamQuestionMinimalResponse, len(questions.Questions))
-	for i, q := range questions.Questions {
-		response[i] = dtos.ExamQuestionMinimalResponse{
-			QuestionID: q.QuestionId,
-			CategoryID: q.CategoryId,
-			Order:      q.Order,
-			MaxScore:   q.MaxScore,
-		}
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
-}
-
-func GetExamCategories(w http.ResponseWriter, r *http.Request) {
-	examID, err := getInt64FromVars(mux.Vars(r), "examId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
-
-	// Get category IDs from exam service
-	categories, err := examService.Client().GetExamCategories(ctx, &proto.ExamRequest{
-		ExamId: examID,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	// Extract category IDs
-	categoryIDs := make([]int64, len(categories.Categories))
-	for i, c := range categories.Categories {
-		categoryIDs[i] = c.CategoryId
-	}
-
-	// No categories to fetch
-	if len(categoryIDs) == 0 {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]dtos.ExamCategoriesResponse{})
-		return
-	}
-
-	// Get category data from paper service
-	paperService := services.GetPaperService()
-	paperCtx := paperService.CreateMetadata(userID)
-
-	categoryData, err := paperService.Client().GetCategoriesByIds(paperCtx, &proto.GetCategoriesByIdsRequest{
-		CategoryIds: categoryIDs,
-	})
-	if err != nil {
-		http.Error(w, "Failed to retrieve category data", http.StatusInternalServerError)
-		return
-	}
-
-	// Create a map of category data
-	categoryMap := make(map[int64]*proto.CategoryBatchItem)
-	for _, c := range categoryData.Categories {
-		categoryMap[c.Id] = c
-	}
-
-	// Convert to response format using order from exam categories
-	response := make([]dtos.ExamCategoriesResponse, len(categories.Categories))
-	for i, c := range categories.Categories {
-		response[i] = dtos.ExamCategoriesResponse{
-			CategoryID: c.CategoryId,
-			Name:       categoryMap[c.CategoryId].Name,
-			Order:      c.Order,
-		}
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
-}
-
-func GetExamQuestion(w http.ResponseWriter, r *http.Request) {
-	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	paperService := services.GetPaperService()
-	question, err := paperService.Client().GetExamQuestion(context.Background(), &proto.QuestionRequest{
-		QuestionId: questionID,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	var questionContent json.RawMessage
-	switch q := question.Question.(type) {
-	case *proto.QuestionResponse_Mcq:
-		questionContent, _ = json.Marshal(q.Mcq)
-	case *proto.QuestionResponse_General:
-		questionContent, _ = json.Marshal(q.General)
-	}
-
-	response := dtos.ExamQuestionResponse{
-		ID:       question.Id,
-		Question: questionContent,
-		Type:     question.Type,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
-}
-
-// GetExamParticipant gets the participant data for the current user
-func GetExamParticipant(w http.ResponseWriter, r *http.Request) {
-	examID, err := getInt64FromVars(mux.Vars(r), "examId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
-
-	participant, err := examService.Client().GetExamParticipant(ctx, &proto.GetExamParticipantRequest{
-		ExamId: examID,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	response := dtos.GetExamParticipantResponse{
-		ID: participant.ParticipantId,
-	}
-
-	if participant.StartedAt != nil {
-		response.StartedAt = participant.StartedAt.AsTime()
-	}
-	if participant.ScheduledEndTime != nil {
-		response.ScheduledEndTime = participant.ScheduledEndTime.AsTime()
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -610,7 +275,7 @@ func GetExamPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := dtos.ExamPermissionResponse{
+	response := dtos.ExamPermissionResponseDto{
 		CanRead:        permission.CanRead,
 		CanWrite:       permission.CanWrite,
 		CanParticipate: permission.CanParticipate,

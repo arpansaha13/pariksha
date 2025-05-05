@@ -65,7 +65,7 @@ func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperReq
 	return response, nil
 }
 
-func (s *PaperServer) GetQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.QuestionResponse, error) {
+func (s *PaperServer) GetPaperQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.QuestionResponse, error) {
 	question, ok := ctx.Value(interceptors.QuestionCtxKey{}).(models.Question)
 	if !ok {
 		return nil, status.Error(codes.Internal, "question data not found in context")

@@ -54,7 +54,7 @@ func CheckAuth(w http.ResponseWriter, r *http.Request) {
 func LoginWithPassword(w http.ResponseWriter, r *http.Request) {
 	var loginReq proto.LoginWithPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&loginReq); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
@@ -80,7 +80,7 @@ func LoginWithPassword(w http.ResponseWriter, r *http.Request) {
 func SignUp(w http.ResponseWriter, r *http.Request) {
 	var signUpReq proto.SignUpRequest
 	if err := json.NewDecoder(r.Body).Decode(&signUpReq); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
@@ -97,7 +97,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 func VerifySignup(w http.ResponseWriter, r *http.Request) {
 	var verificationReq proto.VerificationRequest
 	if err := json.NewDecoder(r.Body).Decode(&verificationReq); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
@@ -122,7 +122,7 @@ func VerifySignup(w http.ResponseWriter, r *http.Request) {
 func LoginWithOtp(w http.ResponseWriter, r *http.Request) {
 	var loginOtpReq proto.LoginWithOtpRequest
 	if err := json.NewDecoder(r.Body).Decode(&loginOtpReq); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
@@ -153,7 +153,7 @@ func LoginWithOtp(w http.ResponseWriter, r *http.Request) {
 func VerifyLoginWithOtp(w http.ResponseWriter, r *http.Request) {
 	var verificationReq proto.VerificationRequest
 	if err := json.NewDecoder(r.Body).Decode(&verificationReq); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
@@ -178,7 +178,7 @@ func VerifyLoginWithOtp(w http.ResponseWriter, r *http.Request) {
 func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	var forgotPasswordReq proto.ForgotPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&forgotPasswordReq); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
@@ -195,7 +195,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 func ResetPassword(w http.ResponseWriter, r *http.Request) {
 	var resetPasswordReq proto.ResetPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&resetPasswordReq); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 

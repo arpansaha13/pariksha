@@ -23,7 +23,7 @@ var requiresRead = map[string]bool{
 	"/proto.PaperService/CheckPaperAccess":   true,
 	"/proto.PaperService/GetPaperCategories": true,
 	"/proto.PaperService/GetPaperQuestions":  true,
-	"/proto.PaperService/GetQuestion":        true,
+	"/proto.PaperService/GetPaperQuestion":   true,
 }
 
 var requiresWrite = map[string]bool{

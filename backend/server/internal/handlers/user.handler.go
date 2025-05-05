@@ -13,16 +13,6 @@ import (
 	"pariksha/server/internal/services"
 )
 
-func mapUserProfileToDto(profile *proto.UserProfileResponse) dtos.UserResponseDto {
-	return dtos.UserResponseDto{
-		ID:        profile.Id,
-		Username:  profile.Username,
-		Email:     profile.Email,
-		FirstName: profile.FirstName,
-		LastName:  profile.LastName,
-	}
-}
-
 func GetAuthUser(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
 	if !ok {
@@ -70,13 +60,13 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 func UpdateAuthUser(w http.ResponseWriter, r *http.Request) {
 	var userDto dtos.UpdateUserDto
 	if err := json.NewDecoder(r.Body).Decode(&userDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
 	errs := validate.Do.Struct(userDto)
 	if errs != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 

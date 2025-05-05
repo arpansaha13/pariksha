@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -9,7 +10,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"context"
 	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
@@ -37,9 +37,9 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var response []dtos.AnswerResponse
+	var response []dtos.AnswerResponseDto
 	for _, answer := range resp.Answers {
-		response = append(response, dtos.AnswerResponse{
+		response = append(response, dtos.AnswerResponseDto{
 			ID:                answer.Id,
 			ExamParticipantID: answer.ExamParticipantId,
 			QuestionID:        answer.QuestionId,
@@ -80,7 +80,7 @@ func GetAnswerForExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := dtos.PartialAnswerResponse{
+	response := dtos.AnswerMinimalResponseDto{
 		ID:         resp.Id,
 		Answer:     resp.Answer,
 		QuestionID: resp.QuestionId,
@@ -98,7 +98,7 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := validate.Do.Struct(answerDTO); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
@@ -145,73 +145,4 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]int64{"answer_id": resp.AnswerId})
-}
-
-func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
-	var updateDTO dtos.UpdateAnswerForEvaluationDTO
-	if err := json.NewDecoder(r.Body).Decode(&updateDTO); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	if err := validate.Do.Struct(updateDTO); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
-
-	req := &proto.UpdateAnswerRequest{
-		AnswerId: updateDTO.AnswerID,
-	}
-
-	if updateDTO.NewScore != nil {
-		score := int32(*updateDTO.NewScore)
-		req.NewScore = &score
-	}
-	if updateDTO.Evaluated != nil {
-		req.Evaluated = updateDTO.Evaluated
-	}
-	if updateDTO.Comments != nil {
-		req.Comments = updateDTO.Comments
-	}
-
-	// Send update request to exam service
-	_, err := examService.Client().UpdateAnswerForEvaluation(ctx, req)
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
-func MarkParticipantAsEvaluated(w http.ResponseWriter, r *http.Request) {
-	participantID, err := getInt64FromVars(mux.Vars(r), "participantId")
-	if err != nil {
-		http.Error(w, "Invalid participant ID", http.StatusBadRequest)
-		return
-	}
-
-	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
-
-	resp, err := examService.Client().MarkParticipantAsEvaluated(ctx, &proto.ParticipantRequest{
-		ParticipantId: participantID,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	response := map[string]int32{
-		"unevaluatedCount": resp.UnevaluatedCount,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
 }

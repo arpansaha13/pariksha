@@ -9,7 +9,7 @@ type UpdatePaperDto struct {
 	DurationMinutes int32  `json:"duration_minutes,omitempty"`
 }
 
-type PaperResponse struct {
+type PaperResponseDto struct {
 	ID              int64           `json:"id"`
 	Title           string          `json:"title"`
 	MaxScore        int             `json:"max_score"`
@@ -18,7 +18,7 @@ type PaperResponse struct {
 	CreatedBy       int64           `json:"created_by"`
 }
 
-type UpdatePaperResponse struct {
+type UpdatePaperResponseDto struct {
 	ID              int64           `json:"id"`
 	Title           string          `json:"title"`
 	MaxScore        int             `json:"max_score"`

@@ -2,13 +2,7 @@ package dtos
 
 import "encoding/json"
 
-type QuestionCategoryResponse struct {
-	ID    int64  `json:"id"`
-	Name  string `json:"name"`
-	Order int    `json:"order"`
-}
-
-type QuestionResponse struct {
+type QuestionResponseDto struct {
 	ID            int64           `json:"id"`
 	Question      json.RawMessage `json:"question"`
 	CategoryID    int64           `json:"category_id"`
@@ -19,12 +13,18 @@ type QuestionResponse struct {
 	CorrectAnswer string          `json:"correct_answer"`
 }
 
-type QuestionMinimalResponse struct {
+type QuestionMinimalResponseDto struct {
 	ID         int64           `json:"id"`
 	CategoryID int64           `json:"category_id"`
 	PaperID    int64           `json:"paper_id"`
 	Order      int             `json:"order"`
 	Question   json.RawMessage `json:"question"`
+}
+
+type QuestionCategoryResponseDto struct {
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	Order int    `json:"order"`
 }
 
 type CreateQuestionDto struct {

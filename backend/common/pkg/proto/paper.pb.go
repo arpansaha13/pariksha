@@ -754,7 +754,7 @@ func (x *GeneralQuestion) GetStatement() string {
 type CreateQuestionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PaperId       int64                  `protobuf:"varint,1,opt,name=paper_id,json=paperId,proto3" json:"paper_id,omitempty"`
-	RawQuestion   []byte                 `protobuf:"bytes,2,opt,name=raw_question,json=rawQuestion,proto3" json:"raw_question,omitempty"` // Changed from oneof to raw bytes
+	RawQuestion   []byte                 `protobuf:"bytes,2,opt,name=raw_question,json=rawQuestion,proto3" json:"raw_question,omitempty"`
 	CategoryId    int64                  `protobuf:"varint,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	Type          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
 	Tags          []string               `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
@@ -847,7 +847,7 @@ type UpdateQuestionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	QuestionId    int64                  `protobuf:"varint,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
 	Type          *string                `protobuf:"bytes,2,opt,name=type,proto3,oneof" json:"type,omitempty"`
-	RawQuestion   []byte                 `protobuf:"bytes,3,opt,name=raw_question,json=rawQuestion,proto3,oneof" json:"raw_question,omitempty"` // Changed from oneof to raw bytes
+	RawQuestion   []byte                 `protobuf:"bytes,3,opt,name=raw_question,json=rawQuestion,proto3,oneof" json:"raw_question,omitempty"`
 	CategoryId    *int64                 `protobuf:"varint,4,opt,name=category_id,json=categoryId,proto3,oneof" json:"category_id,omitempty"`
 	MaxScore      *int32                 `protobuf:"varint,5,opt,name=max_score,json=maxScore,proto3,oneof" json:"max_score,omitempty"`
 	Tags          []string               `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty"`
@@ -1749,15 +1749,15 @@ const file_paper_proto_rawDesc = "" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"X\n" +
 	"\x18ReorderCategoriesRequest\x12\x19\n" +
 	"\bpaper_id\x18\x01 \x01(\x03R\apaperId\x12!\n" +
-	"\fcategory_ids\x18\x02 \x03(\x03R\vcategoryIds2\xef\t\n" +
+	"\fcategory_ids\x18\x02 \x03(\x03R\vcategoryIds2\xf4\t\n" +
 	"\fPaperService\x121\n" +
 	"\rGetUserPapers\x12\f.proto.Empty\x1a\x10.proto.PaperList\"\x00\x127\n" +
 	"\bGetPaper\x12\x13.proto.PaperRequest\x1a\x14.proto.PaperResponse\"\x00\x123\n" +
 	"\vCreatePaper\x12\f.proto.Empty\x1a\x14.proto.PaperResponse\"\x00\x128\n" +
 	"\vUpdatePaper\x12\x19.proto.UpdatePaperRequest\x1a\f.proto.Empty\"\x00\x127\n" +
 	"\x10CheckPaperAccess\x12\x13.proto.PaperRequest\x1a\f.proto.Empty\"\x00\x12?\n" +
-	"\x11GetPaperQuestions\x12\x13.proto.PaperRequest\x1a\x13.proto.QuestionList\"\x00\x12@\n" +
-	"\vGetQuestion\x12\x16.proto.QuestionRequest\x1a\x17.proto.QuestionResponse\"\x00\x12I\n" +
+	"\x11GetPaperQuestions\x12\x13.proto.PaperRequest\x1a\x13.proto.QuestionList\"\x00\x12E\n" +
+	"\x10GetPaperQuestion\x12\x16.proto.QuestionRequest\x1a\x17.proto.QuestionResponse\"\x00\x12I\n" +
 	"\x0eCreateQuestion\x12\x1c.proto.CreateQuestionRequest\x1a\x17.proto.QuestionResponse\"\x00\x12>\n" +
 	"\x0eUpdateQuestion\x12\x1c.proto.UpdateQuestionRequest\x1a\f.proto.Empty\"\x00\x128\n" +
 	"\x0eDeleteQuestion\x12\x16.proto.QuestionRequest\x1a\f.proto.Empty\"\x00\x12B\n" +
@@ -1832,7 +1832,7 @@ var file_paper_proto_depIdxs = []int32{
 	3,  // 15: proto.PaperService.UpdatePaper:input_type -> proto.UpdatePaperRequest
 	0,  // 16: proto.PaperService.CheckPaperAccess:input_type -> proto.PaperRequest
 	0,  // 17: proto.PaperService.GetPaperQuestions:input_type -> proto.PaperRequest
-	5,  // 18: proto.PaperService.GetQuestion:input_type -> proto.QuestionRequest
+	5,  // 18: proto.PaperService.GetPaperQuestion:input_type -> proto.QuestionRequest
 	11, // 19: proto.PaperService.CreateQuestion:input_type -> proto.CreateQuestionRequest
 	12, // 20: proto.PaperService.UpdateQuestion:input_type -> proto.UpdateQuestionRequest
 	5,  // 21: proto.PaperService.DeleteQuestion:input_type -> proto.QuestionRequest
@@ -1851,7 +1851,7 @@ var file_paper_proto_depIdxs = []int32{
 	26, // 34: proto.PaperService.UpdatePaper:output_type -> proto.Empty
 	26, // 35: proto.PaperService.CheckPaperAccess:output_type -> proto.Empty
 	7,  // 36: proto.PaperService.GetPaperQuestions:output_type -> proto.QuestionList
-	6,  // 37: proto.PaperService.GetQuestion:output_type -> proto.QuestionResponse
+	6,  // 37: proto.PaperService.GetPaperQuestion:output_type -> proto.QuestionResponse
 	6,  // 38: proto.PaperService.CreateQuestion:output_type -> proto.QuestionResponse
 	26, // 39: proto.PaperService.UpdateQuestion:output_type -> proto.Empty
 	26, // 40: proto.PaperService.DeleteQuestion:output_type -> proto.Empty

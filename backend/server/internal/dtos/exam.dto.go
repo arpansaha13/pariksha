@@ -22,7 +22,7 @@ type UpdateExamDto struct {
 	DurationMinutes *int32    `json:"duration_minutes" validate:"omitempty,gt=0"`
 }
 
-type ExamResponse struct {
+type ExamResponseDto struct {
 	ID                 int64     `json:"id"`
 	Title              string    `json:"title"`
 	StartsAt           time.Time `json:"starts_at"`
@@ -34,7 +34,7 @@ type ExamResponse struct {
 	DurationMinutes    int32     `json:"duration_minutes"`
 }
 
-type ExamParticipantResponse struct {
+type ExamParticipantResponseDto struct {
 	ID               int64      `json:"id"`
 	UserID           int64      `json:"user_id"`
 	Status           int        `json:"status"`
@@ -56,40 +56,40 @@ type AddExamParticipantDto struct {
 	LastName  string `json:"last_name"`
 }
 
-type AddExamParticipantResponse struct {
+type AddExamParticipantResponseDto struct {
 	ID           int64 `json:"id"`
 	UserID       int64 `json:"user_id"`
 	Status       int   `json:"status"`
 	ScoreAwarded int   `json:"score_awarded"`
 }
 
-type ExamQuestionMinimalResponse struct {
+type ExamQuestionMinimalResponseDto struct {
 	QuestionID int64 `json:"id"`
 	CategoryID int64 `json:"category_id"`
 	Order      int32 `json:"order"`
 	MaxScore   int32 `json:"max_score"`
 }
 
-type ExamCategoriesResponse struct {
+type ExamCategoriesResponseDto struct {
 	CategoryID int64  `json:"id"`
 	Name       string `json:"name"`
 	Order      int32  `json:"order"`
 }
 
-type ExamQuestionResponse struct {
+type ExamQuestionResponseDto struct {
 	ID         int64           `json:"id"`
 	Question   json.RawMessage `json:"question"`
 	CategoryID int64           `json:"category_id"`
 	Type       string          `json:"type"`
 }
 
-type GetExamParticipantResponse struct {
+type GetExamParticipantResponseDto struct {
 	ID               int64     `json:"id"`
 	StartedAt        time.Time `json:"started_at,omitempty"`
 	ScheduledEndTime time.Time `json:"scheduled_end_time,omitempty"`
 }
 
-type ExamPermissionResponse struct {
+type ExamPermissionResponseDto struct {
 	CanRead           bool `json:"can_read"`
 	CanWrite          bool `json:"can_write"`
 	CanParticipate    bool `json:"can_participate"`

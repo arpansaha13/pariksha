@@ -33,9 +33,9 @@ func GetPaperCategories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	categories := make([]dtos.QuestionCategoryResponse, len(response.Categories))
+	categories := make([]dtos.QuestionCategoryResponseDto, len(response.Categories))
 	for i, c := range response.Categories {
-		categories[i] = dtos.QuestionCategoryResponse{
+		categories[i] = dtos.QuestionCategoryResponseDto{
 			ID:    c.Id,
 			Name:  c.Name,
 			Order: int(c.Order),
@@ -67,7 +67,7 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(dtos.QuestionCategoryResponse{
+	json.NewEncoder(w).Encode(dtos.QuestionCategoryResponseDto{
 		ID:    response.Id,
 		Name:  response.Name,
 		Order: int(response.Order),
@@ -84,12 +84,12 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 
 	var categoryDto dtos.UpdateCategoryDto
 	if err := json.NewDecoder(r.Body).Decode(&categoryDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
 	if err := validate.Do.Struct(categoryDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
@@ -138,12 +138,12 @@ func ReorderCategories(w http.ResponseWriter, r *http.Request) {
 
 	var reorderDto dtos.ReorderCategoryDto
 	if err := json.NewDecoder(r.Body).Decode(&reorderDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
 	if err := validate.Do.Struct(reorderDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 

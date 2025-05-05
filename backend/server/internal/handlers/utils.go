@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"pariksha/common/pkg/proto"
+	"pariksha/server/internal/dtos"
 	"strconv"
 
 	"google.golang.org/grpc/codes"
@@ -46,4 +49,39 @@ func getInt64FromVars(vars map[string]string, key string) (int64, error) {
 	}
 
 	return id, nil
+}
+
+func mapUserProfileToDto(profile *proto.UserProfileResponse) dtos.UserResponseDto {
+	return dtos.UserResponseDto{
+		ID:        profile.Id,
+		Username:  profile.Username,
+		Email:     profile.Email,
+		FirstName: profile.FirstName,
+		LastName:  profile.LastName,
+	}
+}
+
+func mapQuestionToDto(resp *proto.QuestionResponse) dtos.QuestionResponseDto {
+	tags, _ := json.Marshal(resp.Tags)
+
+	response := dtos.QuestionResponseDto{
+		ID:            resp.Id,
+		Type:          resp.Type,
+		Tags:          tags,
+		PaperID:       resp.PaperId,
+		MaxScore:      int(resp.MaxScore),
+		CategoryID:    resp.CategoryId,
+		CorrectAnswer: resp.GetCorrectAnswer(),
+	}
+
+	switch q := resp.Question.(type) {
+	case *proto.QuestionResponse_Mcq:
+		data, _ := json.Marshal(q.Mcq)
+		response.Question = data
+	case *proto.QuestionResponse_General:
+		data, _ := json.Marshal(q.General)
+		response.Question = data
+	}
+
+	return response
 }

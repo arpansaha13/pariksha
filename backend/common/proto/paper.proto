@@ -16,7 +16,7 @@ service PaperService {
 
   // Question operations
   rpc GetPaperQuestions(PaperRequest) returns (QuestionList) {}
-  rpc GetQuestion(QuestionRequest) returns (QuestionResponse) {}
+  rpc GetPaperQuestion(QuestionRequest) returns (QuestionResponse) {}
   rpc CreateQuestion(CreateQuestionRequest) returns (QuestionResponse) {}
   rpc UpdateQuestion(UpdateQuestionRequest) returns (Empty) {}
   rpc DeleteQuestion(QuestionRequest) returns (Empty) {}

@@ -29,6 +29,29 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response.Papers)
 }
 
+func GetPaper(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	paperID, err := getInt64FromVars(vars, "paperId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	paperService := services.GetPaperService()
+
+	ctx := paperService.CreateMetadata(userID)
+	response, err := paperService.Client().GetPaper(ctx, &proto.PaperRequest{
+		PaperId: paperID,
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 func CreatePaper(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	paperService := services.GetPaperService()
@@ -47,12 +70,12 @@ func CreatePaper(w http.ResponseWriter, r *http.Request) {
 func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 	var paperDto dtos.UpdatePaperDto
 	if err := json.NewDecoder(r.Body).Decode(&paperDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
 	if err := validate.Do.Struct(paperDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
@@ -85,29 +108,6 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
-
-func GetPaper(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	paperID, err := getInt64FromVars(vars, "paperId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	paperService := services.GetPaperService()
-
-	ctx := paperService.CreateMetadata(userID)
-	response, err := paperService.Client().GetPaper(ctx, &proto.PaperRequest{
-		PaperId: paperID,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
 }
 
 func CheckPaperAccess(w http.ResponseWriter, r *http.Request) {

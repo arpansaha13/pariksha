@@ -34,7 +34,7 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Convert proto response to HTTP response
-	httpResponse := make([]dtos.QuestionMinimalResponse, len(response.Questions))
+	httpResponse := make([]dtos.QuestionMinimalResponseDto, len(response.Questions))
 	for i, q := range response.Questions {
 		var questionData json.RawMessage
 		switch q := q.Question.(type) {
@@ -46,7 +46,7 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 			questionData = data
 		}
 
-		httpResponse[i] = dtos.QuestionMinimalResponse{
+		httpResponse[i] = dtos.QuestionMinimalResponseDto{
 			ID:         q.Id,
 			CategoryID: q.CategoryId,
 			PaperID:    q.PaperId,
@@ -59,7 +59,7 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(httpResponse)
 }
 
-func GetQuestion(w http.ResponseWriter, r *http.Request) {
+func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -70,7 +70,7 @@ func GetQuestion(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	response, err := paperService.Client().GetQuestion(ctx, &proto.QuestionRequest{
+	response, err := paperService.Client().GetPaperQuestion(ctx, &proto.QuestionRequest{
 		QuestionId: questionID,
 	})
 
@@ -92,7 +92,7 @@ func GetQuestion(w http.ResponseWriter, r *http.Request) {
 
 	tags, _ := json.Marshal(response.Tags)
 
-	httpResponse := dtos.QuestionResponse{
+	httpResponse := dtos.QuestionResponseDto{
 		ID:            response.Id,
 		Question:      questionData,
 		CategoryID:    response.CategoryId,
@@ -109,16 +109,21 @@ func GetQuestion(w http.ResponseWriter, r *http.Request) {
 
 func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 	paperID, err := getInt64FromVars(mux.Vars(r), "paperId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	var questionDto dtos.CreateQuestionDto
 	if err := json.NewDecoder(r.Body).Decode(&questionDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
 	if err := validate.Do.Struct(questionDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
@@ -155,7 +160,7 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(protoQuestionToResponse(response))
+	json.NewEncoder(w).Encode(mapQuestionToDto(response))
 }
 
 func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
@@ -168,7 +173,7 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 
 	var updateDto dtos.UpdateQuestionDto
 	if err := json.NewDecoder(r.Body).Decode(&updateDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
@@ -257,12 +262,12 @@ func ReorderQuestions(w http.ResponseWriter, r *http.Request) {
 
 	var reorderDto dtos.ReorderQuestionsDto
 	if err := json.NewDecoder(r.Body).Decode(&reorderDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
 	if err := validate.Do.Struct(reorderDto); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
 		return
 	}
 
@@ -285,29 +290,4 @@ func ReorderQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
-
-func protoQuestionToResponse(resp *proto.QuestionResponse) dtos.QuestionResponse {
-	tags, _ := json.Marshal(resp.Tags)
-
-	response := dtos.QuestionResponse{
-		ID:            resp.Id,
-		Type:          resp.Type,
-		Tags:          tags,
-		PaperID:       resp.PaperId,
-		MaxScore:      int(resp.MaxScore),
-		CategoryID:    resp.CategoryId,
-		CorrectAnswer: resp.GetCorrectAnswer(),
-	}
-
-	switch q := resp.Question.(type) {
-	case *proto.QuestionResponse_Mcq:
-		data, _ := json.Marshal(q.Mcq)
-		response.Question = data
-	case *proto.QuestionResponse_General:
-		data, _ := json.Marshal(q.General)
-		response.Question = data
-	}
-
-	return response
 }
