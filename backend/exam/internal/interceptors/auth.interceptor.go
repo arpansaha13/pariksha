@@ -55,9 +55,7 @@ var (
 	}
 
 	requiresEvaluate = map[string]bool{
-		// "/proto.ExamService/GetParticipantAnswers":       true,
-		// "/proto.ExamService/UpdateAnswerForEvaluation":   true,
-		// "/proto.ExamService/MarkParticipantAsEvaluated":            true,
+		"/proto.ExamService/GetAnswerForEvaluation": true,
 	}
 
 	handlerSpecificPermissionChecks = map[string]func(*models.ExamPermissions) bool{
@@ -226,6 +224,16 @@ func getExamIdFromRequest(req any) (*int64, error) {
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return nil, status.Error(codes.NotFound, "answer not found")
+			}
+			return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
+		}
+	case *proto.GetAnswerForEvaluationRequest:
+		if err := db.DB.Model(&models.ExamParticipant{}).
+			Select("exam_id").
+			Where("id = ?", r.ParticipantId).
+			Take(&examID).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return nil, status.Error(codes.NotFound, "participant not found")
 			}
 			return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
 		}

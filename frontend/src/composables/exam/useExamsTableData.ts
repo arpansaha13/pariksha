@@ -19,7 +19,7 @@ export async function useExamsTableData() {
       header: 'Title',
       cell: ({ row }) => {
         const examId = row.original.id
-        const title = row.getValue('title') as string
+        const title = row.getValue<string>('title')
 
         return h(UButton, {
           label: title,
@@ -33,7 +33,7 @@ export async function useExamsTableData() {
       accessorKey: 'starts_at',
       header: 'Starts/Started at',
       cell: ({ row }) => {
-        const startsAt = row.getValue('starts_at') as string
+        const startsAt = row.getValue<string>('starts_at')
         return formatTimeAgo(new Date(startsAt))
       },
     },
@@ -41,7 +41,7 @@ export async function useExamsTableData() {
       accessorKey: 'ends_at',
       header: 'Ends/Ended at',
       cell: ({ row }) => {
-        const endsAt = row.getValue('ends_at') as string
+        const endsAt = row.getValue<string>('ends_at')
         return formatTimeAgo(new Date(endsAt))
       },
     },

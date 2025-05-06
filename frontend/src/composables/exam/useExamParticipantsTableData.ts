@@ -1,8 +1,11 @@
 // import { formatTimeAgo } from '@vueuse/core'
-
-import { UBadge } from '#components'
+import { UBadge, UButton } from '#components'
 import type { TableColumn } from '@nuxt/ui'
-import { ExamParticipantStatus, type ExamParticipantResponse } from '~/types'
+import {
+  ExamParticipantStatus,
+  type ExamParticipantResponse,
+  type ExamPermission,
+} from '~/types'
 
 const participantStatusColors = {
   [ExamParticipantStatus.UNATTENDED]: 'error',
@@ -20,7 +23,10 @@ const participantStatusText = {
   [ExamParticipantStatus.EVALUATED]: 'Evaluated',
 } as const
 
-export async function useExamParticipantsTableData(examId: number) {
+export async function useExamParticipantsTableData(
+  examId: number,
+  examPermission: Ref<ExamPermission | null>
+) {
   const { data: participants } = await useExamParticipants(examId)
 
   // const now = new Date()
@@ -34,8 +40,26 @@ export async function useExamParticipantsTableData(examId: number) {
     {
       header: 'Name',
       cell: ({ row }) => {
+        const participantId = row.original.id
         const name = row.original.first_name + ' ' + row.original.last_name
-        return name
+
+        if (
+          !examPermission.value?.can_evaluate ||
+          [
+            ExamParticipantStatus.UNATTENDED,
+            ExamParticipantStatus.INVITED,
+            ExamParticipantStatus.STARTED,
+          ].includes(row.original.status)
+        ) {
+          return name
+        }
+
+        return h(UButton, {
+          label: name,
+          to: `/exams/${examId}/evaluation/${participantId}`,
+          variant: 'link',
+          ui: { base: 'px-0' },
+        })
       },
     },
     {
@@ -46,7 +70,7 @@ export async function useExamParticipantsTableData(examId: number) {
       accessorKey: 'status',
       header: 'Status',
       cell: ({ row }) => {
-        const statusValue = row.getValue('status') as ExamParticipantStatus
+        const statusValue = row.getValue<ExamParticipantStatus>('status')
         const color = participantStatusColors[statusValue]
 
         return h(

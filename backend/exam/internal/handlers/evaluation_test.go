@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"strconv"
 	"testing"
@@ -15,6 +16,94 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/exam/internal/config/db"
 )
+
+func TestGetAnswerForEvaluation(t *testing.T) {
+	tests := []struct {
+		name         string
+		setup        func(t *testing.T) (*models.Answer, *models.ExamParticipant)
+		metadata     map[string]string
+		request      *proto.GetAnswerForEvaluationRequest
+		expectedCode codes.Code
+		validate     func(t *testing.T, resp *proto.AnswerResponse)
+	}{
+		{
+			name: "Success - Get answer for evaluation",
+			setup: func(t *testing.T) (*models.Answer, *models.ExamParticipant) {
+				exam := createTestExam(t, userID)
+				err := createTestExamParticipants(t, &exam, []struct {
+					UserID int64
+					Status int16
+				}{{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED}})
+				require.NoError(t, err)
+
+				var participant models.ExamParticipant
+				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
+
+				answer := createTestAnswer(t, &participant, 1)
+				return &answer, &participant
+			},
+			metadata: map[string]string{
+				"user_id": strconv.FormatInt(userID, 10),
+			},
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.AnswerResponse) {
+				assert.NotNil(t, resp)
+				assert.True(t, bytes.Equal([]byte(`{"text":"Test Answer"}`), resp.Answer))
+				assert.Equal(t, int32(5), resp.ScoreAwarded)
+				assert.Equal(t, "Test Comment", resp.Comments)
+			},
+		},
+		{
+			name: "Fail - Answer not found",
+			setup: func(t *testing.T) (*models.Answer, *models.ExamParticipant) {
+				exam := createTestExam(t, userID)
+				err := createTestExamParticipants(t, &exam, []struct {
+					UserID int64
+					Status int16
+				}{{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED}})
+				require.NoError(t, err)
+
+				var participant models.ExamParticipant
+				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
+
+				return nil, &participant
+			},
+			metadata: map[string]string{
+				"user_id": strconv.FormatInt(userID, 10),
+			},
+			expectedCode: codes.NotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+			_, participant := tt.setup(t)
+
+			ctx := createContextWithMetadata(tt.metadata)
+			req := &proto.GetAnswerForEvaluationRequest{
+				ParticipantId: participant.ID,
+				QuestionId:    1,
+			}
+
+			if tt.request != nil {
+				req = tt.request
+			}
+
+			resp, err := client.GetAnswerForEvaluation(ctx, req)
+
+			if tt.expectedCode != codes.OK {
+				assert.Equal(t, tt.expectedCode, status.Code(err))
+				return
+			}
+
+			require.NoError(t, err)
+			if tt.validate != nil {
+				tt.validate(t, resp)
+			}
+		})
+	}
+}
 
 func TestUpdateAnswerForEvaluation(t *testing.T) {
 	newScore := int32(8)

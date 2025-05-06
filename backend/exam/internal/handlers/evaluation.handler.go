@@ -129,3 +129,29 @@ func (s *ExamServer) MarkParticipantAsEvaluated(ctx context.Context, req *proto.
 		UnevaluatedCount: int32(unevaluatedCount),
 	}, nil
 }
+
+func (s *ExamServer) GetAnswerForEvaluation(ctx context.Context, req *proto.GetAnswerForEvaluationRequest) (*proto.AnswerResponse, error) {
+	var answer models.Answer
+	if err := db.DB.Where("exam_participant_id = ? AND question_id = ?", req.ParticipantId, req.QuestionId).
+		Take(&answer).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.NotFound, "answer not found")
+		}
+		return nil, status.Error(codes.Internal, "database error")
+	}
+
+	response := &proto.AnswerResponse{
+		Id:                answer.ID,
+		ExamParticipantId: answer.ExamParticipantID,
+		QuestionId:        answer.QuestionID,
+		Answer:            nil,
+		ScoreAwarded:      int32(answer.ScoreAwarded),
+		Comments:          answer.Comments.String,
+	}
+
+	if answer.Answer != nil {
+		response.Answer = *answer.Answer
+	}
+
+	return response, nil
+}

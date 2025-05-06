@@ -118,14 +118,22 @@ import {
 } from '@internationalized/date'
 import { debounceFilter } from '@vueuse/core'
 import { isNullOrUndefined } from '@arpansaha13/utils'
+import type { ExamPermission } from '~/types'
 
 const route = useRoute()
 const examId = parseInt(route.params.examId as string)
 
+const { data: examPermission } = useNuxtData<ExamPermission>(
+  AsyncDataKeys.EXAM_PERMISSION(examId)
+)
+
 const [
   { data: exam },
   { data: participants, columns: participantsTableColumns },
-] = await Promise.all([useExam(examId), useExamParticipantsTableData(examId)])
+] = await Promise.all([
+  useExam(examId),
+  useExamParticipantsTableData(examId, examPermission),
+])
 
 const fullCurrentUrl = ref('')
 const { copy, copied, isSupported } = useClipboard({ source: fullCurrentUrl })
@@ -144,8 +152,8 @@ const isExamStarted = isCalendarBefore(startsAt, now)
 const isExamEnded = isCalendarBefore(endsAt, now)
 
 const df = new DateFormatter('en-US', {
-  dateStyle: isExamEnded ? 'long' : 'medium',
-  timeStyle: isExamEnded ? undefined : 'short',
+  dateStyle: 'long',
+  timeStyle: 'short',
 })
 
 async function updateExamTitle() {

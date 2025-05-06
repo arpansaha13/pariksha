@@ -23,14 +23,17 @@ service ExamService {
   rpc RemoveExamParticipant(RemoveParticipantRequest) returns (Empty) {}
   rpc StartExam(StartExamRequest) returns (Empty) {}
   rpc EndExam(EndExamRequest) returns (Empty) {}
-  rpc MarkParticipantAsEvaluated(ParticipantRequest) returns (EvaluationStatusResponse) {}
   rpc GetExamParticipant(GetExamParticipantRequest) returns (GetExamParticipantResponse) {}
 
   // Answer operations
   rpc GetParticipantAnswers(ParticipantRequest) returns (AnswerList) {}
   rpc GetAnswerForExam(GetAnswerRequest) returns (GetAnswerResponse) {}
   rpc UpsertAnswer(UpsertAnswersRequest) returns (UpsertAnswersResponse) {}
+
+  // Evaluation
+  rpc GetAnswerForEvaluation(GetAnswerForEvaluationRequest) returns (AnswerResponse) {}
   rpc UpdateAnswerForEvaluation(UpdateAnswerRequest) returns (Empty) {}
+  rpc MarkParticipantAsEvaluated(ParticipantRequest) returns (EvaluationStatusResponse) {}
 }
 
 // Exam messages
@@ -216,4 +219,9 @@ message ExamPermissionResponse {
   bool can_participate = 3;
   bool can_evaluate = 4;
   optional int32 participant_status = 5;
+}
+
+message GetAnswerForEvaluationRequest {
+  int64 participant_id = 1;
+  int64 question_id = 2;
 }

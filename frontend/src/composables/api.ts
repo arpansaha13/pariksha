@@ -14,4 +14,6 @@ export { useExamParticipants } from './api/exams/useExamParticipants'
 export { useExamAnswer } from './api/exams/useExamAnswer'
 export { useExamPermission } from './api/exams/useExamPermission'
 
+export { useEvaluationAnswer } from './api/evaluation/useEvaluationAnswer'
+
 export { useAuthUser } from './api/user/useAuthUser'

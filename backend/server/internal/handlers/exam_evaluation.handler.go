@@ -13,6 +13,45 @@ import (
 	"pariksha/server/internal/services"
 )
 
+func GetAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
+	participantID, err := getInt64FromVars(mux.Vars(r), "participantId")
+	if err != nil {
+		http.Error(w, "Invalid participant ID", http.StatusBadRequest)
+		return
+	}
+
+	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
+	if err != nil {
+		http.Error(w, "Invalid participant ID", http.StatusBadRequest)
+		return
+	}
+
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	examService := services.GetExamService()
+	ctx := examService.CreateMetadata(userID)
+
+	resp, err := examService.Client().GetAnswerForEvaluation(ctx, &proto.GetAnswerForEvaluationRequest{
+		ParticipantId: participantID,
+		QuestionId:    questionID,
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	answer := dtos.AnswerResponseDto{
+		ID:                resp.Id,
+		ExamParticipantID: resp.ExamParticipantId,
+		QuestionID:        resp.QuestionId,
+		Answer:            resp.Answer,
+		ScoreAwarded:      int(resp.ScoreAwarded),
+		Comments:          resp.Comments,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(answer)
+}
+
 func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 	var updateDTO dtos.UpdateAnswerForEvaluationDto
 	if err := json.NewDecoder(r.Body).Decode(&updateDTO); err != nil {

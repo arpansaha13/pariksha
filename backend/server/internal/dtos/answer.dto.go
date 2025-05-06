@@ -30,8 +30,3 @@ type UpdateAnswerForEvaluationDto struct {
 	Evaluated *bool   `json:"evaluated"`
 	Comments  *string `json:"comments"`
 }
-
-type GetAnswerForEvaluationDto struct {
-	ParticipantID int64 `json:"participantId" validate:"required"`
-	QuestionID    int64 `json:"questionId" validate:"required"`
-}

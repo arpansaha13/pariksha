@@ -37,6 +37,7 @@ const (
 	ExamService_GetAnswerForExam_FullMethodName           = "/proto.ExamService/GetAnswerForExam"
 	ExamService_UpsertAnswer_FullMethodName               = "/proto.ExamService/UpsertAnswer"
 	ExamService_UpdateAnswerForEvaluation_FullMethodName  = "/proto.ExamService/UpdateAnswerForEvaluation"
+	ExamService_GetAnswerForEvaluation_FullMethodName     = "/proto.ExamService/GetAnswerForEvaluation"
 )
 
 // ExamServiceClient is the client API for ExamService service.
@@ -64,6 +65,7 @@ type ExamServiceClient interface {
 	GetAnswerForExam(ctx context.Context, in *GetAnswerRequest, opts ...grpc.CallOption) (*GetAnswerResponse, error)
 	UpsertAnswer(ctx context.Context, in *UpsertAnswersRequest, opts ...grpc.CallOption) (*UpsertAnswersResponse, error)
 	UpdateAnswerForEvaluation(ctx context.Context, in *UpdateAnswerRequest, opts ...grpc.CallOption) (*Empty, error)
+	GetAnswerForEvaluation(ctx context.Context, in *GetAnswerForEvaluationRequest, opts ...grpc.CallOption) (*AnswerResponse, error)
 }
 
 type examServiceClient struct {
@@ -254,6 +256,16 @@ func (c *examServiceClient) UpdateAnswerForEvaluation(ctx context.Context, in *U
 	return out, nil
 }
 
+func (c *examServiceClient) GetAnswerForEvaluation(ctx context.Context, in *GetAnswerForEvaluationRequest, opts ...grpc.CallOption) (*AnswerResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AnswerResponse)
+	err := c.cc.Invoke(ctx, ExamService_GetAnswerForEvaluation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ExamServiceServer is the server API for ExamService service.
 // All implementations must embed UnimplementedExamServiceServer
 // for forward compatibility.
@@ -279,6 +291,7 @@ type ExamServiceServer interface {
 	GetAnswerForExam(context.Context, *GetAnswerRequest) (*GetAnswerResponse, error)
 	UpsertAnswer(context.Context, *UpsertAnswersRequest) (*UpsertAnswersResponse, error)
 	UpdateAnswerForEvaluation(context.Context, *UpdateAnswerRequest) (*Empty, error)
+	GetAnswerForEvaluation(context.Context, *GetAnswerForEvaluationRequest) (*AnswerResponse, error)
 	mustEmbedUnimplementedExamServiceServer()
 }
 
@@ -342,6 +355,9 @@ func (UnimplementedExamServiceServer) UpsertAnswer(context.Context, *UpsertAnswe
 }
 func (UnimplementedExamServiceServer) UpdateAnswerForEvaluation(context.Context, *UpdateAnswerRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateAnswerForEvaluation not implemented")
+}
+func (UnimplementedExamServiceServer) GetAnswerForEvaluation(context.Context, *GetAnswerForEvaluationRequest) (*AnswerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAnswerForEvaluation not implemented")
 }
 func (UnimplementedExamServiceServer) mustEmbedUnimplementedExamServiceServer() {}
 func (UnimplementedExamServiceServer) testEmbeddedByValue()                     {}
@@ -688,6 +704,24 @@ func _ExamService_UpdateAnswerForEvaluation_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ExamService_GetAnswerForEvaluation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAnswerForEvaluationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExamServiceServer).GetAnswerForEvaluation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExamService_GetAnswerForEvaluation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExamServiceServer).GetAnswerForEvaluation(ctx, req.(*GetAnswerForEvaluationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ExamService_ServiceDesc is the grpc.ServiceDesc for ExamService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -766,6 +800,10 @@ var ExamService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateAnswerForEvaluation",
 			Handler:    _ExamService_UpdateAnswerForEvaluation_Handler,
+		},
+		{
+			MethodName: "GetAnswerForEvaluation",
+			Handler:    _ExamService_GetAnswerForEvaluation_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
