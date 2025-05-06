@@ -1,9 +1,10 @@
 import type { Paper } from '~/types/paper'
 
 export async function createPaper() {
-  const res = await $fetch<string>('/api/papers', {
+  const { $api } = useNuxtApp()
+
+  const res = await $api<string>('/api/papers', {
     method: 'POST',
-    ...getFetchOptions(),
   })
 
   return JSON.parse(res) as Paper

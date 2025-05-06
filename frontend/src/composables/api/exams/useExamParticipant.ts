@@ -1,10 +1,10 @@
 import type { ExamParticipant } from '~/types'
 
 export function useExamParticipant(examId: number) {
-  const fetchOptions = getFetchOptions()
+  const { $api } = useNuxtApp()
 
   return useAsyncData<ExamParticipant>(
     AsyncDataKeys.EXAM_PARTICIPANT(examId),
-    () => $fetch(`/api/exams/${examId}/participants/current`, fetchOptions)
+    () => $api(`/api/exams/${examId}/participants/current`)
   )
 }

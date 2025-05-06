@@ -9,6 +9,8 @@ export async function updateCategory(
   paperId: number,
   body: UpdateCategoryBody
 ): Promise<void> {
+  const { $api } = useNuxtApp()
+
   const { data: categories } = useNuxtData<QuestionCategory[]>(
     AsyncDataKeys.PAPERS_PAPER_CATEGORIES(paperId)
   )
@@ -20,10 +22,9 @@ export async function updateCategory(
   )
 
   try {
-    await $fetch(`/api/categories/${categoryId}`, {
+    await $api(`/api/categories/${categoryId}`, {
       method: 'PATCH',
       body,
-      ...getFetchOptions(),
     })
 
     await refreshNuxtData(AsyncDataKeys.PAPERS_PAPER_CATEGORIES(paperId))

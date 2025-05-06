@@ -10,10 +10,11 @@ interface CreateExamBody {
 }
 
 export async function createExam(body: CreateExamBody) {
-  const res = await $fetch<string>('/api/exams', {
+  const { $api } = useNuxtApp()
+
+  const res = await $api<string>('/api/exams', {
     method: 'POST',
     body,
-    ...getFetchOptions(),
   })
 
   return JSON.parse(res) as Exam

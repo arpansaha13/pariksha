@@ -5,7 +5,7 @@ export function useExamAnswer(
   examId: number,
   questionId: ComputedRef<number | null>
 ) {
-  const fetchOptions = getFetchOptions()
+  const { $api } = useNuxtApp()
 
   const useExamAnswerKey = computed(() =>
     AsyncDataKeys.EXAM_ANSWER(examId, questionId.value)
@@ -18,9 +18,8 @@ export function useExamAnswer(
         return Promise.resolve(null)
       }
 
-      return $fetch<AnswerMinimal>(
-        `/api/exams/${examId}/questions/${questionId.value}/answer`,
-        fetchOptions
+      return $api<AnswerMinimal>(
+        `/api/exams/${examId}/questions/${questionId.value}/answer`
       )
     },
     { server: false }

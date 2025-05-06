@@ -4,15 +4,10 @@ interface CheckAuthResponse {
 
 export default defineNuxtRouteMiddleware(async (to, _from) => {
   const isUnprotectedRoute = to.path.startsWith('/auth')
+  const { $api } = useNuxtApp()
 
   if (import.meta.server) {
-    const fetchOptions = getFetchOptions()
-    fetchOptions.cache = 'no-cache'
-
-    const { valid } = await $fetch<CheckAuthResponse>(
-      '/api/check-auth',
-      fetchOptions
-    )
+    const { valid } = await $api<CheckAuthResponse>('/api/check-auth')
 
     if (valid && isUnprotectedRoute) {
       return navigateTo('/')

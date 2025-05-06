@@ -1,6 +1,7 @@
 export function startExam(examId: number) {
-  return $fetch(`/api/exams/${examId}/start`, {
+  const { $api } = useNuxtApp()
+
+  return $api(`/api/exams/${examId}/start`, {
     method: 'PATCH',
-    ...getFetchOptions(),
   })
 }

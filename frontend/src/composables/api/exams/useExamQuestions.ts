@@ -1,15 +1,11 @@
 import type { ExamQuestionMinimal } from '~/types'
 
 export function useExamQuestions(examId: number) {
-  const fetchOptions = getFetchOptions()
+  const { $api } = useNuxtApp()
 
   return useAsyncData(
     AsyncDataKeys.EXAM_QUESTIONS(examId),
-    () =>
-      $fetch<ExamQuestionMinimal[]>(
-        `/api/exams/${examId}/questions`,
-        fetchOptions
-      ),
+    () => $api<ExamQuestionMinimal[]>(`/api/exams/${examId}/questions`),
     {
       transform: questions => {
         const byCategory = {} as Record<number, ExamQuestionMinimal[]>

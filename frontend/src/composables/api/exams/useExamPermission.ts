@@ -1,11 +1,10 @@
 import type { ExamPermission } from '~/types/exam'
 
 export function useExamPermission(examId: number) {
-  const fetchOptions = getFetchOptions()
-  fetchOptions.cache = 'no-cache'
+  const { $api } = useNuxtApp()
 
   return useAsyncData<ExamPermission>(
     AsyncDataKeys.EXAM_PERMISSION(examId),
-    () => $fetch(`/api/exams/${examId}/permission`, fetchOptions)
+    () => $api(`/api/exams/${examId}/permission`)
   )
 }

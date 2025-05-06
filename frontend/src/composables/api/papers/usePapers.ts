@@ -1,9 +1,7 @@
 import type { Paper } from '~/types'
 
 export function usePapers() {
-  const fetchOptions = getFetchOptions()
+  const { $api } = useNuxtApp()
 
-  return useAsyncData<Paper[]>(AsyncDataKeys.PAPERS, () =>
-    $fetch('/api/papers', fetchOptions)
-  )
+  return useAsyncData<Paper[]>(AsyncDataKeys.PAPERS, () => $api('/api/papers'))
 }

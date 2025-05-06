@@ -8,10 +8,11 @@ interface UpdateExamBody {
 }
 
 export async function updateExam(examId: number, body: UpdateExamBody) {
-  const res = await $fetch<string>(`/api/exams/${examId}`, {
+  const { $api } = useNuxtApp()
+
+  const res = await $api<string>(`/api/exams/${examId}`, {
     method: 'PATCH',
     body,
-    ...getFetchOptions(),
   })
 
   return JSON.parse(res) as Exam

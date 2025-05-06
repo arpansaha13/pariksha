@@ -5,6 +5,8 @@ export async function deleteQuestion(
   paperId: number,
   categoryId: number
 ): Promise<void> {
+  const { $api } = useNuxtApp()
+
   const { data: groupedQuestions } = useNuxtData<
     Record<number, QuestionMinimal[]>
   >(AsyncDataKeys.PAPERS_PAPER_QUESTIONS(paperId))
@@ -18,9 +20,8 @@ export async function deleteQuestion(
   categoryQuestions.splice(questionIdx, 1)
 
   try {
-    await $fetch(`/api/questions/${questionId}`, {
+    await $api(`/api/questions/${questionId}`, {
       method: 'DELETE',
-      ...getFetchOptions(),
     })
 
     // Refresh paper data since max_score and question_counts change

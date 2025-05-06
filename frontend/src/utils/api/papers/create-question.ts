@@ -29,10 +29,11 @@ export async function createQuestion(
   paperId: number,
   body: CreateQuestionBody
 ): Promise<void> {
-  await $fetch<Question>(`/api/papers/${paperId}/questions`, {
+  const { $api } = useNuxtApp()
+
+  await $api<Question>(`/api/papers/${paperId}/questions`, {
     method: 'POST',
     body,
-    ...getFetchOptions(),
   })
 
   // Refresh both questions and paper data since max_score and question_counts change

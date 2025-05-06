@@ -8,6 +8,8 @@ export async function updateQuestion(
   paperId: number,
   newData: UpdateQuestionBody
 ): Promise<void> {
+  const { $api } = useNuxtApp()
+
   const { data: question } = useNuxtData<Question>(
     AsyncDataKeys.QUESTION(questionId)
   )
@@ -42,10 +44,9 @@ export async function updateQuestion(
   }
 
   try {
-    await $fetch(`/api/questions/${questionId}`, {
+    await $api(`/api/questions/${questionId}`, {
       method: 'PATCH',
       body: requestBody,
-      ...getFetchOptions(),
     })
 
     const refreshPromises = [

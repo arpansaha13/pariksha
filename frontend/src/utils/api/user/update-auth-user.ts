@@ -7,10 +7,12 @@ export interface UpdateUserPayload {
 }
 
 export async function updateAuthUser(body: UpdateUserPayload) {
-  await $fetch<User>(`/api/users/me`, {
+  const { $api } = useNuxtApp()
+
+  await $api<User>(`/api/users/me`, {
     method: 'PATCH',
     body,
-    ...getFetchOptions(),
   })
+
   return refreshNuxtData(AsyncDataKeys.AUTH_USER)
 }

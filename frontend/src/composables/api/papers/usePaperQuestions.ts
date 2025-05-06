@@ -1,15 +1,11 @@
 import type { QuestionMinimal } from '~/types'
 
 export function usePaperQuestions(paperId: number) {
-  const fetchOptions = getFetchOptions()
+  const { $api } = useNuxtApp()
 
   return useAsyncData(
     AsyncDataKeys.PAPERS_PAPER_QUESTIONS(paperId),
-    () =>
-      $fetch<QuestionMinimal[]>(
-        `/api/papers/${paperId}/questions`,
-        fetchOptions
-      ),
+    () => $api<QuestionMinimal[]>(`/api/papers/${paperId}/questions`),
     {
       transform: questions => {
         const byCategory = {} as Record<number, QuestionMinimal[]>

@@ -4,6 +4,8 @@ export async function reorderCategories(
   paperId: number,
   categoryIds: number[]
 ): Promise<void> {
+  const { $api } = useNuxtApp()
+
   const { data: storedCategories } = useNuxtData<QuestionCategory[]>(
     AsyncDataKeys.PAPERS_PAPER_CATEGORIES(paperId)
   )
@@ -16,10 +18,9 @@ export async function reorderCategories(
   )
 
   try {
-    await $fetch(`/api/papers/${paperId}/categories/reorder`, {
+    await $api(`/api/papers/${paperId}/categories/reorder`, {
       method: 'PATCH',
       body: { categories: categoryIds },
-      ...getFetchOptions(),
     })
     await refreshNuxtData(AsyncDataKeys.PAPERS_PAPER_CATEGORIES(paperId))
   } catch {

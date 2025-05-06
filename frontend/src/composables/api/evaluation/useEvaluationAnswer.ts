@@ -5,7 +5,7 @@ export function useEvaluationAnswer(
   participantId: number,
   questionId: ComputedRef<number | null>
 ) {
-  const fetchOptions = getFetchOptions()
+  const { $api } = useNuxtApp()
 
   const useEvaluationAnswerKey = computed(() =>
     AsyncDataKeys.EXAM_ANSWER(participantId, questionId.value)
@@ -18,9 +18,8 @@ export function useEvaluationAnswer(
         return Promise.resolve(null)
       }
 
-      return $fetch<Answer>(
-        `/api/participants/${participantId}/questions/${questionId.value}/answer`,
-        fetchOptions
+      return $api<Answer>(
+        `/api/participants/${participantId}/questions/${questionId.value}/answer`
       )
     },
     { server: false }
