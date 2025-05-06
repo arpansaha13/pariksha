@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -34,7 +35,7 @@ func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.Parti
 			Id:                answer.ID,
 			ExamParticipantId: answer.ExamParticipantID,
 			QuestionId:        answer.QuestionID,
-			Answer:            answer.Answer,
+			Answer:            *answer.Answer,
 			Comments:          answer.Comments.String,
 			ScoreAwarded:      int32(answer.ScoreAwarded),
 		}
@@ -51,16 +52,19 @@ func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerR
 	}
 
 	var answer models.Answer
-	if err := db.DB.Where("exam_participant_id = ? AND question_id = ?", participant.ID, req.QuestionId).Take(&answer).Error; err != nil {
+	if err := db.DB.Where("exam_participant_id = ? AND question_id = ? AND answer IS NOT NULL",
+		participant.ID, req.QuestionId).Take(&answer).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, status.Error(codes.NotFound, "answer not found")
+			return &proto.GetAnswerResponse{
+				QuestionId: req.QuestionId,
+			}, nil
 		}
 		return nil, status.Error(codes.Internal, "database error")
 	}
 
 	return &proto.GetAnswerResponse{
 		Id:         answer.ID,
-		Answer:     answer.Answer,
+		Answer:     *answer.Answer,
 		QuestionId: answer.QuestionID,
 	}, nil
 }
@@ -91,9 +95,15 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 	}
 	questionType := questionTypes[0]
 
-	// Validate answer JSON based on question type
-	if err := validateAnswerJSON(req.Answer.Answer, questionType); err != nil {
-		return nil, err
+	// Convert answer bytes to *json.RawMessage
+	var answerContent *json.RawMessage
+	if req.Answer.Answer != nil && len(req.Answer.Answer) > 0 {
+		// Validate answer JSON based on question type
+		if err := validateAnswerJSON(req.Answer.Answer, questionType); err != nil {
+			return nil, err
+		}
+		raw := json.RawMessage(req.Answer.Answer)
+		answerContent = &raw
 	}
 
 	var answer models.Answer
@@ -103,7 +113,7 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 			answer = models.Answer{
 				ExamParticipantID: participant.ID,
 				QuestionID:        req.Answer.QuestionId,
-				Answer:            req.Answer.Answer,
+				Answer:            answerContent,
 			}
 			if err := db.DB.Create(&answer).Error; err != nil {
 				return nil, status.Error(codes.Internal, "failed to create answer")
@@ -113,7 +123,7 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 		}
 	} else {
 		// Update existing answer
-		answer.Answer = req.Answer.Answer
+		answer.Answer = answerContent
 		if err := db.DB.Save(&answer).Error; err != nil {
 			return nil, status.Error(codes.Internal, "failed to update answer")
 		}

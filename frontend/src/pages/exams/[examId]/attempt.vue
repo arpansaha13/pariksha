@@ -53,6 +53,7 @@
           v-if="!isNullOrUndefined(currentQuestionId)"
           :current-question-id="currentQuestionId"
           :current-category-questions="currentCategoryQuestions"
+          :save-and-navigate-to="saveAndNavigateTo"
         />
       </UCard>
     </div>
@@ -76,17 +77,26 @@
     >
       <UButton
         v-if="prevQuestionId"
-        replace
         label="Previous"
         color="neutral"
         variant="outline"
-        :to="{ query: { ...route.query, question: prevQuestionId } }"
+        @click="
+          saveAndNavigateTo(
+            { query: { ...route.query, question: prevQuestionId } },
+            { replace: true }
+          )
+        "
       />
       <UButton
         v-if="nextQuestionId"
         label="Save and next"
         class="ml-auto"
-        :to="{ query: { ...route.query, question: nextQuestionId } }"
+        @click="
+          saveAndNavigateTo(
+            { query: { ...route.query, question: nextQuestionId } },
+            { replace: true }
+          )
+        "
       />
       <UButton
         v-else
@@ -192,9 +202,13 @@ const [{ data: question }, { data: answer }] = await Promise.all([
 const { answerStates, saveAnswer } = useExamSaveAnswer({
   examId,
   answer,
-  question,
   groupedQuestions,
 })
+
+const saveAndNavigateTo = (async (to, options) => {
+  saveAnswer(question.value!)
+  return navigateTo(to, options)
+}) as typeof navigateTo
 
 // ___________________AUTO-END EXAM ON TIMEOUT____________________
 const isExamEnded = ref(false)
@@ -206,6 +220,10 @@ const { remaining: redirectCountdown, start: startRedirectCountdown } =
   })
 
 async function handleExamSubmit() {
+  // NOTE: The last question may not be saved if user doesn't navigate
+  // to any other question before submitting.
+  // So manually call `saveAnswer` before submission.
+
   await saveAnswer(question.value!)
   await endExam(examId)
   isExamEnded.value = true

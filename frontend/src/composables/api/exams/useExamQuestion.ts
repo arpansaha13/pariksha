@@ -1,5 +1,5 @@
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import { QuestionId, type Question } from '~/types'
+import type { Question } from '~/types'
 
 export function useExamQuestion(questionId: ComputedRef<number | null>) {
   const fetchOptions = getFetchOptions()
@@ -10,7 +10,6 @@ export function useExamQuestion(questionId: ComputedRef<number | null>) {
 
   return useAsyncData(useExamQuestionKey, async () => {
     if (isNullOrUndefined(questionId.value)) return Promise.resolve(null)
-    if (questionId.value === QuestionId.ADD) return Promise.resolve(null)
 
     const data = await $fetch<Question>(
       `/api/exams/questions/${questionId.value}`,

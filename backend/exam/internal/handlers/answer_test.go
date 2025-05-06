@@ -158,7 +158,19 @@ func TestGetAnswerForExam(t *testing.T) {
 			},
 		},
 		{
-			name: "Fail - Answer not found",
+			name: "Fail - User not a participant",
+			setup: func(t *testing.T) (*models.Exam, int64) {
+				exam := createTestExam(t, 2)
+				return &exam, 1
+			},
+			metadata: map[string]string{
+				"user_id":        strconv.FormatInt(userID, 10),
+				"question_score": "10",
+			},
+			expectedCode: codes.PermissionDenied,
+		},
+		{
+			name: "Success - Answer not found returns empty response",
 			setup: func(t *testing.T) (*models.Exam, int64) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []struct {
@@ -172,19 +184,12 @@ func TestGetAnswerForExam(t *testing.T) {
 				"user_id":        strconv.FormatInt(userID, 10),
 				"question_score": "10",
 			},
-			expectedCode: codes.NotFound,
-		},
-		{
-			name: "Fail - User not a participant",
-			setup: func(t *testing.T) (*models.Exam, int64) {
-				exam := createTestExam(t, 2)
-				return &exam, 1
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.GetAnswerResponse) {
+				assert.Equal(t, int64(9999), resp.QuestionId)
+				assert.Zero(t, resp.Id)
+				assert.Nil(t, resp.Answer)
 			},
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-			},
-			expectedCode: codes.PermissionDenied,
 		},
 	}
 
@@ -264,7 +269,7 @@ func TestUpsertAnswer(t *testing.T) {
 				var answerData struct {
 					Text string `json:"text"`
 				}
-				require.NoError(t, json.Unmarshal(answer.Answer, &answerData))
+				require.NoError(t, json.Unmarshal(*answer.Answer, &answerData))
 				assert.Equal(t, "Test answer content", answerData.Text)
 				assert.Equal(t, int64(1), answer.QuestionID)
 			},
@@ -316,7 +321,7 @@ func TestUpsertAnswer(t *testing.T) {
 				var answerData struct {
 					Text string `json:"text"`
 				}
-				require.NoError(t, json.Unmarshal(answer.Answer, &answerData))
+				require.NoError(t, json.Unmarshal(*answer.Answer, &answerData))
 				assert.Equal(t, "Updated answer content", answerData.Text)
 			},
 		},
@@ -401,6 +406,169 @@ func TestUpsertAnswer(t *testing.T) {
 				"question_type":  constants.QUESTION_TYPE_LONG,
 			},
 			expectedCode: codes.FailedPrecondition,
+		},
+		{
+			name: "Success - Empty answer for SHORT question",
+			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
+				exam := createTestExam(t, 2)
+				err := createTestExamParticipants(t, &exam, []struct {
+					UserID int64
+					Status int16
+				}{
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
+				})
+				require.NoError(t, err)
+
+				var participant models.ExamParticipant
+				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
+				participant.ScheduledEndTime = sql.NullTime{Time: time.Now().Add(time.Hour), Valid: true}
+				require.NoError(t, db.DB.Save(&participant).Error)
+
+				return &participant, &proto.UpsertAnswersRequest{
+					ExamId: exam.ID,
+					Answer: &proto.Answer{
+						QuestionId:  1,
+						Answer:      []byte(`{"text": ""}`),
+						SubmittedAt: timestamppb.Now(),
+					},
+				}
+			},
+			userID: userID,
+			metadata: map[string]string{
+				"user_id":        strconv.FormatInt(userID, 10),
+				"question_score": "10",
+				"question_type":  constants.QUESTION_TYPE_SHORT,
+			},
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.UpsertAnswersResponse) {
+				assert.NotZero(t, resp.AnswerId)
+
+				var answer models.Answer
+				require.NoError(t, db.DB.First(&answer, resp.AnswerId).Error)
+				var answerData struct {
+					Text string `json:"text"`
+				}
+				require.NoError(t, json.Unmarshal(*answer.Answer, &answerData))
+				assert.Equal(t, "", answerData.Text)
+			},
+		},
+		{
+			name: "Success - Nil answer clears the answer",
+			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
+				exam := createTestExam(t, 2)
+				err := createTestExamParticipants(t, &exam, []struct {
+					UserID int64
+					Status int16
+				}{
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
+				})
+				require.NoError(t, err)
+
+				var participant models.ExamParticipant
+				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
+				participant.ScheduledEndTime = sql.NullTime{Time: time.Now().Add(time.Hour), Valid: true}
+				require.NoError(t, db.DB.Save(&participant).Error)
+
+				// First create an answer
+				answer := createTestAnswer(t, &participant, 1)
+
+				return &participant, &proto.UpsertAnswersRequest{
+					ExamId: exam.ID,
+					Answer: &proto.Answer{
+						QuestionId:  answer.QuestionID,
+						Answer:      nil, // Explicit nil answer
+						SubmittedAt: timestamppb.Now(),
+					},
+				}
+			},
+			userID: userID,
+			metadata: map[string]string{
+				"user_id":        strconv.FormatInt(userID, 10),
+				"question_score": "10",
+				"question_type":  constants.QUESTION_TYPE_MCQ,
+			},
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.UpsertAnswersResponse) {
+				assert.NotZero(t, resp.AnswerId)
+
+				var answer models.Answer
+				require.NoError(t, db.DB.First(&answer, resp.AnswerId).Error)
+				assert.Nil(t, answer.Answer)
+			},
+		},
+		{
+			name: "Fail - Empty MCQ answer is invalid",
+			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
+				exam := createTestExam(t, 2)
+				err := createTestExamParticipants(t, &exam, []struct {
+					UserID int64
+					Status int16
+				}{
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
+				})
+				require.NoError(t, err)
+
+				var participant models.ExamParticipant
+				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
+				participant.ScheduledEndTime = sql.NullTime{Time: time.Now().Add(time.Hour), Valid: true}
+				require.NoError(t, db.DB.Save(&participant).Error)
+
+				// First create an answer
+				answer := createTestAnswer(t, &participant, 1)
+
+				return &participant, &proto.UpsertAnswersRequest{
+					ExamId: exam.ID,
+					Answer: &proto.Answer{
+						QuestionId:  answer.QuestionID,
+						Answer:      []byte(`{}`), // Empty answer object
+						SubmittedAt: timestamppb.Now(),
+					},
+				}
+			},
+			userID: userID,
+			metadata: map[string]string{
+				"user_id":        strconv.FormatInt(userID, 10),
+				"question_score": "10",
+				"question_type":  constants.QUESTION_TYPE_MCQ,
+			},
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name: "Fail - Nil optionIndex in MCQ answer is invalid",
+			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
+				exam := createTestExam(t, 2)
+				err := createTestExamParticipants(t, &exam, []struct {
+					UserID int64
+					Status int16
+				}{
+					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
+				})
+				require.NoError(t, err)
+
+				var participant models.ExamParticipant
+				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
+				participant.ScheduledEndTime = sql.NullTime{Time: time.Now().Add(time.Hour), Valid: true}
+				require.NoError(t, db.DB.Save(&participant).Error)
+
+				// First create an answer
+				answer := createTestAnswer(t, &participant, 1)
+
+				return &participant, &proto.UpsertAnswersRequest{
+					ExamId: exam.ID,
+					Answer: &proto.Answer{
+						QuestionId:  answer.QuestionID,
+						Answer:      []byte(`{"optionIndex": null}`), // explicit null for optionIndex
+						SubmittedAt: timestamppb.Now(),
+					},
+				}
+			},
+			userID: userID,
+			metadata: map[string]string{
+				"user_id":        strconv.FormatInt(userID, 10),
+				"question_score": "10",
+				"question_type":  constants.QUESTION_TYPE_MCQ,
+			},
+			expectedCode: codes.InvalidArgument,
 		},
 	}
 

@@ -7,18 +7,18 @@ import (
 )
 
 type Answer struct {
-	ID                int64           `gorm:"primaryKey;type:bigint"`
-	ExamParticipantID int64           `gorm:"type:bigint"`
-	QuestionID        int64           `gorm:"type:bigint"`
-	Answer            json.RawMessage `gorm:"type:json"`
-	ScoreAwarded      int             `gorm:"default:0;not null"`
-	Comments          sql.NullString  `gorm:"type:text"`
-	Evaluated         bool            `gorm:"default:false;not null"`
-	ExamParticipant   ExamParticipant `gorm:"foreignKey:ExamParticipantID"`
+	ID                int64            `gorm:"primaryKey;type:bigint"`
+	ExamParticipantID int64            `gorm:"type:bigint"`
+	QuestionID        int64            `gorm:"type:bigint"`
+	Answer            *json.RawMessage `gorm:"type:json"`
+	ScoreAwarded      int              `gorm:"default:0;not null"`
+	Comments          sql.NullString   `gorm:"type:text"`
+	Evaluated         bool             `gorm:"default:false;not null"`
+	ExamParticipant   ExamParticipant  `gorm:"foreignKey:ExamParticipantID"`
 }
 
 type MCQAnswer struct {
-	OptionIndex int `json:"optionIndex"`
+	OptionIndex *int `json:"optionIndex"`
 }
 
 type GeneralAnswer struct {

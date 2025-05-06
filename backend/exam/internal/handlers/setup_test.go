@@ -266,10 +266,11 @@ func createTestExamParticipants(t *testing.T, exam *models.Exam, participants []
 }
 
 func createTestAnswer(t *testing.T, examParticipant *models.ExamParticipant, questionID int64) models.Answer {
+	rawAnswer := json.RawMessage(`{"text": "Test Answer"}`)
 	answer := models.Answer{
 		ExamParticipantID: examParticipant.ID,
 		QuestionID:        questionID,
-		Answer:            []byte(`{"text": "Test Answer"}`),
+		Answer:            &rawAnswer,
 		Comments:          sql.NullString{String: "Test Comment", Valid: true},
 		ScoreAwarded:      5,
 		Evaluated:         true,

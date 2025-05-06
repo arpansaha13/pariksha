@@ -126,7 +126,7 @@ message EvaluationStatusResponse {
 
 // Answer messages
 message Answer {
-  bytes answer = 1;  // JSON encoded answer
+  optional bytes answer = 1;  // JSON encoded answer, can be nil
   google.protobuf.Timestamp submitted_at = 2;
   int64 question_id = 3;
 }

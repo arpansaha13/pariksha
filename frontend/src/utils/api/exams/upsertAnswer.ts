@@ -2,7 +2,8 @@ import type { GeneralAnswer, MCQAnswer } from '~/types'
 
 interface UpsertAnswerBody {
   question_id: number
-  answer: MCQAnswer | GeneralAnswer
+  /** `null` answers clears the saved answer */
+  answer: MCQAnswer | GeneralAnswer | null
 }
 
 export async function upsertAnswer(examId: number, body: UpsertAnswerBody) {

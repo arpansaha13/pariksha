@@ -128,15 +128,21 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 	})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 
-	examService := services.GetExamService()
-	resp, err := examService.Client().UpsertAnswer(ctx, &proto.UpsertAnswersRequest{
+	upsertAnswerRequest := &proto.UpsertAnswersRequest{
 		ExamId: examID,
 		Answer: &proto.Answer{
-			Answer:      answerDTO.Answer,
+			Answer:      nil,
 			SubmittedAt: timestamppb.Now(),
 			QuestionId:  answerDTO.QuestionID,
 		},
-	})
+	}
+
+	if answerDTO.Answer != nil {
+		upsertAnswerRequest.Answer.Answer = *answerDTO.Answer
+	}
+
+	examService := services.GetExamService()
+	resp, err := examService.Client().UpsertAnswer(ctx, upsertAnswerRequest)
 	if err != nil {
 		handleGRPCError(w, err)
 		return

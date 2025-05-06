@@ -5,8 +5,8 @@ import (
 )
 
 type UpsertAnswerDto struct {
-	Answer     json.RawMessage `json:"answer" validate:"required"`
-	QuestionID int64           `json:"question_id" validate:"required"`
+	Answer     *json.RawMessage `json:"answer"`
+	QuestionID int64            `json:"question_id" validate:"required"`
 }
 
 type AnswerResponseDto struct {
@@ -29,4 +29,9 @@ type UpdateAnswerForEvaluationDto struct {
 	NewScore  *int    `json:"new_score"`
 	Evaluated *bool   `json:"evaluated"`
 	Comments  *string `json:"comments"`
+}
+
+type GetAnswerForEvaluationDto struct {
+	ParticipantID int64 `json:"participantId" validate:"required"`
+	QuestionID    int64 `json:"questionId" validate:"required"`
 }
