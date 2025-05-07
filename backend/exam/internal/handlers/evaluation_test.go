@@ -54,7 +54,7 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 			},
 		},
 		{
-			name: "Fail - Answer not found",
+			name: "Success - Answer not found returns empty response",
 			setup: func(t *testing.T) (*models.Answer, *models.ExamParticipant) {
 				exam := createTestExam(t, userID)
 				err := createTestExamParticipants(t, &exam, []struct {
@@ -71,7 +71,80 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 			metadata: map[string]string{
 				"user_id": strconv.FormatInt(userID, 10),
 			},
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.AnswerResponse) {
+				assert.NotNil(t, resp)
+				assert.Equal(t, int64(0), resp.Id)
+				assert.Equal(t, int64(0), resp.ExamParticipantId)
+				assert.Empty(t, resp.Answer)
+				assert.Equal(t, int32(0), resp.ScoreAwarded)
+				assert.Empty(t, resp.Comments)
+			},
+		},
+		{
+			name: "Fail - Participant does not exist",
+			setup: func(t *testing.T) (*models.Answer, *models.ExamParticipant) {
+				return nil, &models.ExamParticipant{ID: 99999} // Non-existent ID
+			},
+			metadata: map[string]string{
+				"user_id": strconv.FormatInt(userID, 10),
+			},
 			expectedCode: codes.NotFound,
+		},
+		{
+			name: "Fail - Exam not ended",
+			setup: func(t *testing.T) (*models.Answer, *models.ExamParticipant) {
+				exam := createTestExam(t, userID)
+				err := createTestExamParticipants(t, &exam, []struct {
+					UserID int64
+					Status int16
+				}{{UserID: 2, Status: constants.PARTICIPANT_STATUS_STARTED}}) // Participant still in STARTED state
+				require.NoError(t, err)
+
+				var participant models.ExamParticipant
+				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
+
+				answer := createTestAnswer(t, &participant, 1)
+				return &answer, &participant
+			},
+			metadata: map[string]string{
+				"user_id": strconv.FormatInt(userID, 10),
+			},
+			expectedCode: codes.FailedPrecondition,
+		},
+		{
+			name: "Success - Question ID does not exist returns empty response",
+			setup: func(t *testing.T) (*models.Answer, *models.ExamParticipant) {
+				exam := createTestExam(t, userID)
+				err := createTestExamParticipants(t, &exam, []struct {
+					UserID int64
+					Status int16
+				}{{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED}})
+				require.NoError(t, err)
+
+				var participant models.ExamParticipant
+				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
+
+				// Create an answer for question ID 1
+				answer := createTestAnswer(t, &participant, 1)
+				return &answer, &participant
+			},
+			metadata: map[string]string{
+				"user_id": strconv.FormatInt(userID, 10),
+			},
+			request: &proto.GetAnswerForEvaluationRequest{
+				QuestionId: 9999, // Non-existent question ID
+			},
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.AnswerResponse) {
+				assert.NotNil(t, resp)
+				assert.Equal(t, int64(9999), resp.QuestionId)
+				assert.Equal(t, int64(0), resp.Id)
+				assert.Equal(t, int64(0), resp.ExamParticipantId)
+				assert.Empty(t, resp.Answer)
+				assert.Equal(t, int32(0), resp.ScoreAwarded)
+				assert.Empty(t, resp.Comments)
+			},
 		},
 	}
 
@@ -81,13 +154,16 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 			_, participant := tt.setup(t)
 
 			ctx := createContextWithMetadata(tt.metadata)
-			req := &proto.GetAnswerForEvaluationRequest{
-				ParticipantId: participant.ID,
-				QuestionId:    1,
-			}
+			var req *proto.GetAnswerForEvaluationRequest
 
 			if tt.request != nil {
 				req = tt.request
+				req.ParticipantId = participant.ID
+			} else {
+				req = &proto.GetAnswerForEvaluationRequest{
+					ParticipantId: participant.ID,
+					QuestionId:    1,
+				}
 			}
 
 			resp, err := client.GetAnswerForEvaluation(ctx, req)

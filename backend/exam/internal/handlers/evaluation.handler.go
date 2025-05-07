@@ -131,27 +131,36 @@ func (s *ExamServer) MarkParticipantAsEvaluated(ctx context.Context, req *proto.
 }
 
 func (s *ExamServer) GetAnswerForEvaluation(ctx context.Context, req *proto.GetAnswerForEvaluationRequest) (*proto.AnswerResponse, error) {
-	var answer models.Answer
-	if err := db.DB.Where("exam_participant_id = ? AND question_id = ?", req.ParticipantId, req.QuestionId).
-		Take(&answer).Error; err != nil {
+	// First check if participant exists and has ended the exam
+	var participant models.ExamParticipant
+	if err := db.DB.Take(&participant, req.ParticipantId).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, status.Error(codes.NotFound, "answer not found")
+			return nil, status.Error(codes.NotFound, "participant not found")
 		}
 		return nil, status.Error(codes.Internal, "database error")
 	}
 
-	response := &proto.AnswerResponse{
+	if participant.Status != constants.PARTICIPANT_STATUS_ENDED &&
+		participant.Status != constants.PARTICIPANT_STATUS_EVALUATED {
+		return nil, status.Error(codes.FailedPrecondition, "cannot evaluate answers before exam completion")
+	}
+
+	var answer models.Answer
+	if err := db.DB.Where("exam_participant_id = ? AND question_id = ? AND answer IS NOT NULL", req.ParticipantId, req.QuestionId).Take(&answer).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return &proto.AnswerResponse{
+				QuestionId: req.QuestionId,
+			}, nil
+		}
+		return nil, status.Error(codes.Internal, "database error")
+	}
+
+	return &proto.AnswerResponse{
 		Id:                answer.ID,
 		ExamParticipantId: answer.ExamParticipantID,
 		QuestionId:        answer.QuestionID,
-		Answer:            nil,
+		Answer:            *answer.Answer,
 		ScoreAwarded:      int32(answer.ScoreAwarded),
 		Comments:          answer.Comments.String,
-	}
-
-	if answer.Answer != nil {
-		response.Answer = *answer.Answer
-	}
-
-	return response, nil
+	}, nil
 }
