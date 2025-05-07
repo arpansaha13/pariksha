@@ -1,9 +1,31 @@
 <template>
   <main>
-    <h1 class="mb-6 text-3xl font-bold">Create exam</h1>
-
     <UCard>
+      <template #header>
+        <h1 class="heading">Create exam</h1>
+      </template>
+
+      <div v-if="hasNoPaper" class="flex flex-col items-center">
+        <div class="flex items-center">
+          <Icon name="i-heroicons-document-plus" size="2.5rem" />
+        </div>
+
+        <p class="mt-2 max-w-sm text-center text-pretty text-gray-500">
+          You need to create or have access to a paper for creating an exam.
+        </p>
+
+        <UButton
+          label="Create a paper"
+          color="primary"
+          variant="solid"
+          :loading="isLoading"
+          class="mt-4"
+          @click="navigateTo('/papers/new')"
+        />
+      </div>
+
       <UForm
+        v-else
         :state="formState"
         :validate="validate"
         :validate-on="[]"
@@ -124,7 +146,7 @@
         <button ref="submitButton" type="submit" class="hidden" />
       </UForm>
 
-      <template #footer>
+      <template v-if="!hasNoPaper" #footer>
         <UButton
           color="primary"
           variant="solid"
@@ -145,6 +167,7 @@ import {
   DateFormatter,
   getLocalTimeZone,
 } from '@internationalized/date'
+import { isNullOrUndefined } from '@arpansaha13/utils'
 import { type Exam, ExamAccessType, type PaperQuestionCounts } from '~/types'
 
 const newExamStore = useNewExamStore()
@@ -164,6 +187,9 @@ const formState = reactive<ExamFormState>({
 })
 
 const { data: papers } = await usePapers()
+const hasNoPaper = ref(
+  isNullOrUndefined(papers.value) || papers.value.length === 0
+)
 
 const today = toCalendarDateTime(new Date())
 
