@@ -25,8 +25,24 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	papers := make([]dtos.PaperResponseDto, len(response.Papers))
+	for i, p := range response.Papers {
+		papers[i] = dtos.PaperResponseDto{
+			ID:              p.Id,
+			Title:           p.Title,
+			MaxScore:        p.MaxScore,
+			DurationMinutes: p.DurationMinutes,
+			QuestionCounts: dtos.QuestionCountDto{
+				MCQ:   p.QuestionCounts.Mcq,
+				Short: p.QuestionCounts.Short,
+				Long:  p.QuestionCounts.Long,
+			},
+			CreatedBy: p.CreatedBy,
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response.Papers)
+	json.NewEncoder(w).Encode(papers)
 }
 
 func GetPaper(w http.ResponseWriter, r *http.Request) {
@@ -48,8 +64,21 @@ func GetPaper(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	paperDto := dtos.PaperResponseDto{
+		ID:              response.Id,
+		Title:           response.Title,
+		MaxScore:        response.MaxScore,
+		DurationMinutes: response.DurationMinutes,
+		QuestionCounts: dtos.QuestionCountDto{
+			MCQ:   response.QuestionCounts.Mcq,
+			Short: response.QuestionCounts.Short,
+			Long:  response.QuestionCounts.Long,
+		},
+		CreatedBy: response.CreatedBy,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(paperDto)
 }
 
 func CreatePaper(w http.ResponseWriter, r *http.Request) {
