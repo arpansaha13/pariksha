@@ -17,7 +17,7 @@ type Question struct {
 	Type          string           `gorm:"type:varchar(20);not null;check:type IN ('MCQ', 'SHORT', 'LONG')"`
 	Tags          json.RawMessage  `gorm:"type:json;default:'[]'"`
 	PaperID       sql.NullInt64    `gorm:"type:bigint"`
-	MaxScore      int16            `gorm:"type:smallint;not null"`
+	MaxScore      int16            `gorm:"type:smallint;not null;check:max_score >= 0 AND max_score <= 1000"`
 	CorrectAnswer sql.NullString   `gorm:"type:text"`
 	Locked        bool             `gorm:"not null;default:false"`
 	Paper         Paper            `gorm:"foreignKey:PaperID"`

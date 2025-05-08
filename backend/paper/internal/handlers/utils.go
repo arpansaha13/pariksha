@@ -217,3 +217,11 @@ func updatePaperStats(tx *gorm.DB, paper models.Paper, oldType, newType string, 
 
 	return nil
 }
+
+// validateMaxScore checks if the given score is within valid range (0 to MAX_SCORE_PER_QUESTION)
+func validateMaxScore(score int32) error {
+    if score < 0 || score > constants.MAX_SCORE_PER_QUESTION {
+        return status.Errorf(codes.InvalidArgument, "max score must be between 0 and %d", constants.MAX_SCORE_PER_QUESTION)
+    }
+    return nil
+}

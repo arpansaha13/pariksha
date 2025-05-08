@@ -207,6 +207,40 @@ func TestCreateQuestion(t *testing.T) {
 				assert.Equal(t, 1, counts.Long)
 			},
 		},
+		{
+			name: "Error - Max score too high",
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				return &paper, &category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{"statement":"Test MCQ","options":["A","B","C"]}`),
+				Type:        constants.QUESTION_TYPE_MCQ,
+				MaxScore:    1001, // Exceeds maximum
+				CategoryId:  1,
+			},
+			userID:       userID,
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name: "Error - Negative max score",
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				return &paper, &category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{"statement":"Test MCQ","options":["A","B","C"]}`),
+				Type:        constants.QUESTION_TYPE_MCQ,
+				MaxScore:    -1, // Negative score
+				CategoryId:  1,
+			},
+			userID:       userID,
+			expectedCode: codes.InvalidArgument,
+		},
 	}
 
 	for _, tt := range tests {
@@ -509,6 +543,54 @@ func TestUpdateQuestion(t *testing.T) {
 				assert.Equal(t, "Expected answer", updated.CorrectAnswer.String)
 				assert.True(t, updated.CorrectAnswer.Valid)
 			},
+		},
+		{
+			name: "Error - Max score too high",
+			setup: func(t *testing.T) (*models.Paper, *models.Question) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				question := models.Question{
+					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+					CategoryID: category.ID,
+					Order:      1,
+					Type:       constants.QUESTION_TYPE_MCQ,
+					Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
+					MaxScore:   5,
+				}
+				require.NoError(t, db.DB.Create(&question).Error)
+				return &paper, &question
+			},
+			request: &proto.UpdateQuestionRequest{
+				MaxScore: &[]int32{1001}[0], // Exceeds maximum
+			},
+			userID:       userID,
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name: "Error - Negative max score",
+			setup: func(t *testing.T) (*models.Paper, *models.Question) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				question := models.Question{
+					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+					CategoryID: category.ID,
+					Order:      1,
+					Type:       constants.QUESTION_TYPE_MCQ,
+					Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
+					MaxScore:   5,
+				}
+				require.NoError(t, db.DB.Create(&question).Error)
+				return &paper, &question
+			},
+			request: &proto.UpdateQuestionRequest{
+				MaxScore: &[]int32{-1}[0], // Negative score
+			},
+			userID:       userID,
+			expectedCode: codes.InvalidArgument,
 		},
 	}
 

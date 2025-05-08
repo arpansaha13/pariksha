@@ -74,6 +74,11 @@ func (s *PaperServer) GetPaperQuestion(ctx context.Context, req *proto.QuestionR
 }
 
 func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuestionRequest) (*proto.QuestionResponse, error) {
+	// Validate max score
+	if err := validateMaxScore(req.MaxScore); err != nil {
+		return nil, err
+	}
+
 	// Validate question data based on type
 	switch req.Type {
 	case constants.QUESTION_TYPE_MCQ:
@@ -167,6 +172,13 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 	question, ok := ctx.Value(interceptors.QuestionCtxKey{}).(models.Question)
 	if !ok {
 		return nil, status.Error(codes.Internal, "question data not found in context")
+	}
+
+	// Validate max score if provided
+	if req.MaxScore != nil {
+		if err := validateMaxScore(*req.MaxScore); err != nil {
+			return nil, err
+		}
 	}
 
 	var transactionErr error

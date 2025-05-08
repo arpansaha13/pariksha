@@ -1,5 +1,7 @@
 export const NUXT_ENV_DEVELOPMENT = 'development'
 
+export const MAX_SCORE_PER_QUESTION = 1000
+
 export enum ToastId {
   LOGIN_FAILED = 'login_failed',
   SIGNUP_FAILED = 'signup_failed',

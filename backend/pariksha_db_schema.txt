@@ -27,7 +27,7 @@ Table papers {
   id bigint [primary key]
   title varchar(255) [not null, default: 'Untitled Paper']
   max_score integer [default: 0, note: 'Maximum score that can be awarded in this paper - Sum of individual scores of each question']
-  duration_minutes integer [not null]
+  duration_minutes integer [not null, note: 'max duration_minutes can be 1440']
   question_counts json [default: '{"mcq":0,"short":0,"long":0}', note: 'Count of each question type']
   created_by bigint [not null]
 }
@@ -42,11 +42,11 @@ Table questions {
   id bigint [primary key]
   category_id bigint [not null]
   question json [not null]
-  order integer [not null]
+  order smallint [not null]
   type varchar(20) [not null, note: 'MCQ, Short-answer, Long-answer']
   tags json [default: '[]']
   paper_id bigint
-  max_score integer [not null]
+  max_score smallint [not null, note: "max_score ranges from 0 to 1000"]
   correct_answer text
   locked boolean [not null, default: false, note: 'Indicates if the question is used in an exam and is locked for editing']
 }
@@ -56,17 +56,17 @@ Table exam_participants {
   exam_id bigint [not null]
   user_id bigint [not null]
   score_awarded integer [not null, note: 'Total score obtained in this exam by this candidate - Sum of individual scores of each answer']
-  status integer [not null, default: 1]
+  status smallint [not null, default: 1]
   started_at timestamp
   ended_at timestamp
-  scheduled_end_time timestamp [note: 'We cannot rely on calculating (starts_at + paper.duration) everytime because the paper duration could update during the exam']
+  scheduled_end_time timestamp [note: 'We cannot rely on calculating (starts_at + paper.duration) every time because the paper duration could update during the exam']
 }
 
 Table answers {
   id bigint [primary key]
   exam_participant_id bigint [not null]
   question_id bigint [not null]
-  answer text
+  answer json
   score_awarded integer [not null, default: 0]
   comments text [note: 'Any comments the evaluator might want to add, for e.g. why is the answer wrong']
   evaluated boolean [not null, default: false]
@@ -77,7 +77,8 @@ Table exam_questions {
   exam_id bigint [not null]
   question_id bigint [not null]
   category_id bigint [not null]
-  order integer [not null]
+  order smallint [not null]
+  max_score smallint [not null]
 }
 
 Table exam_categories {
@@ -97,7 +98,7 @@ Table question_categories {
   id bigint [primary key]
   paper_id bigint
   name varchar(255) [not null]
-  order integer [not null]
+  order smallint [not null]
   locked boolean [not null, default: false, note: 'Indicates if the category is used in an exam and is locked for editing']
 }
 
@@ -105,7 +106,7 @@ Table otps {
   email varchar(255) [primary key]
   otp varchar(6) [not null]
   otp_expires_at timestamp [not null]
-  purpose integer [not null]
+  purpose smallint [not null]
 }
 
 Ref: permissions.paper_id > papers.id // Which paper is accessed

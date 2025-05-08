@@ -25,6 +25,8 @@
 </template>
 
 <script lang="ts" setup>
+import type { FormError } from '@nuxt/ui'
+
 interface ExamViewUpdateUserFormState {
   first_name: string
   last_name: string

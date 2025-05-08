@@ -1,6 +1,8 @@
 <template>
   <UForm
     :state="formState"
+    :validate="validate"
+    :validate-on="['blur']"
     class="flex flex-col gap-y-5"
     @submit.prevent="onSubmit"
   >
@@ -74,7 +76,12 @@
       name="max_score"
       required
     >
-      <UInputNumber v-model="formState.max_score" :min="1" required />
+      <UInputNumber
+        v-model="formState.max_score"
+        :min="0"
+        :max="MAX_SCORE_PER_QUESTION"
+        required
+      />
     </UFormField>
 
     <UFormField
@@ -105,6 +112,7 @@
 </template>
 
 <script setup lang="ts">
+import type { FormError } from '@nuxt/ui'
 import { type Question, QuestionType } from '~/types'
 
 interface CreateQuestionFormState
@@ -133,6 +141,24 @@ const emit = defineEmits<{
 
 async function onSubmit() {
   emit('submit', formState.value)
+}
+
+function validate(formState: CreateQuestionFormState): FormError[] {
+  const errors = []
+
+  if (formState.max_score === 0) {
+    errors.push({
+      name: 'max_score',
+      message: 'Please specify the maximum score for this question',
+    })
+  } else if (formState.max_score > MAX_SCORE_PER_QUESTION) {
+    errors.push({
+      name: 'max_score',
+      message: 'Maximum score cannot be greater than 1000',
+    })
+  }
+
+  return errors
 }
 
 const questionTypes = [

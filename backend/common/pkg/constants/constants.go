@@ -51,3 +51,5 @@ const (
 	MAIL_TYPE_FORGOT_PASSWORD = "forgot_password"
 	MAIL_TYPE_RESET_PASSWORD  = "reset_password"
 )
+
+const MAX_SCORE_PER_QUESTION = 1000
