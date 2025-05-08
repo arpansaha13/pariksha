@@ -12,6 +12,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/interceptors"
 )
 
 type PaperServer struct {
@@ -146,6 +147,14 @@ func (s *PaperServer) UpdatePaper(ctx context.Context, req *proto.UpdatePaperReq
 	return &proto.Empty{}, nil
 }
 
-func (s *PaperServer) CheckPaperAccess(ctx context.Context, req *proto.PaperRequest) (*proto.Empty, error) {
-	return &proto.Empty{}, nil
+func (s *PaperServer) GetPaperPermissions(ctx context.Context, req *proto.PaperRequest) (*proto.PaperPermissionsResponse, error) {
+	permissions, ok := ctx.Value(interceptors.PermissionsCtxKey{}).(models.PaperPermissions)
+	if !ok {
+		return nil, status.Error(codes.Internal, "failed to get permissions from context")
+	}
+
+	return &proto.PaperPermissionsResponse{
+		CanRead:  permissions.CanRead(),
+		CanWrite: permissions.CanWrite(),
+	}, nil
 }

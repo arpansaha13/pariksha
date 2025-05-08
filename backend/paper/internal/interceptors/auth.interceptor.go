@@ -17,13 +17,14 @@ import (
 
 type CategoryCtxKey struct{}
 type QuestionCtxKey struct{}
+type PermissionsCtxKey struct{}
 
 var requiresRead = map[string]bool{
-	"/proto.PaperService/GetPaper":           true,
-	"/proto.PaperService/CheckPaperAccess":   true,
-	"/proto.PaperService/GetPaperCategories": true,
-	"/proto.PaperService/GetPaperQuestions":  true,
-	"/proto.PaperService/GetPaperQuestion":   true,
+	"/proto.PaperService/GetPaper":            true,
+	"/proto.PaperService/GetPaperCategories":  true,
+	"/proto.PaperService/GetPaperQuestions":   true,
+	"/proto.PaperService/GetPaperQuestion":    true,
+	"/proto.PaperService/GetPaperPermissions": true,
 }
 
 var requiresWrite = map[string]bool{
@@ -113,18 +114,16 @@ func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
 			return nil, err
 		}
 
+		ctx = context.WithValue(ctx, PermissionsCtxKey{}, permissions)
+
 		// Check if the method requires READ permission
-		if requiresRead[methodName] {
-			if !permissions.CanRead() {
-				return nil, status.Error(codes.PermissionDenied, "READ permission required")
-			}
+		if requiresRead[methodName] && !permissions.CanRead() {
+			return nil, status.Error(codes.PermissionDenied, "READ permission required")
 		}
 
 		// Check if the method requires WRITE permission
-		if requiresWrite[methodName] {
-			if !permissions.CanWrite() {
-				return nil, status.Error(codes.PermissionDenied, "WRITE permission required")
-			}
+		if requiresWrite[methodName] && !permissions.CanWrite() {
+			return nil, status.Error(codes.PermissionDenied, "WRITE permission required")
 		}
 
 		return handler(ctx, req)

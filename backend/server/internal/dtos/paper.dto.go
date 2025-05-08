@@ -26,3 +26,8 @@ type UpdatePaperResponseDto struct {
 	QuestionCounts  json.RawMessage `json:"question_counts"`
 	CreatedBy       int64           `json:"created_by"`
 }
+
+type PaperPermissionsDto struct {
+	CanRead  bool `json:"can_read"`
+	CanWrite bool `json:"can_write"`
+}

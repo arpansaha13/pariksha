@@ -161,7 +161,7 @@ import { QuestionId, QuestionType } from '~/types'
 
 definePageMeta({
   layout: 'paper',
-  middleware: ['check-paper-access'],
+  middleware: ['check-paper-permission'],
 })
 
 const route = useRoute()

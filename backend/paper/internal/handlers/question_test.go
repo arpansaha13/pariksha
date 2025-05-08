@@ -278,7 +278,7 @@ func TestUpdateQuestion(t *testing.T) {
 				require.NoError(t, json.Unmarshal(updated.Question, &mcq))
 				assert.Equal(t, "Updated MCQ", mcq.Statement)
 				assert.Equal(t, []string{"X", "Y", "Z"}, mcq.Options)
-				assert.Equal(t, 10, updated.MaxScore)
+				assert.Equal(t, int16(10), updated.MaxScore)
 
 				// Verify question counts didn't change
 				var updatedPaper models.Paper
@@ -374,7 +374,7 @@ func TestUpdateQuestion(t *testing.T) {
 				require.NoError(t, json.Unmarshal(newQuestion.Question, &mcq))
 				assert.Equal(t, "Updated MCQ", mcq.Statement)
 				assert.Equal(t, []string{"X", "Y", "Z"}, mcq.Options)
-				assert.Equal(t, 10, newQuestion.MaxScore)
+				assert.Equal(t, int16(10), newQuestion.MaxScore)
 				assert.False(t, newQuestion.Locked)
 			},
 		},
@@ -464,7 +464,7 @@ func TestUpdateQuestion(t *testing.T) {
 				assert.Equal(t, []string{"X", "Y", "Z", "W"}, mcq.Options)
 
 				// Verify other fields
-				assert.Equal(t, 10, updated.MaxScore)
+				assert.Equal(t, int16(10), updated.MaxScore)
 				var tags []string
 				require.NoError(t, json.Unmarshal(updated.Tags, &tags))
 				assert.ElementsMatch(t, []string{"updated", "mcq"}, tags)
@@ -505,7 +505,7 @@ func TestUpdateQuestion(t *testing.T) {
 				assert.Equal(t, "Updated Short Question", general.Statement)
 
 				// Verify other fields
-				assert.Equal(t, 10, updated.MaxScore)
+				assert.Equal(t, int16(10), updated.MaxScore)
 				assert.Equal(t, "Expected answer", updated.CorrectAnswer.String)
 				assert.True(t, updated.CorrectAnswer.Valid)
 			},

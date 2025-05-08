@@ -110,7 +110,7 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func CheckPaperAccess(w http.ResponseWriter, r *http.Request) {
+func GetPaperPermissions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	paperID, err := getInt64FromVars(vars, "paperId")
 	if err != nil {
@@ -121,14 +121,19 @@ func CheckPaperAccess(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 
 	ctx := paperService.CreateMetadata(userID)
-	_, err = paperService.Client().CheckPaperAccess(ctx, &proto.PaperRequest{
+	response, err := paperService.Client().GetPaperPermissions(ctx, &proto.PaperRequest{
 		PaperId: paperID,
 	})
-
 	if err != nil {
 		handleGRPCError(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	permissions := dtos.PaperPermissionsDto{
+		CanRead:  response.CanRead,
+		CanWrite: response.CanWrite,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(permissions)
 }

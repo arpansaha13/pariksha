@@ -436,35 +436,32 @@ func TestGetPaper(t *testing.T) {
 	}
 }
 
-func TestCheckPaperAccess(t *testing.T) {
+func TestGetPaperPermissions(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T) *models.Paper
 		userID       int64
 		expectedCode codes.Code
+		validate     func(t *testing.T, resp *proto.PaperPermissionsResponse)
 	}{
 		{
-			name: "Success - Owner access",
+			name: "Success - Paper owner has full permissions",
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID)
 				return &paper
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
-		},
-		{
-			name: "Paper not found",
-			setup: func(t *testing.T) *models.Paper {
-				return &models.Paper{ID: 999}
+			validate: func(t *testing.T, resp *proto.PaperPermissionsResponse) {
+				assert.True(t, resp.CanRead, "Owner should have read permission")
+				assert.True(t, resp.CanWrite, "Owner should have write permission")
 			},
-			userID:       userID,
-			expectedCode: codes.NotFound,
 		},
 		{
-			name: "Has shared access to paper",
+			name: "Success - User has read-only permissions",
 			setup: func(t *testing.T) *models.Paper {
-				// Create paper owned by user 2
-				paper := createTestPaper(t, 2)
+				// Create paper owned by another user
+				paper := createTestPaper(t, userID+1)
 
 				// Create read-only permissions for test user
 				permissions := models.PaperPermissions{
@@ -478,12 +475,23 @@ func TestCheckPaperAccess(t *testing.T) {
 			},
 			userID:       userID,
 			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.PaperPermissionsResponse) {
+				assert.True(t, resp.CanRead, "User should have read permission")
+				assert.False(t, resp.CanWrite, "User should not have write permission")
+			},
 		},
 		{
-			name: "No access to paper",
+			name: "Paper not found",
 			setup: func(t *testing.T) *models.Paper {
-				// Create paper owned by user 2 with no sharing
-				paper := createTestPaper(t, 2)
+				return &models.Paper{ID: 999}
+			},
+			userID:       userID,
+			expectedCode: codes.NotFound,
+		},
+		{
+			name: "No permission to access paper",
+			setup: func(t *testing.T) *models.Paper {
+				paper := createTestPaper(t, userID+1)
 				return &paper
 			},
 			userID:       userID,
@@ -506,11 +514,18 @@ func TestCheckPaperAccess(t *testing.T) {
 			paper := tt.setup(t)
 
 			ctx := createContextWithUserID(tt.userID)
-			_, err := client.CheckPaperAccess(ctx, &proto.PaperRequest{
+			resp, err := client.GetPaperPermissions(ctx, &proto.PaperRequest{
 				PaperId: paper.ID,
 			})
 
-			assert.Equal(t, tt.expectedCode, status.Code(err))
+			if tt.expectedCode != codes.OK {
+				assert.Equal(t, tt.expectedCode, status.Code(err))
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, resp)
+			tt.validate(t, resp)
 		})
 	}
 }

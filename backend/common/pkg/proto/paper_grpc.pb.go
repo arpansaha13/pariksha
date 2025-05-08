@@ -19,25 +19,25 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PaperService_GetUserPapers_FullMethodName      = "/proto.PaperService/GetUserPapers"
-	PaperService_GetPaper_FullMethodName           = "/proto.PaperService/GetPaper"
-	PaperService_CreatePaper_FullMethodName        = "/proto.PaperService/CreatePaper"
-	PaperService_UpdatePaper_FullMethodName        = "/proto.PaperService/UpdatePaper"
-	PaperService_CheckPaperAccess_FullMethodName   = "/proto.PaperService/CheckPaperAccess"
-	PaperService_GetPaperQuestions_FullMethodName  = "/proto.PaperService/GetPaperQuestions"
-	PaperService_GetPaperQuestion_FullMethodName   = "/proto.PaperService/GetPaperQuestion"
-	PaperService_CreateQuestion_FullMethodName     = "/proto.PaperService/CreateQuestion"
-	PaperService_UpdateQuestion_FullMethodName     = "/proto.PaperService/UpdateQuestion"
-	PaperService_DeleteQuestion_FullMethodName     = "/proto.PaperService/DeleteQuestion"
-	PaperService_ReorderQuestions_FullMethodName   = "/proto.PaperService/ReorderQuestions"
-	PaperService_GetPaperCategories_FullMethodName = "/proto.PaperService/GetPaperCategories"
-	PaperService_CreateCategory_FullMethodName     = "/proto.PaperService/CreateCategory"
-	PaperService_UpdateCategory_FullMethodName     = "/proto.PaperService/UpdateCategory"
-	PaperService_DeleteCategory_FullMethodName     = "/proto.PaperService/DeleteCategory"
-	PaperService_ReorderCategories_FullMethodName  = "/proto.PaperService/ReorderCategories"
-	PaperService_GetQuestionsByIds_FullMethodName  = "/proto.PaperService/GetQuestionsByIds"
-	PaperService_GetCategoriesByIds_FullMethodName = "/proto.PaperService/GetCategoriesByIds"
-	PaperService_GetExamQuestion_FullMethodName    = "/proto.PaperService/GetExamQuestion"
+	PaperService_GetUserPapers_FullMethodName       = "/proto.PaperService/GetUserPapers"
+	PaperService_GetPaper_FullMethodName            = "/proto.PaperService/GetPaper"
+	PaperService_CreatePaper_FullMethodName         = "/proto.PaperService/CreatePaper"
+	PaperService_UpdatePaper_FullMethodName         = "/proto.PaperService/UpdatePaper"
+	PaperService_GetPaperPermissions_FullMethodName = "/proto.PaperService/GetPaperPermissions"
+	PaperService_GetPaperQuestions_FullMethodName   = "/proto.PaperService/GetPaperQuestions"
+	PaperService_GetPaperQuestion_FullMethodName    = "/proto.PaperService/GetPaperQuestion"
+	PaperService_CreateQuestion_FullMethodName      = "/proto.PaperService/CreateQuestion"
+	PaperService_UpdateQuestion_FullMethodName      = "/proto.PaperService/UpdateQuestion"
+	PaperService_DeleteQuestion_FullMethodName      = "/proto.PaperService/DeleteQuestion"
+	PaperService_ReorderQuestions_FullMethodName    = "/proto.PaperService/ReorderQuestions"
+	PaperService_GetPaperCategories_FullMethodName  = "/proto.PaperService/GetPaperCategories"
+	PaperService_CreateCategory_FullMethodName      = "/proto.PaperService/CreateCategory"
+	PaperService_UpdateCategory_FullMethodName      = "/proto.PaperService/UpdateCategory"
+	PaperService_DeleteCategory_FullMethodName      = "/proto.PaperService/DeleteCategory"
+	PaperService_ReorderCategories_FullMethodName   = "/proto.PaperService/ReorderCategories"
+	PaperService_GetQuestionsByIds_FullMethodName   = "/proto.PaperService/GetQuestionsByIds"
+	PaperService_GetCategoriesByIds_FullMethodName  = "/proto.PaperService/GetCategoriesByIds"
+	PaperService_GetExamQuestion_FullMethodName     = "/proto.PaperService/GetExamQuestion"
 )
 
 // PaperServiceClient is the client API for PaperService service.
@@ -49,7 +49,7 @@ type PaperServiceClient interface {
 	GetPaper(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*PaperResponse, error)
 	CreatePaper(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PaperResponse, error)
 	UpdatePaper(ctx context.Context, in *UpdatePaperRequest, opts ...grpc.CallOption) (*Empty, error)
-	CheckPaperAccess(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*Empty, error)
+	GetPaperPermissions(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*PaperPermissionsResponse, error)
 	// Question operations
 	GetPaperQuestions(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*QuestionList, error)
 	GetPaperQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error)
@@ -117,10 +117,10 @@ func (c *paperServiceClient) UpdatePaper(ctx context.Context, in *UpdatePaperReq
 	return out, nil
 }
 
-func (c *paperServiceClient) CheckPaperAccess(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *paperServiceClient) GetPaperPermissions(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*PaperPermissionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, PaperService_CheckPaperAccess_FullMethodName, in, out, cOpts...)
+	out := new(PaperPermissionsResponse)
+	err := c.cc.Invoke(ctx, PaperService_GetPaperPermissions_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +276,7 @@ type PaperServiceServer interface {
 	GetPaper(context.Context, *PaperRequest) (*PaperResponse, error)
 	CreatePaper(context.Context, *Empty) (*PaperResponse, error)
 	UpdatePaper(context.Context, *UpdatePaperRequest) (*Empty, error)
-	CheckPaperAccess(context.Context, *PaperRequest) (*Empty, error)
+	GetPaperPermissions(context.Context, *PaperRequest) (*PaperPermissionsResponse, error)
 	// Question operations
 	GetPaperQuestions(context.Context, *PaperRequest) (*QuestionList, error)
 	GetPaperQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error)
@@ -316,8 +316,8 @@ func (UnimplementedPaperServiceServer) CreatePaper(context.Context, *Empty) (*Pa
 func (UnimplementedPaperServiceServer) UpdatePaper(context.Context, *UpdatePaperRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdatePaper not implemented")
 }
-func (UnimplementedPaperServiceServer) CheckPaperAccess(context.Context, *PaperRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CheckPaperAccess not implemented")
+func (UnimplementedPaperServiceServer) GetPaperPermissions(context.Context, *PaperRequest) (*PaperPermissionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPaperPermissions not implemented")
 }
 func (UnimplementedPaperServiceServer) GetPaperQuestions(context.Context, *PaperRequest) (*QuestionList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPaperQuestions not implemented")
@@ -454,20 +454,20 @@ func _PaperService_UpdatePaper_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_CheckPaperAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _PaperService_GetPaperPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PaperRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).CheckPaperAccess(ctx, in)
+		return srv.(PaperServiceServer).GetPaperPermissions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_CheckPaperAccess_FullMethodName,
+		FullMethod: PaperService_GetPaperPermissions_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).CheckPaperAccess(ctx, req.(*PaperRequest))
+		return srv.(PaperServiceServer).GetPaperPermissions(ctx, req.(*PaperRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -748,8 +748,8 @@ var PaperService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _PaperService_UpdatePaper_Handler,
 		},
 		{
-			MethodName: "CheckPaperAccess",
-			Handler:    _PaperService_CheckPaperAccess_Handler,
+			MethodName: "GetPaperPermissions",
+			Handler:    _PaperService_GetPaperPermissions_Handler,
 		},
 		{
 			MethodName: "GetPaperQuestions",

@@ -3,6 +3,7 @@ export { usePaper } from './api/papers/usePaper'
 export { usePaperQuestions } from './api/papers/usePaperQuestions'
 export { usePaperCategories } from './api/papers/usePaperCategories'
 export { usePaperQuestion } from './api/papers/usePaperQuestion'
+export { usePaperPermission } from './api/papers/usePaperPermission'
 
 export { useExam } from './api/exams/useExam'
 export { useExams } from './api/exams/useExams'

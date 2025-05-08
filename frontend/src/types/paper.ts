@@ -11,3 +11,8 @@ export interface Paper {
   question_counts: PaperQuestionCounts
   duration_minutes: number
 }
+
+export interface PaperPermission {
+  can_read: boolean
+  can_write: boolean
+}
