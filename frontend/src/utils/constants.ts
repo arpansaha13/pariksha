@@ -1,6 +1,7 @@
 export const NUXT_ENV_DEVELOPMENT = 'development'
 
 export const MAX_SCORE_PER_QUESTION = 1000
+export const MAX_EXAM_DURATION_MINUTES = 1440 // 24 hours
 
 export enum ToastId {
   LOGIN_FAILED = 'login_failed',

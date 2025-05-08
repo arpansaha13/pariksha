@@ -72,8 +72,8 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 		return nil, status.Error(codes.InvalidArgument, "max candidates count must be greater than zero")
 	}
 
-	if req.DurationMinutes <= 0 {
-		return nil, status.Error(codes.InvalidArgument, "duration minutes must be greater than zero")
+	if err := validateExamDuration(req.DurationMinutes); err != nil {
+		return nil, err
 	}
 
 	exam := models.Exam{
@@ -182,7 +182,10 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 		isUpdated = true
 	}
 
-	if req.DurationMinutes != nil && req.GetDurationMinutes() > 0 {
+	if req.DurationMinutes != nil {
+		if err := validateExamDuration(req.GetDurationMinutes()); err != nil {
+			return nil, err
+		}
 		exam.DurationMinutes = int16(req.GetDurationMinutes())
 		isUpdated = true
 	}

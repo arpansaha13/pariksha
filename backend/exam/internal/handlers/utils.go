@@ -33,6 +33,17 @@ func validateExamEndTiming(startsAt time.Time, endsAt time.Time) error {
 	return nil
 }
 
+// validateExamDuration checks if the exam duration is within allowed limits
+func validateExamDuration(durationMinutes int32) error {
+	if durationMinutes <= 0 {
+		return status.Error(codes.InvalidArgument, "duration minutes must be greater than zero")
+	}
+	if durationMinutes > int32(constants.MAX_EXAM_DURATION_MINUTES) {
+		return status.Error(codes.InvalidArgument, "duration minutes cannot exceed maximum allowed duration")
+	}
+	return nil
+}
+
 // updateParticipantCounts updates the exam's participant counts and returns marshaled counts
 func updateParticipantCounts(counts *models.ParticipantCount, fromStatus int16, toStatus int16) (json.RawMessage, error) {
 	switch fromStatus {

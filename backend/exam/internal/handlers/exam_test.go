@@ -265,6 +265,20 @@ func TestCreateExam(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.InvalidArgument,
 		},
+		{
+			name: "Invalid - Duration exceeds maximum allowed",
+			request: &proto.CreateExamRequest{
+				Title:              "Invalid Exam",
+				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
+				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
+				MaxCandidatesCount: 50,
+				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_LINK),
+				PaperId:            1,
+				DurationMinutes:    int32(constants.MAX_EXAM_DURATION_MINUTES + 1),
+			},
+			userID:       userID,
+			expectedCode: codes.InvalidArgument,
+		},
 	}
 
 	for _, tt := range tests {
@@ -469,6 +483,21 @@ func TestUpdateExam(t *testing.T) {
 				assert.Equal(t, exam.Type, updated.Type)
 				assert.Greater(t, updated.EndsAt.Unix(), exam.EndsAt.Unix())
 			},
+		},
+		{
+			name: "Fail - Update duration exceeds maximum",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, userID)
+				exam.StartsAt = time.Now().Add(24 * time.Hour)
+				exam.EndsAt = time.Now().Add(48 * time.Hour)
+				require.NoError(t, db.DB.Save(&exam).Error)
+				return &exam
+			},
+			request: &proto.UpdateExamRequest{
+				DurationMinutes: ptr.Int32(int32(constants.MAX_EXAM_DURATION_MINUTES + 1)),
+			},
+			userID:       userID,
+			expectedCode: codes.InvalidArgument,
 		},
 	}
 

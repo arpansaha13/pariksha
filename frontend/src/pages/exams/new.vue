@@ -271,12 +271,19 @@ function validate(formState: Partial<ExamFormState>): FormError[] {
     })
   }
 
-  if (
-    convertToMinutes(formState.duration_hours, formState.duration_minutes) === 0
-  ) {
+  const durationMinutes = convertToMinutes(
+    formState.duration_hours,
+    formState.duration_minutes
+  )
+  if (durationMinutes === 0) {
     errors.push({
       name: 'duration',
       message: 'Please set a duration for the exam',
+    })
+  } else if (durationMinutes > MAX_EXAM_DURATION_MINUTES) {
+    errors.push({
+      name: 'duration',
+      message: 'Exam duration cannot be more than 24 hours',
     })
   }
 
