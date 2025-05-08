@@ -21,11 +21,12 @@ export default defineNuxtPlugin(nuxtApp => {
       }
     },
     async onResponseError({ response }) {
-      const route = useRoute()
-      const isProtectedRoute = !route.path.startsWith('/auth')
-
-      if (response.status === 401 && isProtectedRoute) {
-        await nuxtApp.runWithContext(() => navigateTo('/auth/login'))
+      if (response.status === 401) {
+        await nuxtApp.runWithContext(() => {
+          const route = useRoute()
+          const isProtectedRoute = !route.path.startsWith('/auth')
+          if (isProtectedRoute) navigateTo('/auth/login')
+        })
       }
     },
   })
