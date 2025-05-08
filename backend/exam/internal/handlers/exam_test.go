@@ -35,9 +35,9 @@ func TestGetUserExams(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamList) {
-				assert.Equal(t, 2, len(resp.Exams))
+				assert.EqualValues(t, 2, len(resp.Exams))
 				for _, exam := range resp.Exams {
-					assert.Equal(t, userID, exam.CreatedBy)
+					assert.EqualValues(t, userID, exam.CreatedBy)
 					assert.Equal(t, "Test Exam", exam.Title)
 					assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
 				}
@@ -49,7 +49,7 @@ func TestGetUserExams(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamList) {
-				assert.Equal(t, 0, len(resp.Exams))
+				assert.EqualValues(t, 0, len(resp.Exams))
 			},
 		},
 		{
@@ -61,7 +61,7 @@ func TestGetUserExams(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamList) {
-				assert.Equal(t, 1, len(resp.Exams))
+				assert.EqualValues(t, 1, len(resp.Exams))
 				assert.Equal(t, userID, resp.Exams[0].CreatedBy)
 			},
 		},
@@ -112,14 +112,14 @@ func TestCreateExam(t *testing.T) {
 				assert.Equal(t, "New Exam", resp.Title)
 				assert.Equal(t, userID, resp.CreatedBy)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
-				assert.Equal(t, int32(50), resp.MaxCandidatesCount)
-				assert.Equal(t, int64(1), resp.PaperId)
-				assert.Equal(t, int32(120), resp.DurationMinutes)
+				assert.EqualValues(t, 50, resp.MaxCandidatesCount)
+				assert.EqualValues(t, 1, resp.PaperId)
+				assert.EqualValues(t, 120, resp.DurationMinutes)
 
 				var exam models.Exam
 				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
-				assert.Equal(t, int32(120), exam.DurationMinutes)
+				assert.EqualValues(t, 120, exam.DurationMinutes)
 			},
 		},
 		{
@@ -137,12 +137,12 @@ func TestCreateExam(t *testing.T) {
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamResponse) {
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
-				assert.Equal(t, int32(90), resp.DurationMinutes)
+				assert.EqualValues(t, 90, resp.DurationMinutes)
 
 				var exam models.Exam
 				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
-				assert.Equal(t, int32(90), exam.DurationMinutes)
+				assert.EqualValues(t, 90, exam.DurationMinutes)
 			},
 		},
 		{
@@ -160,12 +160,12 @@ func TestCreateExam(t *testing.T) {
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamResponse) {
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_INVITE, resp.Type)
-				assert.Equal(t, int32(60), resp.DurationMinutes)
+				assert.EqualValues(t, 60, resp.DurationMinutes)
 
 				var exam models.Exam
 				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_INVITE, exam.Type)
-				assert.Equal(t, int32(60), exam.DurationMinutes)
+				assert.EqualValues(t, 60, exam.DurationMinutes)
 			},
 		},
 		{
@@ -393,7 +393,7 @@ func TestUpdateExam(t *testing.T) {
 			validate: func(t *testing.T, exam *models.Exam) {
 				var updated models.Exam
 				require.NoError(t, db.DB.First(&updated, exam.ID).Error)
-				assert.Equal(t, int32(180), updated.DurationMinutes)
+				assert.EqualValues(t, 180, updated.DurationMinutes)
 			},
 		},
 		{
@@ -531,8 +531,8 @@ func TestEndExam(t *testing.T) {
 				counts, err := exam.GetParticipantCounts()
 				require.NoError(t, err)
 
-				assert.Equal(t, 0, counts.Started)
-				assert.Equal(t, 1, counts.Ended)
+				assert.EqualValues(t, 0, counts.Started)
+				assert.EqualValues(t, 1, counts.Ended)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.First(&participant, participantID).Error)
@@ -642,9 +642,9 @@ func TestStartExam(t *testing.T) {
 				counts, err := updated.GetParticipantCounts()
 				require.NoError(t, err)
 
-				assert.Equal(t, 0, counts.Invited)
-				assert.Equal(t, 1, counts.Started)
-				assert.Equal(t, 0, counts.Ended)
+				assert.EqualValues(t, 0, counts.Invited)
+				assert.EqualValues(t, 1, counts.Started)
+				assert.EqualValues(t, 0, counts.Ended)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
@@ -672,9 +672,9 @@ func TestStartExam(t *testing.T) {
 				counts, err := updated.GetParticipantCounts()
 				require.NoError(t, err)
 
-				assert.Equal(t, 0, counts.Invited)
-				assert.Equal(t, 1, counts.Started)
-				assert.Equal(t, 0, counts.Ended)
+				assert.EqualValues(t, 0, counts.Invited)
+				assert.EqualValues(t, 1, counts.Started)
+				assert.EqualValues(t, 0, counts.Ended)
 
 				var participant models.ExamParticipant
 				err = db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error
@@ -785,9 +785,9 @@ func TestStartExam(t *testing.T) {
 				counts, err := updated.GetParticipantCounts()
 				require.NoError(t, err)
 
-				assert.Equal(t, 0, counts.Invited)
-				assert.Equal(t, 1, counts.Started)
-				assert.Equal(t, 0, counts.Ended)
+				assert.EqualValues(t, 0, counts.Invited)
+				assert.EqualValues(t, 1, counts.Started)
+				assert.EqualValues(t, 0, counts.Ended)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
@@ -852,7 +852,7 @@ func TestGetExamQuestions(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamQuestionsResponse) {
-				require.Equal(t, 2, len(resp.Questions))
+				require.EqualValues(t, 2, len(resp.Questions))
 				expectedQuestions := []struct {
 					questionId int64
 					categoryId int64
@@ -917,7 +917,7 @@ func TestGetExamQuestions(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamQuestionsResponse) {
-				require.Equal(t, 2, len(resp.Questions))
+				require.EqualValues(t, 2, len(resp.Questions))
 				expectedQuestions := []struct {
 					questionId int64
 					categoryId int64
@@ -990,7 +990,7 @@ func TestGetExamCategories(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamCategoriesResponse) {
-				require.Equal(t, 2, len(resp.Categories))
+				require.EqualValues(t, 2, len(resp.Categories))
 				expectedIDs := []int64{1, 2}
 				for i, c := range resp.Categories {
 					assert.Equal(t, expectedIDs[i], c.CategoryId)
@@ -1043,7 +1043,7 @@ func TestGetExamCategories(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamCategoriesResponse) {
-				require.Equal(t, 2, len(resp.Categories))
+				require.EqualValues(t, 2, len(resp.Categories))
 				expectedIDs := []int64{1, 2}
 				for i, c := range resp.Categories {
 					assert.Equal(t, expectedIDs[i], c.CategoryId)
@@ -1119,7 +1119,7 @@ func TestGetExamPermission(t *testing.T) {
 				assert.True(t, resp.CanParticipate)
 				assert.False(t, resp.CanEvaluate)
 				require.NotNil(t, resp.ParticipantStatus)
-				assert.Equal(t, int32(constants.PARTICIPANT_STATUS_INVITED), *resp.ParticipantStatus)
+				assert.EqualValues(t, constants.PARTICIPANT_STATUS_INVITED, *resp.ParticipantStatus)
 			},
 		},
 		{
@@ -1137,7 +1137,7 @@ func TestGetExamPermission(t *testing.T) {
 				assert.False(t, resp.CanWrite)
 				assert.True(t, resp.CanParticipate)
 				assert.False(t, resp.CanEvaluate)
-				assert.Equal(t, int32(constants.PARTICIPANT_STATUS_INVITED), *resp.ParticipantStatus)
+				assert.EqualValues(t, constants.PARTICIPANT_STATUS_INVITED, *resp.ParticipantStatus)
 			},
 		},
 		{
@@ -1191,7 +1191,7 @@ func TestGetExamPermission(t *testing.T) {
 				assert.True(t, resp.CanParticipate)
 				assert.False(t, resp.CanEvaluate)
 				require.NotNil(t, resp.ParticipantStatus)
-				assert.Equal(t, int32(constants.PARTICIPANT_STATUS_STARTED), *resp.ParticipantStatus)
+				assert.EqualValues(t, constants.PARTICIPANT_STATUS_STARTED, *resp.ParticipantStatus)
 			},
 		},
 	}
@@ -1238,15 +1238,15 @@ func TestGetExam(t *testing.T) {
 				assert.Equal(t, "Test Exam", resp.Title)
 				assert.Equal(t, userID, resp.CreatedBy)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
-				assert.Equal(t, int32(10), resp.MaxCandidatesCount)
-				assert.Equal(t, int64(1), resp.PaperId)
-				assert.Equal(t, int32(60), resp.DurationMinutes)
+				assert.EqualValues(t, 10, resp.MaxCandidatesCount)
+				assert.EqualValues(t, 1, resp.PaperId)
+				assert.EqualValues(t, 60, resp.DurationMinutes)
 
 				// Validate participant counts
 				assert.NotNil(t, resp.ParticipantCounts)
-				assert.Equal(t, int32(0), resp.ParticipantCounts.Invited)
-				assert.Equal(t, int32(0), resp.ParticipantCounts.Started)
-				assert.Equal(t, int32(0), resp.ParticipantCounts.Ended)
+				assert.EqualValues(t, 0, resp.ParticipantCounts.Invited)
+				assert.EqualValues(t, 0, resp.ParticipantCounts.Started)
+				assert.EqualValues(t, 0, resp.ParticipantCounts.Ended)
 			},
 		},
 		{
@@ -1265,9 +1265,9 @@ func TestGetExam(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ExamResponse) {
-				assert.Equal(t, int64(2), resp.CreatedBy) // Created by different user
+				assert.EqualValues(t, 2, resp.CreatedBy) // Created by different user
 				assert.NotNil(t, resp.ParticipantCounts)
-				assert.Equal(t, int32(1), resp.ParticipantCounts.Invited)
+				assert.EqualValues(t, 1, resp.ParticipantCounts.Invited)
 			},
 		},
 		{

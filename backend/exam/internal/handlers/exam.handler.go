@@ -83,7 +83,7 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 		CreatedBy:          userID,
 		MaxCandidatesCount: req.MaxCandidatesCount,
 		PaperID:            req.PaperId,
-		DurationMinutes:    req.DurationMinutes,
+		DurationMinutes:    int16(req.DurationMinutes),
 	}
 
 	// Only set Type if it's not LINK - will use database default
@@ -183,7 +183,7 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 	}
 
 	if req.DurationMinutes != nil && req.GetDurationMinutes() > 0 {
-		exam.DurationMinutes = req.GetDurationMinutes()
+		exam.DurationMinutes = int16(req.GetDurationMinutes())
 		isUpdated = true
 	}
 

@@ -46,8 +46,8 @@ func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
 		response[i] = dtos.ExamParticipantResponseDto{
 			ID:           p.Id,
 			UserID:       p.UserId,
-			Status:       int(p.Status),
-			ScoreAwarded: int(p.ScoreAwarded),
+			Status:       p.Status,
+			ScoreAwarded: p.ScoreAwarded,
 		}
 
 		if err == nil {
@@ -162,8 +162,8 @@ func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
 	response := dtos.AddExamParticipantResponseDto{
 		ID:           participant.Id,
 		UserID:       participant.UserId,
-		Status:       int(participant.Status),
-		ScoreAwarded: int(participant.ScoreAwarded),
+		Status:       participant.Status,
+		ScoreAwarded: participant.ScoreAwarded,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

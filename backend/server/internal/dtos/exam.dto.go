@@ -29,7 +29,7 @@ type ExamResponseDto struct {
 	EndsAt             time.Time `json:"ends_at"`
 	CreatedBy          int64     `json:"created_by"`
 	Type               string    `json:"type"`
-	MaxCandidatesCount int       `json:"max_candidates_count"`
+	MaxCandidatesCount int32     `json:"max_candidates_count"`
 	PaperID            int64     `json:"paper_id"`
 	DurationMinutes    int32     `json:"duration_minutes"`
 }
@@ -37,8 +37,8 @@ type ExamResponseDto struct {
 type ExamParticipantResponseDto struct {
 	ID               int64      `json:"id"`
 	UserID           int64      `json:"user_id"`
-	Status           int        `json:"status"`
-	ScoreAwarded     int        `json:"score_awarded"`
+	Status           int32      `json:"status"`
+	ScoreAwarded     int32      `json:"score_awarded"`
 	StartedAt        *time.Time `json:"started_at,omitempty"`
 	EndedAt          *time.Time `json:"ended_at,omitempty"`
 	ScheduledEndTime *time.Time `json:"scheduled_end_time,omitempty"`
@@ -59,8 +59,8 @@ type AddExamParticipantDto struct {
 type AddExamParticipantResponseDto struct {
 	ID           int64 `json:"id"`
 	UserID       int64 `json:"user_id"`
-	Status       int   `json:"status"`
-	ScoreAwarded int   `json:"score_awarded"`
+	Status       int32 `json:"status"`
+	ScoreAwarded int32 `json:"score_awarded"`
 }
 
 type ExamQuestionMinimalResponseDto struct {

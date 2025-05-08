@@ -9,7 +9,7 @@ type QuestionResponseDto struct {
 	Type          string          `json:"type"`
 	Tags          json.RawMessage `json:"tags"`
 	PaperID       int64           `json:"paper_id"`
-	MaxScore      int             `json:"max_score"`
+	MaxScore      int32           `json:"max_score"`
 	CorrectAnswer string          `json:"correct_answer"`
 }
 
@@ -17,14 +17,14 @@ type QuestionMinimalResponseDto struct {
 	ID         int64           `json:"id"`
 	CategoryID int64           `json:"category_id"`
 	PaperID    int64           `json:"paper_id"`
-	Order      int             `json:"order"`
+	Order      int32           `json:"order"`
 	Question   json.RawMessage `json:"question"`
 }
 
 type QuestionCategoryResponseDto struct {
 	ID    int64  `json:"id"`
 	Name  string `json:"name"`
-	Order int    `json:"order"`
+	Order int32  `json:"order"`
 }
 
 type CreateQuestionDto struct {
@@ -32,7 +32,7 @@ type CreateQuestionDto struct {
 	CategoryID    int64           `json:"category_id" validate:"required"`
 	Type          string          `json:"type" validate:"required"`
 	Tags          json.RawMessage `json:"tags,omitempty" validate:"required"`
-	MaxScore      int             `json:"max_score" validate:"required"`
+	MaxScore      int32           `json:"max_score" validate:"required"`
 	CorrectAnswer string          `json:"correct_answer,omitempty"`
 }
 
@@ -40,7 +40,7 @@ type UpdateQuestionDto struct {
 	Type          string          `json:"type,omitempty"`
 	Question      json.RawMessage `json:"question,omitempty"`
 	CategoryID    int64           `json:"category_id,omitempty"`
-	MaxScore      int             `json:"max_score,omitempty"`
+	MaxScore      int32           `json:"max_score,omitempty"`
 	Tags          json.RawMessage `json:"tags,omitempty"`
 	CorrectAnswer string          `json:"correct_answer,omitempty"`
 }

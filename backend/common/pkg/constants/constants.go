@@ -53,3 +53,4 @@ const (
 )
 
 const MAX_SCORE_PER_QUESTION = 1000
+const MAX_EXAM_DURATION_MINUTES int16 = 1440 // 24 hours

@@ -73,7 +73,7 @@ func createExamResponse(exam *models.Exam) (*proto.ExamResponse, error) {
 		CreatedBy:          exam.CreatedBy,
 		Type:               exam.Type,
 		MaxCandidatesCount: exam.MaxCandidatesCount,
-		DurationMinutes:    exam.DurationMinutes,
+		DurationMinutes:    int32(exam.DurationMinutes),
 		PaperId:            exam.PaperID,
 		ParticipantCounts: &proto.ParticipantCount{
 			Unattended: int32(counts.Unattended),

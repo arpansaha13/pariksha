@@ -131,16 +131,16 @@ func TestCreateQuestion(t *testing.T) {
 				// Validate question response
 				assert.Equal(t, "Test MCQ", resp.GetMcq().Statement)
 				assert.Equal(t, []string{"A", "B", "C"}, resp.GetMcq().Options)
-				assert.Equal(t, int32(5), resp.MaxScore)
+				assert.EqualValues(t, 5, resp.MaxScore)
 
 				// Validate paper's question counts were updated
 				var updatedPaper models.Paper
 				require.NoError(t, db.DB.First(&updatedPaper, paper.ID).Error)
 				counts, err := updatedPaper.GetQuestionCounts()
 				require.NoError(t, err)
-				assert.Equal(t, 1, counts.MCQ)
-				assert.Equal(t, 0, counts.Short)
-				assert.Equal(t, 0, counts.Long)
+				assert.EqualValues(t, 1, counts.MCQ)
+				assert.EqualValues(t, 0, counts.Short)
+				assert.EqualValues(t, 0, counts.Long)
 			},
 		},
 		{
@@ -162,7 +162,7 @@ func TestCreateQuestion(t *testing.T) {
 			validate: func(t *testing.T, paper *models.Paper, resp *proto.QuestionResponse) {
 				// Validate question response
 				assert.Equal(t, "Test Short Answer", resp.GetGeneral().Statement)
-				assert.Equal(t, int32(10), resp.MaxScore)
+				assert.EqualValues(t, 10, resp.MaxScore)
 				assert.Equal(t, constants.QUESTION_TYPE_SHORT, resp.Type)
 
 				// Validate paper's question counts
@@ -170,9 +170,9 @@ func TestCreateQuestion(t *testing.T) {
 				require.NoError(t, db.DB.First(&updatedPaper, paper.ID).Error)
 				counts, err := updatedPaper.GetQuestionCounts()
 				require.NoError(t, err)
-				assert.Equal(t, 0, counts.MCQ)
-				assert.Equal(t, 1, counts.Short)
-				assert.Equal(t, 0, counts.Long)
+				assert.EqualValues(t, 0, counts.MCQ)
+				assert.EqualValues(t, 1, counts.Short)
+				assert.EqualValues(t, 0, counts.Long)
 			},
 		},
 		{
@@ -194,7 +194,7 @@ func TestCreateQuestion(t *testing.T) {
 			validate: func(t *testing.T, paper *models.Paper, resp *proto.QuestionResponse) {
 				// Validate question response
 				assert.Equal(t, "Test Long Answer", resp.GetGeneral().Statement)
-				assert.Equal(t, int32(15), resp.MaxScore)
+				assert.EqualValues(t, 15, resp.MaxScore)
 				assert.Equal(t, constants.QUESTION_TYPE_LONG, resp.Type)
 
 				// Validate paper's question counts
@@ -202,9 +202,9 @@ func TestCreateQuestion(t *testing.T) {
 				require.NoError(t, db.DB.First(&updatedPaper, paper.ID).Error)
 				counts, err := updatedPaper.GetQuestionCounts()
 				require.NoError(t, err)
-				assert.Equal(t, 0, counts.MCQ)
-				assert.Equal(t, 0, counts.Short)
-				assert.Equal(t, 1, counts.Long)
+				assert.EqualValues(t, 0, counts.MCQ)
+				assert.EqualValues(t, 0, counts.Short)
+				assert.EqualValues(t, 1, counts.Long)
 			},
 		},
 		{
@@ -312,16 +312,16 @@ func TestUpdateQuestion(t *testing.T) {
 				require.NoError(t, json.Unmarshal(updated.Question, &mcq))
 				assert.Equal(t, "Updated MCQ", mcq.Statement)
 				assert.Equal(t, []string{"X", "Y", "Z"}, mcq.Options)
-				assert.Equal(t, int16(10), updated.MaxScore)
+				assert.EqualValues(t, 10, updated.MaxScore)
 
 				// Verify question counts didn't change
 				var updatedPaper models.Paper
 				require.NoError(t, db.DB.First(&updatedPaper, paper.ID).Error)
 				counts, err := updatedPaper.GetQuestionCounts()
 				require.NoError(t, err)
-				assert.Equal(t, 1, counts.MCQ)
-				assert.Equal(t, 0, counts.Short)
-				assert.Equal(t, 0, counts.Long)
+				assert.EqualValues(t, 1, counts.MCQ)
+				assert.EqualValues(t, 0, counts.Short)
+				assert.EqualValues(t, 0, counts.Long)
 			},
 		},
 		{
@@ -363,9 +363,9 @@ func TestUpdateQuestion(t *testing.T) {
 				require.NoError(t, db.DB.First(&updatedPaper, paper.ID).Error)
 				counts, err := updatedPaper.GetQuestionCounts()
 				require.NoError(t, err)
-				assert.Equal(t, 0, counts.MCQ, "MCQ count should decrease")
-				assert.Equal(t, 1, counts.Short, "Short count should increase")
-				assert.Equal(t, 0, counts.Long)
+				assert.EqualValues(t, 0, counts.MCQ, "MCQ count should decrease")
+				assert.EqualValues(t, 1, counts.Short, "Short count should increase")
+				assert.EqualValues(t, 0, counts.Long)
 			},
 		},
 		{
@@ -403,12 +403,12 @@ func TestUpdateQuestion(t *testing.T) {
 				// New question should be created
 				var newQuestion models.Question
 				require.NoError(t, db.DB.Where("paper_id = ?", question.PaperID).First(&newQuestion).Error)
-				assert.NotEqual(t, question.ID, newQuestion.ID)
+				assert.NotEqualValues(t, question.ID, newQuestion.ID)
 				var mcq structs.MCQQuestion
 				require.NoError(t, json.Unmarshal(newQuestion.Question, &mcq))
 				assert.Equal(t, "Updated MCQ", mcq.Statement)
 				assert.Equal(t, []string{"X", "Y", "Z"}, mcq.Options)
-				assert.Equal(t, int16(10), newQuestion.MaxScore)
+				assert.EqualValues(t, 10, newQuestion.MaxScore)
 				assert.False(t, newQuestion.Locked)
 			},
 		},
@@ -498,7 +498,7 @@ func TestUpdateQuestion(t *testing.T) {
 				assert.Equal(t, []string{"X", "Y", "Z", "W"}, mcq.Options)
 
 				// Verify other fields
-				assert.Equal(t, int16(10), updated.MaxScore)
+				assert.EqualValues(t, 10, updated.MaxScore)
 				var tags []string
 				require.NoError(t, json.Unmarshal(updated.Tags, &tags))
 				assert.ElementsMatch(t, []string{"updated", "mcq"}, tags)
@@ -539,7 +539,7 @@ func TestUpdateQuestion(t *testing.T) {
 				assert.Equal(t, "Updated Short Question", general.Statement)
 
 				// Verify other fields
-				assert.Equal(t, int16(10), updated.MaxScore)
+				assert.EqualValues(t, 10, updated.MaxScore)
 				assert.Equal(t, "Expected answer", updated.CorrectAnswer.String)
 				assert.True(t, updated.CorrectAnswer.Valid)
 			},
@@ -657,9 +657,9 @@ func TestDeleteQuestion(t *testing.T) {
 				require.NoError(t, db.DB.First(&updatedPaper, paper.ID).Error)
 				counts, err := updatedPaper.GetQuestionCounts()
 				require.NoError(t, err)
-				assert.Equal(t, 0, counts.MCQ, "MCQ count should decrease")
-				assert.Equal(t, 1, counts.Short)
-				assert.Equal(t, 1, counts.Long)
+				assert.EqualValues(t, 0, counts.MCQ, "MCQ count should decrease")
+				assert.EqualValues(t, 1, counts.Short)
+				assert.EqualValues(t, 1, counts.Long)
 			},
 		},
 		{
@@ -699,9 +699,9 @@ func TestDeleteQuestion(t *testing.T) {
 				require.NoError(t, db.DB.First(&updatedPaper, paper.ID).Error)
 				counts, err := updatedPaper.GetQuestionCounts()
 				require.NoError(t, err)
-				assert.Equal(t, 1, counts.MCQ, "MCQ count should decrease")
-				assert.Equal(t, 1, counts.Short)
-				assert.Equal(t, 0, counts.Long)
+				assert.EqualValues(t, 1, counts.MCQ, "MCQ count should decrease")
+				assert.EqualValues(t, 1, counts.Short)
+				assert.EqualValues(t, 0, counts.Long)
 			},
 		},
 		// Add more test cases for other scenarios

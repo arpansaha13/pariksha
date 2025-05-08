@@ -40,9 +40,9 @@ func TestGetExamParticipants(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ParticipantList) {
-				assert.Equal(t, 2, len(resp.Participants))
-				assert.Equal(t, constants.PARTICIPANT_STATUS_INVITED, int16(resp.Participants[0].Status))
-				assert.Equal(t, constants.PARTICIPANT_STATUS_STARTED, int16(resp.Participants[1].Status))
+				assert.EqualValues(t, 2, len(resp.Participants))
+				assert.EqualValues(t, constants.PARTICIPANT_STATUS_INVITED, int16(resp.Participants[0].Status))
+				assert.EqualValues(t, constants.PARTICIPANT_STATUS_STARTED, int16(resp.Participants[1].Status))
 			},
 		},
 		{
@@ -54,7 +54,7 @@ func TestGetExamParticipants(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.ParticipantList) {
-				assert.Equal(t, 0, len(resp.Participants))
+				assert.EqualValues(t, 0, len(resp.Participants))
 			},
 		},
 		{
@@ -112,18 +112,18 @@ func TestAddExamParticipant(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, examID int64, resp *proto.ParticipantResponse) {
-				assert.Equal(t, int64(2), resp.UserId)
-				assert.Equal(t, int32(constants.PARTICIPANT_STATUS_INVITED), resp.Status)
+				assert.EqualValues(t, 2, resp.UserId)
+				assert.EqualValues(t, constants.PARTICIPANT_STATUS_INVITED, resp.Status)
 
 				// Check if exam participant counts were updated
 				var exam models.Exam
 				require.NoError(t, db.DB.First(&exam, examID).Error)
 				counts, err := exam.GetParticipantCounts()
 				require.NoError(t, err)
-				assert.Equal(t, 1, counts.Invited, "Invited count should be updated")
-				assert.Equal(t, 0, counts.Started)
-				assert.Equal(t, 0, counts.Ended)
-				assert.Equal(t, 0, counts.Unattended)
+				assert.EqualValues(t, 1, counts.Invited, "Invited count should be updated")
+				assert.EqualValues(t, 0, counts.Started)
+				assert.EqualValues(t, 0, counts.Ended)
+				assert.EqualValues(t, 0, counts.Unattended)
 			},
 		},
 		{
@@ -229,7 +229,7 @@ func TestRemoveExamParticipant(t *testing.T) {
 			validate: func(t *testing.T, examID, participantID int64) {
 				var count int64
 				db.DB.Model(&models.ExamParticipant{}).Where("id = ?", participantID).Count(&count)
-				assert.Equal(t, int64(0), count)
+				assert.EqualValues(t, 0, count)
 			},
 		},
 		{

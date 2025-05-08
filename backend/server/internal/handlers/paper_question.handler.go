@@ -50,7 +50,7 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 			ID:         q.Id,
 			CategoryID: q.CategoryId,
 			PaperID:    q.PaperId,
-			Order:      int(q.Order),
+			Order:      q.Order,
 			Question:   questionData,
 		}
 	}
@@ -99,7 +99,7 @@ func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 		Type:          response.Type,
 		Tags:          tags,
 		PaperID:       response.PaperId,
-		MaxScore:      int(response.MaxScore),
+		MaxScore:      response.MaxScore,
 		CorrectAnswer: *response.CorrectAnswer,
 	}
 

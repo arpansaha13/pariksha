@@ -52,10 +52,10 @@ func TestGetPaperCategories(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, categories []models.QuestionCategory, resp *proto.CategoryList) {
-				assert.Equal(t, len(categories), len(resp.Categories))
+				assert.EqualValues(t, len(categories), len(resp.Categories))
 				for i, c := range resp.Categories {
 					assert.Equal(t, categories[i].Name, c.Name)
-					assert.Equal(t, int32(categories[i].Order), c.Order)
+					assert.EqualValues(t, categories[i].Order, c.Order)
 				}
 			},
 		},
@@ -111,7 +111,7 @@ func TestCreateCategory(t *testing.T) {
 			validate: func(t *testing.T, resp *proto.CategoryResponse) {
 				assert.NotZero(t, resp.Id)
 				assert.Equal(t, "Category 2", resp.Name) // Second category since createTestPaper creates one
-				assert.Equal(t, int32(2), resp.Order)
+				assert.EqualValues(t, 2, resp.Order)
 			},
 		},
 		{
@@ -214,7 +214,7 @@ func TestUpdateCategory(t *testing.T) {
 				// New category should be created
 				var newCategory models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ? AND name = ?", category.PaperID, "Updated Name").First(&newCategory).Error)
-				assert.NotEqual(t, category.ID, newCategory.ID) // Different record
+				assert.NotEqualValues(t, category.ID, newCategory.ID) // Different record
 				assert.Equal(t, "Updated Name", newCategory.Name)
 				assert.Equal(t, category.Order, newCategory.Order)
 				assert.False(t, newCategory.Locked)
@@ -266,7 +266,7 @@ func TestUpdateCategory(t *testing.T) {
 				// New category should be created
 				var newCategory models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ? AND name = ?", category.PaperID, "Updated Name").First(&newCategory).Error)
-				assert.NotEqual(t, category.ID, newCategory.ID)
+				assert.NotEqualValues(t, category.ID, newCategory.ID)
 				assert.Equal(t, "Updated Name", newCategory.Name)
 				assert.Equal(t, category.Order, newCategory.Order)
 				assert.False(t, newCategory.Locked)
@@ -274,7 +274,7 @@ func TestUpdateCategory(t *testing.T) {
 				// Questions should be moved to new category
 				var questions []models.Question
 				require.NoError(t, db.DB.Where("category_id = ?", newCategory.ID).Find(&questions).Error)
-				assert.Equal(t, 2, len(questions))
+				assert.EqualValues(t, 2, len(questions))
 				for _, q := range questions {
 					assert.Equal(t, newCategory.ID, q.CategoryID)
 					assert.True(t, q.PaperID.Valid)
@@ -284,7 +284,7 @@ func TestUpdateCategory(t *testing.T) {
 				// No questions should remain in old category
 				count := int64(0)
 				require.NoError(t, db.DB.Model(&models.Question{}).Where("category_id = ?", category.ID).Count(&count).Error)
-				assert.Equal(t, int64(0), count)
+				assert.EqualValues(t, 0, count)
 			},
 		},
 		{
@@ -383,8 +383,8 @@ func TestReorderCategories(t *testing.T) {
 				assert.Equal(t, len(categories), len(updated))
 				assert.Equal(t, categories[1].ID, updated[0].ID) // Category 2 should be first
 				assert.Equal(t, categories[0].ID, updated[1].ID) // Default category should be second
-				assert.Equal(t, int16(1), updated[0].Order)
-				assert.Equal(t, int16(2), updated[1].Order)
+				assert.EqualValues(t, 1, updated[0].Order)
+				assert.EqualValues(t, 2, updated[1].Order)
 			},
 		},
 	}

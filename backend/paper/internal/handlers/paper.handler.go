@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 
+	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
@@ -129,11 +130,11 @@ func (s *PaperServer) UpdatePaper(ctx context.Context, req *proto.UpdatePaperReq
 		if req.GetDurationMinutes() < 0 {
 			return nil, status.Error(codes.InvalidArgument, "duration must be positive")
 		}
-		if req.GetDurationMinutes() > 1440 { // 24 hours = 1440 minutes
+		if req.GetDurationMinutes() > int32(constants.MAX_EXAM_DURATION_MINUTES) {
 			return nil, status.Error(codes.InvalidArgument, "duration cannot exceed 24 hours")
 		}
-		if int(req.GetDurationMinutes()) != paper.DurationMinutes {
-			paper.DurationMinutes = int(req.GetDurationMinutes())
+		if int16(req.GetDurationMinutes()) != paper.DurationMinutes {
+			paper.DurationMinutes = int16(req.GetDurationMinutes())
 			isUpdated = true
 		}
 	}

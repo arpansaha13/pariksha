@@ -12,8 +12,8 @@ type UpdatePaperDto struct {
 type PaperResponseDto struct {
 	ID              int64           `json:"id"`
 	Title           string          `json:"title"`
-	MaxScore        int             `json:"max_score"`
-	DurationMinutes int             `json:"duration_minutes"`
+	MaxScore        int32           `json:"max_score"`
+	DurationMinutes int32           `json:"duration_minutes"`
 	QuestionCounts  json.RawMessage `json:"question_counts"`
 	CreatedBy       int64           `json:"created_by"`
 }
@@ -21,8 +21,8 @@ type PaperResponseDto struct {
 type UpdatePaperResponseDto struct {
 	ID              int64           `json:"id"`
 	Title           string          `json:"title"`
-	MaxScore        int             `json:"max_score"`
-	DurationMinutes int             `json:"duration_minutes"`
+	MaxScore        int32           `json:"max_score"`
+	DurationMinutes int32           `json:"duration_minutes"`
 	QuestionCounts  json.RawMessage `json:"question_counts"`
 	CreatedBy       int64           `json:"created_by"`
 }

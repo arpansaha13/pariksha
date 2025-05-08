@@ -69,7 +69,7 @@ func mapQuestionToDto(resp *proto.QuestionResponse) dtos.QuestionResponseDto {
 		Type:          resp.Type,
 		Tags:          tags,
 		PaperID:       resp.PaperId,
-		MaxScore:      int(resp.MaxScore),
+		MaxScore:      resp.MaxScore,
 		CategoryID:    resp.CategoryId,
 		CorrectAnswer: resp.GetCorrectAnswer(),
 	}

@@ -49,7 +49,7 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 			validate: func(t *testing.T, resp *proto.AnswerResponse) {
 				assert.NotNil(t, resp)
 				assert.True(t, bytes.Equal([]byte(`{"text":"Test Answer"}`), resp.Answer))
-				assert.Equal(t, int32(5), resp.ScoreAwarded)
+				assert.EqualValues(t, 5, resp.ScoreAwarded)
 				assert.Equal(t, "Test Comment", resp.Comments)
 			},
 		},
@@ -74,10 +74,10 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.AnswerResponse) {
 				assert.NotNil(t, resp)
-				assert.Equal(t, int64(0), resp.Id)
-				assert.Equal(t, int64(0), resp.ExamParticipantId)
+				assert.EqualValues(t, 0, resp.Id)
+				assert.EqualValues(t, 0, resp.ExamParticipantId)
 				assert.Empty(t, resp.Answer)
-				assert.Equal(t, int32(0), resp.ScoreAwarded)
+				assert.EqualValues(t, 0, resp.ScoreAwarded)
 				assert.Empty(t, resp.Comments)
 			},
 		},
@@ -138,11 +138,11 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.AnswerResponse) {
 				assert.NotNil(t, resp)
-				assert.Equal(t, int64(9999), resp.QuestionId)
-				assert.Equal(t, int64(0), resp.Id)
-				assert.Equal(t, int64(0), resp.ExamParticipantId)
+				assert.EqualValues(t, 9999, resp.QuestionId)
+				assert.EqualValues(t, 0, resp.Id)
+				assert.EqualValues(t, 0, resp.ExamParticipantId)
 				assert.Empty(t, resp.Answer)
-				assert.Equal(t, int32(0), resp.ScoreAwarded)
+				assert.EqualValues(t, 0, resp.ScoreAwarded)
 				assert.Empty(t, resp.Comments)
 			},
 		},
@@ -232,14 +232,14 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 			validate: func(t *testing.T, answerId int64) {
 				var answer models.Answer
 				require.NoError(t, db.DB.First(&answer, answerId).Error)
-				assert.Equal(t, int(newScore), answer.ScoreAwarded)
+				assert.EqualValues(t, newScore, answer.ScoreAwarded)
 				assert.Equal(t, comments, answer.Comments.String)
 				assert.True(t, answer.Evaluated)
 
 				// Verify participant total score is updated
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.First(&participant, answer.ExamParticipantID).Error)
-				assert.Equal(t, int(newScore), participant.ScoreAwarded)
+				assert.EqualValues(t, newScore, participant.ScoreAwarded)
 			},
 		},
 		{
@@ -272,7 +272,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				var answer models.Answer
 				require.NoError(t, db.DB.First(&answer, answerId).Error)
 				assert.Equal(t, comments, answer.Comments.String)
-				assert.Equal(t, 5, answer.ScoreAwarded) // Original score unchanged
+				assert.EqualValues(t, 5, answer.ScoreAwarded) // Original score unchanged
 			},
 		},
 		{
@@ -376,12 +376,12 @@ func TestMarkParticipantAsEvaluated(t *testing.T) {
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, participant *models.ExamParticipant, resp *proto.EvaluationStatusResponse) {
 				// Verify unevaluated count is 0
-				assert.Equal(t, int32(0), resp.UnevaluatedCount)
+				assert.EqualValues(t, 0, resp.UnevaluatedCount)
 
 				// Verify participant status changed to EVALUATED
 				var updatedParticipant models.ExamParticipant
 				require.NoError(t, db.DB.First(&updatedParticipant, participant.ID).Error)
-				assert.Equal(t, constants.PARTICIPANT_STATUS_EVALUATED, updatedParticipant.Status)
+				assert.EqualValues(t, constants.PARTICIPANT_STATUS_EVALUATED, updatedParticipant.Status)
 			},
 		},
 		{
@@ -411,12 +411,12 @@ func TestMarkParticipantAsEvaluated(t *testing.T) {
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, participant *models.ExamParticipant, resp *proto.EvaluationStatusResponse) {
 				// Verify one answer is still unevaluated
-				assert.Equal(t, int32(1), resp.UnevaluatedCount)
+				assert.EqualValues(t, 1, resp.UnevaluatedCount)
 
 				// Verify participant status remains ENDED
 				var updatedParticipant models.ExamParticipant
 				require.NoError(t, db.DB.First(&updatedParticipant, participant.ID).Error)
-				assert.Equal(t, constants.PARTICIPANT_STATUS_ENDED, updatedParticipant.Status)
+				assert.EqualValues(t, constants.PARTICIPANT_STATUS_ENDED, updatedParticipant.Status)
 			},
 		},
 		{

@@ -77,7 +77,7 @@ func questionToProto(question models.Question) (*proto.QuestionResponse, error) 
 }
 
 // Helper function to update question counts
-func updateQuestionCounts(rawCounts json.RawMessage, questionType string, delta int) (json.RawMessage, error) {
+func updateQuestionCounts(rawCounts json.RawMessage, questionType string, delta int16) (json.RawMessage, error) {
 	var counts models.QuestionCount
 	if err := json.Unmarshal(rawCounts, &counts); err != nil {
 		return nil, err
@@ -220,8 +220,8 @@ func updatePaperStats(tx *gorm.DB, paper models.Paper, oldType, newType string, 
 
 // validateMaxScore checks if the given score is within valid range (0 to MAX_SCORE_PER_QUESTION)
 func validateMaxScore(score int32) error {
-    if score < 0 || score > constants.MAX_SCORE_PER_QUESTION {
-        return status.Errorf(codes.InvalidArgument, "max score must be between 0 and %d", constants.MAX_SCORE_PER_QUESTION)
-    }
-    return nil
+	if score < 0 || score > constants.MAX_SCORE_PER_QUESTION {
+		return status.Errorf(codes.InvalidArgument, "max score must be between 0 and %d", constants.MAX_SCORE_PER_QUESTION)
+	}
+	return nil
 }

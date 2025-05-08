@@ -35,7 +35,7 @@ func GetUserExams(w http.ResponseWriter, r *http.Request) {
 			EndsAt:             exam.EndsAt.AsTime(),
 			CreatedBy:          exam.CreatedBy,
 			Type:               exam.Type,
-			MaxCandidatesCount: int(exam.MaxCandidatesCount),
+			MaxCandidatesCount: exam.MaxCandidatesCount,
 			PaperID:            exam.PaperId,
 			DurationMinutes:    exam.DurationMinutes,
 		}
@@ -102,7 +102,7 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 		EndsAt:             exam.EndsAt.AsTime(),
 		CreatedBy:          exam.CreatedBy,
 		Type:               exam.Type,
-		MaxCandidatesCount: int(exam.MaxCandidatesCount),
+		MaxCandidatesCount: exam.MaxCandidatesCount,
 		PaperID:            exam.PaperId,
 		DurationMinutes:    exam.DurationMinutes,
 	}
@@ -167,7 +167,7 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 		EndsAt:             exam.EndsAt.AsTime(),
 		CreatedBy:          exam.CreatedBy,
 		Type:               exam.Type,
-		MaxCandidatesCount: int(exam.MaxCandidatesCount),
+		MaxCandidatesCount: exam.MaxCandidatesCount,
 		PaperID:            exam.PaperId,
 		DurationMinutes:    exam.DurationMinutes,
 	}
@@ -247,7 +247,7 @@ func GetExam(w http.ResponseWriter, r *http.Request) {
 		EndsAt:             exam.EndsAt.AsTime(),
 		CreatedBy:          exam.CreatedBy,
 		Type:               exam.Type,
-		MaxCandidatesCount: int(exam.MaxCandidatesCount),
+		MaxCandidatesCount: exam.MaxCandidatesCount,
 		PaperID:            exam.PaperId,
 		DurationMinutes:    exam.DurationMinutes,
 	}

@@ -36,17 +36,17 @@ func TestGetUserPapers(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.PaperList) {
-				assert.Equal(t, 2, len(resp.Papers))
+				assert.EqualValues(t, 2, len(resp.Papers))
 
 				// Validate first paper
-				assert.Equal(t, int32(2), resp.Papers[0].QuestionCounts.Mcq)
-				assert.Equal(t, int32(1), resp.Papers[0].QuestionCounts.Short)
-				assert.Equal(t, int32(0), resp.Papers[0].QuestionCounts.Long)
+				assert.EqualValues(t, 2, resp.Papers[0].QuestionCounts.Mcq)
+				assert.EqualValues(t, 1, resp.Papers[0].QuestionCounts.Short)
+				assert.EqualValues(t, 0, resp.Papers[0].QuestionCounts.Long)
 
 				// Validate second paper
-				assert.Equal(t, int32(1), resp.Papers[1].QuestionCounts.Mcq)
-				assert.Equal(t, int32(0), resp.Papers[1].QuestionCounts.Short)
-				assert.Equal(t, int32(1), resp.Papers[1].QuestionCounts.Long)
+				assert.EqualValues(t, 1, resp.Papers[1].QuestionCounts.Mcq)
+				assert.EqualValues(t, 0, resp.Papers[1].QuestionCounts.Short)
+				assert.EqualValues(t, 1, resp.Papers[1].QuestionCounts.Long)
 			},
 		},
 		{
@@ -54,7 +54,7 @@ func TestGetUserPapers(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.PaperList) {
-				assert.Equal(t, 0, len(resp.Papers))
+				assert.EqualValues(t, 0, len(resp.Papers))
 			},
 		},
 		{
@@ -106,7 +106,7 @@ func TestCreatePaper(t *testing.T) {
 				var categories []models.QuestionCategory
 				err := db.DB.Where("paper_id = ?", resp.Id).Find(&categories).Error
 				require.NoError(t, err)
-				assert.Equal(t, 1, len(categories))
+				assert.EqualValues(t, 1, len(categories))
 				assert.Equal(t, "Category 1", categories[0].Name)
 
 				// Verify paper permissions
@@ -170,7 +170,7 @@ func TestUpdatePaper(t *testing.T) {
 				err := db.DB.First(&updated, paper.ID).Error
 				require.NoError(t, err)
 				assert.Equal(t, "Updated Title", updated.Title)
-				assert.Equal(t, 60, updated.DurationMinutes) // Default duration unchanged
+				assert.EqualValues(t, 60, updated.DurationMinutes) // Default duration unchanged
 			},
 		},
 		{
@@ -189,7 +189,7 @@ func TestUpdatePaper(t *testing.T) {
 				err := db.DB.First(&updated, paper.ID).Error
 				require.NoError(t, err)
 				assert.Equal(t, "Test Paper", updated.Title) // Original title unchanged
-				assert.Equal(t, 90, updated.DurationMinutes)
+				assert.EqualValues(t, 90, updated.DurationMinutes)
 			},
 		},
 		{
@@ -209,7 +209,7 @@ func TestUpdatePaper(t *testing.T) {
 				err := db.DB.First(&updated, paper.ID).Error
 				require.NoError(t, err)
 				assert.Equal(t, "New Title", updated.Title)
-				assert.Equal(t, 120, updated.DurationMinutes)
+				assert.EqualValues(t, 120, updated.DurationMinutes)
 			},
 		},
 		{
@@ -280,7 +280,7 @@ func TestUpdatePaper(t *testing.T) {
 				var updated models.Paper
 				err := db.DB.Take(&updated, paper.ID).Error
 				require.NoError(t, err)
-				assert.Equal(t, 0, updated.DurationMinutes) // Updates to zero
+				assert.EqualValues(t, 0, updated.DurationMinutes) // Updates to zero
 			},
 		},
 		{
@@ -340,13 +340,13 @@ func TestGetPaper(t *testing.T) {
 			validate: func(t *testing.T, resp *proto.PaperResponse) {
 				assert.NotZero(t, resp.Id)
 				assert.Equal(t, "Test Paper", resp.Title)
-				assert.Equal(t, int32(60), resp.DurationMinutes)
+				assert.EqualValues(t, 60, resp.DurationMinutes)
 
 				// Validate question counts
 				assert.NotNil(t, resp.QuestionCounts)
-				assert.Equal(t, int32(2), resp.QuestionCounts.Mcq)
-				assert.Equal(t, int32(1), resp.QuestionCounts.Short)
-				assert.Equal(t, int32(1), resp.QuestionCounts.Long)
+				assert.EqualValues(t, 2, resp.QuestionCounts.Mcq)
+				assert.EqualValues(t, 1, resp.QuestionCounts.Short)
+				assert.EqualValues(t, 1, resp.QuestionCounts.Long)
 
 				// Verify paper permissions
 				var permissions models.PaperPermissions

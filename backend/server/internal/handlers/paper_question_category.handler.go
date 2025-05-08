@@ -38,7 +38,7 @@ func GetPaperCategories(w http.ResponseWriter, r *http.Request) {
 		categories[i] = dtos.QuestionCategoryResponseDto{
 			ID:    c.Id,
 			Name:  c.Name,
-			Order: int(c.Order),
+			Order: c.Order,
 		}
 	}
 
@@ -70,7 +70,7 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(dtos.QuestionCategoryResponseDto{
 		ID:    response.Id,
 		Name:  response.Name,
-		Order: int(response.Order),
+		Order: response.Order,
 	})
 }
 

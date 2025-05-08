@@ -52,7 +52,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.AnswerList) {
-				assert.Equal(t, 2, len(resp.Answers))
+				assert.EqualValues(t, 2, len(resp.Answers))
 				for _, answer := range resp.Answers {
 					var answerData struct {
 						Text string `json:"text"`
@@ -60,7 +60,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 					require.NoError(t, json.Unmarshal(answer.Answer, &answerData))
 					assert.Equal(t, "Test Answer", answerData.Text)
 					assert.Equal(t, "Test Comment", answer.Comments)
-					assert.Equal(t, int32(5), answer.ScoreAwarded)
+					assert.EqualValues(t, 5, answer.ScoreAwarded)
 				}
 			},
 		},
@@ -186,7 +186,7 @@ func TestGetAnswerForExam(t *testing.T) {
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.GetAnswerResponse) {
-				assert.Equal(t, int64(9999), resp.QuestionId)
+				assert.EqualValues(t, 9999, resp.QuestionId)
 				assert.Zero(t, resp.Id)
 				assert.Nil(t, resp.Answer)
 			},
@@ -271,7 +271,7 @@ func TestUpsertAnswer(t *testing.T) {
 				}
 				require.NoError(t, json.Unmarshal(*answer.Answer, &answerData))
 				assert.Equal(t, "Test answer content", answerData.Text)
-				assert.Equal(t, int64(1), answer.QuestionID)
+				assert.EqualValues(t, 1, answer.QuestionID)
 			},
 		},
 		{
