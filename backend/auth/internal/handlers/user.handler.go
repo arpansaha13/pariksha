@@ -12,6 +12,7 @@ import (
 	"pariksha/auth/internal/config/db"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/utils"
 )
 
 func (s *AuthServer) GetUser(ctx context.Context, req *proto.GetUserRequest) (*proto.UserProfileResponse, error) {
@@ -55,11 +56,17 @@ func (s *AuthServer) UpdateUser(ctx context.Context, req *proto.UpdateUserReques
 	}
 
 	if req.FirstName != nil && *req.FirstName != user.FirstName.String {
+		if !utils.IsAlpha(*req.FirstName) {
+			return nil, status.Error(codes.InvalidArgument, "first name must contain only alphabets")
+		}
 		user.FirstName = sql.NullString{String: *req.FirstName, Valid: true}
 		isUpdated = true
 	}
 
 	if req.LastName != nil && *req.LastName != user.LastName.String {
+		if !utils.IsAlpha(*req.LastName) {
+			return nil, status.Error(codes.InvalidArgument, "last name must contain only alphabets")
+		}
 		user.LastName = sql.NullString{String: *req.LastName, Valid: true}
 		isUpdated = true
 	}

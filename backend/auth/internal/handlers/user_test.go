@@ -170,6 +170,34 @@ func TestUpdateUser(t *testing.T) {
 				assert.Empty(t, resp.NotUpdatedFields)
 			},
 		},
+		{
+			name: "Invalid First Name",
+			setup: func(t *testing.T) *models.User {
+				user := createTestUser(t, testVerifiedEmail, true)
+				return &user
+			},
+			makeRequest: func(user *models.User) *proto.UpdateUserRequest {
+				return &proto.UpdateUserRequest{
+					UserId:    user.ID,
+					FirstName: strPtr("John123"), // Invalid first name with numbers
+				}
+			},
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name: "Invalid Last Name",
+			setup: func(t *testing.T) *models.User {
+				user := createTestUser(t, testVerifiedEmail, true)
+				return &user
+			},
+			makeRequest: func(user *models.User) *proto.UpdateUserRequest {
+				return &proto.UpdateUserRequest{
+					UserId:   user.ID,
+					LastName: strPtr("Doe!@#"), // Invalid last name with special characters
+				}
+			},
+			expectedCode: codes.InvalidArgument,
+		},
 	}
 
 	for _, tt := range tests {

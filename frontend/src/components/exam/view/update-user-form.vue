@@ -4,7 +4,13 @@
       <h2 class="heading">Verify your information</h2>
     </template>
 
-    <UForm :state="formState" class="flex flex-col gap-y-4" @submit="onSubmit">
+    <UForm
+      :state="formState"
+      :validate="validate"
+      :validate-on="['blur']"
+      class="flex flex-col gap-y-4"
+      @submit="onSubmit"
+    >
       <UFormField label="First name" name="first_name" required>
         <UInput v-model="formState.first_name" required class="w-52" />
       </UFormField>
@@ -37,9 +43,27 @@ const emit = defineEmits<{
   submit: [form: ExamViewUpdateUserFormState]
 }>()
 
+function validate(formState: ExamViewUpdateUserFormState): FormError[] {
+  const errors = []
+
+  if (!isAlpha(formState.first_name)) {
+    errors.push({
+      name: 'first_name',
+      message: 'Name can only have alphabets',
+    })
+  }
+
+  if (!isAlpha(formState.last_name)) {
+    errors.push({
+      name: 'last_name',
+      message: 'Name can only have alphabets',
+    })
+  }
+
+  return errors
+}
+
 async function onSubmit() {
   emit('submit', formState.value)
 }
 </script>
-
-<style></style>
