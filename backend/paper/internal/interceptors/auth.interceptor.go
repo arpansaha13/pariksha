@@ -6,13 +6,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"gorm.io/gorm"
 
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
-
-	"gorm.io/gorm"
 )
 
 type CategoryCtxKey struct{}

@@ -21,7 +21,7 @@ import (
 func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperRequest) (*proto.QuestionList, error) {
 	var questions []models.Question
 	if err := db.DB.Where("paper_id = ?", req.PaperId).Find(&questions).Error; err != nil {
-		return nil, status.Error(codes.Internal, "failed to retrieve questions")
+		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
 	}
 
 	response := &proto.QuestionList{
@@ -29,36 +29,10 @@ func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperReq
 	}
 
 	for i, question := range questions {
-		response.Questions[i] = &proto.QuestionMinimal{
-			Id:         question.ID,
-			CategoryId: question.CategoryID,
-			PaperId:    question.PaperID.Int64,
-			Order:      int32(question.Order),
-			Question:   nil,
-		}
-
-		switch question.Type {
-		case constants.QUESTION_TYPE_MCQ:
-			var mcq structs.MCQQuestion
-			if err := json.Unmarshal(question.Question, &mcq); err != nil {
-				return nil, status.Error(codes.Internal, "invalid question data")
-			}
-			response.Questions[i].Question = &proto.QuestionMinimal_Mcq{
-				Mcq: &proto.McqQuestion{
-					Statement: mcq.Statement,
-					Options:   mcq.Options,
-				},
-			}
-		default:
-			var general structs.GeneralQuestion
-			if err := json.Unmarshal(question.Question, &general); err != nil {
-				return nil, status.Error(codes.Internal, "invalid question data")
-			}
-			response.Questions[i].Question = &proto.QuestionMinimal_General{
-				General: &proto.GeneralQuestion{
-					Statement: general.Statement,
-				},
-			}
+		var err error
+		response.Questions[i], err = questionToMinimalProto(question)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -66,15 +40,14 @@ func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperReq
 }
 
 func (s *PaperServer) GetPaperQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.QuestionResponse, error) {
-	question, ok := ctx.Value(interceptors.QuestionCtxKey{}).(models.Question)
-	if !ok {
+	pc, err := NewPaperContext(ctx)
+	if err != nil || pc.Question == nil {
 		return nil, status.Error(codes.Internal, "question data not found in context")
 	}
-	return questionToProto(question)
+	return questionToProto(*pc.Question)
 }
 
 func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuestionRequest) (*proto.QuestionResponse, error) {
-	// Validate max score
 	if err := validateMaxScore(req.MaxScore); err != nil {
 		return nil, err
 	}
@@ -89,7 +62,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		if err := validateQuestionData(req.Type, &mcq); err != nil {
 			return nil, err
 		}
-	case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
+	default:
 		var general structs.GeneralQuestion
 		if err := utils.StrictUnmarshal(req.RawQuestion, &general); err != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid general question format")
@@ -97,20 +70,22 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		if err := validateQuestionData(req.Type, &general); err != nil {
 			return nil, err
 		}
-	default:
-		return nil, status.Error(codes.InvalidArgument, "invalid question type")
 	}
 
 	tags, _ := json.Marshal(req.Tags)
-
 	var question models.Question
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
+
+	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		// Get max order for this category
 		var maxOrder struct{ MaxOrder int16 }
-		err := tx.Model(&models.Question{}).
+		if err := tx.Model(&models.Question{}).
 			Where("category_id = ?", req.CategoryId).
 			Select("COALESCE(MAX(\"order\"), 0) as max_order").
-			Scan(&maxOrder).Error
+			Scan(&maxOrder).Error; err != nil {
+			return status.Error(codes.Internal, constants.ErrInternalServer)
+		}
+
+		paper, err := utils.FindRecord[models.Paper](tx, req.PaperId, "paper not found")
 		if err != nil {
 			return err
 		}
@@ -133,109 +108,106 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 			return err
 		}
 
-		var paper models.Paper
-		err = db.DB.Take(&paper, req.PaperId).Error
-		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				return status.Error(codes.NotFound, "paper not found")
-			}
-			return status.Error(codes.Internal, "failed to retrieve paper")
-		}
-
-		// Update paper max score
-		if err := tx.Model(&paper).
-			UpdateColumn("max_score", gorm.Expr("max_score + ?", req.MaxScore)).
-			Error; err != nil {
-			return err
-		}
-
-		if err := tx.Preload("Category").Take(&question, question.ID).Error; err != nil {
-			return err
-		}
-
 		newCounts, err := updateQuestionCounts(paper.QuestionCounts, req.Type, 1)
 		if err != nil {
 			return err
 		}
 
-		return tx.Model(&paper).Update("question_counts", newCounts).Error
+		return updatePaperStats(tx, *paper, int32(req.MaxScore), newCounts)
 	})
 
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to create question")
+		return nil, err
 	}
 
 	return questionToProto(question)
 }
 
 func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuestionRequest) (*proto.Empty, error) {
-	question, ok := ctx.Value(interceptors.QuestionCtxKey{}).(models.Question)
-	if !ok {
+	pc, err := NewPaperContext(ctx)
+	if err != nil || pc.Question == nil {
 		return nil, status.Error(codes.Internal, "question data not found in context")
 	}
+	question := *pc.Question
 
-	// Validate max score if provided
 	if req.MaxScore != nil {
 		if err := validateMaxScore(*req.MaxScore); err != nil {
 			return nil, err
 		}
 	}
 
-	var transactionErr error
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
+	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		oldType := question.Type
 		oldMaxScore := question.MaxScore
 
 		if question.Locked {
-			newQuestion := question // Copy original values
-			newQuestion.ID = 0      // Clear ID for new record
-			newQuestion.Locked = false
-
-			updatedQuestion, err := applyQuestionUpdates(newQuestion, req)
-			if err != nil {
-				transactionErr = err
-				return err
-			}
-
-			// Create new question with updated values
-			if err := tx.Create(&updatedQuestion).Error; err != nil {
-				return err
-			}
-
-			// Unlink old question from paper
-			if err := tx.Model(models.Question{}).
-				Where("id = ?", question.ID).
-				Update("paper_id", sql.NullInt64{}).Error; err != nil {
-				return err
-			}
-
-			transactionErr = updatePaperStats(tx, question.Paper, oldType, updatedQuestion.Type, int32(oldMaxScore), int32(updatedQuestion.MaxScore))
-			return transactionErr
+			return handleLockedQuestionUpdate(tx, question, req, oldType, oldMaxScore)
 		}
 
-		// Apply updates to existing question
-		updatedQuestion, err := applyQuestionUpdates(question, req)
-		if err != nil {
-			transactionErr = err
-			return err
-		}
-
-		if err := tx.Save(&updatedQuestion).Error; err != nil {
-			return err
-		}
-
-		transactionErr = updatePaperStats(tx, updatedQuestion.Paper, oldType, updatedQuestion.Type, int32(oldMaxScore), int32(updatedQuestion.MaxScore))
-		return transactionErr
+		return handleUnlockedQuestionUpdate(tx, question, req, oldType, oldMaxScore)
 	})
 
 	if err != nil {
-		if transactionErr != nil {
-			return nil, transactionErr
-		}
-		return nil, status.Error(codes.Internal, "failed to update question")
+		return nil, err
 	}
 
 	return &proto.Empty{}, nil
+}
+
+// handleLockedQuestionUpdate handles updates to a locked question by creating a new one
+func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, req *proto.UpdateQuestionRequest, oldType string, oldMaxScore int16) error {
+	newQuestion := question
+	newQuestion.ID = 0
+	newQuestion.Locked = false
+
+	updatedQuestion, err := applyQuestionUpdates(newQuestion, req)
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Create(&updatedQuestion).Error; err != nil {
+		return status.Error(codes.Internal, constants.ErrInternalServer)
+	}
+
+	if err := tx.Model(models.Question{}).
+		Where("id = ?", question.ID).
+		Update("paper_id", sql.NullInt64{}).Error; err != nil {
+		return status.Error(codes.Internal, constants.ErrInternalServer)
+	}
+
+	return updateQuestionStats(tx, question.Paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
+}
+
+// handleUnlockedQuestionUpdate handles updates to an unlocked question
+func handleUnlockedQuestionUpdate(tx *gorm.DB, question models.Question, req *proto.UpdateQuestionRequest, oldType string, oldMaxScore int16) error {
+	updatedQuestion, err := applyQuestionUpdates(question, req)
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Save(&updatedQuestion).Error; err != nil {
+		return status.Error(codes.Internal, constants.ErrInternalServer)
+	}
+
+	return updateQuestionStats(tx, updatedQuestion.Paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
+}
+
+// updateQuestionStats updates the paper's statistics after a question update
+func updateQuestionStats(tx *gorm.DB, paper models.Paper, oldType, newType string, oldScore, newScore int16) error {
+	scoreDiff := int32(newScore - oldScore)
+	newCounts := paper.QuestionCounts
+	var err error
+
+	if oldType != newType {
+		if newCounts, err = updateQuestionCounts(newCounts, oldType, -1); err != nil {
+			return err
+		}
+		if newCounts, err = updateQuestionCounts(newCounts, newType, 1); err != nil {
+			return err
+		}
+	}
+
+	return updatePaperStats(tx, paper, scoreDiff, newCounts)
 }
 
 func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.Empty, error) {
@@ -245,7 +217,7 @@ func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionReq
 	}
 
 	var transactionErr error
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
+	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		// Update paper max score
 		if err := tx.Model(&question.Paper).
 			UpdateColumn("max_score", gorm.Expr("max_score - ?", question.MaxScore)).
@@ -289,7 +261,7 @@ func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionReq
 }
 
 func (s *PaperServer) ReorderQuestions(ctx context.Context, req *proto.ReorderQuestionsRequest) (*proto.Empty, error) {
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
+	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		// Verify all questions belong to the category
 		var categoryQuestionsCount int64
 		err := tx.Model(&models.Question{}).

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"log"
@@ -15,7 +16,48 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/utils"
+	"pariksha/paper/internal/interceptors"
 )
+
+// ValidateEntityIDs checks if all provided IDs exist in the given table
+func ValidateEntityIDs(tx *gorm.DB, tableName string, ids []int64) error {
+	var count int64
+	err := tx.Table(tableName).Where("id IN ?", ids).Count(&count).Error
+	if err != nil {
+		return status.Error(codes.Internal, constants.ErrInternalServer)
+	}
+	if int(count) != len(ids) {
+		return status.Error(codes.InvalidArgument, "invalid ids provided")
+	}
+	return nil
+}
+
+// PaperContext represents the context of paper-related operations
+type PaperContext struct {
+	Paper       models.Paper
+	Question    *models.Question
+	Category    *models.QuestionCategory
+	Permissions *models.PaperPermissions
+}
+
+// NewPaperContext creates a new paper context from the given gRPC context
+func NewPaperContext(ctx context.Context) (*PaperContext, error) {
+	pc := &PaperContext{}
+
+	if perm, ok := ctx.Value(interceptors.PermissionsCtxKey{}).(models.PaperPermissions); ok {
+		pc.Permissions = &perm
+	}
+
+	if q, ok := ctx.Value(interceptors.QuestionCtxKey{}).(models.Question); ok {
+		pc.Question = &q
+	}
+
+	if cat, ok := ctx.Value(interceptors.CategoryCtxKey{}).(models.QuestionCategory); ok {
+		pc.Category = &cat
+	}
+
+	return pc, nil
+}
 
 // Helper function to convert Paper model to proto response
 func paperToProto(paper models.Paper) *proto.PaperResponse {
@@ -32,15 +74,42 @@ func paperToProto(paper models.Paper) *proto.PaperResponse {
 	}
 }
 
+// Helper function to unmarshal and convert question data based on type
+func unmarshalQuestionData(questionType string, rawQuestion json.RawMessage) (any, error) {
+	switch questionType {
+	case constants.QUESTION_TYPE_MCQ:
+		var mcq structs.MCQQuestion
+		if err := json.Unmarshal(rawQuestion, &mcq); err != nil {
+			return nil, status.Error(codes.Internal, "invalid question data")
+		}
+		return &proto.McqQuestion{
+			Statement: mcq.Statement,
+			Options:   mcq.Options,
+		}, nil
+	default:
+		var general structs.GeneralQuestion
+		if err := json.Unmarshal(rawQuestion, &general); err != nil {
+			return nil, status.Error(codes.Internal, "invalid question data")
+		}
+		return &proto.GeneralQuestion{
+			Statement: general.Statement,
+		}, nil
+	}
+}
+
 func questionToProto(question models.Question) (*proto.QuestionResponse, error) {
 	var tags []string
 	if err := json.Unmarshal(question.Tags, &tags); err != nil {
 		return nil, status.Error(codes.Internal, "invalid tags data")
 	}
 
+	questionData, err := unmarshalQuestionData(question.Type, question.Question)
+	if err != nil {
+		return nil, err
+	}
+
 	response := &proto.QuestionResponse{
 		Id:            question.ID,
-		Question:      nil,
 		CategoryId:    question.CategoryID,
 		Type:          question.Type,
 		Tags:          tags,
@@ -51,29 +120,57 @@ func questionToProto(question models.Question) (*proto.QuestionResponse, error) 
 
 	switch question.Type {
 	case constants.QUESTION_TYPE_MCQ:
-		var mcq structs.MCQQuestion
-		if err := json.Unmarshal(question.Question, &mcq); err != nil {
-			return nil, status.Error(codes.Internal, "invalid question data")
-		}
-		response.Question = &proto.QuestionResponse_Mcq{
-			Mcq: &proto.McqQuestion{
-				Statement: mcq.Statement,
-				Options:   mcq.Options,
-			},
-		}
-	case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
-		var general structs.GeneralQuestion
-		if err := json.Unmarshal(question.Question, &general); err != nil {
-			return nil, status.Error(codes.Internal, "invalid question data")
-		}
-		response.Question = &proto.QuestionResponse_General{
-			General: &proto.GeneralQuestion{
-				Statement: general.Statement,
-			},
-		}
+		response.Question = &proto.QuestionResponse_Mcq{Mcq: questionData.(*proto.McqQuestion)}
+	default:
+		response.Question = &proto.QuestionResponse_General{General: questionData.(*proto.GeneralQuestion)}
 	}
 
 	return response, nil
+}
+
+func questionToMinimalProto(question models.Question) (*proto.QuestionMinimal, error) {
+	questionData, err := unmarshalQuestionData(question.Type, question.Question)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &proto.QuestionMinimal{
+		Id:         question.ID,
+		CategoryId: question.CategoryID,
+		PaperId:    question.PaperID.Int64,
+		Order:      int32(question.Order),
+	}
+
+	switch question.Type {
+	case constants.QUESTION_TYPE_MCQ:
+		response.Question = &proto.QuestionMinimal_Mcq{Mcq: questionData.(*proto.McqQuestion)}
+	default:
+		response.Question = &proto.QuestionMinimal_General{General: questionData.(*proto.GeneralQuestion)}
+	}
+
+	return response, nil
+}
+
+// Helper function to convert QuestionCategory model to proto response
+func categoryToProto(category models.QuestionCategory) *proto.CategoryResponse {
+	return &proto.CategoryResponse{
+		Id:    category.ID,
+		Name:  category.Name,
+		Order: int32(category.Order),
+	}
+}
+
+// Helper function to convert slice of models to proto responses
+func categoriesToProto(categories []models.QuestionCategory) *proto.CategoryList {
+	response := &proto.CategoryList{
+		Categories: make([]*proto.CategoryResponse, len(categories)),
+	}
+
+	for i, category := range categories {
+		response.Categories[i] = categoryToProto(category)
+	}
+
+	return response
 }
 
 // Helper function to update question counts
@@ -188,40 +285,30 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 	return question, nil
 }
 
-// Helper function to update paper stats when question type or max score changes
-func updatePaperStats(tx *gorm.DB, paper models.Paper, oldType, newType string, oldScore int32, newScore int32) error {
-	if oldScore != newScore {
-		scoreDiff := newScore - oldScore
-		if err := tx.Model(&paper).
-			UpdateColumn("max_score", gorm.Expr("max_score + ?", scoreDiff)).
-			Error; err != nil {
-			return err
-		}
-	}
-
-	if oldType != newType {
-		newCounts, err := updateQuestionCounts(paper.QuestionCounts, oldType, -1)
-		if err != nil {
-			return err
-		}
-
-		newCounts, err = updateQuestionCounts(newCounts, newType, 1)
-		if err != nil {
-			return err
-		}
-
-		if err := tx.Model(&paper).Update("question_counts", newCounts).Error; err != nil {
-			return err
-		}
-	}
-
-	return nil
+// Helper function to update paper stats (max score and question counts)
+func updatePaperStats(tx *gorm.DB, paper models.Paper, scoreDiff int32, newQuestionCounts json.RawMessage) error {
+	return tx.Model(&paper).
+		Updates(map[string]interface{}{
+			"max_score":       gorm.Expr("max_score + ?", scoreDiff),
+			"question_counts": newQuestionCounts,
+		}).Error
 }
 
 // validateMaxScore checks if the given score is within valid range (0 to MAX_SCORE_PER_QUESTION)
 func validateMaxScore(score int32) error {
 	if score < 0 || score > constants.MAX_SCORE_PER_QUESTION {
 		return status.Errorf(codes.InvalidArgument, "max score must be between 0 and %d", constants.MAX_SCORE_PER_QUESTION)
+	}
+	return nil
+}
+
+// validateDuration checks if the given duration in minutes is within valid range
+func validateDuration(durationMinutes int32) error {
+	if durationMinutes < 0 {
+		return status.Error(codes.InvalidArgument, "duration must be positive")
+	}
+	if durationMinutes > int32(constants.MAX_EXAM_DURATION_MINUTES) {
+		return status.Error(codes.InvalidArgument, "duration cannot exceed 24 hours")
 	}
 	return nil
 }
