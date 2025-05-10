@@ -60,6 +60,11 @@ export const AsyncDataKeys = {
       ? `EXAM_${examId}_QUESTION_${questionId}_ANSWER`
       : 'EXAM_ANSWER',
 
+  EVALUATION_ANSWER: (participantId: number, questionId: number | null) =>
+    participantId && questionId
+      ? `PARTICIPANT_${participantId}_QUESTION_${questionId}_ANSWER`
+      : 'PARTICIPANT_ANSWER',
+
   AUTH_USER: 'AUTH_USER',
 } as const
 

@@ -31,7 +31,7 @@ service ExamService {
   rpc UpsertAnswer(UpsertAnswersRequest) returns (UpsertAnswersResponse) {}
 
   // Evaluation
-  rpc GetAnswerForEvaluation(GetAnswerForEvaluationRequest) returns (AnswerResponse) {}
+  rpc GetAnswerForEvaluation(GetAnswerForEvaluationRequest) returns (GetAnswerForEvaluationResponse) {}
   rpc UpdateAnswerForEvaluation(UpdateAnswerRequest) returns (Empty) {}
   rpc MarkParticipantAsEvaluated(ParticipantRequest) returns (EvaluationStatusResponse) {}
 }
@@ -224,4 +224,11 @@ message ExamPermissionResponse {
 message GetAnswerForEvaluationRequest {
   int64 participant_id = 1;
   int64 question_id = 2;
+}
+
+message GetAnswerForEvaluationResponse {
+  int64 id = 1;
+  int64 question_id = 3;
+  int32 score_awarded = 5;
+  string comments = 6;
 }

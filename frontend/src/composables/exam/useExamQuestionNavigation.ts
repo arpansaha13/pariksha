@@ -35,5 +35,5 @@ export function useExamQuestionNavigation(
     return currentCategoryQuestions.value[currentQuestionIdx.value + 1].id
   })
 
-  return { prevQuestionId, nextQuestionId }
+  return { prevQuestionId, nextQuestionId, currentQuestionIdx }
 }

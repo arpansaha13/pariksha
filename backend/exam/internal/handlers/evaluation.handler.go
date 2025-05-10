@@ -44,8 +44,8 @@ func (s *ExamServer) UpdateAnswerForEvaluation(ctx context.Context, req *proto.U
 				return err
 			}
 
-			participant.ScoreAwarded = participant.ScoreAwarded - answer.ScoreAwarded + int(*req.NewScore)
-			answer.ScoreAwarded = int(*req.NewScore)
+			participant.ScoreAwarded = participant.ScoreAwarded - int32(answer.ScoreAwarded) + req.GetNewScore()
+			answer.ScoreAwarded = int16(req.GetNewScore())
 
 			if err := tx.Save(participant).Error; err != nil {
 				return status.Error(codes.Internal, "failed to update exam participant")
@@ -113,7 +113,7 @@ func (s *ExamServer) MarkParticipantAsEvaluated(ctx context.Context, req *proto.
 	}, nil
 }
 
-func (s *ExamServer) GetAnswerForEvaluation(ctx context.Context, req *proto.GetAnswerForEvaluationRequest) (*proto.AnswerResponse, error) {
+func (s *ExamServer) GetAnswerForEvaluation(ctx context.Context, req *proto.GetAnswerForEvaluationRequest) (*proto.GetAnswerForEvaluationResponse, error) {
 	// First check if participant exists and has ended the exam
 	participant, err := utils.FindRecord[models.ExamParticipant](db.DB, req.ParticipantId, "participant not found")
 	if err != nil {
@@ -131,12 +131,17 @@ func (s *ExamServer) GetAnswerForEvaluation(ctx context.Context, req *proto.GetA
 	if err := db.DB.Where("exam_participant_id = ? AND question_id = ? AND answer IS NOT NULL",
 		req.ParticipantId, req.QuestionId).Take(&answer).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return &proto.AnswerResponse{
+			return &proto.GetAnswerForEvaluationResponse{
 				QuestionId: req.QuestionId,
 			}, nil
 		}
 		return nil, utils.HandleDBError(err, "answer not found")
 	}
 
-	return answerToProto(answer), nil
+	return &proto.GetAnswerForEvaluationResponse{
+		Id:           answer.ID,
+		QuestionId:   answer.QuestionID,
+		ScoreAwarded: int32(answer.ScoreAwarded),
+		Comments:     answer.Comments.String,
+	}, nil
 }

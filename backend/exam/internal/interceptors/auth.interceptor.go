@@ -51,7 +51,6 @@ var (
 		"/proto.ExamService/EndExam":            true,
 		"/proto.ExamService/UpsertAnswer":       true,
 		"/proto.ExamService/GetExamParticipant": true,
-		"/proto.ExamService/GetAnswerForExam":   true,
 	}
 
 	requiresEvaluate = map[string]bool{
@@ -63,6 +62,9 @@ var (
 			return p.CanParticipate() || p.CanEvaluate()
 		},
 		"/proto.ExamService/GetExamCategories": func(p *models.ExamPermissions) bool {
+			return p.CanParticipate() || p.CanEvaluate()
+		},
+		"/proto.ExamService/GetAnswerForExam": func(p *models.ExamPermissions) bool {
 			return p.CanParticipate() || p.CanEvaluate()
 		},
 	}

@@ -77,10 +77,9 @@ type ExamCategoriesResponseDto struct {
 }
 
 type ExamQuestionResponseDto struct {
-	ID         int64           `json:"id"`
-	Question   json.RawMessage `json:"question"`
-	CategoryID int64           `json:"category_id"`
-	Type       string          `json:"type"`
+	ID       int64           `json:"id"`
+	Question json.RawMessage `json:"question"`
+	Type     string          `json:"type"`
 }
 
 type GetExamParticipantResponseDto struct {

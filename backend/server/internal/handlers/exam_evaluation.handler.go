@@ -39,13 +39,11 @@ func GetAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	answer := dtos.AnswerResponseDto{
-		ID:                resp.Id,
-		ExamParticipantID: resp.ExamParticipantId,
-		QuestionID:        resp.QuestionId,
-		Answer:            resp.Answer,
-		ScoreAwarded:      int(resp.ScoreAwarded),
-		Comments:          resp.Comments,
+	answer := dtos.GetAnswerForEvaluationResponseDto{
+		ID:           resp.Id,
+		QuestionID:   resp.QuestionId,
+		ScoreAwarded: resp.ScoreAwarded,
+		Comments:     resp.Comments,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -53,6 +51,12 @@ func GetAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
+	answerId, err := getInt64FromVars(mux.Vars(r), "answerId")
+	if err != nil {
+		http.Error(w, "Invalid answer ID", http.StatusBadRequest)
+		return
+	}
+
 	var updateDTO dtos.UpdateAnswerForEvaluationDto
 	if err := json.NewDecoder(r.Body).Decode(&updateDTO); err != nil {
 		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
@@ -69,7 +73,7 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 	ctx := examService.CreateMetadata(userID)
 
 	req := &proto.UpdateAnswerRequest{
-		AnswerId: updateDTO.AnswerID,
+		AnswerId: answerId,
 	}
 
 	if updateDTO.NewScore != nil {
@@ -84,7 +88,7 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send update request to exam service
-	_, err := examService.Client().UpdateAnswerForEvaluation(ctx, req)
+	_, err = examService.Client().UpdateAnswerForEvaluation(ctx, req)
 	if err != nil {
 		handleGRPCError(w, err)
 		return

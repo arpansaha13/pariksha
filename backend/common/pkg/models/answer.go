@@ -11,7 +11,7 @@ type Answer struct {
 	ExamParticipantID int64            `gorm:"type:bigint"`
 	QuestionID        int64            `gorm:"type:bigint"`
 	Answer            *json.RawMessage `gorm:"type:json"`
-	ScoreAwarded      int              `gorm:"default:0;not null"`
+	ScoreAwarded      int16            `gorm:"type:smallint;default:0;not null"`
 	Comments          sql.NullString   `gorm:"type:text"`
 	Evaluated         bool             `gorm:"default:false;not null"`
 	ExamParticipant   ExamParticipant  `gorm:"foreignKey:ExamParticipantID"`

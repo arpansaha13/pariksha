@@ -1,5 +1,5 @@
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import type { Answer } from '~/types'
+import type { EvaluationAnswer } from '~/types'
 
 export function useEvaluationAnswer(
   participantId: number,
@@ -8,7 +8,7 @@ export function useEvaluationAnswer(
   const { $api } = useNuxtApp()
 
   const useEvaluationAnswerKey = computed(() =>
-    AsyncDataKeys.EXAM_ANSWER(participantId, questionId.value)
+    AsyncDataKeys.EVALUATION_ANSWER(participantId, questionId.value)
   )
 
   return useAsyncData(
@@ -18,7 +18,7 @@ export function useEvaluationAnswer(
         return Promise.resolve(null)
       }
 
-      return $api<Answer>(
+      return $api<EvaluationAnswer>(
         `/api/participants/${participantId}/questions/${questionId.value}/answer`
       )
     },

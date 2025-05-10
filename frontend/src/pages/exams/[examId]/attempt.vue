@@ -58,7 +58,7 @@
       </UCard>
     </div>
 
-    <div v-if="question" class="col-span-2">
+    <div v-if="question" class="col-span-2 flex flex-col gap-y-2.5">
       <ExamQuestionMcq
         v-if="question.type === QuestionType.MCQ"
         v-model:answer="answerStates[question.id]"

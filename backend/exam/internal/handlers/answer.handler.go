@@ -41,19 +41,24 @@ func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.Parti
 
 // GetAnswerForExam finds an answer using participant ID and question ID and returns minimal info
 func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerRequest) (*proto.GetAnswerResponse, error) {
-	participant, ok := interceptors.GetParticipantFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "participant not found in context")
+	var participant models.ExamParticipant
+	if err := db.DB.Where("exam_id = ?", req.ExamId).Take(&participant).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.NotFound, "participant not found")
+		}
+		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
 	}
 
-	answer, err := getAnswerForParticipant(db.DB, participant.ID, req.QuestionId)
+	var answer models.Answer
+	err := db.DB.Where("exam_participant_id = ? AND question_id = ? AND answer IS NOT NULL",
+		participant.ID, req.QuestionId).Take(&answer).Error
 	if err != nil {
-		return nil, err
-	}
-	if answer == nil {
-		return &proto.GetAnswerResponse{
-			QuestionId: req.QuestionId,
-		}, nil
+		if err == gorm.ErrRecordNotFound {
+			return &proto.GetAnswerResponse{
+				QuestionId: req.QuestionId,
+			}, nil
+		}
+		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
 	}
 
 	return &proto.GetAnswerResponse{
