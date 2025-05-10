@@ -12,8 +12,8 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
-	"pariksha/exam/internal/interceptors"
 )
 
 func (s *ExamServer) GetExamParticipants(ctx context.Context, req *proto.ExamRequest) (*proto.ParticipantList, error) {
@@ -48,22 +48,22 @@ func (s *ExamServer) GetExamParticipants(ctx context.Context, req *proto.ExamReq
 }
 
 func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParticipantRequest) (*proto.ParticipantResponse, error) {
-	exam, ok := interceptors.GetExamFromContext(ctx)
-	if !ok {
+	ec := NewExamContext(ctx)
+	if ec.Exam == nil {
 		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
 
-	if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
+	if ec.Exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
 		return nil, status.Error(codes.InvalidArgument, "participants cannot be added in exams with access-type LINK")
 	}
 
-	counts, err := exam.GetParticipantCounts()
+	counts, err := ec.Exam.GetParticipantCounts()
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to get participant counts")
 	}
 
 	currTotalParticipants := int32(counts.Invited + counts.Started + counts.Ended)
-	if currTotalParticipants >= exam.MaxCandidatesCount {
+	if currTotalParticipants >= ec.Exam.MaxCandidatesCount {
 		return nil, status.Error(codes.FailedPrecondition, "maximum participant limit reached for the exam")
 	}
 
@@ -72,7 +72,7 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 		UserID: req.UserId,
 	}
 
-	err = db.DB.Transaction(func(tx *gorm.DB) error {
+	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		if err := tx.Create(&participant).Error; err != nil {
 			return status.Error(codes.Internal, "failed to add participant")
 		}
@@ -87,6 +87,7 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 			return status.Error(codes.Internal, "failed to create participant permissions")
 		}
 
+		exam := ec.Exam
 		exam.ParticipantCounts, err = updateParticipantCounts(&counts, 0, constants.PARTICIPANT_STATUS_INVITED)
 		if err != nil {
 			return err
@@ -108,18 +109,18 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 }
 
 func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.RemoveParticipantRequest) (*proto.Empty, error) {
-	exam, ok := interceptors.GetExamFromContext(ctx)
-	if !ok {
+	ec := NewExamContext(ctx)
+	if ec.Exam == nil {
 		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
 
-	if exam.StartsAt.Before(time.Now()) {
+	if ec.Exam.StartsAt.Before(time.Now()) {
 		return nil, status.Error(codes.FailedPrecondition, "cannot remove participant after exam has started")
 	}
 
 	var transactionErr error
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		counts, err := exam.GetParticipantCounts()
+	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+		counts, err := ec.Exam.GetParticipantCounts()
 		if err != nil {
 			return status.Error(codes.Internal, "failed to get participant counts")
 		}
@@ -131,6 +132,7 @@ func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.Remov
 		}
 
 		// Update counts based on participant's status
+		exam := ec.Exam
 		exam.ParticipantCounts, err = updateParticipantCounts(&counts, participant.Status, 0)
 		if err != nil {
 			return err
@@ -163,21 +165,21 @@ func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.Remov
 
 // GetExamParticipant returns participant data for the current user
 func (s *ExamServer) GetExamParticipant(ctx context.Context, req *proto.GetExamParticipantRequest) (*proto.GetExamParticipantResponse, error) {
-	participant, ok := interceptors.GetParticipantFromContext(ctx)
-	if !ok {
+	ec := NewExamContext(ctx)
+	if ec.Participant == nil {
 		return nil, status.Error(codes.PermissionDenied, "participant not found")
 	}
 
 	response := &proto.GetExamParticipantResponse{
-		ParticipantId: participant.ID,
+		ParticipantId: ec.Participant.ID,
 	}
 
-	if participant.StartedAt.Valid {
-		response.StartedAt = timestamppb.New(participant.StartedAt.Time)
+	if ec.Participant.StartedAt.Valid {
+		response.StartedAt = timestamppb.New(ec.Participant.StartedAt.Time)
 	}
 
-	if participant.ScheduledEndTime.Valid {
-		response.ScheduledEndTime = timestamppb.New(participant.ScheduledEndTime.Time)
+	if ec.Participant.ScheduledEndTime.Valid {
+		response.ScheduledEndTime = timestamppb.New(ec.Participant.ScheduledEndTime.Time)
 	}
 
 	return response, nil

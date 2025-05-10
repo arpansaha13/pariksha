@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"slices"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -12,6 +13,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/interceptors"
 )
@@ -31,14 +33,7 @@ func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.Parti
 	}
 
 	for i, answer := range answers {
-		response.Answers[i] = &proto.AnswerResponse{
-			Id:                answer.ID,
-			ExamParticipantId: answer.ExamParticipantID,
-			QuestionId:        answer.QuestionID,
-			Answer:            *answer.Answer,
-			Comments:          answer.Comments.String,
-			ScoreAwarded:      int32(answer.ScoreAwarded),
-		}
+		response.Answers[i] = answerToProto(answer)
 	}
 
 	return response, nil
@@ -51,15 +46,14 @@ func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerR
 		return nil, status.Error(codes.Internal, "participant not found in context")
 	}
 
-	var answer models.Answer
-	if err := db.DB.Where("exam_participant_id = ? AND question_id = ? AND answer IS NOT NULL",
-		participant.ID, req.QuestionId).Take(&answer).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return &proto.GetAnswerResponse{
-				QuestionId: req.QuestionId,
-			}, nil
-		}
-		return nil, status.Error(codes.Internal, "database error")
+	answer, err := getAnswerForParticipant(db.DB, participant.ID, req.QuestionId)
+	if err != nil {
+		return nil, err
+	}
+	if answer == nil {
+		return &proto.GetAnswerResponse{
+			QuestionId: req.QuestionId,
+		}, nil
 	}
 
 	return &proto.GetAnswerResponse{
@@ -93,40 +87,49 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 	if len(questionTypes) == 0 {
 		return nil, status.Error(codes.Internal, "missing question type in metadata")
 	}
-	questionType := questionTypes[0]
+
+	// Check participant status
+	if !slices.Contains([]int16{constants.PARTICIPANT_STATUS_STARTED}, participant.Status) {
+		return nil, status.Error(codes.FailedPrecondition, "participant must be in STARTED state")
+	}
+
+	if err := validateAnswerJSON(req.Answer.Answer, questionTypes[0]); err != nil {
+		return nil, err
+	}
 
 	// Convert answer bytes to *json.RawMessage
+	// go-staticcheck: Should omit nil check; len() for []byte is defined as zero (S1009)
 	var answerContent *json.RawMessage
-	if req.Answer.Answer != nil && len(req.Answer.Answer) > 0 {
-		// Validate answer JSON based on question type
-		if err := validateAnswerJSON(req.Answer.Answer, questionType); err != nil {
-			return nil, err
-		}
+	if len(req.Answer.Answer) > 0 {
 		raw := json.RawMessage(req.Answer.Answer)
 		answerContent = &raw
 	}
 
 	var answer models.Answer
-	if err := db.DB.Where("exam_participant_id = ? AND question_id = ?", participant.ID, req.Answer.QuestionId).Take(&answer).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			// Create new answer
-			answer = models.Answer{
-				ExamParticipantID: participant.ID,
-				QuestionID:        req.Answer.QuestionId,
-				Answer:            answerContent,
+	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+		err := tx.Where("exam_participant_id = ? AND question_id = ?",
+			participant.ID, req.Answer.QuestionId).Take(&answer).Error
+
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				// Create new answer
+				answer = models.Answer{
+					ExamParticipantID: participant.ID,
+					QuestionID:        req.Answer.QuestionId,
+					Answer:            answerContent,
+				}
+				return tx.Create(&answer).Error
 			}
-			if err := db.DB.Create(&answer).Error; err != nil {
-				return nil, status.Error(codes.Internal, "failed to create answer")
-			}
-		} else {
-			return nil, status.Error(codes.Internal, "database error")
+			return err
 		}
-	} else {
+
 		// Update existing answer
 		answer.Answer = answerContent
-		if err := db.DB.Save(&answer).Error; err != nil {
-			return nil, status.Error(codes.Internal, "failed to update answer")
-		}
+		return tx.Save(&answer).Error
+	})
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to upsert answer")
 	}
 
 	return &proto.UpsertAnswersResponse{

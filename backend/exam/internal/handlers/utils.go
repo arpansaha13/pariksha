@@ -1,16 +1,19 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/exam/internal/interceptors"
 )
 
 // validateExamStartTiming checks if the exam's `startsAt` constraints are valid
@@ -70,7 +73,7 @@ func updateParticipantCounts(counts *models.ParticipantCount, fromStatus int16, 
 	return marshaled, nil
 }
 
-func createExamResponse(exam *models.Exam) (*proto.ExamResponse, error) {
+func examToProto(exam *models.Exam) (*proto.ExamResponse, error) {
 	counts, err := exam.GetParticipantCounts()
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to parse participant counts")
@@ -93,6 +96,21 @@ func createExamResponse(exam *models.Exam) (*proto.ExamResponse, error) {
 			Ended:      int32(counts.Ended),
 		},
 	}, nil
+}
+
+// answerToProto converts a models.Answer to proto.AnswerResponse
+func answerToProto(answer models.Answer) *proto.AnswerResponse {
+	response := &proto.AnswerResponse{
+		Id:                answer.ID,
+		ExamParticipantId: answer.ExamParticipantID,
+		QuestionId:        answer.QuestionID,
+		ScoreAwarded:      int32(answer.ScoreAwarded),
+		Comments:          answer.Comments.String,
+	}
+	if answer.Answer != nil {
+		response.Answer = *answer.Answer
+	}
+	return response
 }
 
 // validateAnswerJSON validates the answer JSON based on question type
@@ -124,4 +142,91 @@ func validateAnswerJSON(answerJSON []byte, questionType string) error {
 		return status.Error(codes.InvalidArgument, "invalid question type")
 	}
 	return nil
+}
+
+// getAnswerForParticipant finds an answer for a participant and question
+func getAnswerForParticipant(db *gorm.DB, participantID int64, questionID int64) (*models.Answer, error) {
+	var answer models.Answer
+	err := db.Where("exam_participant_id = ? AND question_id = ? AND answer IS NOT NULL",
+		participantID, questionID).Take(&answer).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
+	}
+	return &answer, nil
+}
+
+// validateExamState checks common exam state constraints
+func validateExamState(exam *models.Exam, now time.Time) error {
+	if exam.StartsAt.After(now) {
+		return status.Error(codes.FailedPrecondition, "exam has not started yet")
+	}
+	if exam.EndsAt.Before(now) {
+		return status.Error(codes.FailedPrecondition, "exam has ended")
+	}
+	return nil
+}
+
+// handleParticipantUpdate performs the following steps to update a participant's status:
+//
+// 1. Gets current participant counts for the exam
+//
+// 2. Updates the counts based on the status change (fromStatus -> toStatus)
+//
+// 3. Saves the updated counts to the exam record
+//
+// 4. Updates the participant's status to toStatus
+//
+// 5. Saves the participant record
+//
+// All operations are performed within the provided transaction
+func handleParticipantUpdate(tx *gorm.DB, exam *models.Exam, participant *models.ExamParticipant, fromStatus, toStatus int16) error {
+	counts, err := exam.GetParticipantCounts()
+	if err != nil {
+		return status.Error(codes.Internal, "failed to get participant counts")
+	}
+
+	exam.ParticipantCounts, err = updateParticipantCounts(&counts, fromStatus, toStatus)
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Save(exam).Error; err != nil {
+		return status.Error(codes.Internal, "failed to update exam")
+	}
+
+	participant.Status = toStatus
+	if err := tx.Save(participant).Error; err != nil {
+		return status.Error(codes.Internal, "failed to update participant")
+	}
+
+	return nil
+}
+
+// ExamContext represents the context of exam-related operations
+type ExamContext struct {
+	Exam        *models.Exam
+	Participant *models.ExamParticipant
+	Permission  *models.ExamPermissions
+}
+
+// NewExamContext creates a new exam context from the given gRPC context
+func NewExamContext(ctx context.Context) *ExamContext {
+	ec := &ExamContext{}
+
+	if exam, ok := interceptors.GetExamFromContext(ctx); ok {
+		ec.Exam = exam
+	}
+
+	if participant, ok := interceptors.GetParticipantFromContext(ctx); ok {
+		ec.Participant = participant
+	}
+
+	if permission, ok := interceptors.GetPermissionFromContext(ctx); ok {
+		ec.Permission = permission
+	}
+
+	return ec
 }
