@@ -1,18 +1,16 @@
 <template>
-  <div>
-    <div>
-      <p>{{ question.statement }}</p>
-    </div>
+  <UCard>
+    <p class="font-medium">{{ question.statement }}</p>
+  </UCard>
 
-    <USeparator :ui="{ root: 'my-4' }" />
-
+  <UCard :ui="{ root: 'grow' }">
     <UTextarea
       v-model="generalAnswer.text"
       autoresize
       placeholder="Write your answer here..."
       :ui="{ root: 'flex' }"
     />
-  </div>
+  </UCard>
 </template>
 
 <script setup lang="ts">

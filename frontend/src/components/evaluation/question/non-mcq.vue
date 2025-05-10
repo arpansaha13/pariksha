@@ -1,15 +1,26 @@
 <template>
-  <div>
-    <p>{{ question.statement }}</p>
+  <UCard>
+    <p class="font-medium">{{ question.statement }}</p>
+  </UCard>
 
-    <USeparator :ui="{ root: 'my-4' }" />
-
+  <UCard>
     <div v-if="answer">
       <p>
         {{ answer.text }}
       </p>
     </div>
-  </div>
+  </UCard>
+
+  <UCard :ui="{ root: 'grow' }">
+    <UFormField
+      label="Score"
+      description="Score to be awarded for this answer"
+      name="score_awarded"
+      required
+    >
+      <UInputNumber :min="0" :max="MAX_SCORE_PER_QUESTION" required />
+    </UFormField>
+  </UCard>
 </template>
 
 <script setup lang="ts">

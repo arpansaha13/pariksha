@@ -24,18 +24,20 @@
     </UCard>
   </div>
 
-  <UCard v-if="question" :ui="{ root: 'col-span-2' }">
+  <div v-if="question" class="col-span-2">
+    <!-- prettier-ignore -->
     <EvaluationQuestionMcq
       v-if="question.type === QuestionType.MCQ"
-      :answer="answer?.answer as MCQAnswer"
+      :answer="(answer?.answer as MCQAnswer)"
       :question="question.question"
     />
+    <!-- prettier-ignore -->
     <EvaluationQuestionNonMcq
       v-else
-      :answer="answer?.answer as GeneralAnswer"
+      :answer="(answer?.answer as GeneralAnswer)"
       :question="question.question"
     />
-  </UCard>
+  </div>
 
   <UCard
     v-if="currentCategoryQuestions.length > 0"

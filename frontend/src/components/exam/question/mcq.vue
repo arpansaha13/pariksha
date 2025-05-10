@@ -1,10 +1,13 @@
 <template>
-  <div>
-    <p class="mb-4">{{ question.statement }}</p>
+  <UCard>
+    <p class="font-medium">{{ question.statement }}</p>
+  </UCard>
 
+  <UCard :ui="{ root: 'grow' }">
     <URadioGroup
       v-model="mcqAnswer.optionIndex"
       :items="options"
+      variant="card"
       :ui="{
         wrapper: 'ml-3',
         fieldset: 'space-y-1',
@@ -21,7 +24,7 @@
     >
       Clear selection
     </UButton>
-  </div>
+  </UCard>
 </template>
 
 <script setup lang="ts">

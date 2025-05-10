@@ -58,7 +58,7 @@
       </UCard>
     </div>
 
-    <UCard v-if="question" :ui="{ root: 'col-span-2' }">
+    <div v-if="question" class="col-span-2">
       <ExamQuestionMcq
         v-if="question.type === QuestionType.MCQ"
         v-model:answer="answerStates[question.id]"
@@ -69,7 +69,7 @@
         v-model:answer="answerStates[question.id]"
         :question="question.question"
       />
-    </UCard>
+    </div>
 
     <UCard
       v-if="currentCategoryQuestions.length > 0"

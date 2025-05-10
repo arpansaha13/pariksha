@@ -1,17 +1,31 @@
 <template>
-  <div>
-    <p class="mb-4">{{ question.statement }}</p>
+  <UCard>
+    <p class="font-medium">{{ question.statement }}</p>
+  </UCard>
 
+  <UCard>
     <URadioGroup
       v-model="selectedOptionIndex"
       :items="options"
+      variant="card"
       disabled
       :ui="{
         wrapper: 'ml-3',
         fieldset: 'space-y-1',
       }"
     />
-  </div>
+  </UCard>
+
+  <UCard :ui="{ root: 'flex-grow' }">
+    <UFormField
+      label="Score"
+      description="Score to be awarded for this answer"
+      name="score_awarded"
+      required
+    >
+      <UInputNumber :min="0" :max="MAX_SCORE_PER_QUESTION" required />
+    </UFormField>
+  </UCard>
 </template>
 
 <script setup lang="ts">
