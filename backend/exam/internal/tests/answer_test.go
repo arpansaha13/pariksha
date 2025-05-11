@@ -1,4 +1,4 @@
-package handlers
+package tests
 
 import (
 	"database/sql"
@@ -10,31 +10,31 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/exam/internal/config/db"
 )
 
 func TestGetParticipantAnswers(t *testing.T) {
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T) *models.ExamParticipant
-		metadata     map[string]string
-		expectedCode codes.Code
-		validate     func(t *testing.T, resp *proto.AnswerList)
-	}{
+	tests := []ParticipantTestCase[*proto.AnswerList]{
 		{
-			name: "Success - Get multiple answers",
+			BaseTestCase: BaseTestCase{
+				name: "Success - Get multiple answers",
+				metadata: map[string]string{
+					"user_id": strconv.FormatInt(userID, 10),
+				},
+				expectedCode: codes.OK,
+				userID:       userID,
+			},
 			setup: func(t *testing.T) *models.ExamParticipant {
 				exam := createTestExam(t, 2) // Created by different user
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: userID, Status: 1}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: userID, Status: 1},
+				})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -46,11 +46,6 @@ func TestGetParticipantAnswers(t *testing.T) {
 
 				return &participant
 			},
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.AnswerList) {
 				assert.EqualValues(t, 2, len(resp.Answers))
 				for _, answer := range resp.Answers {
@@ -65,35 +60,38 @@ func TestGetParticipantAnswers(t *testing.T) {
 			},
 		},
 		{
-			name: "Fail - Participant not found",
+			BaseTestCase: BaseTestCase{
+				name: "Fail - Participant not found",
+				metadata: map[string]string{
+					"user_id": strconv.FormatInt(userID, 10),
+				},
+				expectedCode: codes.NotFound,
+				userID:       userID,
+			},
 			setup: func(t *testing.T) *models.ExamParticipant {
 				return &models.ExamParticipant{ID: 9999}
 			},
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-			},
-			expectedCode: codes.NotFound,
 		},
 		{
-			name: "Fail - No answers found",
+			BaseTestCase: BaseTestCase{
+				name: "Fail - No answers found",
+				metadata: map[string]string{
+					"user_id": strconv.FormatInt(userID, 10),
+				},
+				expectedCode: codes.NotFound,
+				userID:       userID,
+			},
 			setup: func(t *testing.T) *models.ExamParticipant {
 				exam := createTestExam(t, 2) // Created by different user
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: userID, Status: 1}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: userID, Status: 1},
+				})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 				return &participant
 			},
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-			},
-			expectedCode: codes.NotFound,
 		},
 	}
 
@@ -103,38 +101,29 @@ func TestGetParticipantAnswers(t *testing.T) {
 			participant := tt.setup(t)
 
 			ctx := createContextWithMetadata(tt.metadata)
-			resp, err := client.GetParticipantAnswers(ctx, &proto.ParticipantRequest{
-				ParticipantId: participant.ID,
-			})
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			require.NotNil(t, resp)
-			tt.validate(t, resp)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				&proto.ParticipantRequest{ParticipantId: participant.ID},
+				client.GetParticipantAnswers,
+				tt.validate,
+			)
 		})
 	}
 }
 
 func TestGetAnswerForExam(t *testing.T) {
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T) (*models.Exam, int64)
-		metadata     map[string]string
-		expectedCode codes.Code
-		validate     func(t *testing.T, resp *proto.AnswerMinimalResponse)
-	}{
+	tests := []ExamTestCase[*proto.AnswerMinimalResponse]{
 		{
-			name: "Success - Get single answer",
+			BaseTestCase: BaseTestCase{
+				name: "Success - Get single answer",
+				metadata: map[string]string{
+					"user_id": strconv.FormatInt(userID, 10),
+				},
+				expectedCode: codes.OK,
+				userID:       userID,
+			},
 			setup: func(t *testing.T) (*models.Exam, int64) {
 				exam := createTestExam(t, 2) // Created by different user
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED}})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -143,11 +132,6 @@ func TestGetAnswerForExam(t *testing.T) {
 				answer := createTestAnswer(t, &participant, 1)
 				return &exam, answer.QuestionID
 			},
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.AnswerMinimalResponse) {
 				var answerData struct {
 					Text string `json:"text"`
@@ -158,33 +142,34 @@ func TestGetAnswerForExam(t *testing.T) {
 			},
 		},
 		{
-			name: "Fail - User not a participant",
+			BaseTestCase: BaseTestCase{
+				name: "Fail - User not a participant",
+				metadata: map[string]string{
+					"user_id": strconv.FormatInt(userID, 10),
+				},
+				expectedCode: codes.PermissionDenied,
+				userID:       userID,
+			},
 			setup: func(t *testing.T) (*models.Exam, int64) {
 				exam := createTestExam(t, 2)
 				return &exam, 1
 			},
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-			},
-			expectedCode: codes.PermissionDenied,
 		},
 		{
-			name: "Success - Answer not found returns empty response",
+			BaseTestCase: BaseTestCase{
+				name: "Success - Answer not found returns empty response",
+				metadata: map[string]string{
+					"user_id": strconv.FormatInt(userID, 10),
+				},
+				expectedCode: codes.OK,
+				userID:       userID,
+			},
 			setup: func(t *testing.T) (*models.Exam, int64) {
 				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED}})
 				require.NoError(t, err)
 				return &exam, 9999 // Non-existent question ID
 			},
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.AnswerMinimalResponse) {
 				assert.EqualValues(t, 9999, resp.QuestionId)
 				assert.Zero(t, resp.Id)
@@ -199,40 +184,33 @@ func TestGetAnswerForExam(t *testing.T) {
 			exam, questionId := tt.setup(t)
 
 			ctx := createContextWithMetadata(tt.metadata)
-			resp, err := client.GetAnswerForExam(ctx, &proto.GetAnswerRequest{
-				ExamId:     exam.ID,
-				QuestionId: questionId,
-			})
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			require.NotNil(t, resp)
-			tt.validate(t, resp)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				&proto.GetAnswerRequest{
+					ExamId:     exam.ID,
+					QuestionId: questionId,
+				},
+				client.GetAnswerForExam,
+				tt.validate,
+			)
 		})
 	}
 }
 
 func TestUpsertAnswer(t *testing.T) {
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest)
-		userID       int64
-		metadata     map[string]string
-		expectedCode codes.Code
-		validate     func(t *testing.T, resp *proto.UpsertAnswersResponse)
-	}{
+	tests := []ParticipantRequestTestCase[*proto.UpsertAnswersResponse, *proto.UpsertAnswersRequest]{
 		{
-			name: "Success - Create new answer",
+			BaseTestCase: BaseTestCase{
+				name: "Success - Create new answer",
+				metadata: map[string]string{
+					"user_id":       strconv.FormatInt(userID, 10),
+					"question_type": constants.QUESTION_TYPE_LONG,
+				},
+				expectedCode: codes.OK,
+				userID:       userID,
+			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2) // Created by different user
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
@@ -253,13 +231,6 @@ func TestUpsertAnswer(t *testing.T) {
 					},
 				}
 			},
-			userID: userID,
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-				"question_type":  constants.QUESTION_TYPE_LONG,
-			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.UpsertAnswersResponse) {
 				assert.NotZero(t, resp.AnswerId)
 
@@ -275,13 +246,18 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 		},
 		{
-			name: "Success - Update existing answer",
+			BaseTestCase: BaseTestCase{
+				name: "Success - Update existing answer",
+				metadata: map[string]string{
+					"user_id":       strconv.FormatInt(userID, 10),
+					"question_type": constants.QUESTION_TYPE_LONG,
+				},
+				expectedCode: codes.OK,
+				userID:       userID,
+			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
@@ -305,13 +281,6 @@ func TestUpsertAnswer(t *testing.T) {
 					},
 				}
 			},
-			userID: userID,
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-				"question_type":  constants.QUESTION_TYPE_LONG,
-			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.UpsertAnswersResponse) {
 				assert.NotZero(t, resp.AnswerId)
 
@@ -326,7 +295,15 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 		},
 		{
-			name: "Fail - Exam participant not found",
+			BaseTestCase: BaseTestCase{
+				name: "Fail - Exam participant not found",
+				metadata: map[string]string{
+					"user_id":       strconv.FormatInt(userID, 10),
+					"question_type": constants.QUESTION_TYPE_LONG,
+				},
+				expectedCode: codes.PermissionDenied,
+				userID:       userID,
+			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
 				return nil, &proto.UpsertAnswersRequest{
@@ -338,22 +315,20 @@ func TestUpsertAnswer(t *testing.T) {
 					},
 				}
 			},
-			userID: userID,
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-				"question_type":  constants.QUESTION_TYPE_LONG,
-			},
-			expectedCode: codes.PermissionDenied,
 		},
 		{
-			name: "Fail - Exam not started",
+			BaseTestCase: BaseTestCase{
+				name: "Fail - Exam not started",
+				metadata: map[string]string{
+					"user_id":       strconv.FormatInt(userID, 10),
+					"question_type": constants.QUESTION_TYPE_LONG,
+				},
+				expectedCode: codes.FailedPrecondition,
+				userID:       userID,
+			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
@@ -367,22 +342,20 @@ func TestUpsertAnswer(t *testing.T) {
 					},
 				}
 			},
-			userID: userID,
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-				"question_type":  constants.QUESTION_TYPE_LONG,
-			},
-			expectedCode: codes.FailedPrecondition,
 		},
 		{
-			name: "Fail - Exam ended",
+			BaseTestCase: BaseTestCase{
+				name: "Fail - Exam ended",
+				metadata: map[string]string{
+					"user_id":       strconv.FormatInt(userID, 10),
+					"question_type": constants.QUESTION_TYPE_LONG,
+				},
+				expectedCode: codes.FailedPrecondition,
+				userID:       userID,
+			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
 				require.NoError(t, err)
@@ -399,22 +372,20 @@ func TestUpsertAnswer(t *testing.T) {
 					},
 				}
 			},
-			userID: userID,
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-				"question_type":  constants.QUESTION_TYPE_LONG,
-			},
-			expectedCode: codes.FailedPrecondition,
 		},
 		{
-			name: "Success - Empty answer for SHORT question",
+			BaseTestCase: BaseTestCase{
+				name: "Success - Empty answer for SHORT question",
+				metadata: map[string]string{
+					"user_id":       strconv.FormatInt(userID, 10),
+					"question_type": constants.QUESTION_TYPE_SHORT,
+				},
+				expectedCode: codes.OK,
+				userID:       userID,
+			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
@@ -433,13 +404,6 @@ func TestUpsertAnswer(t *testing.T) {
 					},
 				}
 			},
-			userID: userID,
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-				"question_type":  constants.QUESTION_TYPE_SHORT,
-			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.UpsertAnswersResponse) {
 				assert.NotZero(t, resp.AnswerId)
 
@@ -453,13 +417,18 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 		},
 		{
-			name: "Success - Nil answer clears the answer",
+			BaseTestCase: BaseTestCase{
+				name: "Success - Nil answer clears the answer",
+				metadata: map[string]string{
+					"user_id":       strconv.FormatInt(userID, 10),
+					"question_type": constants.QUESTION_TYPE_MCQ,
+				},
+				expectedCode: codes.OK,
+				userID:       userID,
+			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
@@ -481,13 +450,6 @@ func TestUpsertAnswer(t *testing.T) {
 					},
 				}
 			},
-			userID: userID,
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-				"question_type":  constants.QUESTION_TYPE_MCQ,
-			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.UpsertAnswersResponse) {
 				assert.NotZero(t, resp.AnswerId)
 
@@ -497,13 +459,18 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 		},
 		{
-			name: "Fail - Empty MCQ answer is invalid",
+			BaseTestCase: BaseTestCase{
+				name: "Fail - Empty MCQ answer is invalid",
+				metadata: map[string]string{
+					"user_id":       strconv.FormatInt(userID, 10),
+					"question_type": constants.QUESTION_TYPE_MCQ,
+				},
+				expectedCode: codes.InvalidArgument,
+				userID:       userID,
+			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
@@ -525,22 +492,20 @@ func TestUpsertAnswer(t *testing.T) {
 					},
 				}
 			},
-			userID: userID,
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-				"question_type":  constants.QUESTION_TYPE_MCQ,
-			},
-			expectedCode: codes.InvalidArgument,
 		},
 		{
-			name: "Fail - Nil optionIndex in MCQ answer is invalid",
+			BaseTestCase: BaseTestCase{
+				name: "Fail - Nil optionIndex in MCQ answer is invalid",
+				metadata: map[string]string{
+					"user_id":       strconv.FormatInt(userID, 10),
+					"question_type": constants.QUESTION_TYPE_MCQ,
+				},
+				expectedCode: codes.InvalidArgument,
+				userID:       userID,
+			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
@@ -562,13 +527,6 @@ func TestUpsertAnswer(t *testing.T) {
 					},
 				}
 			},
-			userID: userID,
-			metadata: map[string]string{
-				"user_id":        strconv.FormatInt(userID, 10),
-				"question_score": "10",
-				"question_type":  constants.QUESTION_TYPE_MCQ,
-			},
-			expectedCode: codes.InvalidArgument,
 		},
 	}
 
@@ -578,16 +536,11 @@ func TestUpsertAnswer(t *testing.T) {
 			_, req := tt.setup(t)
 
 			ctx := createContextWithMetadata(tt.metadata)
-			resp, err := client.UpsertAnswer(ctx, req)
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			require.NotNil(t, resp)
-			tt.validate(t, resp)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				req,
+				client.UpsertAnswer,
+				tt.validate,
+			)
 		})
 	}
 }

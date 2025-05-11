@@ -1,4 +1,4 @@
-package handlers
+package tests
 
 import (
 	"encoding/json"
@@ -13,6 +13,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/exam/internal/config/db"
 )
 
@@ -38,10 +39,9 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 				require.NoError(t, db.DB.Create(&permission).Error)
 
 				// Create participant and answer
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: 3, Status: constants.PARTICIPANT_STATUS_ENDED}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: 3, Status: constants.PARTICIPANT_STATUS_ENDED},
+				})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -70,10 +70,9 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 				exam := createTestExam(t, 2) // Created by different user
 
 				// Create participant and answer
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: 3, Status: constants.PARTICIPANT_STATUS_ENDED}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: 3, Status: constants.PARTICIPANT_STATUS_ENDED},
+				})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -93,10 +92,9 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 				exam := createTestExam(t, userID) // Create as owner to get evaluate permission
 
 				// Create participant without answer
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
+				})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -122,19 +120,14 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 			participant, questionId := tt.setup(t)
 
 			ctx := createContextWithMetadata(tt.metadata)
-			resp, err := client.GetAnswerForEvaluation(ctx, &proto.ParticipantQuestionRequest{
-				ParticipantId: participant.ID,
-				QuestionId:    questionId,
-			})
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			require.NotNil(t, resp)
-			tt.validate(t, resp)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				&proto.ParticipantQuestionRequest{
+					ParticipantId: participant.ID,
+					QuestionId:    questionId,
+				},
+				client.GetAnswerForEvaluation,
+				tt.validate,
+			)
 		})
 	}
 }
@@ -161,10 +154,9 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 				require.NoError(t, db.DB.Create(&permission).Error)
 
 				// Create participant and answer
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: 3, Status: constants.PARTICIPANT_STATUS_ENDED}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: 3, Status: constants.PARTICIPANT_STATUS_ENDED},
+				})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -189,10 +181,9 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 				exam := createTestExam(t, 2) // Created by different user
 
 				// Create participant and answer
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: 3, Status: constants.PARTICIPANT_STATUS_ENDED}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: 3, Status: constants.PARTICIPANT_STATUS_ENDED},
+				})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -212,10 +203,9 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 				exam := createTestExam(t, userID) // Create as owner to get evaluate permission
 
 				// Create participant with STARTED status
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: 2, Status: constants.PARTICIPANT_STATUS_STARTED}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: 2, Status: constants.PARTICIPANT_STATUS_STARTED},
+				})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -237,19 +227,14 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 			participant, questionId := tt.setup(t)
 
 			ctx := createContextWithMetadata(tt.metadata)
-			resp, err := client.GetAnswerEvaluationData(ctx, &proto.ParticipantQuestionRequest{
-				ParticipantId: participant.ID,
-				QuestionId:    questionId,
-			})
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			require.NotNil(t, resp)
-			tt.validate(t, resp)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				&proto.ParticipantQuestionRequest{
+					ParticipantId: participant.ID,
+					QuestionId:    questionId,
+				},
+				client.GetAnswerEvaluationData,
+				tt.validate,
+			)
 		})
 	}
 }
@@ -272,10 +257,9 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 			name: "Success - Update all fields",
 			setup: func(t *testing.T) *models.Answer {
 				exam := createTestExam(t, userID)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
+				})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -319,10 +303,9 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 			name: "Success - Update only comments",
 			setup: func(t *testing.T) *models.Answer {
 				exam := createTestExam(t, userID)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
+				})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -368,10 +351,9 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 			name: "Fail - Score exceeds max score",
 			setup: func(t *testing.T) *models.Answer {
 				exam := createTestExam(t, userID)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
+				})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -426,10 +408,9 @@ func TestMarkParticipantAsEvaluated(t *testing.T) {
 			name: "Success - All answers evaluated",
 			setup: func(t *testing.T) *models.ExamParticipant {
 				exam := createTestExam(t, userID)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
+				})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -461,10 +442,9 @@ func TestMarkParticipantAsEvaluated(t *testing.T) {
 			name: "Success - Some answers unevaluated",
 			setup: func(t *testing.T) *models.ExamParticipant {
 				exam := createTestExam(t, userID)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
+				})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -503,10 +483,9 @@ func TestMarkParticipantAsEvaluated(t *testing.T) {
 			name: "Fail - Exam not ended",
 			setup: func(t *testing.T) *models.ExamParticipant {
 				exam := createTestExam(t, userID)
-				err := createTestExamParticipants(t, &exam, []struct {
-					UserID int64
-					Status int16
-				}{{UserID: 2, Status: constants.PARTICIPANT_STATUS_STARTED}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: 2, Status: constants.PARTICIPANT_STATUS_STARTED},
+				})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant

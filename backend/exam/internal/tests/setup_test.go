@@ -1,28 +1,22 @@
-package handlers
+package tests
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
 	"log"
 	"net"
 	"os"
-	"strconv"
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/test/bufconn"
 
-	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/config/env"
+	"pariksha/exam/internal/handlers"
 	"pariksha/exam/internal/interceptors"
 	"pariksha/exam/internal/services"
 )
@@ -129,24 +123,12 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
 }
 
-func createContextWithUserID(userID int64) context.Context {
-	md := metadata.New(map[string]string{
-		"user_id": strconv.FormatInt(userID, 10),
-	})
-	return metadata.NewOutgoingContext(context.Background(), md)
-}
-
-func createContextWithMetadata(mdMap map[string]string) context.Context {
-	md := metadata.New(mdMap)
-	return metadata.NewOutgoingContext(context.Background(), md)
-}
-
 func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 	lis = bufconn.Listen(bufSize)
 	srv := grpc.NewServer(
 		grpc.UnaryInterceptor(interceptors.ExamAuthInterceptor()),
 	)
-	proto.RegisterExamServiceServer(srv, &ExamServer{})
+	proto.RegisterExamServiceServer(srv, &handlers.ExamServer{})
 
 	go func() {
 		if err := srv.Serve(lis); err != nil {
@@ -181,112 +163,4 @@ func TestMain(m *testing.M) {
 
 	cleanup()
 	os.Exit(code)
-}
-
-func createTestExam(t *testing.T, createdBy int64) models.Exam {
-	exam := models.Exam{
-		Title:              "Test Exam",
-		CreatedBy:          createdBy,
-		Type:               constants.EXAM_ACCESS_TYPE_LINK,
-		MaxCandidatesCount: 10,
-		PaperID:            1,
-		DurationMinutes:    60, // Add default duration
-		ParticipantCounts:  []byte(`{"unattended":0,"invited":0,"started":0,"ended":0}`),
-	}
-	require.NoError(t, db.DB.Create(&exam).Error)
-
-	permission := models.ExamPermissions{
-		ExamID: exam.ID,
-		UserID: createdBy,
-	}
-	permission.SetWrite()
-	permission.SetEvaluate()
-	require.NoError(t, db.DB.Create(&permission).Error)
-
-	return exam
-}
-
-func createTestExamParticipants(t *testing.T, exam *models.Exam, participants []struct {
-	UserID int64
-	Status int16
-}) error {
-	examParticipants := make([]models.ExamParticipant, len(participants))
-	counts, err := exam.GetParticipantCounts()
-	if err != nil {
-		return err
-	}
-
-	// Create participants and update counts
-	for i, p := range participants {
-		examParticipants[i] = models.ExamParticipant{
-			ExamID: exam.ID,
-			UserID: p.UserID,
-			Status: p.Status,
-		}
-
-		// Update counts based on status
-		switch p.Status {
-		case constants.PARTICIPANT_STATUS_INVITED:
-			counts.Invited++
-		case constants.PARTICIPANT_STATUS_STARTED:
-			counts.Started++
-		case constants.PARTICIPANT_STATUS_ENDED:
-			counts.Ended++
-		case constants.PARTICIPANT_STATUS_UNATTENDED:
-			counts.Unattended++
-		}
-	}
-
-	// Save participants
-	if err := db.DB.Create(&examParticipants).Error; err != nil {
-		return err
-	}
-
-	// Create permissions for all participants
-	permissions := make([]models.ExamPermissions, len(participants))
-	for i, p := range participants {
-		permissions[i] = models.ExamPermissions{
-			ExamID: exam.ID,
-			UserID: p.UserID,
-		}
-		permissions[i].SetParticipate()
-	}
-
-	if err := db.DB.Create(&permissions).Error; err != nil {
-		return err
-	}
-
-	// Update exam counts
-	exam.ParticipantCounts, err = json.Marshal(counts)
-	if err != nil {
-		return err
-	}
-
-	return db.DB.Save(&exam).Error
-}
-
-func createTestAnswer(t *testing.T, examParticipant *models.ExamParticipant, questionID int64) models.Answer {
-	rawAnswer := json.RawMessage(`{"text": "Test Answer"}`)
-	answer := models.Answer{
-		ExamParticipantID: examParticipant.ID,
-		QuestionID:        questionID,
-		Answer:            &rawAnswer,
-		Comments:          sql.NullString{String: "Test Comment", Valid: true},
-		ScoreAwarded:      5,
-		Evaluated:         true,
-	}
-	require.NoError(t, db.DB.Create(&answer).Error)
-	return answer
-}
-
-func createTestExamQuestion(t *testing.T, exam *models.Exam, questionID int64, maxScore int16) models.ExamQuestion {
-	examQuestion := models.ExamQuestion{
-		ExamID:     exam.ID,
-		QuestionID: questionID,
-		CategoryID: 1,
-		Order:      1,
-		MaxScore:   maxScore,
-	}
-	require.NoError(t, db.DB.Create(&examQuestion).Error)
-	return examQuestion
 }
