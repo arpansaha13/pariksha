@@ -125,7 +125,7 @@ func TestGetAnswerForExam(t *testing.T) {
 		setup        func(t *testing.T) (*models.Exam, int64)
 		metadata     map[string]string
 		expectedCode codes.Code
-		validate     func(t *testing.T, resp *proto.GetAnswerResponse)
+		validate     func(t *testing.T, resp *proto.AnswerMinimalResponse)
 	}{
 		{
 			name: "Success - Get single answer",
@@ -148,7 +148,7 @@ func TestGetAnswerForExam(t *testing.T) {
 				"question_score": "10",
 			},
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, resp *proto.GetAnswerResponse) {
+			validate: func(t *testing.T, resp *proto.AnswerMinimalResponse) {
 				var answerData struct {
 					Text string `json:"text"`
 				}
@@ -185,7 +185,7 @@ func TestGetAnswerForExam(t *testing.T) {
 				"question_score": "10",
 			},
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, resp *proto.GetAnswerResponse) {
+			validate: func(t *testing.T, resp *proto.AnswerMinimalResponse) {
 				assert.EqualValues(t, 9999, resp.QuestionId)
 				assert.Zero(t, resp.Id)
 				assert.Nil(t, resp.Answer)

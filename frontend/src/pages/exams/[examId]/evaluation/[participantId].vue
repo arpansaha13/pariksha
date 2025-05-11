@@ -4,6 +4,14 @@
     <h1 class="text-xl font-semibold">{{ exam.title }}</h1>
   </div>
 
+  <div class="flex items-center justify-end gap-2.5">
+    <UButton
+      label="Submit evaluation"
+      loading-auto
+      @click="handleEvaluationSubmit"
+    />
+  </div>
+
   <div class="col-span-2 flex h-full flex-col gap-y-4">
     <ExamCategoryNavigation
       v-if="!isNullOrUndefined(sortedCategories)"
@@ -33,41 +41,23 @@
       <p class="font-medium">{{ question.question.statement }}</p>
     </UCard>
 
-    <UCard v-if="answerPending" :ui="{ body: 'space-y-1.5' }">
-      <template v-if="question.type === QuestionType.MCQ">
-        <div class="flex gap-x-2.5 rounded-md border border-neutral-300 p-3.5">
-          <USkeleton class="size-4" />
-          <USkeleton class="h-4.5 w-[250px]" />
-        </div>
-        <div class="flex gap-x-2.5 rounded-md border border-neutral-300 p-3.5">
-          <USkeleton class="size-4" />
-          <USkeleton class="h-4.5 w-[250px]" />
-        </div>
-      </template>
-
-      <template v-else>
-        <USkeleton class="h-4 w-full" />
-        <USkeleton class="h-4 w-full" />
-        <USkeleton class="h-4 w-[250px]" />
-      </template>
+    <UCard v-if="answerPending">
+      <SkeletonQuestionMcqOptions v-if="question.type === QuestionType.MCQ" />
+      <SkeletonQuestionGeneralAnswer v-else />
     </UCard>
 
     <UCard
       v-else
-      :ui="{ root: isNullOrUndefined(answerData!.answer) ? 'grow' : '' }"
+      :ui="{
+        root:
+          isNullOrUndefined(answerData!.answer) &&
+          question.type !== QuestionType.MCQ &&
+          'grow',
+      }"
     >
-      <template
-        v-if="
-          question.type === QuestionType.MCQ &&
-          !isNullOrUndefined(currentQuestionMcqOptions)
-        "
-      >
-        <USkeleton
-          v-if="isNullOrUndefined(selectedOptionIndex)"
-          class="h-4 w-[250px]"
-        />
+      <template v-if="question.type === QuestionType.MCQ">
         <URadioGroup
-          v-else
+          v-if="!isNullOrUndefined(currentQuestionMcqOptions)"
           v-model="selectedOptionIndex"
           :items="currentQuestionMcqOptions"
           variant="card"
@@ -81,16 +71,8 @@
         />
       </template>
 
-      <template v-else-if="question.type !== QuestionType.MCQ">
-        <div
-          v-if="isNullOrUndefined(answerData?.answer)"
-          class="flex flex-col items-center"
-        >
-          <div class="mt-1 text-gray-600">
-            <Icon name="lucide:file-question" size="2.5rem" />
-          </div>
-          <p class="text-gray-500">This question is unanswered</p>
-        </div>
+      <template v-else>
+        <EvaluationUnanswered v-if="isNullOrUndefined(answerData?.answer)" />
 
         <p v-else>
           {{ (answerData!.answer as GeneralAnswer).text }}
@@ -99,16 +81,20 @@
     </UCard>
 
     <UCard v-if="answerPending" :ui="{ root: 'grow', body: 'space-y-1' }">
-      <USkeleton class="h-4 w-[44px]" />
-      <USkeleton class="h-4 w-[250px]" />
-      <USkeleton class="h-8 w-[230px]" />
+      <SkeletonEvaluation />
     </UCard>
 
+    <!-- Show evaluation section for MCQ because EvaluationUnanswered for MCQ is shown here -->
     <UCard
-      v-else-if="!isNullOrUndefined(answerData!.answer)"
+      v-else-if="
+        !isNullOrUndefined(answerData!.answer) ||
+        question.type === QuestionType.MCQ
+      "
       :ui="{ root: 'grow' }"
     >
+      <EvaluationUnanswered v-if="isNullOrUndefined(answerData?.answer)" />
       <UFormField
+        v-else
         label="Score"
         description="Score to be awarded for this answer"
         name="score_awarded"
@@ -249,8 +235,8 @@ const [
   { data: evaluationAnswer },
 ] = await Promise.all([
   useExamQuestion(currentQuestionId),
-  useExamAnswer(examId, currentQuestionId),
-  useEvaluationAnswer(participantId, currentQuestionId),
+  useAnswerForEvaluation(participantId, currentQuestionId),
+  useAnswerEvaluationData(participantId, currentQuestionId),
 ])
 
 const currentQuestionMaxScore = computed(() => {
@@ -265,6 +251,7 @@ watchImmediate(evaluationAnswer, newEvaluationAnswer => {
     newEvaluationAnswer.score_awarded
 })
 
+// _________________________SAVE EVALUATION_________________________
 /** Save answer for a specific question */
 function saveEvaluation(questionId: number) {
   const evaluationState = evaluationStates[questionId]
@@ -284,7 +271,7 @@ function saveEvaluation(questionId: number) {
     evaluated: true,
   }
 
-  updateAnswerEvaluation(answerData.value!.id, updateEvaluationBody)
+  return updateAnswerEvaluation(answerData.value!.id, updateEvaluationBody)
 }
 
 const saveAndNavigateTo = (async (to, options) => {
@@ -292,6 +279,7 @@ const saveAndNavigateTo = (async (to, options) => {
   return navigateTo(to, options)
 }) as typeof navigateTo
 
+// ______________________MCQ QUESTIONS DISPLAY______________________
 const selectedOptionIndex = ref<number>()
 
 watchImmediate(answerData, val => {
@@ -318,4 +306,35 @@ const currentQuestionMcqOptions = computed(() => {
     label: option,
   }))
 })
+
+// ________________________SUBMIT EVALUATION________________________
+
+const toast = useToast()
+async function handleEvaluationSubmit() {
+  if (isNullOrUndefined(question.value)) return
+
+  try {
+    await saveEvaluation(question.value.id)
+    await markParticipantAsEvaluated(participantId)
+    await navigateTo(`/exams/${examId}`)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
+    if (
+      err.statusCode === HttpStatus.BAD_REQUEST &&
+      err.statusMessage === NuxtErrorStatusMessage.INCOMPLETE_EVALUATION
+    ) {
+      const toastDescription =
+        err.data.unevaluated_count === 1
+          ? '1 answer still needs evaluation.'
+          : `${err.data.unevaluated_count} answers still need evaluation.`
+
+      toast.add({
+        id: ToastId.INCOMPLETE_EVALUATION,
+        title: 'Failed to submit evaluation!',
+        description: toastDescription,
+        color: 'error',
+      })
+    }
+  }
+}
 </script>

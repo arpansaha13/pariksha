@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"slices"
 
 	"google.golang.org/grpc/codes"
@@ -15,6 +16,83 @@ import (
 	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
 )
+
+// GetAnswerForEvaluation retrieves an answer for evaluation purposes
+func (s *ExamServer) GetAnswerForEvaluation(ctx context.Context, req *proto.ParticipantQuestionRequest) (*proto.AnswerMinimalResponse, error) {
+	var answer struct {
+		ID         int64
+		QuestionID int64
+		Answer     *json.RawMessage
+	}
+
+	err := db.DB.Model(&models.Answer{}).
+		Select("id", "question_id", "answer").
+		Where("exam_participant_id = ? AND question_id = ?",
+			req.ParticipantId,
+			req.QuestionId,
+		).Take(&answer).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return &proto.AnswerMinimalResponse{
+				QuestionId: req.QuestionId,
+			}, nil
+		}
+		return nil, status.Error(codes.Internal, "failed to fetch answer")
+	}
+
+	var answerBytes []byte
+	if answer.Answer != nil {
+		answerBytes = *answer.Answer
+	}
+
+	return &proto.AnswerMinimalResponse{
+		Id:         answer.ID,
+		Answer:     answerBytes,
+		QuestionId: answer.QuestionID,
+	}, nil
+}
+
+func (s *ExamServer) GetAnswerEvaluationData(ctx context.Context, req *proto.ParticipantQuestionRequest) (*proto.GetAnswerEvaluationDataResponse, error) {
+	// First check if participant exists and has ended the exam
+	participant, err := utils.FindRecord[models.ExamParticipant](db.DB, req.ParticipantId, "participant not found")
+	if err != nil {
+		return nil, err
+	}
+
+	if !slices.Contains([]int16{
+		constants.PARTICIPANT_STATUS_ENDED,
+		constants.PARTICIPANT_STATUS_EVALUATED,
+	}, participant.Status) {
+		return nil, status.Error(codes.FailedPrecondition, "cannot evaluate answers before exam completion")
+	}
+
+	var answer struct {
+		ID           int64
+		QuestionID   int64
+		ScoreAwarded int16
+		Comments     sql.NullString
+	}
+
+	if err := db.DB.Model(&models.Answer{}).
+		Select("id", "question_id", "score_awarded", "comments").
+		Where("exam_participant_id = ? AND question_id = ? AND answer IS NOT NULL",
+			req.ParticipantId, req.QuestionId).Take(&answer).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return &proto.GetAnswerEvaluationDataResponse{
+				QuestionId: req.QuestionId,
+			}, nil
+		}
+		return nil, utils.HandleDBError(err, "answer not found")
+	}
+
+	return &proto.GetAnswerEvaluationDataResponse{
+		Id:           answer.ID,
+		QuestionId:   answer.QuestionID,
+		ScoreAwarded: int32(answer.ScoreAwarded),
+		Comments:     answer.Comments.String,
+	}, nil
+}
 
 func (s *ExamServer) UpdateAnswerForEvaluation(ctx context.Context, req *proto.UpdateAnswerRequest) (*proto.Empty, error) {
 	// Get max score from exam_questions using joins
@@ -70,27 +148,29 @@ func (s *ExamServer) UpdateAnswerForEvaluation(ctx context.Context, req *proto.U
 }
 
 func (s *ExamServer) MarkParticipantAsEvaluated(ctx context.Context, req *proto.ParticipantRequest) (*proto.EvaluationStatusResponse, error) {
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		var examParticipant models.ExamParticipant
-		if err := tx.Take(&examParticipant, req.ParticipantId).Error; err != nil {
-			if err == gorm.ErrRecordNotFound {
-				return status.Error(codes.NotFound, "exam participant not found")
-			}
-			return status.Error(codes.Internal, "database error")
+	var unevaluatedCount int64
+
+	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+		// Find and validate participant exists
+		participant, err := utils.FindRecord[models.ExamParticipant](tx, req.ParticipantId, "exam participant not found")
+		if err != nil {
+			return err
 		}
 
-		if examParticipant.Status != constants.PARTICIPANT_STATUS_ENDED {
+		// Ensure participant has finished the exam before evaluation
+		if participant.Status != constants.PARTICIPANT_STATUS_ENDED {
 			return status.Error(codes.FailedPrecondition, "evaluation can only start if the exam has ended")
 		}
 
-		var unevaluatedCount int64
-		if err := tx.Model(&models.Answer{}).Where("exam_participant_id = ? AND evaluated = ?", req.ParticipantId, false).Count(&unevaluatedCount).Error; err != nil {
+		// Count answers that are still pending evaluation
+		if err := tx.Model(&models.Answer{}).Where("exam_participant_id = ? AND evaluated = ? AND answer IS NOT NULL", req.ParticipantId, false).Count(&unevaluatedCount).Error; err != nil {
 			return status.Error(codes.Internal, "failed to count unevaluated answers")
 		}
 
+		// If all answers are evaluated, mark the participant's exam as fully evaluated
 		if unevaluatedCount == 0 {
-			examParticipant.Status = constants.PARTICIPANT_STATUS_EVALUATED
-			if err := tx.Save(&examParticipant).Error; err != nil {
+			participant.Status = constants.PARTICIPANT_STATUS_EVALUATED
+			if err := tx.Save(participant).Error; err != nil {
 				return status.Error(codes.Internal, "failed to update exam participant status")
 			}
 		}
@@ -102,46 +182,7 @@ func (s *ExamServer) MarkParticipantAsEvaluated(ctx context.Context, req *proto.
 		return nil, err
 	}
 
-	// Get final unevaluated count
-	var unevaluatedCount int64
-	if err := db.DB.Model(&models.Answer{}).Where("exam_participant_id = ? AND evaluated = ?", req.ParticipantId, false).Count(&unevaluatedCount).Error; err != nil {
-		return nil, status.Error(codes.Internal, "failed to count unevaluated answers")
-	}
-
 	return &proto.EvaluationStatusResponse{
 		UnevaluatedCount: int32(unevaluatedCount),
-	}, nil
-}
-
-func (s *ExamServer) GetAnswerForEvaluation(ctx context.Context, req *proto.GetAnswerForEvaluationRequest) (*proto.GetAnswerForEvaluationResponse, error) {
-	// First check if participant exists and has ended the exam
-	participant, err := utils.FindRecord[models.ExamParticipant](db.DB, req.ParticipantId, "participant not found")
-	if err != nil {
-		return nil, err
-	}
-
-	if !slices.Contains([]int16{
-		constants.PARTICIPANT_STATUS_ENDED,
-		constants.PARTICIPANT_STATUS_EVALUATED,
-	}, participant.Status) {
-		return nil, status.Error(codes.FailedPrecondition, "cannot evaluate answers before exam completion")
-	}
-
-	var answer models.Answer
-	if err := db.DB.Where("exam_participant_id = ? AND question_id = ? AND answer IS NOT NULL",
-		req.ParticipantId, req.QuestionId).Take(&answer).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return &proto.GetAnswerForEvaluationResponse{
-				QuestionId: req.QuestionId,
-			}, nil
-		}
-		return nil, utils.HandleDBError(err, "answer not found")
-	}
-
-	return &proto.GetAnswerForEvaluationResponse{
-		Id:           answer.ID,
-		QuestionId:   answer.QuestionID,
-		ScoreAwarded: int32(answer.ScoreAwarded),
-		Comments:     answer.Comments.String,
 	}, nil
 }

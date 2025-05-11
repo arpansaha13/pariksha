@@ -13,7 +13,7 @@ import (
 	"pariksha/server/internal/services"
 )
 
-func GetAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
+func GetAnswerEvaluationData(w http.ResponseWriter, r *http.Request) {
 	participantID, err := getInt64FromVars(mux.Vars(r), "participantId")
 	if err != nil {
 		http.Error(w, "Invalid participant ID", http.StatusBadRequest)
@@ -30,7 +30,7 @@ func GetAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
-	resp, err := examService.Client().GetAnswerForEvaluation(ctx, &proto.GetAnswerForEvaluationRequest{
+	resp, err := examService.Client().GetAnswerEvaluationData(ctx, &proto.ParticipantQuestionRequest{
 		ParticipantId: participantID,
 		QuestionId:    questionID,
 	})
@@ -39,7 +39,7 @@ func GetAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	answer := dtos.GetAnswerForEvaluationResponseDto{
+	answer := dtos.GetAnswerEvaluationDataResponseDto{
 		ID:           resp.Id,
 		QuestionID:   resp.QuestionId,
 		ScoreAwarded: resp.ScoreAwarded,
@@ -116,11 +116,45 @@ func MarkParticipantAsEvaluated(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]int32{
-		"unevaluatedCount": resp.UnevaluatedCount,
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(dtos.EvaluationStatusResponseDto{
+		UnevaluatedCount: resp.UnevaluatedCount,
+	})
+}
+
+func GetAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
+	participantID, err := getInt64FromVars(mux.Vars(r), "participantId")
+	if err != nil {
+		http.Error(w, "Invalid participant ID", http.StatusBadRequest)
+		return
+	}
+
+	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
+	if err != nil {
+		http.Error(w, "Invalid question ID", http.StatusBadRequest)
+		return
+	}
+
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	examService := services.GetExamService()
+	ctx := examService.CreateMetadata(userID)
+
+	answer, err := examService.Client().GetAnswerForEvaluation(ctx, &proto.ParticipantQuestionRequest{
+		ParticipantId: participantID,
+		QuestionId:    questionID,
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	response := dtos.AnswerMinimalResponseDto{
+		ID:         answer.Id,
+		Answer:     answer.Answer,
+		QuestionID: answer.QuestionId,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }

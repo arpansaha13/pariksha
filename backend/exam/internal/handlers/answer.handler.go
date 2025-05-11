@@ -40,7 +40,7 @@ func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.Parti
 }
 
 // GetAnswerForExam finds an answer using participant ID and question ID and returns minimal info
-func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerRequest) (*proto.GetAnswerResponse, error) {
+func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerRequest) (*proto.AnswerMinimalResponse, error) {
 	var participant models.ExamParticipant
 	if err := db.DB.Where("exam_id = ?", req.ExamId).Take(&participant).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -54,14 +54,14 @@ func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerR
 		participant.ID, req.QuestionId).Take(&answer).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return &proto.GetAnswerResponse{
+			return &proto.AnswerMinimalResponse{
 				QuestionId: req.QuestionId,
 			}, nil
 		}
 		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
 	}
 
-	return &proto.GetAnswerResponse{
+	return &proto.AnswerMinimalResponse{
 		Id:         answer.ID,
 		Answer:     *answer.Answer,
 		QuestionId: answer.QuestionID,

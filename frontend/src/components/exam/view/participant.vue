@@ -175,6 +175,8 @@ const endsAt = toCalendarDateTime(exam.value!.ends_at)
 const isExamStarted = isCalendarBefore(startsAt, now)
 const isExamEnded = isCalendarAfter(now, endsAt)
 
+console.log(isParticipantInvited, props.examPermission)
+
 const fullCurrentUrl = ref('')
 const { copy, copied, isSupported } = useClipboard({ source: fullCurrentUrl })
 

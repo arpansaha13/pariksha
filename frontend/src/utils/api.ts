@@ -26,3 +26,4 @@ export { upsertAnswer } from './api/exams/upsertAnswer'
 export { updateAuthUser } from './api/user/update-auth-user'
 
 export { updateAnswerEvaluation } from './api/evaluation/updateAnswerEvaluation'
+export { markParticipantAsEvaluated } from './api/evaluation/markParticipantAsEvaluated'

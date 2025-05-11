@@ -23,16 +23,3 @@ type AnswerMinimalResponseDto struct {
 	Answer     json.RawMessage `json:"answer"`
 	QuestionID int64           `json:"question_id"`
 }
-
-type UpdateAnswerForEvaluationDto struct {
-	NewScore  *int    `json:"new_score"`
-	Evaluated *bool   `json:"evaluated"`
-	Comments  *string `json:"comments"`
-}
-
-type GetAnswerForEvaluationResponseDto struct {
-	ID           int64  `json:"id"`
-	QuestionID   int64  `json:"question_id"`
-	ScoreAwarded int32  `json:"score_awarded"`
-	Comments     string `json:"comments"`
-}

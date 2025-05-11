@@ -10,6 +10,7 @@ export enum ToastId {
   FORGOT_PASSWORD_FAILED = 'forgot_password_failed',
   RESET_PASSWORD_FAILED = 'reset_password_failed',
   COPIED_TO_CLIPBOARD = 'copied_to_clipboard',
+  INCOMPLETE_EVALUATION = 'incomplete_evaluation',
 }
 
 export enum HeaderNames {
@@ -19,6 +20,10 @@ export enum HeaderNames {
 export enum CookieNames {
   CSRF_TOKEN = 'csrftoken',
   TOKEN = 'token',
+}
+
+export enum NuxtErrorStatusMessage {
+  INCOMPLETE_EVALUATION = 'incomplete_evaluation',
 }
 
 export enum HttpStatus {
@@ -62,8 +67,12 @@ export const AsyncDataKeys = {
 
   EVALUATION_ANSWER: (participantId: number, questionId: number | null) =>
     participantId && questionId
-      ? `PARTICIPANT_${participantId}_QUESTION_${questionId}_ANSWER`
-      : 'PARTICIPANT_ANSWER',
+      ? `PARTICIPANT_${participantId}_QUESTION_${questionId}_EVALUATION_ANSWER`
+      : 'EVALUATION_ANSWER',
+  ANSWER_EVALUATION_DATA: (participantId: number, questionId: number | null) =>
+    participantId && questionId
+      ? `PARTICIPANT_${participantId}_QUESTION_${questionId}_ANSWER_EVALUATION_DATA`
+      : 'ANSWER_EVALUATION_DATA',
 
   AUTH_USER: 'AUTH_USER',
 } as const

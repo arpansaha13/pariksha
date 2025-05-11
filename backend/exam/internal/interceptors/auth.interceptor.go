@@ -51,10 +51,14 @@ var (
 		"/proto.ExamService/EndExam":            true,
 		"/proto.ExamService/UpsertAnswer":       true,
 		"/proto.ExamService/GetExamParticipant": true,
+		"/proto.ExamService/GetAnswerForExam":   true,
 	}
 
 	requiresEvaluate = map[string]bool{
-		"/proto.ExamService/GetAnswerForEvaluation": true,
+		"/proto.ExamService/GetAnswerEvaluationData":    true,
+		"/proto.ExamService/UpdateAnswerForEvaluation":  true,
+		"/proto.ExamService/MarkParticipantAsEvaluated": true,
+		"/proto.ExamService/GetAnswerForEvaluation":     true,
 	}
 
 	handlerSpecificPermissionChecks = map[string]func(*models.ExamPermissions) bool{
@@ -62,9 +66,6 @@ var (
 			return p.CanParticipate() || p.CanEvaluate()
 		},
 		"/proto.ExamService/GetExamCategories": func(p *models.ExamPermissions) bool {
-			return p.CanParticipate() || p.CanEvaluate()
-		},
-		"/proto.ExamService/GetAnswerForExam": func(p *models.ExamPermissions) bool {
 			return p.CanParticipate() || p.CanEvaluate()
 		},
 	}
@@ -196,26 +197,19 @@ func getExamIdFromRequest(req any) (*int64, error) {
 	var examID int64
 
 	switch r := req.(type) {
-	case *proto.ExamRequest:
-		examID = r.ExamId
-	case *proto.UpdateExamRequest:
-		examID = r.ExamId
-	case *proto.StartExamRequest:
-		examID = r.ExamId
-	case *proto.EndExamRequest:
-		examID = r.ExamId
-	case *proto.AddParticipantRequest:
-		examID = r.ExamId
-	case *proto.RemoveParticipantRequest:
-		examID = r.ExamId
-	case *proto.UpsertAnswersRequest:
-		examID = r.ExamId
-	case *proto.CheckParticipantRequest:
-		examID = r.ExamId
-	case *proto.GetExamParticipantRequest:
-		examID = r.ExamId
-	case *proto.GetAnswerRequest:
-		examID = r.ExamId
+	// Group all cases that directly use ExamId field
+	case *proto.ExamRequest,
+		*proto.UpdateExamRequest,
+		*proto.StartExamRequest,
+		*proto.EndExamRequest,
+		*proto.AddParticipantRequest,
+		*proto.RemoveParticipantRequest,
+		*proto.UpsertAnswersRequest,
+		*proto.CheckParticipantRequest,
+		*proto.GetExamParticipantRequest,
+		*proto.GetAnswerRequest:
+		examID = r.(interface{ GetExamId() int64 }).GetExamId()
+
 	case *proto.UpdateAnswerRequest:
 		// Find exam ID using joins, selecting only exam_id
 		err := db.DB.Model(&models.ExamParticipant{}).
@@ -229,16 +223,26 @@ func getExamIdFromRequest(req any) (*int64, error) {
 			}
 			return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
 		}
-	case *proto.GetAnswerForEvaluationRequest:
+
+	case *proto.ParticipantQuestionRequest, *proto.ParticipantRequest:
+		var participantID int64
+		switch v := r.(type) {
+		case *proto.ParticipantQuestionRequest:
+			participantID = v.ParticipantId
+		case *proto.ParticipantRequest:
+			participantID = v.ParticipantId
+		}
+
 		if err := db.DB.Model(&models.ExamParticipant{}).
 			Select("exam_id").
-			Where("id = ?", r.ParticipantId).
+			Where("id = ?", participantID).
 			Take(&examID).Error; err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return nil, status.Error(codes.NotFound, "participant not found")
 			}
 			return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
 		}
+
 	default:
 		log.Printf("Unhandled exam request type: %T", req)
 		return nil, status.Error(codes.Internal, "unhandled request type in exam access interceptor")
