@@ -1,4 +1,4 @@
-package handlers
+package tests
 
 import (
 	"testing"
@@ -6,35 +6,29 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils/ptr"
+	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/paper/internal/config/db"
 )
 
 func TestGetUserPapers(t *testing.T) {
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T)
-		userID       int64
-		expectedCode codes.Code
-		validate     func(t *testing.T, resp *proto.PaperList)
-	}{
+	tests := []ListPapersTestCase{
 		{
-			name: "Success - Get user papers",
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Get user papers",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
 			setup: func(t *testing.T) {
 				paper1 := createTestPaper(t, userID)
-				err := db.DB.Model(&paper1).Update("question_counts", `{"mcq": 2, "short": 1, "long": 0}`).Error
-				require.NoError(t, err)
+				updatePaperCounts(t, &paper1, `{"mcq": 2, "short": 1, "long": 0}`)
 
 				paper2 := createTestPaper(t, userID)
-				err = db.DB.Model(&paper2).Update("question_counts", `{"mcq": 1, "short": 0, "long": 1}`).Error
-				require.NoError(t, err)
+				updatePaperCounts(t, &paper2, `{"mcq": 1, "short": 0, "long": 1}`)
 			},
-			userID:       userID,
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.PaperList) {
 				assert.EqualValues(t, 2, len(resp.Papers))
 
@@ -50,17 +44,21 @@ func TestGetUserPapers(t *testing.T) {
 			},
 		},
 		{
-			name:         "Success - No papers",
-			userID:       userID,
-			expectedCode: codes.OK,
+			BaseTestCase: BaseTestCase{
+				name:         "Success - No papers",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
 			validate: func(t *testing.T, resp *proto.PaperList) {
 				assert.EqualValues(t, 0, len(resp.Papers))
 			},
 		},
 		{
-			name:         "Invalid user ID",
-			userID:       0,
-			expectedCode: codes.InvalidArgument,
+			BaseTestCase: BaseTestCase{
+				name:         "Invalid user ID",
+				userID:       0,
+				expectedCode: codes.InvalidArgument,
+			},
 		},
 	}
 
@@ -72,16 +70,9 @@ func TestGetUserPapers(t *testing.T) {
 			}
 
 			ctx := createContextWithUserID(tt.userID)
-			resp, err := client.GetUserPapers(ctx, &proto.Empty{})
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			require.NotNil(t, resp)
-			tt.validate(t, resp)
+			testrunner.Runner(t, ctx, tt.expectedCode, &proto.Empty{},
+				client.GetUserPapers,
+				tt.validate)
 		})
 	}
 }
@@ -131,59 +122,50 @@ func TestCreatePaper(t *testing.T) {
 			}
 
 			ctx := createContextWithUserID(tt.userID)
-			resp, err := client.CreatePaper(ctx, &proto.Empty{})
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			require.NotNil(t, resp)
-			tt.validate(t, resp)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				&proto.Empty{},
+				client.CreatePaper,
+				tt.validate)
 		})
 	}
 }
 
 func TestUpdatePaper(t *testing.T) {
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T) *models.Paper
-		userID       int64
-		request      *proto.UpdatePaperRequest
-		expectedCode codes.Code
-		validate     func(t *testing.T, paper *models.Paper)
-	}{
+	tests := []UpdatePaperCase{
 		{
-			name: "Success - Update title",
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Update title",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID)
 				return &paper
 			},
-			userID: userID,
 			request: &proto.UpdatePaperRequest{
 				Title: ptr.String("Updated Title"),
 			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, paper *models.Paper) {
 				var updated models.Paper
 				err := db.DB.First(&updated, paper.ID).Error
 				require.NoError(t, err)
 				assert.Equal(t, "Updated Title", updated.Title)
-				assert.EqualValues(t, 60, updated.DurationMinutes) // Default duration unchanged
+				assert.EqualValues(t, 60, updated.DurationMinutes)
 			},
 		},
 		{
-			name: "Success - Update duration",
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Update duration",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID)
 				return &paper
 			},
-			userID: userID,
 			request: &proto.UpdatePaperRequest{
 				DurationMinutes: ptr.Int32(90),
 			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, paper *models.Paper) {
 				var updated models.Paper
 				err := db.DB.First(&updated, paper.ID).Error
@@ -193,17 +175,19 @@ func TestUpdatePaper(t *testing.T) {
 			},
 		},
 		{
-			name: "Success - Update both title and duration",
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Update both title and duration",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID)
 				return &paper
 			},
-			userID: userID,
 			request: &proto.UpdatePaperRequest{
 				Title:           ptr.String("New Title"),
 				DurationMinutes: ptr.Int32(120),
 			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, paper *models.Paper) {
 				var updated models.Paper
 				err := db.DB.First(&updated, paper.ID).Error
@@ -213,39 +197,45 @@ func TestUpdatePaper(t *testing.T) {
 			},
 		},
 		{
-			name: "Paper not found",
+			BaseTestCase: BaseTestCase{
+				name:         "Paper not found",
+				userID:       userID,
+				expectedCode: codes.NotFound,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				return &models.Paper{ID: 999}
 			},
-			userID: userID,
 			request: &proto.UpdatePaperRequest{
 				Title: ptr.String("Updated Title"),
 			},
-			expectedCode: codes.NotFound,
 		},
 		{
-			name: "Invalid user ID",
+			BaseTestCase: BaseTestCase{
+				name:         "Invalid user ID",
+				userID:       0,
+				expectedCode: codes.InvalidArgument,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID)
 				return &paper
 			},
-			userID: 0,
 			request: &proto.UpdatePaperRequest{
 				Title: ptr.String("Updated Title"),
 			},
-			expectedCode: codes.InvalidArgument,
 		},
 		{
-			name: "Failure - Empty paper title",
+			BaseTestCase: BaseTestCase{
+				name:         "Failure - Empty paper title",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID)
 				return &paper
 			},
-			userID: userID,
 			request: &proto.UpdatePaperRequest{
 				Title: ptr.String(""), // Empty title
 			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, paper *models.Paper) {
 				var updated models.Paper
 				err := db.DB.Take(&updated, paper.ID).Error
@@ -254,28 +244,32 @@ func TestUpdatePaper(t *testing.T) {
 			},
 		},
 		{
-			name: "Failure - Negative duration",
+			BaseTestCase: BaseTestCase{
+				name:         "Failure - Negative duration",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID)
 				return &paper
 			},
-			userID: userID,
 			request: &proto.UpdatePaperRequest{
 				DurationMinutes: ptr.Int32(-30), // Negative duration
 			},
-			expectedCode: codes.InvalidArgument,
 		},
 		{
-			name: "Failure - Zero duration",
+			BaseTestCase: BaseTestCase{
+				name:         "Failure - Zero duration",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID)
 				return &paper
 			},
-			userID: userID,
 			request: &proto.UpdatePaperRequest{
 				DurationMinutes: ptr.Int32(0), // Zero duration
 			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, paper *models.Paper) {
 				var updated models.Paper
 				err := db.DB.Take(&updated, paper.ID).Error
@@ -284,16 +278,18 @@ func TestUpdatePaper(t *testing.T) {
 			},
 		},
 		{
-			name: "Failure - Extremely large duration",
+			BaseTestCase: BaseTestCase{
+				name:         "Failure - Extremely large duration",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID)
 				return &paper
 			},
-			userID: userID,
 			request: &proto.UpdatePaperRequest{
 				DurationMinutes: ptr.Int32(1441), // More than 24 hours
 			},
-			expectedCode: codes.InvalidArgument,
 		},
 	}
 
@@ -304,39 +300,31 @@ func TestUpdatePaper(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			tt.request.PaperId = paper.ID
-			_, err := client.UpdatePaper(ctx, tt.request)
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			if tt.validate != nil {
-				tt.validate(t, paper)
-			}
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				tt.request,
+				client.UpdatePaper,
+				func(t *testing.T, _ *proto.Empty) {
+					if tt.validate != nil {
+						tt.validate(t, paper)
+					}
+				})
 		})
 	}
 }
 
 func TestGetPaper(t *testing.T) {
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T) *models.Paper
-		userID       int64
-		expectedCode codes.Code
-		validate     func(t *testing.T, resp *proto.PaperResponse)
-	}{
+	tests := []GetPaperTestCase{
 		{
-			name: "Success - Get owned paper",
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Get owned paper",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID)
-				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 2, "short": 1, "long": 1}`).Error
-				require.NoError(t, err)
+				updatePaperCounts(t, &paper, `{"mcq": 2, "short": 1, "long": 1}`)
 				return &paper
 			},
-			userID:       userID,
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.PaperResponse) {
 				assert.NotZero(t, resp.Id)
 				assert.Equal(t, "Test Paper", resp.Title)
@@ -356,61 +344,51 @@ func TestGetPaper(t *testing.T) {
 			},
 		},
 		{
-			name: "Success - Get shared paper",
-			setup: func(t *testing.T) *models.Paper {
-				// Create paper owned by user 2
-				paper := createTestPaper(t, 2)
-
-				// Create read-only permissions for test user
-				permissions := models.PaperPermissions{
-					UserID:  userID,
-					PaperID: paper.ID,
-				}
-				permissions.SetRead()
-				err := db.DB.Create(&permissions).Error
-				require.NoError(t, err)
-
-				return &paper
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Get shared paper",
+				userID:       userID,
+				expectedCode: codes.OK,
 			},
-			userID:       userID,
-			expectedCode: codes.OK,
+			setup: func(t *testing.T) *models.Paper {
+				return setupPaperWithSharedAccess(t, 2, userID, true)
+			},
 			validate: func(t *testing.T, resp *proto.PaperResponse) {
 				assert.NotZero(t, resp.Id)
-
-				// Verify paper permissions
-				var permissions models.PaperPermissions
-				err := db.DB.Where("paper_id = ? AND user_id = ?", resp.Id, userID).Take(&permissions).Error
-				require.NoError(t, err)
-				assert.True(t, permissions.CanRead(), "User should have read access to the paper")
-				assert.False(t, permissions.CanWrite(), "User should not have write access to the paper")
+				verifyPaperPermissions(t, resp.Id, userID, true, false)
 			},
 		},
 		{
-			name: "Paper not found",
+			BaseTestCase: BaseTestCase{
+				name:         "Paper not found",
+				userID:       userID,
+				expectedCode: codes.NotFound,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				return &models.Paper{ID: 999}
 			},
-			userID:       userID,
-			expectedCode: codes.NotFound,
 		},
 		{
-			name: "No access to paper",
+			BaseTestCase: BaseTestCase{
+				name:         "No access to paper",
+				userID:       userID,
+				expectedCode: codes.PermissionDenied,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				// Create paper owned by user 2 with no sharing
 				paper := createTestPaper(t, 2)
 				return &paper
 			},
-			userID:       userID,
-			expectedCode: codes.PermissionDenied,
 		},
 		{
-			name: "Invalid user ID",
+			BaseTestCase: BaseTestCase{
+				name:         "Invalid user ID",
+				userID:       0,
+				expectedCode: codes.InvalidArgument,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID)
 				return &paper
 			},
-			userID:       0,
-			expectedCode: codes.InvalidArgument,
 		},
 	}
 
@@ -420,45 +398,37 @@ func TestGetPaper(t *testing.T) {
 			paper := tt.setup(t)
 
 			ctx := createContextWithUserID(tt.userID)
-			resp, err := client.GetPaper(ctx, &proto.PaperRequest{
-				PaperId: paper.ID,
-			})
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			require.NotNil(t, resp)
-			tt.validate(t, resp)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				&proto.PaperRequest{PaperId: paper.ID},
+				client.GetPaper,
+				tt.validate)
 		})
 	}
 }
 
 func TestGetPaperPermissions(t *testing.T) {
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T) *models.Paper
-		userID       int64
-		expectedCode codes.Code
-		validate     func(t *testing.T, resp *proto.PaperPermissionsResponse)
-	}{
+	tests := []PaperPermissionsCase{
 		{
-			name: "Success - Paper owner has full permissions",
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Paper owner has full permissions",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID)
 				return &paper
 			},
-			userID:       userID,
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.PaperPermissionsResponse) {
 				assert.True(t, resp.CanRead, "Owner should have read permission")
 				assert.True(t, resp.CanWrite, "Owner should have write permission")
 			},
 		},
 		{
-			name: "Success - User has read-only permissions",
+			BaseTestCase: BaseTestCase{
+				name:         "Success - User has read-only permissions",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				// Create paper owned by another user
 				paper := createTestPaper(t, userID+1)
@@ -473,38 +443,42 @@ func TestGetPaperPermissions(t *testing.T) {
 				require.NoError(t, err)
 				return &paper
 			},
-			userID:       userID,
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.PaperPermissionsResponse) {
 				assert.True(t, resp.CanRead, "User should have read permission")
 				assert.False(t, resp.CanWrite, "User should not have write permission")
 			},
 		},
 		{
-			name: "Paper not found",
+			BaseTestCase: BaseTestCase{
+				name:         "Paper not found",
+				userID:       userID,
+				expectedCode: codes.NotFound,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				return &models.Paper{ID: 999}
 			},
-			userID:       userID,
-			expectedCode: codes.NotFound,
 		},
 		{
-			name: "No permission to access paper",
+			BaseTestCase: BaseTestCase{
+				name:         "No permission to access paper",
+				userID:       userID,
+				expectedCode: codes.PermissionDenied,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID+1)
 				return &paper
 			},
-			userID:       userID,
-			expectedCode: codes.PermissionDenied,
 		},
 		{
-			name: "Invalid user ID",
+			BaseTestCase: BaseTestCase{
+				name:         "Invalid user ID",
+				userID:       0,
+				expectedCode: codes.InvalidArgument,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID)
 				return &paper
 			},
-			userID:       0,
-			expectedCode: codes.InvalidArgument,
 		},
 	}
 
@@ -514,18 +488,10 @@ func TestGetPaperPermissions(t *testing.T) {
 			paper := tt.setup(t)
 
 			ctx := createContextWithUserID(tt.userID)
-			resp, err := client.GetPaperPermissions(ctx, &proto.PaperRequest{
-				PaperId: paper.ID,
-			})
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			require.NotNil(t, resp)
-			tt.validate(t, resp)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				&proto.PaperRequest{PaperId: paper.ID},
+				client.GetPaperPermissions,
+				tt.validate)
 		})
 	}
 }

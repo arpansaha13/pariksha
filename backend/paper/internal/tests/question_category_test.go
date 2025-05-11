@@ -1,4 +1,4 @@
-package handlers
+package tests
 
 import (
 	"database/sql"
@@ -8,24 +8,22 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/paper/internal/config/db"
 )
 
 func TestGetPaperCategories(t *testing.T) {
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T) (*models.Paper, []models.QuestionCategory)
-		userID       int64
-		expectedCode codes.Code
-		validate     func(t *testing.T, categories []models.QuestionCategory, resp *proto.CategoryList)
-	}{
+	tests := []CategoryListCase{
 		{
-			name: "Success - Get categories",
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Get categories",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
 			setup: func(t *testing.T) (*models.Paper, []models.QuestionCategory) {
 				paper := createTestPaper(t, userID)
 				var defaultCategory models.QuestionCategory
@@ -49,8 +47,6 @@ func TestGetPaperCategories(t *testing.T) {
 				require.NoError(t, db.DB.Create(&categoriesToBeCreated).Error)
 				return &paper, categories
 			},
-			userID:       userID,
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, categories []models.QuestionCategory, resp *proto.CategoryList) {
 				assert.EqualValues(t, len(categories), len(resp.Categories))
 				for i, c := range resp.Categories {
@@ -60,13 +56,15 @@ func TestGetPaperCategories(t *testing.T) {
 			},
 		},
 		{
-			name: "No access to paper",
+			BaseTestCase: BaseTestCase{
+				name:         "No access to paper",
+				userID:       userID,
+				expectedCode: codes.PermissionDenied,
+			},
 			setup: func(t *testing.T) (*models.Paper, []models.QuestionCategory) {
 				paper := createTestPaper(t, 2) // Create paper owned by different user
 				return &paper, nil
 			},
-			userID:       userID,
-			expectedCode: codes.PermissionDenied,
 		},
 	}
 
@@ -76,38 +74,30 @@ func TestGetPaperCategories(t *testing.T) {
 			paper, categories := tt.setup(t)
 
 			ctx := createContextWithUserID(tt.userID)
-			resp, err := client.GetPaperCategories(ctx, &proto.PaperRequest{
-				PaperId: paper.ID,
-			})
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			require.NotNil(t, resp)
-			tt.validate(t, categories, resp)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				&proto.PaperRequest{PaperId: paper.ID},
+				client.GetPaperCategories,
+				func(t *testing.T, resp *proto.CategoryList) {
+					if tt.validate != nil {
+						tt.validate(t, categories, resp)
+					}
+				})
 		})
 	}
 }
 
 func TestCreateCategory(t *testing.T) {
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T) *models.Paper
-		userID       int64
-		expectedCode codes.Code
-		validate     func(t *testing.T, resp *proto.CategoryResponse)
-	}{
+	tests := []CreateCategoryCase{
 		{
-			name: "Success - Create category",
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Create category",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID)
 				return &paper
 			},
-			userID:       userID,
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.CategoryResponse) {
 				assert.NotZero(t, resp.Id)
 				assert.Equal(t, "Category 2", resp.Name) // Second category since createTestPaper creates one
@@ -115,21 +105,25 @@ func TestCreateCategory(t *testing.T) {
 			},
 		},
 		{
-			name: "Not paper owner",
+			BaseTestCase: BaseTestCase{
+				name:         "Not paper owner",
+				userID:       userID,
+				expectedCode: codes.PermissionDenied,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, 2) // Different user
 				return &paper
 			},
-			userID:       userID,
-			expectedCode: codes.PermissionDenied,
 		},
 		{
-			name: "Paper not found",
+			BaseTestCase: BaseTestCase{
+				name:         "Paper not found",
+				userID:       userID,
+				expectedCode: codes.NotFound,
+			},
 			setup: func(t *testing.T) *models.Paper {
 				return &models.Paper{ID: 999}
 			},
-			userID:       userID,
-			expectedCode: codes.NotFound,
 		},
 	}
 
@@ -139,47 +133,31 @@ func TestCreateCategory(t *testing.T) {
 			paper := tt.setup(t)
 
 			ctx := createContextWithUserID(tt.userID)
-			resp, err := client.CreateCategory(ctx, &proto.CreateCategoryRequest{
-				PaperId: paper.ID,
-			})
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			require.NotNil(t, resp)
-			tt.validate(t, resp)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				&proto.CreateCategoryRequest{PaperId: paper.ID},
+				client.CreateCategory,
+				func(t *testing.T, resp *proto.CategoryResponse) {
+					if tt.validate != nil {
+						tt.validate(t, resp)
+					}
+				})
 		})
 	}
 }
 
 func TestUpdateCategory(t *testing.T) {
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T) *models.QuestionCategory
-		userID       int64
-		newName      string
-		expectedCode codes.Code
-		validate     func(t *testing.T, category *models.QuestionCategory)
-	}{
+	tests := []UpdateCategoryCase{
 		{
-			name: "Success - Update unlocked category",
-			setup: func(t *testing.T) *models.QuestionCategory {
-				paper := createTestPaper(t, userID)
-				category := models.QuestionCategory{
-					PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
-					Name:    "Original Name",
-					Order:   1,
-					Locked:  false,
-				}
-				require.NoError(t, db.DB.Create(&category).Error)
-				return &category
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Update unlocked category",
+				userID:       userID,
+				expectedCode: codes.OK,
 			},
-			userID:       userID,
-			newName:      "Updated Name",
-			expectedCode: codes.OK,
+			setup: func(t *testing.T) *models.QuestionCategory {
+				_, category := setupTestCategory(t, userID, false)
+				return category
+			},
+			newName: "Updated Name",
 			validate: func(t *testing.T, category *models.QuestionCategory) {
 				var updated models.QuestionCategory
 				require.NoError(t, db.DB.First(&updated, category.ID).Error)
@@ -188,7 +166,11 @@ func TestUpdateCategory(t *testing.T) {
 			},
 		},
 		{
-			name: "Success - Update locked category creates new record",
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Update locked category creates new record",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, userID)
 				category := models.QuestionCategory{
@@ -200,9 +182,7 @@ func TestUpdateCategory(t *testing.T) {
 				require.NoError(t, db.DB.Create(&category).Error)
 				return &category
 			},
-			userID:       userID,
-			newName:      "Updated Name",
-			expectedCode: codes.OK,
+			newName: "Updated Name",
 			validate: func(t *testing.T, category *models.QuestionCategory) {
 				// Original category should be unlinked
 				var original models.QuestionCategory
@@ -221,45 +201,21 @@ func TestUpdateCategory(t *testing.T) {
 			},
 		},
 		{
-			name: "Success - Update locked category with questions",
-			setup: func(t *testing.T) *models.QuestionCategory {
-				paper := createTestPaper(t, userID)
-				category := models.QuestionCategory{
-					PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
-					Name:    "Original Name",
-					Order:   1,
-					Locked:  true,
-				}
-				require.NoError(t, db.DB.Create(&category).Error)
-
-				// Create some questions in this category
-				questions := []models.Question{
-					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
-						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
-						Question:   json.RawMessage(`{"statement":"Q1","options":["A","B"]}`),
-						MaxScore:   5,
-					},
-					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
-						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_SHORT,
-						Question:   json.RawMessage(`{"statement":"Q2"}`),
-						MaxScore:   10,
-					},
-				}
-				require.NoError(t, db.DB.Create(&questions).Error)
-				return &category
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Update locked category with questions",
+				userID:       userID,
+				expectedCode: codes.OK,
 			},
-			userID:       userID,
-			newName:      "Updated Name",
-			expectedCode: codes.OK,
+			setup: func(t *testing.T) *models.QuestionCategory {
+				_, category := setupCategoryWithQuestions(t, userID, true, 2)
+				return category
+			},
+			newName: "Updated Name",
 			validate: func(t *testing.T, category *models.QuestionCategory) {
 				// Original category should be unlinked from paper
 				var original models.QuestionCategory
 				require.NoError(t, db.DB.First(&original, category.ID).Error)
-				assert.Equal(t, "Original Name", original.Name)
+				assert.Equal(t, "Test Category", original.Name)
 				assert.True(t, original.Locked)
 				assert.False(t, original.PaperID.Valid) // Should be unlinked
 
@@ -288,7 +244,11 @@ func TestUpdateCategory(t *testing.T) {
 			},
 		},
 		{
-			name: "Success - Update category",
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Update category",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, userID)
 				category := models.QuestionCategory{
@@ -299,9 +259,7 @@ func TestUpdateCategory(t *testing.T) {
 				require.NoError(t, db.DB.Create(&category).Error)
 				return &category
 			},
-			userID:       userID,
-			newName:      "Updated Name",
-			expectedCode: codes.OK,
+			newName: "Updated Name",
 			validate: func(t *testing.T, category *models.QuestionCategory) {
 				var updated models.QuestionCategory
 				require.NoError(t, db.DB.First(&updated, category.ID).Error)
@@ -309,7 +267,11 @@ func TestUpdateCategory(t *testing.T) {
 			},
 		},
 		{
-			name: "Not paper owner",
+			BaseTestCase: BaseTestCase{
+				name:         "Not paper owner",
+				userID:       userID,
+				expectedCode: codes.PermissionDenied,
+			},
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, 2) // Different user
 				category := models.QuestionCategory{
@@ -320,9 +282,7 @@ func TestUpdateCategory(t *testing.T) {
 				require.NoError(t, db.DB.Create(&category).Error)
 				return &category
 			},
-			userID:       userID,
-			newName:      "Updated Name",
-			expectedCode: codes.PermissionDenied,
+			newName: "Updated Name",
 		},
 	}
 
@@ -332,32 +292,29 @@ func TestUpdateCategory(t *testing.T) {
 			category := tt.setup(t)
 
 			ctx := createContextWithUserID(tt.userID)
-			_, err := client.UpdateCategory(ctx, &proto.UpdateCategoryRequest{
-				CategoryId: category.ID,
-				Name:       tt.newName,
-			})
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			tt.validate(t, category)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				&proto.UpdateCategoryRequest{
+					CategoryId: category.ID,
+					Name:       tt.newName,
+				},
+				client.UpdateCategory,
+				func(t *testing.T, resp *proto.Empty) {
+					if tt.validate != nil {
+						tt.validate(t, category)
+					}
+				})
 		})
 	}
 }
 
 func TestReorderCategories(t *testing.T) {
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T) (*models.Paper, []models.QuestionCategory)
-		userID       int64
-		expectedCode codes.Code
-		validate     func(t *testing.T, categories []models.QuestionCategory)
-	}{
+	tests := []ReorderCategoriesCase{
 		{
-			name: "Success - Reorder categories",
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Reorder categories",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
 			setup: func(t *testing.T) (*models.Paper, []models.QuestionCategory) {
 				paper := createTestPaper(t, userID)
 				var defaultCategory models.QuestionCategory
@@ -373,8 +330,6 @@ func TestReorderCategories(t *testing.T) {
 				categories := []models.QuestionCategory{defaultCategory, additionalCategory}
 				return &paper, categories
 			},
-			userID:       userID,
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, categories []models.QuestionCategory) {
 				var updated []models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", categories[0].PaperID).
@@ -395,45 +350,33 @@ func TestReorderCategories(t *testing.T) {
 			paper, categories := tt.setup(t)
 
 			ctx := createContextWithUserID(tt.userID)
-			_, err := client.ReorderCategories(ctx, &proto.ReorderCategoriesRequest{
-				PaperId:     paper.ID,
-				CategoryIds: []int64{categories[1].ID, categories[0].ID}, // Reverse order
-			})
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			tt.validate(t, categories)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				&proto.ReorderCategoriesRequest{
+					PaperId:     paper.ID,
+					CategoryIds: []int64{categories[1].ID, categories[0].ID}, // Reverse order
+				},
+				client.ReorderCategories,
+				func(t *testing.T, resp *proto.Empty) {
+					if tt.validate != nil {
+						tt.validate(t, categories)
+					}
+				})
 		})
 	}
 }
 
 func TestDeleteCategory(t *testing.T) {
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T) *models.QuestionCategory
-		userID       int64
-		expectedCode codes.Code
-		validate     func(t *testing.T, categoryID int64)
-	}{
+	tests := []DeleteCategoryCase{
 		{
-			name: "Success - Delete category when multiple exist",
-			setup: func(t *testing.T) *models.QuestionCategory {
-				paper := createTestPaper(t, userID)
-				// createTestPaper already creates one category
-				category := models.QuestionCategory{
-					PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
-					Name:    "Test Category",
-					Order:   2,
-				}
-				require.NoError(t, db.DB.Create(&category).Error)
-				return &category
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Delete category when multiple exist",
+				userID:       userID,
+				expectedCode: codes.OK,
 			},
-			userID:       userID,
-			expectedCode: codes.OK,
+			setup: func(t *testing.T) *models.QuestionCategory {
+				_, category := setupTestCategory(t, userID, false)
+				return category
+			},
 			validate: func(t *testing.T, categoryID int64) {
 				var category models.QuestionCategory
 				err := db.DB.First(&category, categoryID).Error
@@ -441,15 +384,17 @@ func TestDeleteCategory(t *testing.T) {
 			},
 		},
 		{
-			name: "Fail - Cannot delete last category",
+			BaseTestCase: BaseTestCase{
+				name:         "Fail - Cannot delete last category",
+				userID:       userID,
+				expectedCode: codes.FailedPrecondition,
+			},
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, userID)
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 				return &category
 			},
-			userID:       userID,
-			expectedCode: codes.FailedPrecondition,
 			validate: func(t *testing.T, categoryID int64) {
 				var category models.QuestionCategory
 				err := db.DB.First(&category, categoryID).Error
@@ -457,7 +402,11 @@ func TestDeleteCategory(t *testing.T) {
 			},
 		},
 		{
-			name: "Not paper owner",
+			BaseTestCase: BaseTestCase{
+				name:         "Not paper owner",
+				userID:       userID,
+				expectedCode: codes.PermissionDenied,
+			},
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, 2) // Different user
 				category := models.QuestionCategory{
@@ -468,41 +417,17 @@ func TestDeleteCategory(t *testing.T) {
 				require.NoError(t, db.DB.Create(&category).Error)
 				return &category
 			},
-			userID:       userID,
-			expectedCode: codes.PermissionDenied,
 		},
 		{
-			name: "Success - Delete locked category unlinks it",
-			setup: func(t *testing.T) *models.QuestionCategory {
-				paper := createTestPaper(t, userID)
-				// Default category from createTestPaper
-				var defaultCategory models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&defaultCategory).Error)
-
-				// Create locked category
-				category := models.QuestionCategory{
-					PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
-					Name:    "Test Category",
-					Order:   2,
-					Locked:  true,
-				}
-				require.NoError(t, db.DB.Create(&category).Error)
-
-				// Add a locked question to this category
-				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
-					CategoryID: category.ID,
-					Type:       constants.QUESTION_TYPE_MCQ,
-					Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
-					MaxScore:   5,
-					Locked:     true,
-				}
-				require.NoError(t, db.DB.Create(&question).Error)
-
-				return &category
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Delete locked category unlinks it",
+				userID:       userID,
+				expectedCode: codes.OK,
 			},
-			userID:       userID,
-			expectedCode: codes.OK,
+			setup: func(t *testing.T) *models.QuestionCategory {
+				_, category := setupCategoryWithQuestions(t, userID, true, 1)
+				return category
+			},
 			validate: func(t *testing.T, categoryID int64) {
 				// Verify category still exists but is unlinked
 				var category models.QuestionCategory
@@ -518,7 +443,11 @@ func TestDeleteCategory(t *testing.T) {
 			},
 		},
 		{
-			name: "Success - Delete category with mix of locked and unlocked questions",
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Delete category with mix of locked and unlocked questions",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, userID)
 				// Default category from createTestPaper
@@ -559,8 +488,6 @@ func TestDeleteCategory(t *testing.T) {
 
 				return &category
 			},
-			userID:       userID,
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, categoryID int64) {
 				// Verify category still exists but is unlinked
 				var category models.QuestionCategory
@@ -587,17 +514,14 @@ func TestDeleteCategory(t *testing.T) {
 			category := tt.setup(t)
 
 			ctx := createContextWithUserID(tt.userID)
-			_, err := client.DeleteCategory(ctx, &proto.CategoryRequest{
-				CategoryId: category.ID,
-			})
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			tt.validate(t, category.ID)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				&proto.CategoryRequest{CategoryId: category.ID},
+				client.DeleteCategory,
+				func(t *testing.T, resp *proto.Empty) {
+					if tt.validate != nil {
+						tt.validate(t, category.ID)
+					}
+				})
 		})
 	}
 }

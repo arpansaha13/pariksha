@@ -1,4 +1,4 @@
-package handlers
+package tests
 
 import (
 	"context"
@@ -9,6 +9,8 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/db"
 	"testing"
+
+	"pariksha/common/pkg/utils/testrunner"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -101,16 +103,14 @@ func TestGetQuestionsByIds(t *testing.T) {
 				}
 			}
 
-			resp, err := client.GetQuestionsByIds(context.Background(), tt.request)
-
-			if tt.expectedCode != codes.OK {
-				assert.Equal(t, tt.expectedCode, status.Code(err))
-				return
-			}
-
-			require.NoError(t, err)
-			require.NotNil(t, resp)
-			tt.validate(t, resp, questions)
+			testrunner.Runner(t, context.Background(), tt.expectedCode,
+				tt.request,
+				client.GetQuestionsByIds,
+				func(t *testing.T, resp *proto.QuestionBatchResponse) {
+					if tt.validate != nil {
+						tt.validate(t, resp, questions)
+					}
+				})
 		})
 	}
 }
