@@ -6,6 +6,7 @@ export { resetPassword } from './api/auth/reset-password'
 
 export { createPaper } from './api/papers/create-paper'
 export { updatePaper } from './api/papers/update-paper'
+export { deletePaper } from './api/papers/delete-paper'
 
 export { createCategory } from './api/papers/create-category'
 export { updateCategory } from './api/papers/update-category'

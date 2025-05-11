@@ -6,8 +6,8 @@
       </template>
 
       <UTable
-        v-if="!isNullOrUndefined(papers)"
-        :data="papers"
+        :data="papersData ?? undefined"
+        :loading="papersPending"
         :columns="columns"
         class="flex-1"
       />
@@ -16,18 +16,22 @@
 </template>
 
 <script setup lang="ts">
+import { ConfirmModal } from '#components'
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import type { TableColumn } from '@nuxt/ui'
+import type { DropdownMenuItem, TableColumn } from '@nuxt/ui'
 import type { Paper, PaperQuestionCounts } from '~/types'
 
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 
-const { data: papers } = await usePapers()
+const { data: papersData, pending: papersPending } = await usePapers()
 
 const toast = useToast()
 const newExamStore = useNewExamStore()
 const { copy, isSupported } = useClipboard()
+
+const overlay = useOverlay()
+const confirmModal = overlay.create(ConfirmModal)
 
 function createExamWithPaper(paper: Paper) {
   newExamStore.clear()
@@ -37,6 +41,19 @@ function createExamWithPaper(paper: Paper) {
     paper.duration_minutes ?? 0
   )
   return navigateTo(`/exams/new`)
+}
+
+async function handleDeletePaper(paper: Paper) {
+  const instance = confirmModal.open({
+    title: 'Delete paper',
+    description: `Are you sure you want to to delete ${paper.title}? This action cannot be undone.`,
+    confirmLabel: 'Delete paper',
+  })
+  const shouldDelete = await instance.result
+
+  if (shouldDelete) {
+    deletePaper([paper.id])
+  }
 }
 
 const columns: TableColumn<Paper>[] = [
@@ -84,18 +101,30 @@ const columns: TableColumn<Paper>[] = [
     id: 'actions',
     enableHiding: false,
     cell: ({ row }) => {
-      const items = [
-        {
-          label: 'Create exam',
-          icon: 'i-lucide-bookmark-plus',
-          onSelect() {
-            createExamWithPaper(row.original)
+      const items: DropdownMenuItem[][] = [
+        [
+          {
+            label: 'Create exam',
+            icon: 'i-lucide-bookmark-plus',
+            onSelect() {
+              createExamWithPaper(row.original)
+            },
           },
-        },
+        ],
+        [
+          {
+            label: 'Delete',
+            color: 'error',
+            icon: 'i-heroicons-trash',
+            onSelect() {
+              handleDeletePaper(row.original)
+            },
+          },
+        ],
       ]
 
       if (isSupported) {
-        items.push({
+        items[0].push({
           label: 'Copy link',
           icon: 'i-lucide-link',
           onSelect() {

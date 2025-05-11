@@ -11,6 +11,7 @@ export enum ToastId {
   RESET_PASSWORD_FAILED = 'reset_password_failed',
   COPIED_TO_CLIPBOARD = 'copied_to_clipboard',
   INCOMPLETE_EVALUATION = 'incomplete_evaluation',
+  DELETE_PAPER_FAILED = 'delete_paper_failed',
 }
 
 export enum HeaderNames {

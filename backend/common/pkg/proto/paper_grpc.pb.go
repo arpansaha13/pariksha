@@ -23,6 +23,7 @@ const (
 	PaperService_GetPaper_FullMethodName            = "/proto.PaperService/GetPaper"
 	PaperService_CreatePaper_FullMethodName         = "/proto.PaperService/CreatePaper"
 	PaperService_UpdatePaper_FullMethodName         = "/proto.PaperService/UpdatePaper"
+	PaperService_DeletePaper_FullMethodName         = "/proto.PaperService/DeletePaper"
 	PaperService_GetPaperPermissions_FullMethodName = "/proto.PaperService/GetPaperPermissions"
 	PaperService_GetPaperQuestions_FullMethodName   = "/proto.PaperService/GetPaperQuestions"
 	PaperService_GetPaperQuestion_FullMethodName    = "/proto.PaperService/GetPaperQuestion"
@@ -49,6 +50,7 @@ type PaperServiceClient interface {
 	GetPaper(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*PaperResponse, error)
 	CreatePaper(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PaperResponse, error)
 	UpdatePaper(ctx context.Context, in *UpdatePaperRequest, opts ...grpc.CallOption) (*Empty, error)
+	DeletePaper(ctx context.Context, in *DeletePaperRequest, opts ...grpc.CallOption) (*Empty, error)
 	GetPaperPermissions(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*PaperPermissionsResponse, error)
 	// Question operations
 	GetPaperQuestions(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*QuestionList, error)
@@ -111,6 +113,16 @@ func (c *paperServiceClient) UpdatePaper(ctx context.Context, in *UpdatePaperReq
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
 	err := c.cc.Invoke(ctx, PaperService_UpdatePaper_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paperServiceClient) DeletePaper(ctx context.Context, in *DeletePaperRequest, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, PaperService_DeletePaper_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -276,6 +288,7 @@ type PaperServiceServer interface {
 	GetPaper(context.Context, *PaperRequest) (*PaperResponse, error)
 	CreatePaper(context.Context, *Empty) (*PaperResponse, error)
 	UpdatePaper(context.Context, *UpdatePaperRequest) (*Empty, error)
+	DeletePaper(context.Context, *DeletePaperRequest) (*Empty, error)
 	GetPaperPermissions(context.Context, *PaperRequest) (*PaperPermissionsResponse, error)
 	// Question operations
 	GetPaperQuestions(context.Context, *PaperRequest) (*QuestionList, error)
@@ -315,6 +328,9 @@ func (UnimplementedPaperServiceServer) CreatePaper(context.Context, *Empty) (*Pa
 }
 func (UnimplementedPaperServiceServer) UpdatePaper(context.Context, *UpdatePaperRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdatePaper not implemented")
+}
+func (UnimplementedPaperServiceServer) DeletePaper(context.Context, *DeletePaperRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeletePaper not implemented")
 }
 func (UnimplementedPaperServiceServer) GetPaperPermissions(context.Context, *PaperRequest) (*PaperPermissionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPaperPermissions not implemented")
@@ -450,6 +466,24 @@ func _PaperService_UpdatePaper_Handler(srv interface{}, ctx context.Context, dec
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PaperServiceServer).UpdatePaper(ctx, req.(*UpdatePaperRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PaperService_DeletePaper_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeletePaperRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaperServiceServer).DeletePaper(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaperService_DeletePaper_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaperServiceServer).DeletePaper(ctx, req.(*DeletePaperRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -746,6 +780,10 @@ var PaperService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdatePaper",
 			Handler:    _PaperService_UpdatePaper_Handler,
+		},
+		{
+			MethodName: "DeletePaper",
+			Handler:    _PaperService_DeletePaper_Handler,
 		},
 		{
 			MethodName: "GetPaperPermissions",

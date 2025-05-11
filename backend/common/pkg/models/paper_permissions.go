@@ -1,9 +1,12 @@
 package models
 
+import "gorm.io/gorm"
+
 type PaperPermissions struct {
-	PaperID     int64 `gorm:"primaryKey;type:bigint;not null"`
-	UserID      int64 `gorm:"primaryKey;type:bigint;not null"`
-	Permissions int16 `gorm:"type:smallint;not null"`
+	PaperID     int64          `gorm:"primaryKey;type:bigint;not null"`
+	UserID      int64          `gorm:"primaryKey;type:bigint;not null"`
+	Permissions int16          `gorm:"type:smallint;not null"`
+	DeletedAt   gorm.DeletedAt `gorm:"index"`
 }
 
 func (PaperPermissions) TableName() string {

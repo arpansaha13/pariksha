@@ -166,3 +166,31 @@ func GetPaperPermissions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(permissions)
 }
+
+func DeletePaper(w http.ResponseWriter, r *http.Request) {
+	var deletePaperDto dtos.DeletePaperDto
+	if err := json.NewDecoder(r.Body).Decode(&deletePaperDto); err != nil {
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
+		return
+	}
+
+	if err := validate.Do.Struct(deletePaperDto); err != nil {
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
+		return
+	}
+
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	paperService := services.GetPaperService()
+	ctx := paperService.CreateMetadata(userID)
+
+	_, err := paperService.Client().DeletePaper(ctx, &proto.DeletePaperRequest{
+		PaperIds: deletePaperDto.PaperIDs,
+	})
+
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 
+	"gorm.io/gorm"
+
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/structs"
 )
@@ -22,6 +24,7 @@ type Question struct {
 	Locked        bool             `gorm:"not null;default:false"`
 	Paper         Paper            `gorm:"foreignKey:PaperID"`
 	Category      QuestionCategory `gorm:"foreignKey:CategoryID"`
+	DeletedAt     gorm.DeletedAt   `gorm:"index"`
 }
 
 // Unmarshal the raw JSON data into the appropriate struct based on the Type field

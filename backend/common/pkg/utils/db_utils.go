@@ -37,3 +37,11 @@ func FindRecord[T any](db *gorm.DB, id int64, notFoundMsg string) (*T, error) {
 	}
 	return &record, nil
 }
+
+// BatchDelete performs a soft delete on multiple records based on a where condition
+func BatchDelete(db *gorm.DB, model any, query any, args ...any) error {
+	if err := db.Where(query, args...).Delete(model).Error; err != nil {
+		return status.Error(codes.Internal, constants.ErrInternalServer)
+	}
+	return nil
+}

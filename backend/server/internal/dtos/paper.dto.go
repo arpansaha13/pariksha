@@ -24,3 +24,7 @@ type PaperPermissionsDto struct {
 	CanRead  bool `json:"can_read"`
 	CanWrite bool `json:"can_write"`
 }
+
+type DeletePaperDto struct {
+	PaperIDs []int64 `json:"paper_ids" validate:"required,min=1"`
+}

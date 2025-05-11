@@ -314,6 +314,51 @@ func (x *QuestionCount) GetLong() int32 {
 	return 0
 }
 
+// Add new message for batch delete
+type DeletePaperRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PaperIds      []int64                `protobuf:"varint,1,rep,packed,name=paper_ids,json=paperIds,proto3" json:"paper_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeletePaperRequest) Reset() {
+	*x = DeletePaperRequest{}
+	mi := &file_paper_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeletePaperRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeletePaperRequest) ProtoMessage() {}
+
+func (x *DeletePaperRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_paper_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeletePaperRequest.ProtoReflect.Descriptor instead.
+func (*DeletePaperRequest) Descriptor() ([]byte, []int) {
+	return file_paper_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *DeletePaperRequest) GetPaperIds() []int64 {
+	if x != nil {
+		return x.PaperIds
+	}
+	return nil
+}
+
 // Question messages
 type QuestionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -324,7 +369,7 @@ type QuestionRequest struct {
 
 func (x *QuestionRequest) Reset() {
 	*x = QuestionRequest{}
-	mi := &file_paper_proto_msgTypes[5]
+	mi := &file_paper_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -336,7 +381,7 @@ func (x *QuestionRequest) String() string {
 func (*QuestionRequest) ProtoMessage() {}
 
 func (x *QuestionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[5]
+	mi := &file_paper_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -349,7 +394,7 @@ func (x *QuestionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuestionRequest.ProtoReflect.Descriptor instead.
 func (*QuestionRequest) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{5}
+	return file_paper_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *QuestionRequest) GetQuestionId() int64 {
@@ -379,7 +424,7 @@ type QuestionResponse struct {
 
 func (x *QuestionResponse) Reset() {
 	*x = QuestionResponse{}
-	mi := &file_paper_proto_msgTypes[6]
+	mi := &file_paper_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -391,7 +436,7 @@ func (x *QuestionResponse) String() string {
 func (*QuestionResponse) ProtoMessage() {}
 
 func (x *QuestionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[6]
+	mi := &file_paper_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -404,7 +449,7 @@ func (x *QuestionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuestionResponse.ProtoReflect.Descriptor instead.
 func (*QuestionResponse) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{6}
+	return file_paper_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *QuestionResponse) GetId() int64 {
@@ -506,7 +551,7 @@ type QuestionList struct {
 
 func (x *QuestionList) Reset() {
 	*x = QuestionList{}
-	mi := &file_paper_proto_msgTypes[7]
+	mi := &file_paper_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -518,7 +563,7 @@ func (x *QuestionList) String() string {
 func (*QuestionList) ProtoMessage() {}
 
 func (x *QuestionList) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[7]
+	mi := &file_paper_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -531,7 +576,7 @@ func (x *QuestionList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuestionList.ProtoReflect.Descriptor instead.
 func (*QuestionList) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{7}
+	return file_paper_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *QuestionList) GetQuestions() []*QuestionMinimal {
@@ -558,7 +603,7 @@ type QuestionMinimal struct {
 
 func (x *QuestionMinimal) Reset() {
 	*x = QuestionMinimal{}
-	mi := &file_paper_proto_msgTypes[8]
+	mi := &file_paper_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -570,7 +615,7 @@ func (x *QuestionMinimal) String() string {
 func (*QuestionMinimal) ProtoMessage() {}
 
 func (x *QuestionMinimal) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[8]
+	mi := &file_paper_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -583,7 +628,7 @@ func (x *QuestionMinimal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuestionMinimal.ProtoReflect.Descriptor instead.
 func (*QuestionMinimal) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{8}
+	return file_paper_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *QuestionMinimal) GetId() int64 {
@@ -665,7 +710,7 @@ type McqQuestion struct {
 
 func (x *McqQuestion) Reset() {
 	*x = McqQuestion{}
-	mi := &file_paper_proto_msgTypes[9]
+	mi := &file_paper_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -677,7 +722,7 @@ func (x *McqQuestion) String() string {
 func (*McqQuestion) ProtoMessage() {}
 
 func (x *McqQuestion) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[9]
+	mi := &file_paper_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -690,7 +735,7 @@ func (x *McqQuestion) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use McqQuestion.ProtoReflect.Descriptor instead.
 func (*McqQuestion) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{9}
+	return file_paper_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *McqQuestion) GetStatement() string {
@@ -716,7 +761,7 @@ type GeneralQuestion struct {
 
 func (x *GeneralQuestion) Reset() {
 	*x = GeneralQuestion{}
-	mi := &file_paper_proto_msgTypes[10]
+	mi := &file_paper_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -728,7 +773,7 @@ func (x *GeneralQuestion) String() string {
 func (*GeneralQuestion) ProtoMessage() {}
 
 func (x *GeneralQuestion) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[10]
+	mi := &file_paper_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -741,7 +786,7 @@ func (x *GeneralQuestion) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GeneralQuestion.ProtoReflect.Descriptor instead.
 func (*GeneralQuestion) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{10}
+	return file_paper_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GeneralQuestion) GetStatement() string {
@@ -766,7 +811,7 @@ type CreateQuestionRequest struct {
 
 func (x *CreateQuestionRequest) Reset() {
 	*x = CreateQuestionRequest{}
-	mi := &file_paper_proto_msgTypes[11]
+	mi := &file_paper_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -778,7 +823,7 @@ func (x *CreateQuestionRequest) String() string {
 func (*CreateQuestionRequest) ProtoMessage() {}
 
 func (x *CreateQuestionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[11]
+	mi := &file_paper_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -791,7 +836,7 @@ func (x *CreateQuestionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateQuestionRequest.ProtoReflect.Descriptor instead.
 func (*CreateQuestionRequest) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{11}
+	return file_paper_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *CreateQuestionRequest) GetPaperId() int64 {
@@ -858,7 +903,7 @@ type UpdateQuestionRequest struct {
 
 func (x *UpdateQuestionRequest) Reset() {
 	*x = UpdateQuestionRequest{}
-	mi := &file_paper_proto_msgTypes[12]
+	mi := &file_paper_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -870,7 +915,7 @@ func (x *UpdateQuestionRequest) String() string {
 func (*UpdateQuestionRequest) ProtoMessage() {}
 
 func (x *UpdateQuestionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[12]
+	mi := &file_paper_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -883,7 +928,7 @@ func (x *UpdateQuestionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateQuestionRequest.ProtoReflect.Descriptor instead.
 func (*UpdateQuestionRequest) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{12}
+	return file_paper_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *UpdateQuestionRequest) GetQuestionId() int64 {
@@ -945,7 +990,7 @@ type ReorderQuestionsRequest struct {
 
 func (x *ReorderQuestionsRequest) Reset() {
 	*x = ReorderQuestionsRequest{}
-	mi := &file_paper_proto_msgTypes[13]
+	mi := &file_paper_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -957,7 +1002,7 @@ func (x *ReorderQuestionsRequest) String() string {
 func (*ReorderQuestionsRequest) ProtoMessage() {}
 
 func (x *ReorderQuestionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[13]
+	mi := &file_paper_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -970,7 +1015,7 @@ func (x *ReorderQuestionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderQuestionsRequest.ProtoReflect.Descriptor instead.
 func (*ReorderQuestionsRequest) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{13}
+	return file_paper_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ReorderQuestionsRequest) GetCategoryId() int64 {
@@ -996,7 +1041,7 @@ type GetQuestionsByIdsRequest struct {
 
 func (x *GetQuestionsByIdsRequest) Reset() {
 	*x = GetQuestionsByIdsRequest{}
-	mi := &file_paper_proto_msgTypes[14]
+	mi := &file_paper_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1008,7 +1053,7 @@ func (x *GetQuestionsByIdsRequest) String() string {
 func (*GetQuestionsByIdsRequest) ProtoMessage() {}
 
 func (x *GetQuestionsByIdsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[14]
+	mi := &file_paper_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1021,7 +1066,7 @@ func (x *GetQuestionsByIdsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuestionsByIdsRequest.ProtoReflect.Descriptor instead.
 func (*GetQuestionsByIdsRequest) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{14}
+	return file_paper_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *GetQuestionsByIdsRequest) GetQuestionIds() []int64 {
@@ -1040,7 +1085,7 @@ type QuestionBatchResponse struct {
 
 func (x *QuestionBatchResponse) Reset() {
 	*x = QuestionBatchResponse{}
-	mi := &file_paper_proto_msgTypes[15]
+	mi := &file_paper_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1052,7 +1097,7 @@ func (x *QuestionBatchResponse) String() string {
 func (*QuestionBatchResponse) ProtoMessage() {}
 
 func (x *QuestionBatchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[15]
+	mi := &file_paper_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1065,7 +1110,7 @@ func (x *QuestionBatchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuestionBatchResponse.ProtoReflect.Descriptor instead.
 func (*QuestionBatchResponse) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{15}
+	return file_paper_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *QuestionBatchResponse) GetQuestions() []*QuestionBatchItem {
@@ -1091,7 +1136,7 @@ type QuestionBatchItem struct {
 
 func (x *QuestionBatchItem) Reset() {
 	*x = QuestionBatchItem{}
-	mi := &file_paper_proto_msgTypes[16]
+	mi := &file_paper_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1103,7 +1148,7 @@ func (x *QuestionBatchItem) String() string {
 func (*QuestionBatchItem) ProtoMessage() {}
 
 func (x *QuestionBatchItem) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[16]
+	mi := &file_paper_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1116,7 +1161,7 @@ func (x *QuestionBatchItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuestionBatchItem.ProtoReflect.Descriptor instead.
 func (*QuestionBatchItem) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{16}
+	return file_paper_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *QuestionBatchItem) GetId() int64 {
@@ -1191,7 +1236,7 @@ type GetCategoriesByIdsRequest struct {
 
 func (x *GetCategoriesByIdsRequest) Reset() {
 	*x = GetCategoriesByIdsRequest{}
-	mi := &file_paper_proto_msgTypes[17]
+	mi := &file_paper_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1203,7 +1248,7 @@ func (x *GetCategoriesByIdsRequest) String() string {
 func (*GetCategoriesByIdsRequest) ProtoMessage() {}
 
 func (x *GetCategoriesByIdsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[17]
+	mi := &file_paper_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1216,7 +1261,7 @@ func (x *GetCategoriesByIdsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCategoriesByIdsRequest.ProtoReflect.Descriptor instead.
 func (*GetCategoriesByIdsRequest) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{17}
+	return file_paper_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GetCategoriesByIdsRequest) GetCategoryIds() []int64 {
@@ -1235,7 +1280,7 @@ type CategoryBatchResponse struct {
 
 func (x *CategoryBatchResponse) Reset() {
 	*x = CategoryBatchResponse{}
-	mi := &file_paper_proto_msgTypes[18]
+	mi := &file_paper_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1247,7 +1292,7 @@ func (x *CategoryBatchResponse) String() string {
 func (*CategoryBatchResponse) ProtoMessage() {}
 
 func (x *CategoryBatchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[18]
+	mi := &file_paper_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1260,7 +1305,7 @@ func (x *CategoryBatchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CategoryBatchResponse.ProtoReflect.Descriptor instead.
 func (*CategoryBatchResponse) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{18}
+	return file_paper_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *CategoryBatchResponse) GetCategories() []*CategoryBatchItem {
@@ -1280,7 +1325,7 @@ type CategoryBatchItem struct {
 
 func (x *CategoryBatchItem) Reset() {
 	*x = CategoryBatchItem{}
-	mi := &file_paper_proto_msgTypes[19]
+	mi := &file_paper_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1292,7 +1337,7 @@ func (x *CategoryBatchItem) String() string {
 func (*CategoryBatchItem) ProtoMessage() {}
 
 func (x *CategoryBatchItem) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[19]
+	mi := &file_paper_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1305,7 +1350,7 @@ func (x *CategoryBatchItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CategoryBatchItem.ProtoReflect.Descriptor instead.
 func (*CategoryBatchItem) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{19}
+	return file_paper_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *CategoryBatchItem) GetId() int64 {
@@ -1331,7 +1376,7 @@ type CategoryRequest struct {
 
 func (x *CategoryRequest) Reset() {
 	*x = CategoryRequest{}
-	mi := &file_paper_proto_msgTypes[20]
+	mi := &file_paper_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1343,7 +1388,7 @@ func (x *CategoryRequest) String() string {
 func (*CategoryRequest) ProtoMessage() {}
 
 func (x *CategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[20]
+	mi := &file_paper_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1356,7 +1401,7 @@ func (x *CategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CategoryRequest.ProtoReflect.Descriptor instead.
 func (*CategoryRequest) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{20}
+	return file_paper_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *CategoryRequest) GetCategoryId() int64 {
@@ -1377,7 +1422,7 @@ type CategoryResponse struct {
 
 func (x *CategoryResponse) Reset() {
 	*x = CategoryResponse{}
-	mi := &file_paper_proto_msgTypes[21]
+	mi := &file_paper_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1389,7 +1434,7 @@ func (x *CategoryResponse) String() string {
 func (*CategoryResponse) ProtoMessage() {}
 
 func (x *CategoryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[21]
+	mi := &file_paper_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1402,7 +1447,7 @@ func (x *CategoryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CategoryResponse.ProtoReflect.Descriptor instead.
 func (*CategoryResponse) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{21}
+	return file_paper_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *CategoryResponse) GetId() int64 {
@@ -1435,7 +1480,7 @@ type CategoryList struct {
 
 func (x *CategoryList) Reset() {
 	*x = CategoryList{}
-	mi := &file_paper_proto_msgTypes[22]
+	mi := &file_paper_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1447,7 +1492,7 @@ func (x *CategoryList) String() string {
 func (*CategoryList) ProtoMessage() {}
 
 func (x *CategoryList) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[22]
+	mi := &file_paper_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1460,7 +1505,7 @@ func (x *CategoryList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CategoryList.ProtoReflect.Descriptor instead.
 func (*CategoryList) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{22}
+	return file_paper_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *CategoryList) GetCategories() []*CategoryResponse {
@@ -1479,7 +1524,7 @@ type CreateCategoryRequest struct {
 
 func (x *CreateCategoryRequest) Reset() {
 	*x = CreateCategoryRequest{}
-	mi := &file_paper_proto_msgTypes[23]
+	mi := &file_paper_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1491,7 +1536,7 @@ func (x *CreateCategoryRequest) String() string {
 func (*CreateCategoryRequest) ProtoMessage() {}
 
 func (x *CreateCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[23]
+	mi := &file_paper_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1504,7 +1549,7 @@ func (x *CreateCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCategoryRequest.ProtoReflect.Descriptor instead.
 func (*CreateCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{23}
+	return file_paper_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *CreateCategoryRequest) GetPaperId() int64 {
@@ -1524,7 +1569,7 @@ type UpdateCategoryRequest struct {
 
 func (x *UpdateCategoryRequest) Reset() {
 	*x = UpdateCategoryRequest{}
-	mi := &file_paper_proto_msgTypes[24]
+	mi := &file_paper_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1536,7 +1581,7 @@ func (x *UpdateCategoryRequest) String() string {
 func (*UpdateCategoryRequest) ProtoMessage() {}
 
 func (x *UpdateCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[24]
+	mi := &file_paper_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1549,7 +1594,7 @@ func (x *UpdateCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCategoryRequest.ProtoReflect.Descriptor instead.
 func (*UpdateCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{24}
+	return file_paper_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *UpdateCategoryRequest) GetCategoryId() int64 {
@@ -1576,7 +1621,7 @@ type ReorderCategoriesRequest struct {
 
 func (x *ReorderCategoriesRequest) Reset() {
 	*x = ReorderCategoriesRequest{}
-	mi := &file_paper_proto_msgTypes[25]
+	mi := &file_paper_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1588,7 +1633,7 @@ func (x *ReorderCategoriesRequest) String() string {
 func (*ReorderCategoriesRequest) ProtoMessage() {}
 
 func (x *ReorderCategoriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[25]
+	mi := &file_paper_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1601,7 +1646,7 @@ func (x *ReorderCategoriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderCategoriesRequest.ProtoReflect.Descriptor instead.
 func (*ReorderCategoriesRequest) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{25}
+	return file_paper_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ReorderCategoriesRequest) GetPaperId() int64 {
@@ -1628,7 +1673,7 @@ type PaperPermissionsResponse struct {
 
 func (x *PaperPermissionsResponse) Reset() {
 	*x = PaperPermissionsResponse{}
-	mi := &file_paper_proto_msgTypes[26]
+	mi := &file_paper_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1640,7 +1685,7 @@ func (x *PaperPermissionsResponse) String() string {
 func (*PaperPermissionsResponse) ProtoMessage() {}
 
 func (x *PaperPermissionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_paper_proto_msgTypes[26]
+	mi := &file_paper_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1653,7 +1698,7 @@ func (x *PaperPermissionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PaperPermissionsResponse.ProtoReflect.Descriptor instead.
 func (*PaperPermissionsResponse) Descriptor() ([]byte, []int) {
-	return file_paper_proto_rawDescGZIP(), []int{26}
+	return file_paper_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *PaperPermissionsResponse) GetCanRead() bool {
@@ -1696,7 +1741,9 @@ const file_paper_proto_rawDesc = "" +
 	"\rQuestionCount\x12\x10\n" +
 	"\x03mcq\x18\x01 \x01(\x05R\x03mcq\x12\x14\n" +
 	"\x05short\x18\x02 \x01(\x05R\x05short\x12\x12\n" +
-	"\x04long\x18\x03 \x01(\x05R\x04long\"2\n" +
+	"\x04long\x18\x03 \x01(\x05R\x04long\"1\n" +
+	"\x12DeletePaperRequest\x12\x1b\n" +
+	"\tpaper_ids\x18\x01 \x03(\x03R\bpaperIds\"2\n" +
 	"\x0fQuestionRequest\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\x03R\n" +
 	"questionId\"\xca\x02\n" +
@@ -1804,13 +1851,14 @@ const file_paper_proto_rawDesc = "" +
 	"\fcategory_ids\x18\x02 \x03(\x03R\vcategoryIds\"R\n" +
 	"\x18PaperPermissionsResponse\x12\x19\n" +
 	"\bcan_read\x18\x01 \x01(\bR\acanRead\x12\x1b\n" +
-	"\tcan_write\x18\x02 \x01(\bR\bcanWrite2\x8a\n" +
+	"\tcan_write\x18\x02 \x01(\bR\bcanWrite2\xc4\n" +
 	"\n" +
 	"\fPaperService\x121\n" +
 	"\rGetUserPapers\x12\f.proto.Empty\x1a\x10.proto.PaperList\"\x00\x127\n" +
 	"\bGetPaper\x12\x13.proto.PaperRequest\x1a\x14.proto.PaperResponse\"\x00\x123\n" +
 	"\vCreatePaper\x12\f.proto.Empty\x1a\x14.proto.PaperResponse\"\x00\x128\n" +
-	"\vUpdatePaper\x12\x19.proto.UpdatePaperRequest\x1a\f.proto.Empty\"\x00\x12M\n" +
+	"\vUpdatePaper\x12\x19.proto.UpdatePaperRequest\x1a\f.proto.Empty\"\x00\x128\n" +
+	"\vDeletePaper\x12\x19.proto.DeletePaperRequest\x1a\f.proto.Empty\"\x00\x12M\n" +
 	"\x13GetPaperPermissions\x12\x13.proto.PaperRequest\x1a\x1f.proto.PaperPermissionsResponse\"\x00\x12?\n" +
 	"\x11GetPaperQuestions\x12\x13.proto.PaperRequest\x1a\x13.proto.QuestionList\"\x00\x12E\n" +
 	"\x10GetPaperQuestion\x12\x16.proto.QuestionRequest\x1a\x17.proto.QuestionResponse\"\x00\x12I\n" +
@@ -1839,90 +1887,93 @@ func file_paper_proto_rawDescGZIP() []byte {
 	return file_paper_proto_rawDescData
 }
 
-var file_paper_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_paper_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_paper_proto_goTypes = []any{
 	(*PaperRequest)(nil),              // 0: proto.PaperRequest
 	(*PaperResponse)(nil),             // 1: proto.PaperResponse
 	(*PaperList)(nil),                 // 2: proto.PaperList
 	(*UpdatePaperRequest)(nil),        // 3: proto.UpdatePaperRequest
 	(*QuestionCount)(nil),             // 4: proto.QuestionCount
-	(*QuestionRequest)(nil),           // 5: proto.QuestionRequest
-	(*QuestionResponse)(nil),          // 6: proto.QuestionResponse
-	(*QuestionList)(nil),              // 7: proto.QuestionList
-	(*QuestionMinimal)(nil),           // 8: proto.QuestionMinimal
-	(*McqQuestion)(nil),               // 9: proto.McqQuestion
-	(*GeneralQuestion)(nil),           // 10: proto.GeneralQuestion
-	(*CreateQuestionRequest)(nil),     // 11: proto.CreateQuestionRequest
-	(*UpdateQuestionRequest)(nil),     // 12: proto.UpdateQuestionRequest
-	(*ReorderQuestionsRequest)(nil),   // 13: proto.ReorderQuestionsRequest
-	(*GetQuestionsByIdsRequest)(nil),  // 14: proto.GetQuestionsByIdsRequest
-	(*QuestionBatchResponse)(nil),     // 15: proto.QuestionBatchResponse
-	(*QuestionBatchItem)(nil),         // 16: proto.QuestionBatchItem
-	(*GetCategoriesByIdsRequest)(nil), // 17: proto.GetCategoriesByIdsRequest
-	(*CategoryBatchResponse)(nil),     // 18: proto.CategoryBatchResponse
-	(*CategoryBatchItem)(nil),         // 19: proto.CategoryBatchItem
-	(*CategoryRequest)(nil),           // 20: proto.CategoryRequest
-	(*CategoryResponse)(nil),          // 21: proto.CategoryResponse
-	(*CategoryList)(nil),              // 22: proto.CategoryList
-	(*CreateCategoryRequest)(nil),     // 23: proto.CreateCategoryRequest
-	(*UpdateCategoryRequest)(nil),     // 24: proto.UpdateCategoryRequest
-	(*ReorderCategoriesRequest)(nil),  // 25: proto.ReorderCategoriesRequest
-	(*PaperPermissionsResponse)(nil),  // 26: proto.PaperPermissionsResponse
-	(*Empty)(nil),                     // 27: proto.Empty
+	(*DeletePaperRequest)(nil),        // 5: proto.DeletePaperRequest
+	(*QuestionRequest)(nil),           // 6: proto.QuestionRequest
+	(*QuestionResponse)(nil),          // 7: proto.QuestionResponse
+	(*QuestionList)(nil),              // 8: proto.QuestionList
+	(*QuestionMinimal)(nil),           // 9: proto.QuestionMinimal
+	(*McqQuestion)(nil),               // 10: proto.McqQuestion
+	(*GeneralQuestion)(nil),           // 11: proto.GeneralQuestion
+	(*CreateQuestionRequest)(nil),     // 12: proto.CreateQuestionRequest
+	(*UpdateQuestionRequest)(nil),     // 13: proto.UpdateQuestionRequest
+	(*ReorderQuestionsRequest)(nil),   // 14: proto.ReorderQuestionsRequest
+	(*GetQuestionsByIdsRequest)(nil),  // 15: proto.GetQuestionsByIdsRequest
+	(*QuestionBatchResponse)(nil),     // 16: proto.QuestionBatchResponse
+	(*QuestionBatchItem)(nil),         // 17: proto.QuestionBatchItem
+	(*GetCategoriesByIdsRequest)(nil), // 18: proto.GetCategoriesByIdsRequest
+	(*CategoryBatchResponse)(nil),     // 19: proto.CategoryBatchResponse
+	(*CategoryBatchItem)(nil),         // 20: proto.CategoryBatchItem
+	(*CategoryRequest)(nil),           // 21: proto.CategoryRequest
+	(*CategoryResponse)(nil),          // 22: proto.CategoryResponse
+	(*CategoryList)(nil),              // 23: proto.CategoryList
+	(*CreateCategoryRequest)(nil),     // 24: proto.CreateCategoryRequest
+	(*UpdateCategoryRequest)(nil),     // 25: proto.UpdateCategoryRequest
+	(*ReorderCategoriesRequest)(nil),  // 26: proto.ReorderCategoriesRequest
+	(*PaperPermissionsResponse)(nil),  // 27: proto.PaperPermissionsResponse
+	(*Empty)(nil),                     // 28: proto.Empty
 }
 var file_paper_proto_depIdxs = []int32{
 	4,  // 0: proto.PaperResponse.question_counts:type_name -> proto.QuestionCount
 	1,  // 1: proto.PaperList.papers:type_name -> proto.PaperResponse
-	9,  // 2: proto.QuestionResponse.mcq:type_name -> proto.McqQuestion
-	10, // 3: proto.QuestionResponse.general:type_name -> proto.GeneralQuestion
-	8,  // 4: proto.QuestionList.questions:type_name -> proto.QuestionMinimal
-	9,  // 5: proto.QuestionMinimal.mcq:type_name -> proto.McqQuestion
-	10, // 6: proto.QuestionMinimal.general:type_name -> proto.GeneralQuestion
-	16, // 7: proto.QuestionBatchResponse.questions:type_name -> proto.QuestionBatchItem
-	9,  // 8: proto.QuestionBatchItem.mcq:type_name -> proto.McqQuestion
-	10, // 9: proto.QuestionBatchItem.general:type_name -> proto.GeneralQuestion
-	19, // 10: proto.CategoryBatchResponse.categories:type_name -> proto.CategoryBatchItem
-	21, // 11: proto.CategoryList.categories:type_name -> proto.CategoryResponse
-	27, // 12: proto.PaperService.GetUserPapers:input_type -> proto.Empty
+	10, // 2: proto.QuestionResponse.mcq:type_name -> proto.McqQuestion
+	11, // 3: proto.QuestionResponse.general:type_name -> proto.GeneralQuestion
+	9,  // 4: proto.QuestionList.questions:type_name -> proto.QuestionMinimal
+	10, // 5: proto.QuestionMinimal.mcq:type_name -> proto.McqQuestion
+	11, // 6: proto.QuestionMinimal.general:type_name -> proto.GeneralQuestion
+	17, // 7: proto.QuestionBatchResponse.questions:type_name -> proto.QuestionBatchItem
+	10, // 8: proto.QuestionBatchItem.mcq:type_name -> proto.McqQuestion
+	11, // 9: proto.QuestionBatchItem.general:type_name -> proto.GeneralQuestion
+	20, // 10: proto.CategoryBatchResponse.categories:type_name -> proto.CategoryBatchItem
+	22, // 11: proto.CategoryList.categories:type_name -> proto.CategoryResponse
+	28, // 12: proto.PaperService.GetUserPapers:input_type -> proto.Empty
 	0,  // 13: proto.PaperService.GetPaper:input_type -> proto.PaperRequest
-	27, // 14: proto.PaperService.CreatePaper:input_type -> proto.Empty
+	28, // 14: proto.PaperService.CreatePaper:input_type -> proto.Empty
 	3,  // 15: proto.PaperService.UpdatePaper:input_type -> proto.UpdatePaperRequest
-	0,  // 16: proto.PaperService.GetPaperPermissions:input_type -> proto.PaperRequest
-	0,  // 17: proto.PaperService.GetPaperQuestions:input_type -> proto.PaperRequest
-	5,  // 18: proto.PaperService.GetPaperQuestion:input_type -> proto.QuestionRequest
-	11, // 19: proto.PaperService.CreateQuestion:input_type -> proto.CreateQuestionRequest
-	12, // 20: proto.PaperService.UpdateQuestion:input_type -> proto.UpdateQuestionRequest
-	5,  // 21: proto.PaperService.DeleteQuestion:input_type -> proto.QuestionRequest
-	13, // 22: proto.PaperService.ReorderQuestions:input_type -> proto.ReorderQuestionsRequest
-	0,  // 23: proto.PaperService.GetPaperCategories:input_type -> proto.PaperRequest
-	23, // 24: proto.PaperService.CreateCategory:input_type -> proto.CreateCategoryRequest
-	24, // 25: proto.PaperService.UpdateCategory:input_type -> proto.UpdateCategoryRequest
-	20, // 26: proto.PaperService.DeleteCategory:input_type -> proto.CategoryRequest
-	25, // 27: proto.PaperService.ReorderCategories:input_type -> proto.ReorderCategoriesRequest
-	14, // 28: proto.PaperService.GetQuestionsByIds:input_type -> proto.GetQuestionsByIdsRequest
-	17, // 29: proto.PaperService.GetCategoriesByIds:input_type -> proto.GetCategoriesByIdsRequest
-	5,  // 30: proto.PaperService.GetExamQuestion:input_type -> proto.QuestionRequest
-	2,  // 31: proto.PaperService.GetUserPapers:output_type -> proto.PaperList
-	1,  // 32: proto.PaperService.GetPaper:output_type -> proto.PaperResponse
-	1,  // 33: proto.PaperService.CreatePaper:output_type -> proto.PaperResponse
-	27, // 34: proto.PaperService.UpdatePaper:output_type -> proto.Empty
-	26, // 35: proto.PaperService.GetPaperPermissions:output_type -> proto.PaperPermissionsResponse
-	7,  // 36: proto.PaperService.GetPaperQuestions:output_type -> proto.QuestionList
-	6,  // 37: proto.PaperService.GetPaperQuestion:output_type -> proto.QuestionResponse
-	6,  // 38: proto.PaperService.CreateQuestion:output_type -> proto.QuestionResponse
-	27, // 39: proto.PaperService.UpdateQuestion:output_type -> proto.Empty
-	27, // 40: proto.PaperService.DeleteQuestion:output_type -> proto.Empty
-	27, // 41: proto.PaperService.ReorderQuestions:output_type -> proto.Empty
-	22, // 42: proto.PaperService.GetPaperCategories:output_type -> proto.CategoryList
-	21, // 43: proto.PaperService.CreateCategory:output_type -> proto.CategoryResponse
-	27, // 44: proto.PaperService.UpdateCategory:output_type -> proto.Empty
-	27, // 45: proto.PaperService.DeleteCategory:output_type -> proto.Empty
-	27, // 46: proto.PaperService.ReorderCategories:output_type -> proto.Empty
-	15, // 47: proto.PaperService.GetQuestionsByIds:output_type -> proto.QuestionBatchResponse
-	18, // 48: proto.PaperService.GetCategoriesByIds:output_type -> proto.CategoryBatchResponse
-	6,  // 49: proto.PaperService.GetExamQuestion:output_type -> proto.QuestionResponse
-	31, // [31:50] is the sub-list for method output_type
-	12, // [12:31] is the sub-list for method input_type
+	5,  // 16: proto.PaperService.DeletePaper:input_type -> proto.DeletePaperRequest
+	0,  // 17: proto.PaperService.GetPaperPermissions:input_type -> proto.PaperRequest
+	0,  // 18: proto.PaperService.GetPaperQuestions:input_type -> proto.PaperRequest
+	6,  // 19: proto.PaperService.GetPaperQuestion:input_type -> proto.QuestionRequest
+	12, // 20: proto.PaperService.CreateQuestion:input_type -> proto.CreateQuestionRequest
+	13, // 21: proto.PaperService.UpdateQuestion:input_type -> proto.UpdateQuestionRequest
+	6,  // 22: proto.PaperService.DeleteQuestion:input_type -> proto.QuestionRequest
+	14, // 23: proto.PaperService.ReorderQuestions:input_type -> proto.ReorderQuestionsRequest
+	0,  // 24: proto.PaperService.GetPaperCategories:input_type -> proto.PaperRequest
+	24, // 25: proto.PaperService.CreateCategory:input_type -> proto.CreateCategoryRequest
+	25, // 26: proto.PaperService.UpdateCategory:input_type -> proto.UpdateCategoryRequest
+	21, // 27: proto.PaperService.DeleteCategory:input_type -> proto.CategoryRequest
+	26, // 28: proto.PaperService.ReorderCategories:input_type -> proto.ReorderCategoriesRequest
+	15, // 29: proto.PaperService.GetQuestionsByIds:input_type -> proto.GetQuestionsByIdsRequest
+	18, // 30: proto.PaperService.GetCategoriesByIds:input_type -> proto.GetCategoriesByIdsRequest
+	6,  // 31: proto.PaperService.GetExamQuestion:input_type -> proto.QuestionRequest
+	2,  // 32: proto.PaperService.GetUserPapers:output_type -> proto.PaperList
+	1,  // 33: proto.PaperService.GetPaper:output_type -> proto.PaperResponse
+	1,  // 34: proto.PaperService.CreatePaper:output_type -> proto.PaperResponse
+	28, // 35: proto.PaperService.UpdatePaper:output_type -> proto.Empty
+	28, // 36: proto.PaperService.DeletePaper:output_type -> proto.Empty
+	27, // 37: proto.PaperService.GetPaperPermissions:output_type -> proto.PaperPermissionsResponse
+	8,  // 38: proto.PaperService.GetPaperQuestions:output_type -> proto.QuestionList
+	7,  // 39: proto.PaperService.GetPaperQuestion:output_type -> proto.QuestionResponse
+	7,  // 40: proto.PaperService.CreateQuestion:output_type -> proto.QuestionResponse
+	28, // 41: proto.PaperService.UpdateQuestion:output_type -> proto.Empty
+	28, // 42: proto.PaperService.DeleteQuestion:output_type -> proto.Empty
+	28, // 43: proto.PaperService.ReorderQuestions:output_type -> proto.Empty
+	23, // 44: proto.PaperService.GetPaperCategories:output_type -> proto.CategoryList
+	22, // 45: proto.PaperService.CreateCategory:output_type -> proto.CategoryResponse
+	28, // 46: proto.PaperService.UpdateCategory:output_type -> proto.Empty
+	28, // 47: proto.PaperService.DeleteCategory:output_type -> proto.Empty
+	28, // 48: proto.PaperService.ReorderCategories:output_type -> proto.Empty
+	16, // 49: proto.PaperService.GetQuestionsByIds:output_type -> proto.QuestionBatchResponse
+	19, // 50: proto.PaperService.GetCategoriesByIds:output_type -> proto.CategoryBatchResponse
+	7,  // 51: proto.PaperService.GetExamQuestion:output_type -> proto.QuestionResponse
+	32, // [32:52] is the sub-list for method output_type
+	12, // [12:32] is the sub-list for method input_type
 	12, // [12:12] is the sub-list for extension type_name
 	12, // [12:12] is the sub-list for extension extendee
 	0,  // [0:12] is the sub-list for field type_name
@@ -1935,17 +1986,17 @@ func file_paper_proto_init() {
 	}
 	file_common_proto_init()
 	file_paper_proto_msgTypes[3].OneofWrappers = []any{}
-	file_paper_proto_msgTypes[6].OneofWrappers = []any{
+	file_paper_proto_msgTypes[7].OneofWrappers = []any{
 		(*QuestionResponse_Mcq)(nil),
 		(*QuestionResponse_General)(nil),
 	}
-	file_paper_proto_msgTypes[8].OneofWrappers = []any{
+	file_paper_proto_msgTypes[9].OneofWrappers = []any{
 		(*QuestionMinimal_Mcq)(nil),
 		(*QuestionMinimal_General)(nil),
 	}
-	file_paper_proto_msgTypes[11].OneofWrappers = []any{}
 	file_paper_proto_msgTypes[12].OneofWrappers = []any{}
-	file_paper_proto_msgTypes[16].OneofWrappers = []any{
+	file_paper_proto_msgTypes[13].OneofWrappers = []any{}
+	file_paper_proto_msgTypes[17].OneofWrappers = []any{
 		(*QuestionBatchItem_Mcq)(nil),
 		(*QuestionBatchItem_General)(nil),
 	}
@@ -1955,7 +2006,7 @@ func file_paper_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_paper_proto_rawDesc), len(file_paper_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   27,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

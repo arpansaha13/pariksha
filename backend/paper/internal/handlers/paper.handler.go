@@ -149,3 +149,42 @@ func (s *PaperServer) GetPaperPermissions(ctx context.Context, req *proto.PaperR
 		CanWrite: pc.Permissions.CanWrite(),
 	}, nil
 }
+
+func (s *PaperServer) DeletePaper(ctx context.Context, req *proto.DeletePaperRequest) (*proto.Empty, error) {
+	if len(req.PaperIds) == 0 {
+		return &proto.Empty{}, nil
+	}
+
+	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+		// Delete all specified papers
+		if err := utils.BatchDelete(tx, &models.Paper{}, "id IN ?", req.PaperIds); err != nil {
+			return err
+		}
+
+		// Delete all non-locked questions for these papers
+		if err := utils.BatchDelete(tx, &models.Question{},
+			"paper_id IN ? AND locked = ?", req.PaperIds, false); err != nil {
+			return err
+		}
+
+		// Delete all non-locked categories for these papers
+		if err := utils.BatchDelete(tx, &models.QuestionCategory{},
+			"paper_id IN ? AND locked = ?", req.PaperIds, false); err != nil {
+			return err
+		}
+
+		// Delete all permissions for these papers
+		if err := utils.BatchDelete(tx, &models.PaperPermissions{},
+			"paper_id IN ?", req.PaperIds); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.Empty{}, nil
+}

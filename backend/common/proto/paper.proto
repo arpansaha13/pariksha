@@ -12,6 +12,7 @@ service PaperService {
   rpc GetPaper(PaperRequest) returns (PaperResponse) {}
   rpc CreatePaper(Empty) returns (PaperResponse) {}
   rpc UpdatePaper(UpdatePaperRequest) returns (Empty) {}
+  rpc DeletePaper(DeletePaperRequest) returns (Empty) {}
   rpc GetPaperPermissions(PaperRequest) returns (PaperPermissionsResponse) {}
 
   // Question operations
@@ -63,6 +64,10 @@ message QuestionCount {
   int32 mcq = 1;
   int32 short = 2;
   int32 long = 3;
+}
+
+message DeletePaperRequest {
+  repeated int64 paper_ids = 1;
 }
 
 // Question messages
