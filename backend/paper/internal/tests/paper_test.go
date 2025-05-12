@@ -495,3 +495,93 @@ func TestGetPaperPermissions(t *testing.T) {
 		})
 	}
 }
+
+func TestDeletePapers(t *testing.T) {
+	tests := []struct {
+		BaseTestCase
+		setup    func(t *testing.T) []int64
+		validate func(t *testing.T)
+	}{
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Delete multiple owned papers",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) []int64 {
+				// Create 3 papers owned by test user
+				paper1 := createTestPaper(t, userID)
+				paper2 := createTestPaper(t, userID)
+				paper3 := createTestPaper(t, userID)
+				return []int64{paper1.ID, paper2.ID, paper3.ID}
+			},
+			validate: func(t *testing.T) {
+				// Verify papers are soft deleted
+				var count int64
+				err := db.DB.Model(&models.Paper{}).Where("deleted_at IS NULL").Count(&count).Error
+				require.NoError(t, err)
+				assert.Equal(t, int64(0), count)
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Mixed permissions - Only delete papers with WRITE access",
+				userID:       userID,
+				expectedCode: codes.PermissionDenied,
+			},
+			setup: func(t *testing.T) []int64 {
+				// Create paper owned by test user
+				paper1 := createTestPaper(t, userID)
+
+				// Create paper with another user and grant read-only access to test-user
+				paper2 := createTestPaper(t, 2)
+				permissions := models.PaperPermissions{
+					PaperID: paper2.ID,
+					UserID:  userID,
+				}
+				permissions.SetRead()
+				err := db.DB.Create(&permissions).Error
+				require.NoError(t, err)
+
+				return []int64{paper1.ID, paper2.ID}
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Failure - Empty paper IDs list",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
+			setup: func(t *testing.T) []int64 {
+				return []int64{}
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Failure - Non-existent papers",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) []int64 {
+				return []int64{999, 1000}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+			paperIds := tt.setup(t)
+
+			ctx := createContextWithUserID(tt.userID)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				&proto.DeletePapersRequest{PaperIds: paperIds},
+				client.DeletePapers,
+				func(t *testing.T, _ *proto.Empty) {
+					if tt.validate != nil {
+						tt.validate(t)
+					}
+				})
+		})
+	}
+}

@@ -314,28 +314,27 @@ func (x *QuestionCount) GetLong() int32 {
 	return 0
 }
 
-// Add new message for batch delete
-type DeletePaperRequest struct {
+type DeletePapersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PaperIds      []int64                `protobuf:"varint,1,rep,packed,name=paper_ids,json=paperIds,proto3" json:"paper_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *DeletePaperRequest) Reset() {
-	*x = DeletePaperRequest{}
+func (x *DeletePapersRequest) Reset() {
+	*x = DeletePapersRequest{}
 	mi := &file_paper_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DeletePaperRequest) String() string {
+func (x *DeletePapersRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DeletePaperRequest) ProtoMessage() {}
+func (*DeletePapersRequest) ProtoMessage() {}
 
-func (x *DeletePaperRequest) ProtoReflect() protoreflect.Message {
+func (x *DeletePapersRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_paper_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -347,12 +346,12 @@ func (x *DeletePaperRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeletePaperRequest.ProtoReflect.Descriptor instead.
-func (*DeletePaperRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use DeletePapersRequest.ProtoReflect.Descriptor instead.
+func (*DeletePapersRequest) Descriptor() ([]byte, []int) {
 	return file_paper_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *DeletePaperRequest) GetPaperIds() []int64 {
+func (x *DeletePapersRequest) GetPaperIds() []int64 {
 	if x != nil {
 		return x.PaperIds
 	}
@@ -1741,8 +1740,8 @@ const file_paper_proto_rawDesc = "" +
 	"\rQuestionCount\x12\x10\n" +
 	"\x03mcq\x18\x01 \x01(\x05R\x03mcq\x12\x14\n" +
 	"\x05short\x18\x02 \x01(\x05R\x05short\x12\x12\n" +
-	"\x04long\x18\x03 \x01(\x05R\x04long\"1\n" +
-	"\x12DeletePaperRequest\x12\x1b\n" +
+	"\x04long\x18\x03 \x01(\x05R\x04long\"2\n" +
+	"\x13DeletePapersRequest\x12\x1b\n" +
 	"\tpaper_ids\x18\x01 \x03(\x03R\bpaperIds\"2\n" +
 	"\x0fQuestionRequest\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\x03R\n" +
@@ -1851,14 +1850,14 @@ const file_paper_proto_rawDesc = "" +
 	"\fcategory_ids\x18\x02 \x03(\x03R\vcategoryIds\"R\n" +
 	"\x18PaperPermissionsResponse\x12\x19\n" +
 	"\bcan_read\x18\x01 \x01(\bR\acanRead\x12\x1b\n" +
-	"\tcan_write\x18\x02 \x01(\bR\bcanWrite2\xc4\n" +
+	"\tcan_write\x18\x02 \x01(\bR\bcanWrite2\xc6\n" +
 	"\n" +
 	"\fPaperService\x121\n" +
 	"\rGetUserPapers\x12\f.proto.Empty\x1a\x10.proto.PaperList\"\x00\x127\n" +
 	"\bGetPaper\x12\x13.proto.PaperRequest\x1a\x14.proto.PaperResponse\"\x00\x123\n" +
 	"\vCreatePaper\x12\f.proto.Empty\x1a\x14.proto.PaperResponse\"\x00\x128\n" +
-	"\vUpdatePaper\x12\x19.proto.UpdatePaperRequest\x1a\f.proto.Empty\"\x00\x128\n" +
-	"\vDeletePaper\x12\x19.proto.DeletePaperRequest\x1a\f.proto.Empty\"\x00\x12M\n" +
+	"\vUpdatePaper\x12\x19.proto.UpdatePaperRequest\x1a\f.proto.Empty\"\x00\x12:\n" +
+	"\fDeletePapers\x12\x1a.proto.DeletePapersRequest\x1a\f.proto.Empty\"\x00\x12M\n" +
 	"\x13GetPaperPermissions\x12\x13.proto.PaperRequest\x1a\x1f.proto.PaperPermissionsResponse\"\x00\x12?\n" +
 	"\x11GetPaperQuestions\x12\x13.proto.PaperRequest\x1a\x13.proto.QuestionList\"\x00\x12E\n" +
 	"\x10GetPaperQuestion\x12\x16.proto.QuestionRequest\x1a\x17.proto.QuestionResponse\"\x00\x12I\n" +
@@ -1894,7 +1893,7 @@ var file_paper_proto_goTypes = []any{
 	(*PaperList)(nil),                 // 2: proto.PaperList
 	(*UpdatePaperRequest)(nil),        // 3: proto.UpdatePaperRequest
 	(*QuestionCount)(nil),             // 4: proto.QuestionCount
-	(*DeletePaperRequest)(nil),        // 5: proto.DeletePaperRequest
+	(*DeletePapersRequest)(nil),       // 5: proto.DeletePapersRequest
 	(*QuestionRequest)(nil),           // 6: proto.QuestionRequest
 	(*QuestionResponse)(nil),          // 7: proto.QuestionResponse
 	(*QuestionList)(nil),              // 8: proto.QuestionList
@@ -1936,7 +1935,7 @@ var file_paper_proto_depIdxs = []int32{
 	0,  // 13: proto.PaperService.GetPaper:input_type -> proto.PaperRequest
 	28, // 14: proto.PaperService.CreatePaper:input_type -> proto.Empty
 	3,  // 15: proto.PaperService.UpdatePaper:input_type -> proto.UpdatePaperRequest
-	5,  // 16: proto.PaperService.DeletePaper:input_type -> proto.DeletePaperRequest
+	5,  // 16: proto.PaperService.DeletePapers:input_type -> proto.DeletePapersRequest
 	0,  // 17: proto.PaperService.GetPaperPermissions:input_type -> proto.PaperRequest
 	0,  // 18: proto.PaperService.GetPaperQuestions:input_type -> proto.PaperRequest
 	6,  // 19: proto.PaperService.GetPaperQuestion:input_type -> proto.QuestionRequest
@@ -1956,7 +1955,7 @@ var file_paper_proto_depIdxs = []int32{
 	1,  // 33: proto.PaperService.GetPaper:output_type -> proto.PaperResponse
 	1,  // 34: proto.PaperService.CreatePaper:output_type -> proto.PaperResponse
 	28, // 35: proto.PaperService.UpdatePaper:output_type -> proto.Empty
-	28, // 36: proto.PaperService.DeletePaper:output_type -> proto.Empty
+	28, // 36: proto.PaperService.DeletePapers:output_type -> proto.Empty
 	27, // 37: proto.PaperService.GetPaperPermissions:output_type -> proto.PaperPermissionsResponse
 	8,  // 38: proto.PaperService.GetPaperQuestions:output_type -> proto.QuestionList
 	7,  // 39: proto.PaperService.GetPaperQuestion:output_type -> proto.QuestionResponse

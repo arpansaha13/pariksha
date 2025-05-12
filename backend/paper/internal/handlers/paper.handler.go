@@ -150,7 +150,7 @@ func (s *PaperServer) GetPaperPermissions(ctx context.Context, req *proto.PaperR
 	}, nil
 }
 
-func (s *PaperServer) DeletePaper(ctx context.Context, req *proto.DeletePaperRequest) (*proto.Empty, error) {
+func (s *PaperServer) DeletePapers(ctx context.Context, req *proto.DeletePapersRequest) (*proto.Empty, error) {
 	if len(req.PaperIds) == 0 {
 		return &proto.Empty{}, nil
 	}

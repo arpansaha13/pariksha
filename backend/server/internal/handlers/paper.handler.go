@@ -167,7 +167,7 @@ func GetPaperPermissions(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(permissions)
 }
 
-func DeletePaper(w http.ResponseWriter, r *http.Request) {
+func DeletePapers(w http.ResponseWriter, r *http.Request) {
 	var deletePaperDto dtos.DeletePaperDto
 	if err := json.NewDecoder(r.Body).Decode(&deletePaperDto); err != nil {
 		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
@@ -183,7 +183,7 @@ func DeletePaper(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	_, err := paperService.Client().DeletePaper(ctx, &proto.DeletePaperRequest{
+	_, err := paperService.Client().DeletePapers(ctx, &proto.DeletePapersRequest{
 		PaperIds: deletePaperDto.PaperIDs,
 	})
 
