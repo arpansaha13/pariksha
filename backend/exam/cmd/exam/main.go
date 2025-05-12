@@ -24,7 +24,8 @@ func main() {
 
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			interceptors.ExamAuthInterceptor(),
+			interceptors.GeneralExamAuthInterceptor(),
+			interceptors.DeleteExamsAuthInterceptor(),
 			interceptors.EndExamInterceptor(),
 		),
 	)

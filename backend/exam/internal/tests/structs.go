@@ -78,3 +78,10 @@ type ExamSetupTestCase[T any] struct {
 	setup    func(t *testing.T) *models.Exam
 	validate func(t *testing.T, resp T)
 }
+
+// ExamBatchTestCase represents a test case for batch exam operations
+type ExamBatchTestCase struct {
+	BaseTestCase
+	setup    func(t *testing.T) []int64
+	validate func(t *testing.T, deletedExamIDs []int64)
+}

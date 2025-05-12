@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
@@ -1331,6 +1333,89 @@ func TestGetExam(t *testing.T) {
 				&proto.ExamRequest{ExamId: exam.ID},
 				client.GetExam,
 				tt.validate,
+			)
+		})
+	}
+}
+
+func TestDeleteExams(t *testing.T) {
+	tests := []ExamBatchTestCase{
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Delete multiple exams",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) []int64 {
+				exam1 := createTestExam(t, userID)
+				exam2 := createTestExam(t, userID)
+				return []int64{exam1.ID, exam2.ID}
+			},
+			validate: func(t *testing.T, deletedExamIDs []int64) {
+				for _, id := range deletedExamIDs {
+					var exam models.Exam
+					err := db.DB.First(&exam, id).Error
+					assert.Error(t, err)
+					assert.True(t, errors.Is(err, gorm.ErrRecordNotFound))
+				}
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Fail - Attempt to delete exams created by another user",
+				userID:       userID,
+				expectedCode: codes.PermissionDenied,
+			},
+			setup: func(t *testing.T) []int64 {
+				exam := createTestExam(t, 2) // Created by a different user
+
+				// Create read-only permission for the test user
+				permission := models.ExamPermissions{
+					ExamID: exam.ID,
+					UserID: userID,
+				}
+				permission.SetRead()
+				require.NoError(t, db.DB.Create(&permission).Error)
+
+				return []int64{exam.ID}
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Non-existent exam returns success",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) []int64 {
+				return []int64{9999} // Non-existent exam ID
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Fail - Empty exam IDs list",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
+			setup: func(t *testing.T) []int64 {
+				return []int64{}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+			examIDs := tt.setup(t)
+
+			ctx := createContextWithUserID(tt.userID)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				&proto.DeleteExamsRequest{ExamIds: examIDs},
+				client.DeleteExams,
+				func(t *testing.T, _ *proto.Empty) {
+					if tt.validate != nil {
+						tt.validate(t, examIDs)
+					}
+				},
 			)
 		})
 	}

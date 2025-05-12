@@ -95,7 +95,7 @@ func checkPermissions(permission *models.ExamPermissions, methodName string) err
 	return nil
 }
 
-func ExamAuthInterceptor() grpc.UnaryServerInterceptor {
+func GeneralExamAuthInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		methodName := info.FullMethod
 		if !shouldIntercept(methodName) {
@@ -146,7 +146,7 @@ func ExamAuthInterceptor() grpc.UnaryServerInterceptor {
 
 func fetchExam(examID int64) (*models.Exam, error) {
 	var exam models.Exam
-	if err := db.DB.Take(&exam, examID).Error; err != nil {
+	if err := db.DB.Where("id IN (?)", []int64{examID}).Take(&exam).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, status.Error(codes.NotFound, "exam not found")
 		}
