@@ -2,7 +2,6 @@ package interceptors
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -12,21 +11,15 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
+	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
 )
 
-func endExamShouldIntercept(methodName string) bool {
-	methodsToIntercept := []string{
-		"/proto.ExamService/EndExam",
-		"/proto.ExamService/UpsertAnswer",
-	}
+const participantContextKey contextKey = "participant"
 
-	for _, method := range methodsToIntercept {
-		if strings.HasSuffix(methodName, method) {
-			return true
-		}
-	}
-	return false
+var endExamShouldIntercept = map[string]bool{
+	"/proto.ExamService/EndExam":      true,
+	"/proto.ExamService/UpsertAnswer": true,
 }
 
 // updateParticipantCounts updates the participant counts JSON in exam
@@ -48,19 +41,26 @@ func updateParticipantCounts(tx *gorm.DB, exam *models.Exam) error {
 func EndExamInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		methodName := info.FullMethod
-		if !endExamShouldIntercept(methodName) {
+		if !endExamShouldIntercept[methodName] {
 			return handler(ctx, req)
-		}
-
-		participant, ok := GetParticipantFromContext(ctx)
-		if !ok {
-			return nil, status.Error(codes.Internal, "participant not found in context")
 		}
 
 		exam, ok := GetExamFromContext(ctx)
 		if !ok {
 			return nil, status.Error(codes.Internal, "exam not found in context")
 		}
+
+		userID, err := utils.GetUserIDFromMetadata(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		participant := &models.ExamParticipant{}
+		if err := db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).Take(participant).Error; err != nil {
+			return nil, utils.HandleDBError(err, "participant not found")
+		}
+
+		ctx = context.WithValue(ctx, participantContextKey, participant)
 
 		now := time.Now()
 		shouldEndExam := participant.Status == constants.PARTICIPANT_STATUS_STARTED &&
@@ -93,4 +93,10 @@ func EndExamInterceptor() grpc.UnaryServerInterceptor {
 
 		return handler(ctx, req)
 	}
+}
+
+// Getter function to safely access exam from context
+func GetParticipantFromContext(ctx context.Context) (*models.ExamParticipant, bool) {
+	participant, ok := ctx.Value(participantContextKey).(*models.ExamParticipant)
+	return participant, ok
 }

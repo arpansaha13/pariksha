@@ -19,9 +19,8 @@ import (
 type contextKey string
 
 const (
-	examContextKey        contextKey = "exam"
-	participantContextKey contextKey = "participant"
-	permissionContextKey  contextKey = "permission"
+	examContextKey       contextKey = "exam"
+	permissionContextKey contextKey = "permission"
 
 	PERMISSION_DENIED_MESSAGE string = "no permission to perform this action"
 	DATABASE_ERROR_MESSAGE    string = "database error"
@@ -96,18 +95,6 @@ func checkPermissions(permission *models.ExamPermissions, methodName string) err
 	return nil
 }
 
-func addParticipantToContext(ctx context.Context, examID int64, userID int64) (context.Context, error) {
-	participant, err := fetchParticipant(examID, userID)
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
-	}
-	if participant != nil {
-		ctx = context.WithValue(ctx, participantContextKey, participant)
-	}
-
-	return ctx, nil
-}
-
 func ExamAuthInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		methodName := info.FullMethod
@@ -153,13 +140,6 @@ func ExamAuthInterceptor() grpc.UnaryServerInterceptor {
 			return nil, err
 		}
 
-		if permission.CanParticipate() {
-			ctx, err = addParticipantToContext(ctx, *examID, userID)
-			if err != nil {
-				return nil, err
-			}
-		}
-
 		return handler(ctx, req)
 	}
 }
@@ -173,15 +153,6 @@ func fetchExam(examID int64) (*models.Exam, error) {
 		return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
 	}
 	return &exam, nil
-}
-
-func fetchParticipant(examID int64, userID int64) (*models.ExamParticipant, error) {
-	var participant models.ExamParticipant
-	err := db.DB.Where("exam_id = ? AND user_id = ?", examID, userID).Take(&participant).Error
-	if err != nil {
-		return nil, err
-	}
-	return &participant, nil
 }
 
 func fetchExamPermission(examID int64, userID int64) (*models.ExamPermissions, error) {
@@ -255,12 +226,6 @@ func getExamIdFromRequest(req any) (*int64, error) {
 func GetExamFromContext(ctx context.Context) (*models.Exam, bool) {
 	exam, ok := ctx.Value(examContextKey).(*models.Exam)
 	return exam, ok
-}
-
-// Getter function to safely access exam from context
-func GetParticipantFromContext(ctx context.Context) (*models.ExamParticipant, bool) {
-	participant, ok := ctx.Value(participantContextKey).(*models.ExamParticipant)
-	return participant, ok
 }
 
 // Getter function to safely access permission from context

@@ -127,32 +127,32 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 
 // UpdateExam modifies an existing exam's details while enforcing time-based restrictions
 func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamRequest) (*proto.ExamResponse, error) {
-	ec := NewExamContext(ctx)
-	if ec.Exam == nil {
+	exam, ok := interceptors.GetExamFromContext(ctx)
+	if !ok {
 		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
 
 	isUpdated := false
 	now := time.Now()
 
-	if now.After(ec.Exam.EndsAt) {
+	if now.After(exam.EndsAt) {
 		// Allow only title updates after exam has ended
-		if req.Title != nil && *req.Title != ec.Exam.Title {
-			ec.Exam.Title = *req.Title
-			if err := db.DB.Save(&ec.Exam).Error; err != nil {
+		if req.Title != nil && *req.Title != exam.Title {
+			exam.Title = *req.Title
+			if err := db.DB.Save(&exam).Error; err != nil {
 				return nil, status.Error(codes.Internal, "failed to update exam")
 			}
-			return examToProto(ec.Exam)
+			return examToProto(exam)
 		}
 		return nil, status.Error(codes.FailedPrecondition, "cannot update exam after it has ended")
 	}
 
-	if req.Title != nil && *req.Title != ec.Exam.Title {
-		ec.Exam.Title = *req.Title
+	if req.Title != nil && *req.Title != exam.Title {
+		exam.Title = *req.Title
 		isUpdated = true
 	}
 
-	if req.StartsAt != nil && now.After(ec.Exam.StartsAt) {
+	if req.StartsAt != nil && now.After(exam.StartsAt) {
 		return nil, status.Error(codes.FailedPrecondition, "cannot update start time after exam has started")
 	}
 
@@ -161,24 +161,24 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 		if err := validateExamStartTiming(startsAt); err != nil {
 			return nil, err
 		}
-		ec.Exam.StartsAt = startsAt
+		exam.StartsAt = startsAt
 		isUpdated = true
 	}
 
 	if req.EndsAt != nil {
 		endsAt := req.EndsAt.AsTime()
-		if err := validateExamEndTiming(ec.Exam.StartsAt, endsAt); err != nil {
+		if err := validateExamEndTiming(exam.StartsAt, endsAt); err != nil {
 			return nil, err
 		}
-		ec.Exam.EndsAt = endsAt
+		exam.EndsAt = endsAt
 		isUpdated = true
 	}
 
 	if req.Type != nil {
-		if now.After(ec.Exam.StartsAt) {
+		if now.After(exam.StartsAt) {
 			return nil, status.Error(codes.FailedPrecondition, "cannot update type after exam has started")
 		}
-		ec.Exam.Type = *req.Type
+		exam.Type = *req.Type
 		isUpdated = true
 	}
 
@@ -186,17 +186,17 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 		if err := validateExamDuration(req.GetDurationMinutes()); err != nil {
 			return nil, err
 		}
-		ec.Exam.DurationMinutes = int16(req.GetDurationMinutes())
+		exam.DurationMinutes = int16(req.GetDurationMinutes())
 		isUpdated = true
 	}
 
 	if isUpdated {
-		if err := db.DB.Save(&ec.Exam).Error; err != nil {
+		if err := db.DB.Save(&exam).Error; err != nil {
 			return nil, status.Error(codes.Internal, "failed to update exam")
 		}
 	}
 
-	return examToProto(ec.Exam)
+	return examToProto(exam)
 }
 
 // StartExam initiates an exam for a participant and updates participation statistics
@@ -206,20 +206,22 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 		return nil, err
 	}
 
-	var participant *models.ExamParticipant
+	exam, ok := interceptors.GetExamFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "exam not found in context")
+	}
+
+	now := time.Now()
+	if err := validateExamState(exam, now); err != nil {
+		return nil, err
+	}
+
+	participant := &models.ExamParticipant{}
 	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		exam, ok := interceptors.GetExamFromContext(ctx)
-		if !ok {
-			return status.Error(codes.Internal, "exam not found in context")
-		}
+		err := tx.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(participant).Error
+		participantExists := err == nil
 
-		now := time.Now()
-		if err := validateExamState(exam, now); err != nil {
-			return err
-		}
-
-		participant, ok = interceptors.GetParticipantFromContext(ctx)
-		if !ok {
+		if !participantExists {
 			if exam.Type != constants.EXAM_ACCESS_TYPE_LINK {
 				return status.Error(codes.PermissionDenied, "participant is not invited")
 			}
@@ -263,7 +265,7 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 			return status.Error(codes.Internal, "failed to get participant counts")
 		}
 
-		if !ok {
+		if !participantExists {
 			exam.ParticipantCounts, err = updateParticipantCounts(&counts, 0, constants.PARTICIPANT_STATUS_STARTED)
 		} else {
 			exam.ParticipantCounts, err = updateParticipantCounts(&counts, constants.PARTICIPANT_STATUS_INVITED, constants.PARTICIPANT_STATUS_STARTED)
@@ -301,6 +303,7 @@ func (s *ExamServer) EndExam(ctx context.Context, req *proto.EndExamRequest) (*p
 		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
 
+	// Should be added to context by EndExamInterceptor
 	participant, ok := interceptors.GetParticipantFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "participant not found in context")
@@ -330,12 +333,12 @@ func (s *ExamServer) EndExam(ctx context.Context, req *proto.EndExamRequest) (*p
 
 // GetExam retrieves detailed information about a specific exam
 func (s *ExamServer) GetExam(ctx context.Context, req *proto.ExamRequest) (*proto.ExamResponse, error) {
-	ec := NewExamContext(ctx)
-	if ec.Exam == nil {
+	exam, ok := interceptors.GetExamFromContext(ctx)
+	if !ok {
 		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
 
-	return examToProto(ec.Exam)
+	return examToProto(exam)
 }
 
 // GetExamQuestions retrieves all questions associated with an exam
@@ -392,14 +395,15 @@ func (s *ExamServer) GetExamPermission(ctx context.Context, req *proto.ExamReque
 		return nil, err
 	}
 
-	ec := NewExamContext(ctx)
-	if ec.Exam == nil {
+	exam, ok := interceptors.GetExamFromContext(ctx)
+	if !ok {
 		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
 
-	// For LINK type exams, grant participate permission if no permission exists
-	if ec.Permission == nil {
-		if ec.Exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
+	permission, ok := interceptors.GetPermissionFromContext(ctx)
+	// For LINK type exams, grant PARTICIPATE permission if no permission exists
+	if !ok {
+		if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
 			return &proto.ExamPermissionResponse{
 				CanRead:           true,
 				CanWrite:          false,
@@ -412,14 +416,14 @@ func (s *ExamServer) GetExamPermission(ctx context.Context, req *proto.ExamReque
 	}
 
 	response := &proto.ExamPermissionResponse{
-		CanRead:        ec.Permission.CanRead(),
-		CanWrite:       ec.Permission.CanWrite(),
-		CanParticipate: ec.Permission.CanParticipate(),
-		CanEvaluate:    ec.Permission.CanEvaluate(),
+		CanRead:        permission.CanRead(),
+		CanWrite:       permission.CanWrite(),
+		CanParticipate: permission.CanParticipate(),
+		CanEvaluate:    permission.CanEvaluate(),
 	}
 
 	// Check if user is a participant and add status if found
-	if ec.Permission.CanParticipate() {
+	if permission.CanParticipate() {
 		var participant models.ExamParticipant
 		err = db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error
 		if err == nil {

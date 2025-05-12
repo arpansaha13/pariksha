@@ -126,7 +126,10 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 	lis = bufconn.Listen(bufSize)
 	srv := grpc.NewServer(
-		grpc.UnaryInterceptor(interceptors.ExamAuthInterceptor()),
+		grpc.ChainUnaryInterceptor(
+			interceptors.ExamAuthInterceptor(),
+			interceptors.EndExamInterceptor(),
+		),
 	)
 	proto.RegisterExamServiceServer(srv, &handlers.ExamServer{})
 

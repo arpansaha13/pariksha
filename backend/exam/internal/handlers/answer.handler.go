@@ -69,6 +69,7 @@ func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerR
 }
 
 func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersRequest) (*proto.UpsertAnswersResponse, error) {
+	// Should be added to context by EndExamInterceptor
 	participant, ok := interceptors.GetParticipantFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "participant not found in context")

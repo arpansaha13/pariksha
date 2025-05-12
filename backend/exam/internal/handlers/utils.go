@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"time"
 
@@ -13,7 +12,6 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
-	"pariksha/exam/internal/interceptors"
 )
 
 // validateExamStartTiming checks if the exam's `startsAt` constraints are valid
@@ -203,30 +201,4 @@ func handleParticipantUpdate(tx *gorm.DB, exam *models.Exam, participant *models
 	}
 
 	return nil
-}
-
-// ExamContext represents the context of exam-related operations
-type ExamContext struct {
-	Exam        *models.Exam
-	Participant *models.ExamParticipant
-	Permission  *models.ExamPermissions
-}
-
-// NewExamContext creates a new exam context from the given gRPC context
-func NewExamContext(ctx context.Context) *ExamContext {
-	ec := &ExamContext{}
-
-	if exam, ok := interceptors.GetExamFromContext(ctx); ok {
-		ec.Exam = exam
-	}
-
-	if participant, ok := interceptors.GetParticipantFromContext(ctx); ok {
-		ec.Participant = participant
-	}
-
-	if permission, ok := interceptors.GetPermissionFromContext(ctx); ok {
-		ec.Permission = permission
-	}
-
-	return ec
 }
