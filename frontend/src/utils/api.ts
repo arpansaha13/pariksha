@@ -19,6 +19,7 @@ export { deleteQuestion } from './api/papers/delete-question'
 export { reorderQuestions } from './api/papers/reorder-questions'
 
 export { createExam } from './api/exams/createExam'
+export { deleteExams } from './api/exams/deleteExams'
 export { updateExam } from './api/exams/updateExam'
 export { startExam } from './api/exams/startExam'
 export { endExam } from './api/exams/endExam'

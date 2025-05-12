@@ -290,3 +290,31 @@ func GetExamPermission(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
+
+func DeleteExams(w http.ResponseWriter, r *http.Request) {
+	var deleteExamsDto dtos.DeleteExamsDto
+	if err := json.NewDecoder(r.Body).Decode(&deleteExamsDto); err != nil {
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
+		return
+	}
+
+	errs := validate.Do.Struct(deleteExamsDto)
+	if errs != nil {
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
+		return
+	}
+
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	examService := services.GetExamService()
+	ctx := examService.CreateMetadata(userID)
+
+	_, err := examService.Client().DeleteExams(ctx, &proto.DeleteExamsRequest{
+		ExamIds: deleteExamsDto.ExamIds,
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

@@ -16,6 +16,7 @@ service ExamService {
   rpc GetExamQuestions(ExamRequest) returns (ExamQuestionsResponse) {}
   rpc GetExamCategories(ExamRequest) returns (ExamCategoriesResponse) {}
   rpc GetExamPermission(ExamRequest) returns (ExamPermissionResponse) {}
+  rpc DeleteExams(DeleteExamsRequest) returns (Empty) {}
 
   // Participant operations
   rpc GetExamParticipants(ExamRequest) returns (ParticipantList) {}
@@ -232,4 +233,8 @@ message GetAnswerEvaluationDataResponse {
   int64 question_id = 3;
   int32 score_awarded = 5;
   string comments = 6;
+}
+
+message DeleteExamsRequest {
+  repeated int64 exam_ids = 1;
 }

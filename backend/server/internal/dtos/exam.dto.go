@@ -95,3 +95,7 @@ type ExamPermissionResponseDto struct {
 	CanEvaluate       bool `json:"can_evaluate"`
 	ParticipantStatus *int `json:"participant_status,omitempty"`
 }
+
+type DeleteExamsDto struct {
+	ExamIds []int64 `json:"exam_ids" validate:"required,min=1"`
+}

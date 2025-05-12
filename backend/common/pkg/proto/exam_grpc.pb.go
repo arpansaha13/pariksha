@@ -26,6 +26,7 @@ const (
 	ExamService_GetExamQuestions_FullMethodName           = "/proto.ExamService/GetExamQuestions"
 	ExamService_GetExamCategories_FullMethodName          = "/proto.ExamService/GetExamCategories"
 	ExamService_GetExamPermission_FullMethodName          = "/proto.ExamService/GetExamPermission"
+	ExamService_DeleteExams_FullMethodName                = "/proto.ExamService/DeleteExams"
 	ExamService_GetExamParticipants_FullMethodName        = "/proto.ExamService/GetExamParticipants"
 	ExamService_AddExamParticipant_FullMethodName         = "/proto.ExamService/AddExamParticipant"
 	ExamService_RemoveExamParticipant_FullMethodName      = "/proto.ExamService/RemoveExamParticipant"
@@ -53,6 +54,7 @@ type ExamServiceClient interface {
 	GetExamQuestions(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamQuestionsResponse, error)
 	GetExamCategories(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamCategoriesResponse, error)
 	GetExamPermission(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamPermissionResponse, error)
+	DeleteExams(ctx context.Context, in *DeleteExamsRequest, opts ...grpc.CallOption) (*Empty, error)
 	// Participant operations
 	GetExamParticipants(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ParticipantList, error)
 	AddExamParticipant(ctx context.Context, in *AddParticipantRequest, opts ...grpc.CallOption) (*ParticipantResponse, error)
@@ -143,6 +145,16 @@ func (c *examServiceClient) GetExamPermission(ctx context.Context, in *ExamReque
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExamPermissionResponse)
 	err := c.cc.Invoke(ctx, ExamService_GetExamPermission_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *examServiceClient) DeleteExams(ctx context.Context, in *DeleteExamsRequest, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, ExamService_DeleteExams_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -291,6 +303,7 @@ type ExamServiceServer interface {
 	GetExamQuestions(context.Context, *ExamRequest) (*ExamQuestionsResponse, error)
 	GetExamCategories(context.Context, *ExamRequest) (*ExamCategoriesResponse, error)
 	GetExamPermission(context.Context, *ExamRequest) (*ExamPermissionResponse, error)
+	DeleteExams(context.Context, *DeleteExamsRequest) (*Empty, error)
 	// Participant operations
 	GetExamParticipants(context.Context, *ExamRequest) (*ParticipantList, error)
 	AddExamParticipant(context.Context, *AddParticipantRequest) (*ParticipantResponse, error)
@@ -337,6 +350,9 @@ func (UnimplementedExamServiceServer) GetExamCategories(context.Context, *ExamRe
 }
 func (UnimplementedExamServiceServer) GetExamPermission(context.Context, *ExamRequest) (*ExamPermissionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamPermission not implemented")
+}
+func (UnimplementedExamServiceServer) DeleteExams(context.Context, *DeleteExamsRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteExams not implemented")
 }
 func (UnimplementedExamServiceServer) GetExamParticipants(context.Context, *ExamRequest) (*ParticipantList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamParticipants not implemented")
@@ -520,6 +536,24 @@ func _ExamService_GetExamPermission_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ExamServiceServer).GetExamPermission(ctx, req.(*ExamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ExamService_DeleteExams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteExamsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExamServiceServer).DeleteExams(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExamService_DeleteExams_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExamServiceServer).DeleteExams(ctx, req.(*DeleteExamsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -792,6 +826,10 @@ var ExamService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetExamPermission",
 			Handler:    _ExamService_GetExamPermission_Handler,
+		},
+		{
+			MethodName: "DeleteExams",
+			Handler:    _ExamService_DeleteExams_Handler,
 		},
 		{
 			MethodName: "GetExamParticipants",

@@ -88,3 +88,28 @@ func EnqueueAutoEndExam(payload structs.AutoEndExamPayload, scheduledEndTime tim
 		log.Default().Printf("Enqueued auto-end task: id=%s queue=%s at=%v", info.ID, info.Queue, scheduledEndTime)
 	}
 }
+
+func EnqueuePostDeleteExamsCleanup(examIds []int64) error {
+	payload := structs.DeleteExamsPayload{
+		ExamIDs: examIds,
+	}
+
+	taskBytes, err := json.Marshal(payload)
+	if err != nil {
+		log.Default().Printf("Failed to marshal delete payload: %v", err)
+		return fmt.Errorf("failed to marshal delete payload: %v", err)
+	}
+
+	task := asynq.NewTask(constants.EXAM_QUEUE_TASK_DELETE_EXAMS, taskBytes)
+	info, err := asynqClient.Enqueue(task)
+	if err != nil {
+		log.Default().Printf("Failed to enqueue delete task: %v", err)
+		return fmt.Errorf("failed to enqueue delete task: %v", err)
+	}
+
+	if env.GO_ENV != constants.GO_ENV_TEST {
+		log.Default().Printf("Enqueued delete cleanup task: id=%s queue=%s", info.ID, info.Queue)
+	}
+
+	return nil
+}

@@ -429,3 +429,28 @@ func (s *ExamServer) GetExamPermission(ctx context.Context, req *proto.ExamReque
 
 	return response, nil
 }
+
+// DeleteExams handles the batch deletion of exams and their associated permissions
+func (s *ExamServer) DeleteExams(ctx context.Context, req *proto.DeleteExamsRequest) (*proto.Empty, error) {
+	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+		if err := tx.Where("id IN ?", req.ExamIds).Delete(&models.Exam{}).Error; err != nil {
+			return status.Error(codes.Internal, "failed to delete exams")
+		}
+
+		if err := tx.Where("exam_id IN ?", req.ExamIds).Delete(&models.ExamPermissions{}).Error; err != nil {
+			return status.Error(codes.Internal, "failed to delete exam permissions")
+		}
+
+		if err := services.EnqueuePostDeleteExamsCleanup(req.ExamIds); err != nil {
+			return status.Error(codes.Internal, "failed to enqueue post-delete-exam cleanup task")
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.Empty{}, nil
+}

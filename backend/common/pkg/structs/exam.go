@@ -9,3 +9,7 @@ type AutoEndExamPayload struct {
 	ExamID        int64 `json:"exam_id"`
 	ParticipantID int64 `json:"participant_id"`
 }
+
+type DeleteExamsPayload struct {
+	ExamIDs []int64 `json:"examIds"`
+}

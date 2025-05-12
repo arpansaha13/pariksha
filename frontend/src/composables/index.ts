@@ -6,4 +6,3 @@ export { useExamQuestionIdForCategoryId } from './exam/useExamQuestionIdForCateg
 export { useExamQuestionNavigation } from './exam/useExamQuestionNavigation'
 export { useExamSaveAnswer } from './exam/useExamSaveAnswer'
 export { useExamParticipantsTableData } from './exam/useExamParticipantsTableData'
-export { useExamsTableData } from './exam/useExamsTableData'

@@ -13,6 +13,7 @@ const (
 	RABBIT_MAIL_QUEUE_NAME            string = "mail_queue"
 	EXAM_QUEUE_TASK_PREPARE_QUESTIONS string = "exam_queue:prepare_questions"
 	EXAM_QUEUE_TASK_AUTO_END          string = "exam_queue:auto_end"
+	EXAM_QUEUE_TASK_DELETE_EXAMS      string = "exam_queue:delete_exams"
 )
 
 const (

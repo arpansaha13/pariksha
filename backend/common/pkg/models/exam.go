@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type ParticipantCount struct {
@@ -25,6 +27,7 @@ type Exam struct {
 	PaperID            int64             `gorm:"type:bigint"`
 	ParticipantCounts  json.RawMessage   `gorm:"type:json;default:'{\"unattended\":0,\"invited\":0,\"started\":0,\"ended\":0}'"`
 	Participants       []ExamParticipant `gorm:"foreignKey:ExamID"`
+	DeletedAt          gorm.DeletedAt    `gorm:"index"`
 }
 
 func (Exam) TableName() string {

@@ -12,6 +12,7 @@ export enum ToastId {
   COPIED_TO_CLIPBOARD = 'copied_to_clipboard',
   INCOMPLETE_EVALUATION = 'incomplete_evaluation',
   DELETE_PAPER_FAILED = 'delete_paper_failed',
+  DELETE_EXAM_FAILED = 'delete_exam_failed',
 }
 
 export enum HeaderNames {
