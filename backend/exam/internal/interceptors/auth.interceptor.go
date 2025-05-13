@@ -51,6 +51,7 @@ var (
 		"/proto.ExamService/UpsertAnswer":       true,
 		"/proto.ExamService/GetExamParticipant": true,
 		"/proto.ExamService/GetAnswerForExam":   true,
+		"/proto.ExamService/GetExamResults":     true,
 	}
 
 	requiresEvaluate = map[string]bool{

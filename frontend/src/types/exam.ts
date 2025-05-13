@@ -1,3 +1,4 @@
+import type { GeneralAnswer, MCQAnswer } from './answer'
 import type { Question, QuestionCategory } from './question'
 
 export enum ExamAccessType {
@@ -59,4 +60,14 @@ export interface ExamParticipantResponse {
   first_name?: string
   last_name?: string
   email?: string
+}
+
+export interface ExamResult {
+  readonly question_id: number
+  readonly order: number
+  readonly category_id: number
+  readonly answer: MCQAnswer | GeneralAnswer | null
+  readonly score_awarded: number
+  readonly comments: string
+  readonly max_score: number
 }

@@ -17,6 +17,7 @@ service ExamService {
   rpc GetExamCategories(ExamRequest) returns (ExamCategoriesResponse) {}
   rpc GetExamPermission(ExamRequest) returns (ExamPermissionResponse) {}
   rpc DeleteExams(DeleteExamsRequest) returns (Empty) {}
+  rpc GetExamResults(ExamRequest) returns (ExamResultsResponse) {}
 
   // Participant operations
   rpc GetExamParticipants(ExamRequest) returns (ParticipantList) {}
@@ -237,4 +238,18 @@ message GetAnswerEvaluationDataResponse {
 
 message DeleteExamsRequest {
   repeated int64 exam_ids = 1;
+}
+
+message ExamResultItem {
+  int64 question_id = 1;
+  int32 order = 2;
+  int64 category_id = 3;
+  bytes answer = 4;  // JSON encoded answer, can be nil
+  int32 score_awarded = 5;
+  string comments = 6;
+  int32 max_score = 7;
+}
+
+message ExamResultsResponse {
+  repeated ExamResultItem results = 1;
 }

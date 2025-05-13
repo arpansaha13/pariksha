@@ -14,6 +14,7 @@ export { useExamParticipant } from './api/exams/useExamParticipant'
 export { useExamParticipants } from './api/exams/useExamParticipants'
 export { useExamAnswer } from './api/exams/useExamAnswer'
 export { useExamPermission } from './api/exams/useExamPermission'
+export { useExamResults } from './api/exams/useExamResults'
 
 export { useAnswerEvaluationData } from './api/evaluation/useAnswerEvaluationData'
 export { useAnswerForEvaluation } from './api/evaluation/useAnswerForEvaluation'
