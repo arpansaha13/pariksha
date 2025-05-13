@@ -157,26 +157,26 @@ func (s *PaperServer) DeletePapers(ctx context.Context, req *proto.DeletePapersR
 
 	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		// Delete all specified papers
-		if err := utils.BatchDelete(tx, &models.Paper{}, "id IN ?", req.PaperIds); err != nil {
-			return err
+		if err := tx.Where("id IN ?", req.PaperIds).Delete(&models.Paper{}).Error; err != nil {
+			return status.Error(codes.Internal, constants.ErrInternalServer)
 		}
 
 		// Delete all non-locked questions for these papers
-		if err := utils.BatchDelete(tx, &models.Question{},
-			"paper_id IN ? AND locked = ?", req.PaperIds, false); err != nil {
-			return err
+		if err := tx.Where("paper_id IN ? AND locked = ?", req.PaperIds, false).
+			Delete(&models.Question{}).Error; err != nil {
+			return status.Error(codes.Internal, constants.ErrInternalServer)
 		}
 
 		// Delete all non-locked categories for these papers
-		if err := utils.BatchDelete(tx, &models.QuestionCategory{},
-			"paper_id IN ? AND locked = ?", req.PaperIds, false); err != nil {
-			return err
+		if err := tx.Where("paper_id IN ? AND locked = ?", req.PaperIds, false).
+			Delete(&models.QuestionCategory{}).Error; err != nil {
+			return status.Error(codes.Internal, constants.ErrInternalServer)
 		}
 
 		// Delete all permissions for these papers
-		if err := utils.BatchDelete(tx, &models.PaperPermissions{},
-			"paper_id IN ?", req.PaperIds); err != nil {
-			return err
+		if err := tx.Where("paper_id IN ?", req.PaperIds).
+			Delete(&models.PaperPermissions{}).Error; err != nil {
+			return status.Error(codes.Internal, constants.ErrInternalServer)
 		}
 
 		return nil
