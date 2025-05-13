@@ -1,5 +1,9 @@
 package models
 
+import (
+	"pariksha/common/pkg/constants"
+)
+
 type ExamQuestion struct {
 	ID         int64 `gorm:"primaryKey;type:bigint"`
 	ExamID     int64 `gorm:"type:bigint;not null"`
@@ -11,5 +15,5 @@ type ExamQuestion struct {
 }
 
 func (ExamQuestion) TableName() string {
-	return "exam_questions"
+	return constants.TABLE_EXAM_QUESTIONS
 }

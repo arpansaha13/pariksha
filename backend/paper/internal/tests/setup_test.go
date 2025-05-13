@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 
+	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/config/env"
@@ -80,10 +81,10 @@ func setupContainer() func() {
 
 func clearTables(t *testing.T) {
 	tables := []string{
-		"questions",
-		"question_categories",
-		"permissions",
-		"papers",
+		constants.TABLE_QUESTIONS,
+		constants.TABLE_QUESTION_CATEGORIES,
+		constants.TABLE_PAPER_PERMISSIONS,
+		constants.TABLE_PAPERS,
 	}
 
 	for i := range tables {

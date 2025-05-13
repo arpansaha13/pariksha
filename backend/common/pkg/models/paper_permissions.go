@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+
+	"pariksha/common/pkg/constants"
+)
 
 type PaperPermissions struct {
 	PaperID     int64          `gorm:"primaryKey;type:bigint;not null"`
@@ -10,7 +14,7 @@ type PaperPermissions struct {
 }
 
 func (PaperPermissions) TableName() string {
-	return "permissions"
+	return constants.TABLE_PAPER_PERMISSIONS
 }
 
 const (

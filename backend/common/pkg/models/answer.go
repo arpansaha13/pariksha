@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"pariksha/common/pkg/constants"
 )
 
 type Answer struct {
@@ -34,5 +35,5 @@ func (a *GeneralAnswer) Value() (driver.Value, error) {
 }
 
 func (Answer) TableName() string {
-	return "answers"
+	return constants.TABLE_ANSWERS
 }

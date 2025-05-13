@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+
+	"pariksha/common/pkg/constants"
 )
 
 type ParticipantCount struct {
@@ -31,7 +33,7 @@ type Exam struct {
 }
 
 func (Exam) TableName() string {
-	return "exams"
+	return constants.TABLE_EXAMS
 }
 
 func (e *Exam) GetParticipantCounts() (ParticipantCount, error) {

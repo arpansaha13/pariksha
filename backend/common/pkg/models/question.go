@@ -48,5 +48,5 @@ func (q *Question) GetQuestion() (interface{}, error) {
 }
 
 func (Question) TableName() string {
-	return "questions"
+	return constants.TABLE_QUESTIONS
 }

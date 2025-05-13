@@ -1,5 +1,9 @@
 package models
 
+import (
+	"pariksha/common/pkg/constants"
+)
+
 type ExamCategory struct {
 	ID         int64 `gorm:"primaryKey;type:bigint"`
 	ExamID     int64 `gorm:"type:bigint;not null"`
@@ -9,5 +13,5 @@ type ExamCategory struct {
 }
 
 func (ExamCategory) TableName() string {
-	return "exam_categories"
+	return constants.TABLE_EXAM_CATEGORIES
 }

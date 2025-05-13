@@ -4,6 +4,8 @@ import (
 	"database/sql"
 
 	"gorm.io/gorm"
+
+	"pariksha/common/pkg/constants"
 )
 
 type QuestionCategory struct {
@@ -17,5 +19,5 @@ type QuestionCategory struct {
 }
 
 func (QuestionCategory) TableName() string {
-	return "question_categories"
+	return constants.TABLE_QUESTION_CATEGORIES
 }

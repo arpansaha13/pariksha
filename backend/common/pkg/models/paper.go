@@ -5,6 +5,8 @@ import (
 	"errors"
 
 	"gorm.io/gorm"
+
+	"pariksha/common/pkg/constants"
 )
 
 type QuestionCount struct {
@@ -38,5 +40,5 @@ func (p *Paper) GetQuestionCounts() (QuestionCount, error) {
 }
 
 func (Paper) TableName() string {
-	return "papers"
+	return constants.TABLE_PAPERS
 }

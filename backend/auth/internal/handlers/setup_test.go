@@ -22,6 +22,7 @@ import (
 	"pariksha/auth/internal/config/db"
 	"pariksha/auth/internal/config/env"
 	"pariksha/auth/internal/services"
+	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 )
@@ -149,12 +150,12 @@ func setupContainers() func() {
 }
 
 func clearTables(t *testing.T) {
-	tables := []string{"users", "otps"}
+	tables := []string{constants.TABLE_USERS, constants.TABLE_OTPS}
 	for _, table := range tables {
 		err := db.DB.Exec(fmt.Sprintf("DELETE FROM %s", table)).Error
 		require.NoError(t, err)
 	}
-	err := db.Sessions.Exec("DELETE FROM sessions").Error
+	err := db.Sessions.Exec("DELETE FROM " + constants.TABLE_SESSIONS).Error
 	require.NoError(t, err)
 }
 

@@ -1,6 +1,10 @@
 package models
 
-import "database/sql"
+import (
+	"database/sql"
+
+	"pariksha/common/pkg/constants"
+)
 
 type ExamParticipant struct {
 	ID               int64 `gorm:"primaryKey;type:bigint"`
@@ -16,5 +20,5 @@ type ExamParticipant struct {
 }
 
 func (ExamParticipant) TableName() string {
-	return "exam_participants"
+	return constants.TABLE_EXAM_PARTICIPANTS
 }

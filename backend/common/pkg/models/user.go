@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"pariksha/common/pkg/constants"
 	"time"
 )
 
@@ -19,5 +20,5 @@ type User struct {
 }
 
 func (User) TableName() string {
-	return "users"
+	return constants.TABLE_USERS
 }

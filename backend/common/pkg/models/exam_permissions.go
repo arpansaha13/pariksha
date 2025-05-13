@@ -1,5 +1,7 @@
 package models
 
+import "pariksha/common/pkg/constants"
+
 type ExamPermissions struct {
 	ExamID      int64 `gorm:"primaryKey;type:bigint;not null"`
 	UserID      int64 `gorm:"primaryKey;type:bigint;not null"`
@@ -7,7 +9,7 @@ type ExamPermissions struct {
 }
 
 func (ExamPermissions) TableName() string {
-	return "permissions"
+	return constants.TABLE_EXAM_PERMISSIONS
 }
 
 const (

@@ -3,6 +3,8 @@ package models
 import (
 	"time"
 
+	"pariksha/common/pkg/constants"
+
 	"github.com/google/uuid"
 )
 
@@ -16,5 +18,5 @@ type Session struct {
 }
 
 func (Session) TableName() string {
-	return "sessions"
+	return constants.TABLE_SESSIONS
 }

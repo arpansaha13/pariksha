@@ -1,6 +1,7 @@
 package models
 
 import (
+	"pariksha/common/pkg/constants"
 	"time"
 )
 
@@ -14,5 +15,5 @@ type Otp struct {
 }
 
 func (Otp) TableName() string {
-	return "otps"
+	return constants.TABLE_OTPS
 }
