@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/hibiken/asynq"
@@ -68,6 +69,7 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 		return examsTx.Error
 	}
 
+	var totalMaxScore int32
 	// Create exam questions
 	for _, q := range questions {
 		examQuestion := models.ExamQuestion{
@@ -77,6 +79,8 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 			Order:      q.Order,
 			MaxScore:   q.MaxScore,
 		}
+		totalMaxScore += int32(q.MaxScore) // Accumulate total max_score
+
 		if err := examsTx.Create(&examQuestion).Error; err != nil {
 			examsTx.Rollback()
 			papersTx.Rollback()
@@ -98,6 +102,14 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 			log.Default().Printf("Failed to create exam category: %v", err)
 			return err
 		}
+	}
+	fmt.Println("totalMaxScore", totalMaxScore)
+	// Update exam's max_score
+	if err := examsTx.Model(&models.Exam{}).Where("id = ?", payload.ExamID).Update("max_score", totalMaxScore).Error; err != nil {
+		examsTx.Rollback()
+		papersTx.Rollback()
+		log.Default().Printf("Failed to update exam max score: %v", err)
+		return err
 	}
 
 	// Commit both transactions

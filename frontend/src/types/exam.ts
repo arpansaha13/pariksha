@@ -1,5 +1,12 @@
 import type { GeneralAnswer, MCQAnswer } from './answer'
-import type { Question, QuestionCategory } from './question'
+import type {
+  Question,
+  QuestionCategory,
+  QuestionLong,
+  QuestionMcq,
+  QuestionShort,
+  QuestionType,
+} from './question'
 
 export enum ExamAccessType {
   LINK = 'LINK',
@@ -22,6 +29,7 @@ export interface Exam {
   created_by: number
   type: ExamAccessType
   max_candidates_count: number
+  max_score: number
   paper_id: number
   duration_minutes: number
 }
@@ -62,12 +70,36 @@ export interface ExamParticipantResponse {
   email?: string
 }
 
-export interface ExamResult {
-  readonly question_id: number
-  readonly order: number
-  readonly category_id: number
-  readonly answer: MCQAnswer | GeneralAnswer | null
-  readonly score_awarded: number
-  readonly comments: string
-  readonly max_score: number
+type ExamResultMCQ = {
+  readonly type: QuestionType.MCQ
+  readonly question: {
+    readonly id: number
+    readonly order: number
+    readonly category_id: number
+    readonly max_score: number
+    readonly content: QuestionMcq['question']
+  }
+  readonly answer: {
+    readonly content: MCQAnswer | null
+    readonly score_awarded: number
+    readonly comments: string
+  }
 }
+
+type ExamResultGeneral = {
+  readonly type: QuestionType.SHORT | QuestionType.LONG
+  readonly question: {
+    readonly id: number
+    readonly order: number
+    readonly category_id: number
+    readonly max_score: number
+    readonly content: QuestionShort['question'] | QuestionLong['question']
+  }
+  readonly answer: {
+    readonly content: GeneralAnswer | null
+    readonly score_awarded: number
+    readonly comments: string
+  }
+}
+
+export type ExamResult = ExamResultMCQ | ExamResultGeneral

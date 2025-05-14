@@ -32,6 +32,7 @@ type ExamResponseDto struct {
 	MaxCandidatesCount int32     `json:"max_candidates_count"`
 	PaperID            int64     `json:"paper_id"`
 	DurationMinutes    int32     `json:"duration_minutes"`
+	MaxScore           int32     `json:"max_score"`
 }
 
 type ExamParticipantResponseDto struct {

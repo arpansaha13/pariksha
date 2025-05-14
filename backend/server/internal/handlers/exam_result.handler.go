@@ -72,11 +72,11 @@ func GetExamResults(w http.ResponseWriter, r *http.Request) {
 		}
 
 		response[i] = dtos.ExamResultItemDTO{
+			Type: questionDetail.GetType(),
 			Question: dtos.ExamResultQuestionDTO{
 				ID:         result.QuestionId,
 				Order:      result.Order,
 				CategoryID: result.CategoryId,
-				Type:       questionDetail.GetType(),
 				Content:    questionBytes,
 				MaxScore:   result.MaxScore,
 			},

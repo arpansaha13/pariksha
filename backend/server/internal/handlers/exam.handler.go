@@ -38,6 +38,7 @@ func GetUserExams(w http.ResponseWriter, r *http.Request) {
 			MaxCandidatesCount: exam.MaxCandidatesCount,
 			PaperID:            exam.PaperId,
 			DurationMinutes:    exam.DurationMinutes,
+			MaxScore:           exam.MaxScore,
 		}
 	}
 
@@ -250,6 +251,7 @@ func GetExam(w http.ResponseWriter, r *http.Request) {
 		MaxCandidatesCount: exam.MaxCandidatesCount,
 		PaperID:            exam.PaperId,
 		DurationMinutes:    exam.DurationMinutes,
+		MaxScore:           exam.MaxScore,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

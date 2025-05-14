@@ -74,6 +74,7 @@ message ExamResponse {
   int64 paper_id = 8;
   ParticipantCount participant_counts = 9;
   int32 duration_minutes = 10;
+  int32 max_score = 11;
 }
 
 message ExamList {

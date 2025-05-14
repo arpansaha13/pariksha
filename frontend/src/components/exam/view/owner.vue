@@ -101,9 +101,9 @@
       </template>
 
       <UTable
-        v-if="!isNullOrUndefined(participants)"
-        :data="participants"
-        :columns="participantsTableColumns"
+        :data="participantsData ?? undefined"
+        :loading="participantsPending"
+        :columns="columns"
         class="flex-1"
       />
     </UCard>
@@ -116,9 +116,16 @@ import {
   DateFormatter,
   getLocalTimeZone,
 } from '@internationalized/date'
+import type { TableColumn } from '@nuxt/ui'
 import { debounceFilter } from '@vueuse/core'
-import { isNullOrUndefined } from '@arpansaha13/utils'
-import type { ExamPermission } from '~/types'
+import {
+  ExamParticipantStatus,
+  type ExamParticipantResponse,
+  type ExamPermission,
+} from '~/types'
+
+const UButton = resolveComponent('UButton')
+const UBadge = resolveComponent('UBadge')
 
 const route = useRoute()
 const examId = parseInt(route.params.examId as string)
@@ -129,11 +136,8 @@ const { data: examPermission } = useNuxtData<ExamPermission>(
 
 const [
   { data: exam },
-  { data: participants, columns: participantsTableColumns },
-] = await Promise.all([
-  useExam(examId),
-  useExamParticipantsTableData(examId, examPermission),
-])
+  { data: participantsData, pending: participantsPending },
+] = await Promise.all([useExam(examId), useExamParticipants(examId)])
 
 const fullCurrentUrl = ref('')
 const { copy, copied, isSupported } = useClipboard({ source: fullCurrentUrl })
@@ -233,4 +237,75 @@ const { ignoreUpdates: ignoreEndsAtUpdates } = watchIgnorable(
   },
   { eventFilter: debounceFilter(WATCH_DEBOUNCE_MS) }
 )
+
+// ___________________EXAM PARTICIPANT TABLE DATA___________________
+
+const participantStatusColors = {
+  [ExamParticipantStatus.UNATTENDED]: 'error',
+  [ExamParticipantStatus.INVITED]: 'info',
+  [ExamParticipantStatus.STARTED]: 'success',
+  [ExamParticipantStatus.ENDED]: 'warning',
+  [ExamParticipantStatus.EVALUATED]: 'success',
+} as const
+
+const participantStatusText = {
+  [ExamParticipantStatus.UNATTENDED]: 'Unattended',
+  [ExamParticipantStatus.INVITED]: 'Invited',
+  [ExamParticipantStatus.STARTED]: 'Started',
+  [ExamParticipantStatus.ENDED]: 'Pending evaluation',
+  [ExamParticipantStatus.EVALUATED]: 'Evaluated',
+} as const
+
+const columns: TableColumn<ExamParticipantResponse>[] = [
+  {
+    header: 'Name',
+    cell: ({ row }) => {
+      const participantId = row.original.id
+      const name = row.original.first_name + ' ' + row.original.last_name
+
+      if (
+        !examPermission.value?.can_evaluate ||
+        [
+          ExamParticipantStatus.UNATTENDED,
+          ExamParticipantStatus.INVITED,
+          ExamParticipantStatus.STARTED,
+        ].includes(row.original.status)
+      ) {
+        return name
+      }
+
+      return h(UButton, {
+        label: name,
+        to: `/exams/${examId}/evaluation/${participantId}`,
+        variant: 'link',
+        ui: { base: 'px-0' },
+      })
+    },
+  },
+  {
+    accessorKey: 'email',
+    header: 'Email',
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => {
+      const statusValue = row.getValue<ExamParticipantStatus>('status')
+      const color = participantStatusColors[statusValue]
+
+      return h(
+        UBadge,
+        { class: 'capitalize', variant: 'subtle', color },
+        () => participantStatusText[statusValue]
+      )
+    },
+  },
+  {
+    header: 'Score',
+    cell: ({ row }) => {
+      if (row.original.status !== ExamParticipantStatus.EVALUATED) return '--'
+      return row.original.score_awarded + '/' + exam.value?.max_score
+    },
+  },
+]
 </script>

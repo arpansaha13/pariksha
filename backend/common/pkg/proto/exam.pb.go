@@ -301,6 +301,7 @@ type ExamResponse struct {
 	PaperId            int64                  `protobuf:"varint,8,opt,name=paper_id,json=paperId,proto3" json:"paper_id,omitempty"`
 	ParticipantCounts  *ParticipantCount      `protobuf:"bytes,9,opt,name=participant_counts,json=participantCounts,proto3" json:"participant_counts,omitempty"`
 	DurationMinutes    int32                  `protobuf:"varint,10,opt,name=duration_minutes,json=durationMinutes,proto3" json:"duration_minutes,omitempty"`
+	MaxScore           int32                  `protobuf:"varint,11,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -401,6 +402,13 @@ func (x *ExamResponse) GetParticipantCounts() *ParticipantCount {
 func (x *ExamResponse) GetDurationMinutes() int32 {
 	if x != nil {
 		return x.DurationMinutes
+	}
+	return 0
+}
+
+func (x *ExamResponse) GetMaxScore() int32 {
+	if x != nil {
+		return x.MaxScore
 	}
 	return 0
 }
@@ -2170,7 +2178,7 @@ const file_exam_proto_rawDesc = "" +
 	"\n" +
 	"\b_ends_atB\a\n" +
 	"\x05_typeB\x13\n" +
-	"\x11_duration_minutes\"\x95\x03\n" +
+	"\x11_duration_minutes\"\xb2\x03\n" +
 	"\fExamResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x127\n" +
@@ -2183,7 +2191,8 @@ const file_exam_proto_rawDesc = "" +
 	"\bpaper_id\x18\b \x01(\x03R\apaperId\x12F\n" +
 	"\x12participant_counts\x18\t \x01(\v2\x17.proto.ParticipantCountR\x11participantCounts\x12)\n" +
 	"\x10duration_minutes\x18\n" +
-	" \x01(\x05R\x0fdurationMinutes\"5\n" +
+	" \x01(\x05R\x0fdurationMinutes\x12\x1b\n" +
+	"\tmax_score\x18\v \x01(\x05R\bmaxScore\"5\n" +
 	"\bExamList\x12)\n" +
 	"\x05exams\x18\x01 \x03(\v2\x13.proto.ExamResponseR\x05exams\"|\n" +
 	"\x10ParticipantCount\x12\x1e\n" +

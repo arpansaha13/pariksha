@@ -70,9 +70,9 @@
           :to="`/exams/${examId}/attempt`"
         />
 
-        <!-- If participant's exam has ended, then show them a link to results page -->
+        <!-- If participant's exam has ended/evaluated, then show them a link to results page -->
         <div
-          v-else-if="isParticipantExamEnded"
+          v-else-if="isParticipantExamEnded || isParticipantExamEvaluated"
           class="flex flex-col items-center"
         >
           <div class="mb-1">
@@ -96,8 +96,11 @@
 
       <!-- Exam is ongoing -->
       <template v-else>
-        <!-- If participant's exam has ended, then show them a link to results page -->
-        <div v-if="isParticipantExamEnded" class="flex flex-col items-center">
+        <!-- If participant's exam has ended/evaluated, then show them a link to results page -->
+        <div
+          v-if="isParticipantExamEnded || isParticipantExamEvaluated"
+          class="flex flex-col items-center"
+        >
           <div class="mb-1">
             <Icon
               name="i-lucide-circle-check-big"
@@ -159,6 +162,8 @@ const isParticipantExamStarted =
   props.examPermission.participant_status === ExamParticipantStatus.STARTED
 const isParticipantExamEnded =
   props.examPermission.participant_status === ExamParticipantStatus.ENDED
+const isParticipantExamEvaluated =
+  props.examPermission.participant_status === ExamParticipantStatus.EVALUATED
 
 const route = useRoute()
 const examId = parseInt(route.params.examId as string)
@@ -174,8 +179,6 @@ const endsAt = toCalendarDateTime(exam.value!.ends_at)
 
 const isExamStarted = isCalendarBefore(startsAt, now)
 const isExamEnded = isCalendarAfter(now, endsAt)
-
-console.log(isParticipantInvited, props.examPermission)
 
 const fullCurrentUrl = ref('')
 const { copy, copied, isSupported } = useClipboard({ source: fullCurrentUrl })

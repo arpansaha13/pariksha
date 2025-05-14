@@ -5,4 +5,3 @@ export { usePaperAutoCancelQuestionEdit } from './paper/usePaperAutoCancelQuesti
 export { useExamQuestionIdForCategoryId } from './exam/useExamQuestionIdForCategoryId'
 export { useExamQuestionNavigation } from './exam/useExamQuestionNavigation'
 export { useExamSaveAnswer } from './exam/useExamSaveAnswer'
-export { useExamParticipantsTableData } from './exam/useExamParticipantsTableData'

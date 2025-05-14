@@ -1,6 +1,6 @@
 <template>
   <UContainer class="flex min-h-screen gap-6">
-    <div class="sticky top-0 h-screen w-60 p-2">
+    <div class="sticky top-0 h-screen w-60 shrink-0 p-2">
       <div class="flex items-center gap-2 p-2">
         <Logo class="size-8" />
         <p class="text-md font-bold">Pariksha</p>
