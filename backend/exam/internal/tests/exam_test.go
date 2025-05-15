@@ -517,6 +517,22 @@ func TestUpdateExam(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.InvalidArgument,
 		},
+		{
+			name: "Fail - Update duration after exam has started",
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, userID)
+				exam.StartsAt = time.Now().Add(-1 * time.Hour) // Started 1 hour ago
+				exam.EndsAt = time.Now().Add(1 * time.Hour)    // Ends in 1 hour
+				exam.DurationMinutes = 60
+				require.NoError(t, db.DB.Save(&exam).Error)
+				return &exam
+			},
+			request: &proto.UpdateExamRequest{
+				DurationMinutes: ptr.Int32(120), // Try to update to 2 hours
+			},
+			userID:       userID,
+			expectedCode: codes.FailedPrecondition,
+		},
 	}
 
 	for _, tt := range tests {

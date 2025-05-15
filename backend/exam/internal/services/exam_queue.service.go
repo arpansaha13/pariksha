@@ -48,7 +48,7 @@ func CloseExamQueue() {
 	}
 }
 
-func EnqueuePrepareQuestons(payload structs.PrepareQuestionsPayload) {
+func EnqueuePrepareQuestions(payload structs.PrepareQuestionsPayload) {
 	taskBytes, err := json.Marshal(payload)
 	if err != nil {
 		log.Default().Printf("Failed to marshal payload: %v", err)

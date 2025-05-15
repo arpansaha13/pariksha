@@ -117,7 +117,7 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 		return nil, err
 	}
 
-	services.EnqueuePrepareQuestons(structs.PrepareQuestionsPayload{
+	services.EnqueuePrepareQuestions(structs.PrepareQuestionsPayload{
 		ExamID:  exam.ID,
 		PaperID: exam.PaperID,
 	})
@@ -132,66 +132,26 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
 
-	isUpdated := false
-	now := time.Now()
-
-	if now.After(exam.EndsAt) {
-		// Allow only title updates after exam has ended
-		if req.Title != nil && *req.Title != exam.Title {
-			exam.Title = *req.Title
-			if err := db.DB.Save(&exam).Error; err != nil {
-				return nil, status.Error(codes.Internal, "failed to update exam")
-			}
-			return examToProto(exam)
-		}
-		return nil, status.Error(codes.FailedPrecondition, "cannot update exam after it has ended")
+	updateCtx := &examUpdateCtx{
+		exam:      exam,
+		req:       req,
+		now:       time.Now(),
+		isUpdated: false,
 	}
 
-	if req.Title != nil && *req.Title != exam.Title {
-		exam.Title = *req.Title
-		isUpdated = true
+	// Validate update request
+	if err := validateExamUpdate(updateCtx); err != nil {
+		return nil, err
 	}
 
-	if req.StartsAt != nil && now.After(exam.StartsAt) {
-		return nil, status.Error(codes.FailedPrecondition, "cannot update start time after exam has started")
+	// Apply updates
+	if err := updateExamFields(updateCtx); err != nil {
+		return nil, err
 	}
 
-	if req.StartsAt != nil {
-		startsAt := req.StartsAt.AsTime()
-		if err := validateExamStartTiming(startsAt); err != nil {
-			return nil, err
-		}
-		exam.StartsAt = startsAt
-		isUpdated = true
-	}
-
-	if req.EndsAt != nil {
-		endsAt := req.EndsAt.AsTime()
-		if err := validateExamEndTiming(exam.StartsAt, endsAt); err != nil {
-			return nil, err
-		}
-		exam.EndsAt = endsAt
-		isUpdated = true
-	}
-
-	if req.Type != nil {
-		if now.After(exam.StartsAt) {
-			return nil, status.Error(codes.FailedPrecondition, "cannot update type after exam has started")
-		}
-		exam.Type = *req.Type
-		isUpdated = true
-	}
-
-	if req.DurationMinutes != nil {
-		if err := validateExamDuration(req.GetDurationMinutes()); err != nil {
-			return nil, err
-		}
-		exam.DurationMinutes = int16(req.GetDurationMinutes())
-		isUpdated = true
-	}
-
-	if isUpdated {
-		if err := db.DB.Save(&exam).Error; err != nil {
+	// Save if any fields were updated
+	if updateCtx.isUpdated {
+		if err := db.DB.Save(exam).Error; err != nil {
 			return nil, status.Error(codes.Internal, "failed to update exam")
 		}
 	}

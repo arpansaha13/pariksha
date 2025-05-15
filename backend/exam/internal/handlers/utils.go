@@ -203,3 +203,108 @@ func handleParticipantUpdate(tx *gorm.DB, exam *models.Exam, participant *models
 
 	return nil
 }
+
+// examUpdateCtx holds the context for an exam update operation
+type examUpdateCtx struct {
+	exam      *models.Exam
+	req       *proto.UpdateExamRequest
+	now       time.Time
+	isUpdated bool
+}
+
+// validateExamUpdate performs all validation checks for exam updates
+func validateExamUpdate(ctx *examUpdateCtx) error {
+	// After exam has ended, only title updates are allowed
+	if ctx.now.After(ctx.exam.EndsAt) {
+		if ctx.req.Title == nil || *ctx.req.Title == ctx.exam.Title {
+			return status.Error(codes.FailedPrecondition, "cannot update exam after it has ended")
+		}
+		return nil
+	}
+
+	// After exam has started, certain fields cannot be updated
+	if ctx.now.After(ctx.exam.StartsAt) {
+		if ctx.req.StartsAt != nil {
+			return status.Error(codes.FailedPrecondition, "cannot update start time after exam has started")
+		}
+		if ctx.req.Type != nil {
+			return status.Error(codes.FailedPrecondition, "cannot update type after exam has started")
+		}
+		if ctx.req.DurationMinutes != nil {
+			return status.Error(codes.FailedPrecondition, "cannot update duration after exam has started")
+		}
+	}
+
+	return nil
+}
+
+// updateExamFields applies the update request to exam fields
+func updateExamFields(ctx *examUpdateCtx) error {
+	// After exam has ended, only update title
+	if ctx.now.After(ctx.exam.EndsAt) {
+		if ctx.req.Title != nil && *ctx.req.Title != ctx.exam.Title {
+			ctx.exam.Title = *ctx.req.Title
+			ctx.isUpdated = true
+		}
+		return nil
+	}
+
+	// Update basic fields
+	if ctx.req.Title != nil && *ctx.req.Title != ctx.exam.Title {
+		ctx.exam.Title = *ctx.req.Title
+		ctx.isUpdated = true
+	}
+
+	// Update time fields
+	if err := updateExamTimeFields(ctx); err != nil {
+		return err
+	}
+
+	// Update exam settings
+	if err := updateExamSettings(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// updateExamTimeFields updates exam time-related fields
+func updateExamTimeFields(ctx *examUpdateCtx) error {
+	if ctx.req.StartsAt != nil {
+		startsAt := ctx.req.StartsAt.AsTime()
+		if err := validateExamStartTiming(startsAt); err != nil {
+			return err
+		}
+		ctx.exam.StartsAt = startsAt
+		ctx.isUpdated = true
+	}
+
+	if ctx.req.EndsAt != nil {
+		endsAt := ctx.req.EndsAt.AsTime()
+		if err := validateExamEndTiming(ctx.exam.StartsAt, endsAt); err != nil {
+			return err
+		}
+		ctx.exam.EndsAt = endsAt
+		ctx.isUpdated = true
+	}
+
+	return nil
+}
+
+// updateExamSettings updates exam configuration settings
+func updateExamSettings(ctx *examUpdateCtx) error {
+	if ctx.req.Type != nil {
+		ctx.exam.Type = ctx.req.GetType()
+		ctx.isUpdated = true
+	}
+
+	if ctx.req.DurationMinutes != nil {
+		if err := validateExamDuration(ctx.req.GetDurationMinutes()); err != nil {
+			return err
+		}
+		ctx.exam.DurationMinutes = int16(ctx.req.GetDurationMinutes())
+		ctx.isUpdated = true
+	}
+
+	return nil
+}
