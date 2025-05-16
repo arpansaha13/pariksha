@@ -5,6 +5,7 @@ interface UpdateExamBody {
   starts_at?: Date
   ends_at?: Date
   type?: string
+  duration_minutes?: number
 }
 
 export async function updateExam(examId: number, body: UpdateExamBody) {
@@ -15,5 +16,6 @@ export async function updateExam(examId: number, body: UpdateExamBody) {
     body,
   })
 
+  refreshNuxtData(AsyncDataKeys.EXAM(examId))
   return JSON.parse(res) as Exam
 }

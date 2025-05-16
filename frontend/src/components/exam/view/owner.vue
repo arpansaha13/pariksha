@@ -88,6 +88,39 @@
           </template>
         </UPopover>
       </div>
+
+      <div class="flex items-center gap-2">
+        <p class="font-medium">Duration:</p>
+        <p>{{ formatDurationMinutes(exam.duration_minutes) }}</p>
+
+        <UModal
+          v-if="!isExamStarted"
+          title="Edit duration"
+          description="Edit the exam duration"
+          @after:leave="updateExamDuration"
+        >
+          <UTooltip text="Edit duration">
+            <UButton
+              icon="lucide:edit"
+              size="sm"
+              color="neutral"
+              variant="subtle"
+            />
+          </UTooltip>
+
+          <template #body>
+            <div class="grid grid-cols-2 gap-x-4">
+              <UFormField label="Hours" name="duration_hours">
+                <UInputNumber v-model="hours" :min="0" :max="24" />
+              </UFormField>
+
+              <UFormField label="Minutes" name="duration_minutes">
+                <UInputNumber v-model="minutes" :min="0" :max="59" />
+              </UFormField>
+            </div>
+          </template>
+        </UModal>
+      </div>
     </UCard>
 
     <UCard
@@ -118,6 +151,7 @@ import {
 } from '@internationalized/date'
 import type { TableColumn } from '@nuxt/ui'
 import { debounceFilter } from '@vueuse/core'
+import { isNullOrUndefined } from '@arpansaha13/utils'
 import {
   ExamParticipantStatus,
   type ExamParticipantResponse,
@@ -175,16 +209,22 @@ async function updateExamTitle() {
   }
 }
 
+// ______________________UPDATE START/END TIME______________________
+
 function addEndOfDayTime(date: CalendarDateTime) {
   return date.add({ hours: 23, minutes: 59, seconds: 59 })
 }
 
 // Sync with exam data
 watch(exam, newExam => {
-  if (!newExam) return
+  if (isNullOrUndefined(newExam)) return
   editableExamTitle.value = newExam.title
-  startsAt.value = toCalendarDateTime(newExam.starts_at)
-  endsAt.value = toCalendarDateTime(newExam.ends_at)
+  ignoreStartsAtUpdates(() => {
+    startsAt.value = toCalendarDateTime(newExam.starts_at)
+  })
+  ignoreEndsAtUpdates(() => {
+    endsAt.value = toCalendarDateTime(newExam.ends_at)
+  })
 })
 
 const WATCH_DEBOUNCE_MS = 700
@@ -237,6 +277,25 @@ const { ignoreUpdates: ignoreEndsAtUpdates } = watchIgnorable(
   },
   { eventFilter: debounceFilter(WATCH_DEBOUNCE_MS) }
 )
+
+// _________________________DURATION UPDATE_________________________
+
+const hours = ref(0)
+const minutes = ref(0)
+
+watchEffect(() => {
+  if (exam.value && exam.value.duration_minutes) {
+    hours.value = Math.floor(exam.value.duration_minutes / 60)
+    minutes.value = exam.value.duration_minutes % 60
+  }
+})
+
+function updateExamDuration() {
+  const totalMinutes = hours.value * 60 + minutes.value
+  if (totalMinutes > 0) {
+    updateExam(exam.value!.id, { duration_minutes: totalMinutes })
+  }
+}
 
 // ___________________EXAM PARTICIPANT TABLE DATA___________________
 

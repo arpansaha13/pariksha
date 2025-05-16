@@ -17,7 +17,6 @@
 
 <script setup lang="ts">
 import { ConfirmModal } from '#components'
-import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { DropdownMenuItem, TableColumn } from '@nuxt/ui'
 import type { Paper, PaperQuestionCounts } from '~/types'
 
@@ -52,7 +51,7 @@ async function handleDeletePaper(paper: Paper) {
   const shouldDelete = await instance.result
 
   if (shouldDelete) {
-    deletePaper([paper.id])
+    deletePapers([paper.id])
   }
 }
 
@@ -86,7 +85,7 @@ const columns: TableColumn<Paper>[] = [
     header: 'Duration',
     cell: ({ row }) => {
       const durationMinutes = row.getValue('duration_minutes') as number
-      return getDurationMinutesText(durationMinutes)
+      return formatDurationMinutes(durationMinutes)
     },
   },
   {
@@ -175,19 +174,5 @@ function getQuestionCountsText(questionCounts: PaperQuestionCounts) {
 
   if (totalCount === 1) return `${totalCount} question`
   return `${totalCount} questions`
-}
-
-function getDurationMinutesText(durationMinutes: number) {
-  if (isNullOrUndefined(durationMinutes)) return '0 minutes'
-
-  const hours = calcHours(durationMinutes)
-  const remainingMinutes = calcRemainderMinutes(durationMinutes)
-
-  if (hours === 0) return `${remainingMinutes} minutes`
-  if (remainingMinutes === 0)
-    return `${hours} ${hours === 1 ? 'hour' : 'hours'}`
-  if (hours === 1)
-    return `${hours} hour ${remainingMinutes} ${remainingMinutes === 1 ? 'minute' : 'minutes'}`
-  return `${hours} hours  ${remainingMinutes} minutes`
 }
 </script>
