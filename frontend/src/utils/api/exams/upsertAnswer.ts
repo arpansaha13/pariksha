@@ -1,4 +1,4 @@
-import type { GeneralAnswer, MCQAnswer } from '~/types'
+import type { AnswerMinimal, GeneralAnswer, MCQAnswer } from '~/types'
 
 interface UpsertAnswerBody {
   question_id: number
@@ -9,9 +9,8 @@ interface UpsertAnswerBody {
 export async function upsertAnswer(examId: number, body: UpsertAnswerBody) {
   const { $api } = useNuxtApp()
 
-  await $api(`/api/exams/${examId}/answers`, {
+  return $api<AnswerMinimal>(`/api/exams/${examId}/answers`, {
     method: 'POST',
     body,
   })
-  return refreshNuxtData(AsyncDataKeys.EXAM_ANSWER(examId, body.question_id))
 }

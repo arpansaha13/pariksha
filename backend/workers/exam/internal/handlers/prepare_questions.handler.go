@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 
 	"github.com/hibiken/asynq"
@@ -29,7 +28,7 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 
 	// Get all questions for the paper
 	var questions []models.Question
-	err := papersTx.Select("id", "category_id", "order", "max_score").Where("paper_id = ?", payload.PaperID).Find(&questions).Error
+	err := papersTx.Select("id", "category_id", "type", "order", "max_score").Where("paper_id = ?", payload.PaperID).Find(&questions).Error
 	if err != nil {
 		papersTx.Rollback()
 		log.Default().Printf("Failed to fetch questions: %v", err)
@@ -76,6 +75,7 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 			ExamID:     payload.ExamID,
 			QuestionID: q.ID,
 			CategoryID: q.CategoryID,
+			Type:       q.Type,
 			Order:      q.Order,
 			MaxScore:   q.MaxScore,
 		}
@@ -103,7 +103,7 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 			return err
 		}
 	}
-	fmt.Println("totalMaxScore", totalMaxScore)
+
 	// Update exam's max_score
 	if err := examsTx.Model(&models.Exam{}).Where("id = ?", payload.ExamID).Update("max_score", totalMaxScore).Error; err != nil {
 		examsTx.Rollback()

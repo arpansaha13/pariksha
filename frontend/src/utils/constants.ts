@@ -2,6 +2,7 @@ export const NUXT_ENV_DEVELOPMENT = 'development'
 
 export const MAX_SCORE_PER_QUESTION = 1000
 export const MAX_EXAM_DURATION_MINUTES = 1440 // 24 hours
+export const AUTO_SAVE_EXAM_ANSWER_INTERVAL_SECONDS = 15
 
 export enum ToastId {
   LOGIN_FAILED = 'login_failed',
@@ -62,11 +63,6 @@ export const AsyncDataKeys = {
 
   EXAM_QUESTION: (questionId: number | null) =>
     questionId ? `EXAM_QUESTION_${questionId}` : 'EXAM_QUESTION',
-
-  EXAM_ANSWER: (examId: number, questionId: number | null) =>
-    examId && questionId
-      ? `EXAM_${examId}_QUESTION_${questionId}_ANSWER`
-      : 'EXAM_ANSWER',
 
   EVALUATION_ANSWER: (participantId: number, questionId: number | null) =>
     participantId && questionId

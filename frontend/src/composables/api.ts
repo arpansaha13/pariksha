@@ -12,7 +12,6 @@ export { useExamCategories } from './api/exams/useExamCategories'
 export { useExamQuestion } from './api/exams/useExamQuestion'
 export { useExamParticipant } from './api/exams/useExamParticipant'
 export { useExamParticipants } from './api/exams/useExamParticipants'
-export { useExamAnswer } from './api/exams/useExamAnswer'
 export { useExamPermission } from './api/exams/useExamPermission'
 export { useExamResults } from './api/exams/useExamResults'
 

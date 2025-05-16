@@ -1067,6 +1067,8 @@ func (x *UpsertAnswersRequest) GetAnswer() *Answer {
 type UpsertAnswersResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AnswerId      int64                  `protobuf:"varint,1,opt,name=answer_id,json=answerId,proto3" json:"answer_id,omitempty"`
+	QuestionId    int64                  `protobuf:"varint,2,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	Answer        []byte                 `protobuf:"bytes,3,opt,name=answer,proto3,oneof" json:"answer,omitempty"` // JSON encoded answer, can be nil
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1106,6 +1108,20 @@ func (x *UpsertAnswersResponse) GetAnswerId() int64 {
 		return x.AnswerId
 	}
 	return 0
+}
+
+func (x *UpsertAnswersResponse) GetQuestionId() int64 {
+	if x != nil {
+		return x.QuestionId
+	}
+	return 0
+}
+
+func (x *UpsertAnswersResponse) GetAnswer() []byte {
+	if x != nil {
+		return x.Answer
+	}
+	return nil
 }
 
 type AnswerResponse struct {
@@ -1569,7 +1585,8 @@ type ExamQuestion struct {
 	QuestionId    int64                  `protobuf:"varint,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
 	CategoryId    int64                  `protobuf:"varint,2,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	Order         int32                  `protobuf:"varint,3,opt,name=order,proto3" json:"order,omitempty"`
-	MaxScore      int32                  `protobuf:"varint,4,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
+	Type          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	MaxScore      int32                  `protobuf:"varint,5,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1623,6 +1640,13 @@ func (x *ExamQuestion) GetOrder() int32 {
 		return x.Order
 	}
 	return 0
+}
+
+func (x *ExamQuestion) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
 }
 
 func (x *ExamQuestion) GetMaxScore() int32 {
@@ -2240,9 +2264,13 @@ const file_exam_proto_rawDesc = "" +
 	"\a_answer\"V\n" +
 	"\x14UpsertAnswersRequest\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\x03R\x06examId\x12%\n" +
-	"\x06answer\x18\x02 \x01(\v2\r.proto.AnswerR\x06answer\"4\n" +
+	"\x06answer\x18\x02 \x01(\v2\r.proto.AnswerR\x06answer\"}\n" +
 	"\x15UpsertAnswersResponse\x12\x1b\n" +
-	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\"\xca\x01\n" +
+	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12\x1f\n" +
+	"\vquestion_id\x18\x02 \x01(\x03R\n" +
+	"questionId\x12\x1b\n" +
+	"\x06answer\x18\x03 \x01(\fH\x00R\x06answer\x88\x01\x01B\t\n" +
+	"\a_answer\"\xca\x01\n" +
 	"\x0eAnswerResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12.\n" +
 	"\x13exam_participant_id\x18\x02 \x01(\x03R\x11examParticipantId\x12\x1f\n" +
@@ -2283,14 +2311,15 @@ const file_exam_proto_rawDesc = "" +
 	"started_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\tstartedAt\x88\x01\x01\x12M\n" +
 	"\x12scheduled_end_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\x10scheduledEndTime\x88\x01\x01B\r\n" +
 	"\v_started_atB\x15\n" +
-	"\x13_scheduled_end_time\"\x83\x01\n" +
+	"\x13_scheduled_end_time\"\x97\x01\n" +
 	"\fExamQuestion\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\x03R\n" +
 	"questionId\x12\x1f\n" +
 	"\vcategory_id\x18\x02 \x01(\x03R\n" +
 	"categoryId\x12\x14\n" +
-	"\x05order\x18\x03 \x01(\x05R\x05order\x12\x1b\n" +
-	"\tmax_score\x18\x04 \x01(\x05R\bmaxScore\"J\n" +
+	"\x05order\x18\x03 \x01(\x05R\x05order\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\x12\x1b\n" +
+	"\tmax_score\x18\x05 \x01(\x05R\bmaxScore\"J\n" +
 	"\x15ExamQuestionsResponse\x121\n" +
 	"\tquestions\x18\x01 \x03(\v2\x13.proto.ExamQuestionR\tquestions\"E\n" +
 	"\fExamCategory\x12\x1f\n" +
@@ -2497,6 +2526,7 @@ func file_exam_proto_init() {
 	file_exam_proto_msgTypes[2].OneofWrappers = []any{}
 	file_exam_proto_msgTypes[7].OneofWrappers = []any{}
 	file_exam_proto_msgTypes[14].OneofWrappers = []any{}
+	file_exam_proto_msgTypes[16].OneofWrappers = []any{}
 	file_exam_proto_msgTypes[19].OneofWrappers = []any{}
 	file_exam_proto_msgTypes[24].OneofWrappers = []any{}
 	file_exam_proto_msgTypes[29].OneofWrappers = []any{}

@@ -53,22 +53,59 @@
           v-if="!isNullOrUndefined(currentQuestionId)"
           :current-question-id="currentQuestionId"
           :current-category-questions="currentCategoryQuestions"
-          :save-and-navigate-to="saveAndNavigateTo"
         />
       </UCard>
     </div>
 
-    <div v-if="question" class="col-span-2 flex flex-col gap-y-2.5">
-      <ExamQuestionMcq
-        v-if="question.type === QuestionType.MCQ"
-        v-model:answer="answerStates[question.id]"
-        :question="question.question"
-      />
-      <ExamQuestionNonMcq
-        v-else
-        v-model:answer="answerStates[question.id]"
-        :question="question.question"
-      />
+    <div
+      v-if="!isNullOrUndefined(currentQuestionType) && question"
+      class="col-span-2 flex flex-col gap-y-2.5"
+    >
+      <template v-if="currentQuestionType === QuestionType.MCQ">
+        <UCard>
+          <p class="font-medium">{{ question.question.statement }}</p>
+        </UCard>
+
+        <UCard :ui="{ root: 'grow' }">
+          <URadioGroup
+            v-model="mcqAnswerStates[question.id].optionIndex"
+            :items="mcqOptions"
+            variant="card"
+            :ui="{
+              wrapper: 'ml-3',
+              fieldset: 'space-y-1',
+            }"
+          />
+
+          <UButton
+            variant="ghost"
+            :disabled="
+              isNullOrUndefined(mcqAnswerStates[question.id].optionIndex)
+            "
+            :ui="{
+              base: 'mt-5',
+            }"
+            @click="clearMcqSelection"
+          >
+            Clear selection
+          </UButton>
+        </UCard>
+      </template>
+
+      <template v-else>
+        <UCard>
+          <p class="font-medium">{{ question.question.statement }}</p>
+        </UCard>
+
+        <UCard :ui="{ root: 'grow' }">
+          <UTextarea
+            v-model="generalAnswerStates[question.id].text"
+            autoresize
+            placeholder="Write your answer here..."
+            :ui="{ root: 'flex' }"
+          />
+        </UCard>
+      </template>
     </div>
 
     <UCard
@@ -77,32 +114,18 @@
     >
       <UButton
         v-if="prevQuestionId"
+        :to="{ query: { ...route.query, question: prevQuestionId } }"
+        replace
         label="Previous"
         color="neutral"
         variant="outline"
-        @click="
-          saveAndNavigateTo(
-            { query: { ...route.query, question: prevQuestionId } },
-            { replace: true }
-          )
-        "
       />
       <UButton
         v-if="nextQuestionId"
+        :to="{ query: { ...route.query, question: nextQuestionId } }"
         label="Save and next"
         class="ml-auto"
-        @click="
-          saveAndNavigateTo(
-            { query: { ...route.query, question: nextQuestionId } },
-            { replace: true }
-          )
-        "
-      />
-      <UButton
-        v-else
-        label="Save"
-        class="ml-auto"
-        @click="saveAnswer(question!)"
+        replace
       />
     </UCard>
   </template>
@@ -114,7 +137,11 @@ import { ConfirmModal } from '#components'
 import {
   ExamParticipantStatus,
   QuestionType,
+  type AnswerMinimal,
   type ExamPermission,
+  type GeneralAnswer,
+  type MCQAnswer,
+  type QuestionMcq,
 } from '~/types'
 
 definePageMeta({
@@ -188,27 +215,191 @@ const currentQuestionId = computed(() => {
   return route.query.question ? parseInt(route.query.question as string) : null
 })
 
-const { prevQuestionId, nextQuestionId } = useExamQuestionNavigation({
-  currentQuestionId,
-  currentCategoryQuestions,
+const { prevQuestionId, nextQuestionId, currentQuestionIdx } =
+  useExamQuestionNavigation({
+    currentQuestionId,
+    currentCategoryQuestions,
+  })
+
+const currentQuestionType = computed(() => {
+  const qIdx = currentQuestionIdx.value
+  if (qIdx === -1) return null
+  return currentCategoryQuestions.value[qIdx].type
 })
 
-const [{ data: question }, { data: answer }] = await Promise.all([
-  useExamQuestion(currentQuestionId),
-  useExamAnswer(examId, currentQuestionId),
-])
+const { data: question } = await useExamQuestion(currentQuestionId)
 
-//__________________________SAVE ANSWER___________________________
-const { answerStates, saveAnswer } = useExamSaveAnswer({
-  examId,
-  answer,
-  groupedQuestions,
+const mcqOptions = computed(() => {
+  if (
+    isNullOrUndefined(question.value) ||
+    currentQuestionType.value !== QuestionType.MCQ
+  ) {
+    return
+  }
+  return (question.value.question as QuestionMcq['question']).options.map(
+    (option, i) => ({
+      value: i,
+      label: option,
+    })
+  )
 })
 
-const saveAndNavigateTo = (async (to, options) => {
-  saveAnswer(question.value!)
-  return navigateTo(to, options)
-}) as typeof navigateTo
+function clearMcqSelection() {
+  if (isNullOrUndefined(currentQuestionId.value)) return
+  const qid = currentQuestionId.value
+  mcqAnswerStates[qid].optionIndex = undefined
+}
+
+//__________________________LOAD ANSWER___________________________
+const answerFetched = ref<Record<string, boolean>>({})
+const savedMcqAnswerStates = shallowRef<Record<string, MCQAnswer>>({})
+const savedGeneralAnswerStates = shallowRef<Record<string, GeneralAnswer>>({})
+const mcqAnswerStates = reactive<Record<string, MCQAnswer>>({})
+const generalAnswerStates = reactive<Record<string, GeneralAnswer>>({})
+
+for (const questionMinimals of Object.values(groupedQuestions.value!)) {
+  for (const questionMinimal of questionMinimals) {
+    const qid = questionMinimal.id
+    if (questionMinimal.type === QuestionType.MCQ) {
+      mcqAnswerStates[qid] = {
+        optionIndex: undefined,
+      }
+      savedMcqAnswerStates.value[qid] = { ...mcqAnswerStates[qid] }
+    } else {
+      generalAnswerStates[qid] = {
+        text: '',
+      }
+      savedGeneralAnswerStates.value[qid] = { ...generalAnswerStates[qid] }
+    }
+  }
+}
+
+const { $api } = useNuxtApp()
+
+watchImmediate(currentQuestionId, async qid => {
+  if (isNullOrUndefined(qid)) return
+
+  if (answerFetched.value[qid]) return
+  answerFetched.value[qid] = true
+
+  const data = await $api<AnswerMinimal>(
+    `/api/exams/${examId}/questions/${qid}/answer`
+  )
+
+  if (data.question_id !== qid || isNullOrUndefined(data.answer)) {
+    return
+  }
+  storeAnswerFromResponse(qid, data)
+})
+
+function storeAnswerFromResponse(qid: number, answerResponse: AnswerMinimal) {
+  if (isNullOrUndefined(currentCategoryQuestions.value)) {
+    console.warn('currentCategoryQuestions is null or undefined')
+    return
+  }
+
+  const qIdx = currentQuestionIdx.value
+  if (qIdx === -1) {
+    console.warn('currentQuestionIdx is -1')
+    return
+  }
+
+  if (currentCategoryQuestions.value[qIdx].type === QuestionType.MCQ) {
+    mcqAnswerStates[qid] = {
+      optionIndex: (answerResponse.answer as MCQAnswer).optionIndex,
+    }
+    savedMcqAnswerStates.value[qid] = { ...mcqAnswerStates[qid] }
+  } else {
+    generalAnswerStates[qid] = {
+      text: (answerResponse.answer as GeneralAnswer).text,
+    }
+    savedGeneralAnswerStates.value[qid] = { ...generalAnswerStates[qid] }
+  }
+}
+
+function saveUpdatedAnswers() {
+  for (const [qid, mcqAnswer] of Object.entries(mcqAnswerStates)) {
+    const savedState = savedMcqAnswerStates.value[qid]
+    if (savedState.optionIndex !== mcqAnswer.optionIndex) {
+      saveMcqAnswer(parseInt(qid), savedState, mcqAnswer).then(res => {
+        if (isNullOrUndefined(res)) return
+        savedState.optionIndex = (res.answer as MCQAnswer).optionIndex
+      })
+    }
+  }
+  for (const [qid, generalAnswer] of Object.entries(generalAnswerStates)) {
+    const savedState = savedGeneralAnswerStates.value[qid]
+    if (savedState.text !== generalAnswer.text) {
+      saveGeneralAnswer(parseInt(qid), savedState, generalAnswer).then(res => {
+        if (isNullOrUndefined(res)) return
+        savedState.text = (res.answer as GeneralAnswer).text
+      })
+    }
+  }
+}
+useIntervalFn(saveUpdatedAnswers, AUTO_SAVE_EXAM_ANSWER_INTERVAL_SECONDS * 1000)
+
+/** Save answer for a MCQ question */
+function saveMcqAnswer(
+  questionId: number,
+  savedAnswer: MCQAnswer,
+  newAnswer: MCQAnswer
+) {
+  const upsertAnswerBody = {
+    question_id: questionId,
+    answer: null as MCQAnswer | null,
+  }
+
+  const currentOptionIndex = savedAnswer ? savedAnswer.optionIndex : undefined
+
+  if (savedAnswer && isNullOrUndefined(newAnswer.optionIndex)) {
+    return upsertAnswer(examId, upsertAnswerBody)
+  }
+
+  if (
+    isNullOrUndefined(newAnswer.optionIndex) &&
+    isNullOrUndefined(currentOptionIndex)
+  ) {
+    return Promise.resolve(null)
+  }
+
+  if (newAnswer.optionIndex === currentOptionIndex) {
+    return Promise.resolve(null)
+  }
+
+  upsertAnswerBody.answer = { optionIndex: newAnswer.optionIndex }
+  return upsertAnswer(examId, upsertAnswerBody)
+}
+
+/** Save answer for a general question */
+function saveGeneralAnswer(
+  questionId: number,
+  savedAnswer: GeneralAnswer,
+  newAnswer: GeneralAnswer
+) {
+  const upsertAnswerBody = {
+    question_id: questionId,
+    answer: null as GeneralAnswer | null,
+  }
+
+  const currentText = savedAnswer ? savedAnswer.text : ''
+  const answerText = newAnswer.text ?? ''
+
+  if (savedAnswer && !answerText) {
+    return upsertAnswer(examId, upsertAnswerBody)
+  }
+
+  if (!currentText && !answerText) {
+    return Promise.resolve(null)
+  }
+
+  if (currentText === answerText) {
+    return Promise.resolve(null)
+  }
+
+  upsertAnswerBody.answer = { text: answerText }
+  return upsertAnswer(examId, upsertAnswerBody)
+}
 
 // ___________________AUTO-END EXAM ON TIMEOUT____________________
 const isExamEnded = ref(false)
@@ -220,11 +411,8 @@ const { remaining: redirectCountdown, start: startRedirectCountdown } =
   })
 
 async function handleExamSubmit() {
-  // NOTE: The last question may not be saved if user doesn't navigate
-  // to any other question before submitting.
-  // So manually call `saveAnswer` before submission.
-
-  await saveAnswer(question.value!)
+  // Save any remaining unsaved answers
+  saveUpdatedAnswers()
   await endExam(examId)
   isExamEnded.value = true
   startRedirectCountdown()

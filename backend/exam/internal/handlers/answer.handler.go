@@ -6,7 +6,6 @@ import (
 	"slices"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 
@@ -83,23 +82,19 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 		return nil, status.Error(codes.FailedPrecondition, "participant has ended the exam")
 	}
 
-	// Get question type from metadata
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "missing metadata")
-	}
-
-	questionTypes := md.Get("question_type")
-	if len(questionTypes) == 0 {
-		return nil, status.Error(codes.Internal, "missing question type in metadata")
-	}
-
 	// Check participant status
 	if !slices.Contains([]int16{constants.PARTICIPANT_STATUS_STARTED}, participant.Status) {
 		return nil, status.Error(codes.FailedPrecondition, "participant must be in STARTED state")
 	}
 
-	if err := validateAnswerJSON(req.Answer.Answer, questionTypes[0]); err != nil {
+	var examQuestion models.ExamQuestion
+	if err := db.DB.Model(&models.ExamQuestion{}).
+		Select("type").
+		Where("exam_id = ? AND question_id = ?", req.ExamId, req.Answer.QuestionId).
+		Find(&examQuestion).Error; err != nil {
+		return nil, status.Error(codes.Internal, "failed to fetch question")
+	}
+	if err := validateAnswerJSON(req.Answer.Answer, examQuestion.Type); err != nil {
 		return nil, err
 	}
 
@@ -139,6 +134,8 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 	}
 
 	return &proto.UpsertAnswersResponse{
-		AnswerId: answer.ID,
+		AnswerId:   answer.ID,
+		QuestionId: req.Answer.QuestionId,
+		Answer:     *answer.Answer,
 	}, nil
 }

@@ -2,16 +2,12 @@
   <ul class="flex flex-wrap gap-4">
     <li v-for="(q, i) of currentCategoryQuestions" :key="q.id">
       <UButton
+        :to="{ query: { ...route.query, question: q.id } }"
+        replace
         :color="currentQuestionId === q.id ? 'primary' : 'neutral'"
         :variant="currentQuestionId === q.id ? 'subtle' : 'outline'"
         size="lg"
         class="flex size-10 items-center justify-center rounded-full"
-        @click="
-          saveAndNavigateTo(
-            { query: { ...route.query, question: q.id } },
-            { replace: true }
-          )
-        "
       >
         {{ i + 1 }}
       </UButton>
@@ -29,10 +25,6 @@ defineProps({
   },
   currentCategoryQuestions: {
     type: Array as PropType<ExamQuestionMinimal[]>,
-    required: true,
-  },
-  saveAndNavigateTo: {
-    type: Function as PropType<typeof navigateTo>,
     required: true,
   },
 })

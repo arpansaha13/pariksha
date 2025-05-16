@@ -85,8 +85,7 @@ func (s *PaperServer) GetExamQuestion(ctx context.Context, req *proto.QuestionRe
 	}
 
 	response := &proto.QuestionResponse{
-		Id:   question.ID,
-		Type: question.Type,
+		Id: question.ID,
 	}
 
 	switch question.Type {

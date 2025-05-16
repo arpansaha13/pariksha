@@ -1,13 +1,10 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"pariksha/common/pkg/proto"
@@ -25,7 +22,6 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
@@ -102,31 +98,11 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examID, err := getInt64FromVars(mux.Vars(r), "examId")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	// Fetch question from paper service to get question type
-	paperService := services.GetPaperService()
-	paperCtx := paperService.CreateMetadata(userID)
-
-	questionResp, err := paperService.Client().GetExamQuestion(paperCtx, &proto.QuestionRequest{
-		QuestionId: answerDTO.QuestionID,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	// Create metadata with question type
-	md := metadata.New(map[string]string{
-		"user_id":       strconv.FormatInt(userID, 10),
-		"question_type": questionResp.Type,
-	})
-	ctx := metadata.NewOutgoingContext(context.Background(), md)
 
 	upsertAnswerRequest := &proto.UpsertAnswersRequest{
 		ExamId: examID,
@@ -141,7 +117,10 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 		upsertAnswerRequest.Answer.Answer = *answerDTO.Answer
 	}
 
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
+	ctx := examService.CreateMetadata(userID)
+
 	resp, err := examService.Client().UpsertAnswer(ctx, upsertAnswerRequest)
 	if err != nil {
 		handleGRPCError(w, err)
@@ -150,5 +129,9 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]int64{"answer_id": resp.AnswerId})
+	json.NewEncoder(w).Encode(dtos.AnswerMinimalResponseDto{
+		ID:         resp.AnswerId,
+		QuestionID: resp.QuestionId,
+		Answer:     resp.Answer,
+	})
 }

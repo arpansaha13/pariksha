@@ -145,6 +145,8 @@ message UpsertAnswersRequest {
 
 message UpsertAnswersResponse {
   int64 answer_id = 1;
+  int64 question_id = 2;
+  optional bytes answer = 3;  // JSON encoded answer, can be nil
 }
 
 message AnswerResponse {
@@ -196,7 +198,8 @@ message ExamQuestion {
   int64 question_id = 1;
   int64 category_id = 2;
   int32 order = 3;
-  int32 max_score = 4;
+  string type = 4;
+  int32 max_score = 5;
 }
 
 message ExamQuestionsResponse {

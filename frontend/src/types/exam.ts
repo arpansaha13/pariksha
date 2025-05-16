@@ -42,11 +42,11 @@ export interface ExamPermission {
   participant_status?: ExamParticipantStatus
 }
 
-export type ExamQuestion = Pick<Question, 'id' | 'question' | 'type'>
+export type ExamQuestion = Pick<Question, 'id' | 'question'>
 
 export type ExamQuestionMinimal = Pick<
   Question,
-  'id' | 'category_id' | 'order' | 'max_score'
+  'id' | 'category_id' | 'order' | 'max_score' | 'type'
 >
 
 export type ExamCategory = Pick<QuestionCategory, 'id' | 'name' | 'order'>
