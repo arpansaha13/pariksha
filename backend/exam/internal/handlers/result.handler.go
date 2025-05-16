@@ -6,7 +6,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
@@ -25,13 +24,6 @@ func (s *ExamServer) GetExamResults(ctx context.Context, req *proto.ExamRequest)
 	if err := db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).
 		Take(&participant).Error; err != nil {
 		return nil, utils.HandleDBError(err, "participant not found")
-	}
-
-	// Return empty array if participant is not evaluated
-	if participant.Status != constants.PARTICIPANT_STATUS_EVALUATED {
-		return &proto.ExamResultsResponse{
-			Results: []*proto.ExamResultItem{},
-		}, nil
 	}
 
 	// Get all questions for this exam

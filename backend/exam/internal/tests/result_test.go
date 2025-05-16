@@ -156,34 +156,6 @@ func TestGetExamResults(t *testing.T) {
 				assert.Empty(t, resp.Results)
 			},
 		},
-		{
-			BaseTestCase: BaseTestCase{
-				name:         "Success - Participant not evaluated yet",
-				userID:       userID,
-				expectedCode: codes.OK,
-			},
-			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, 2)
-
-				// Create questions for the exam
-				questions := []models.ExamQuestion{
-					{ExamID: exam.ID, QuestionID: 1, CategoryID: 10, Order: 1, MaxScore: 10},
-					{ExamID: exam.ID, QuestionID: 2, CategoryID: 10, Order: 2, MaxScore: 5},
-				}
-				require.NoError(t, db.DB.Create(&questions).Error)
-
-				// Create participant with ENDED status (not EVALUATED)
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED},
-				})
-				require.NoError(t, err)
-
-				return &exam
-			},
-			validate: func(t *testing.T, resp *proto.ExamResultsResponse) {
-				assert.Empty(t, resp.Results, "Results should be empty for unevaluated participant")
-			},
-		},
 	}
 
 	for _, tt := range tests {
