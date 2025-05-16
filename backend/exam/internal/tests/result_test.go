@@ -28,11 +28,18 @@ func TestGetExamResults(t *testing.T) {
 				exam := createTestExam(t, 2) // Created by different user
 
 				// Create questions for the exam
-				questions := []models.ExamQuestion{
-					{ExamID: exam.ID, QuestionID: 1, CategoryID: 10, Order: 1, MaxScore: 10},
-					{ExamID: exam.ID, QuestionID: 2, CategoryID: 10, Order: 2, MaxScore: 5},
-				}
-				require.NoError(t, db.DB.Create(&questions).Error)
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 10,
+					MaxScore:   10,
+					Type:       constants.QUESTION_TYPE_MCQ,
+				})
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 2,
+					CategoryID: 10,
+					MaxScore:   5,
+					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+				})
 
 				// Create participant
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
@@ -89,11 +96,16 @@ func TestGetExamResults(t *testing.T) {
 				exam := createTestExam(t, 2)
 
 				// Create questions
-				questions := []models.ExamQuestion{
-					{ExamID: exam.ID, QuestionID: 1, CategoryID: 10, Order: 1, MaxScore: 10},
-					{ExamID: exam.ID, QuestionID: 2, CategoryID: 10, Order: 2, MaxScore: 5},
-				}
-				require.NoError(t, db.DB.Create(&questions).Error)
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 10,
+					MaxScore:   5,
+				})
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 2,
+					CategoryID: 10,
+					MaxScore:   5,
+				})
 
 				// Create participant
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
@@ -131,10 +143,11 @@ func TestGetExamResults(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, 2)
-				questions := []models.ExamQuestion{
-					{ExamID: exam.ID, QuestionID: 1, CategoryID: 10, Order: 1, MaxScore: 10},
-				}
-				require.NoError(t, db.DB.Create(&questions).Error)
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 2,
+					CategoryID: 10,
+					MaxScore:   10,
+				})
 				return &exam
 			},
 		},

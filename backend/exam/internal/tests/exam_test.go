@@ -881,11 +881,18 @@ func TestGetExamQuestions(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, 2) // Created by different user
-				questions := []models.ExamQuestion{
-					{ExamID: exam.ID, QuestionID: 1, CategoryID: 10, Order: 1, MaxScore: 10},
-					{ExamID: exam.ID, QuestionID: 2, CategoryID: 10, Order: 2, MaxScore: 5},
-				}
-				require.NoError(t, db.DB.Create(&questions).Error)
+
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 10,
+					MaxScore:   10,
+				})
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 2,
+					CategoryID: 10,
+					MaxScore:   5,
+					Order:      2,
+				})
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
@@ -922,11 +929,11 @@ func TestGetExamQuestions(t *testing.T) {
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, 2)
 				exam.Type = constants.EXAM_ACCESS_TYPE_LINK // Even with LINK type
-				questions := []models.ExamQuestion{
-					{ExamID: exam.ID, QuestionID: 1},
-					{ExamID: exam.ID, QuestionID: 2},
-				}
-				require.NoError(t, db.DB.Create(&questions).Error)
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 10,
+					MaxScore:   5,
+				})
 				return &exam
 			},
 		},
@@ -948,11 +955,18 @@ func TestGetExamQuestions(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, 2) // Created by different user
-				questions := []models.ExamQuestion{
-					{ExamID: exam.ID, QuestionID: 1, CategoryID: 10, Order: 1, MaxScore: 10},
-					{ExamID: exam.ID, QuestionID: 2, CategoryID: 10, Order: 2, MaxScore: 5},
-				}
-				require.NoError(t, db.DB.Create(&questions).Error)
+
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 10,
+					MaxScore:   10,
+				})
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 2,
+					CategoryID: 10,
+					MaxScore:   5,
+					Order:      2,
+				})
 
 				// Create evaluator permission
 				permission := models.ExamPermissions{

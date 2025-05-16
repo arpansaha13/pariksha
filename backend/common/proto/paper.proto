@@ -62,8 +62,7 @@ message UpdatePaperRequest {
 
 message QuestionCount {
   int32 mcq = 1;
-  int32 short = 2;
-  int32 long = 3;
+  int32 subjective = 2;
 }
 
 message DeletePapersRequest {
@@ -79,7 +78,7 @@ message QuestionResponse {
   int64 id = 1;
   oneof question {
     McqQuestion mcq = 2;
-    GeneralQuestion general = 3;
+    SubjectiveQuestion subjective = 3;
   }
   int64 category_id = 4;
   string type = 5;
@@ -100,7 +99,7 @@ message QuestionMinimal {
   int32 order = 4;
   oneof question {
     McqQuestion mcq = 5;
-    GeneralQuestion general = 6;
+    SubjectiveQuestion subjective = 6;
   }
 }
 
@@ -109,7 +108,7 @@ message McqQuestion {
   repeated string options = 2;
 }
 
-message GeneralQuestion {
+message SubjectiveQuestion {
   string statement = 1;
 }
 
@@ -150,7 +149,7 @@ message QuestionBatchItem {
   int64 id = 1;
   oneof question {
     McqQuestion mcq = 2;
-    GeneralQuestion general = 3;
+    SubjectiveQuestion subjective = 3;
   }
   int32 max_score = 4;
   string type = 6;

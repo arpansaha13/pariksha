@@ -24,23 +24,21 @@ func TestGetUserPapers(t *testing.T) {
 			},
 			setup: func(t *testing.T) {
 				paper1 := createTestPaper(t, userID)
-				updatePaperCounts(t, &paper1, `{"mcq": 2, "short": 1, "long": 0}`)
+				updatePaperCounts(t, &paper1, `{"mcq": 2, "subjective": 1}`)
 
 				paper2 := createTestPaper(t, userID)
-				updatePaperCounts(t, &paper2, `{"mcq": 1, "short": 0, "long": 1}`)
+				updatePaperCounts(t, &paper2, `{"mcq": 1, "subjective": 0}`)
 			},
 			validate: func(t *testing.T, resp *proto.PaperList) {
 				assert.EqualValues(t, 2, len(resp.Papers))
 
 				// Validate first paper
 				assert.EqualValues(t, 2, resp.Papers[0].QuestionCounts.Mcq)
-				assert.EqualValues(t, 1, resp.Papers[0].QuestionCounts.Short)
-				assert.EqualValues(t, 0, resp.Papers[0].QuestionCounts.Long)
+				assert.EqualValues(t, 1, resp.Papers[0].QuestionCounts.Subjective)
 
 				// Validate second paper
 				assert.EqualValues(t, 1, resp.Papers[1].QuestionCounts.Mcq)
-				assert.EqualValues(t, 0, resp.Papers[1].QuestionCounts.Short)
-				assert.EqualValues(t, 1, resp.Papers[1].QuestionCounts.Long)
+				assert.EqualValues(t, 0, resp.Papers[1].QuestionCounts.Subjective)
 			},
 		},
 		{
@@ -322,7 +320,7 @@ func TestGetPaper(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID)
-				updatePaperCounts(t, &paper, `{"mcq": 2, "short": 1, "long": 1}`)
+				updatePaperCounts(t, &paper, `{"mcq": 2, "subjective": 1}`)
 				return &paper
 			},
 			validate: func(t *testing.T, resp *proto.PaperResponse) {
@@ -333,8 +331,7 @@ func TestGetPaper(t *testing.T) {
 				// Validate question counts
 				assert.NotNil(t, resp.QuestionCounts)
 				assert.EqualValues(t, 2, resp.QuestionCounts.Mcq)
-				assert.EqualValues(t, 1, resp.QuestionCounts.Short)
-				assert.EqualValues(t, 1, resp.QuestionCounts.Long)
+				assert.EqualValues(t, 1, resp.QuestionCounts.Subjective)
 
 				// Verify paper permissions
 				var permissions models.PaperPermissions

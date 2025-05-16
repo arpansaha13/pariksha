@@ -66,8 +66,8 @@ func GetExamResults(w http.ResponseWriter, r *http.Request) {
 			switch q := questionDetail.Question.(type) {
 			case *proto.QuestionBatchItem_Mcq:
 				questionBytes, _ = json.Marshal(q.Mcq)
-			case *proto.QuestionBatchItem_General:
-				questionBytes, _ = json.Marshal(q.General)
+			case *proto.QuestionBatchItem_Subjective:
+				questionBytes, _ = json.Marshal(q.Subjective)
 			}
 		}
 

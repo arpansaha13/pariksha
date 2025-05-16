@@ -99,7 +99,7 @@
 
         <UCard :ui="{ root: 'grow' }">
           <UTextarea
-            v-model="generalAnswerStates[question.id].text"
+            v-model="subjectiveAnswerStates[question.id].text"
             autoresize
             placeholder="Write your answer here..."
             :ui="{ root: 'flex' }"
@@ -139,7 +139,7 @@ import {
   QuestionType,
   type AnswerMinimal,
   type ExamPermission,
-  type GeneralAnswer,
+  type SubjectiveAnswer,
   type MCQAnswer,
   type QuestionMcq,
 } from '~/types'
@@ -253,9 +253,11 @@ function clearMcqSelection() {
 //__________________________LOAD ANSWER___________________________
 const answerFetched = ref<Record<string, boolean>>({})
 const savedMcqAnswerStates = shallowRef<Record<string, MCQAnswer>>({})
-const savedGeneralAnswerStates = shallowRef<Record<string, GeneralAnswer>>({})
+const savedSubjectiveAnswerStates = shallowRef<
+  Record<string, SubjectiveAnswer>
+>({})
 const mcqAnswerStates = reactive<Record<string, MCQAnswer>>({})
-const generalAnswerStates = reactive<Record<string, GeneralAnswer>>({})
+const subjectiveAnswerStates = reactive<Record<string, SubjectiveAnswer>>({})
 
 for (const questionMinimals of Object.values(groupedQuestions.value!)) {
   for (const questionMinimal of questionMinimals) {
@@ -266,10 +268,12 @@ for (const questionMinimals of Object.values(groupedQuestions.value!)) {
       }
       savedMcqAnswerStates.value[qid] = { ...mcqAnswerStates[qid] }
     } else {
-      generalAnswerStates[qid] = {
+      subjectiveAnswerStates[qid] = {
         text: '',
       }
-      savedGeneralAnswerStates.value[qid] = { ...generalAnswerStates[qid] }
+      savedSubjectiveAnswerStates.value[qid] = {
+        ...subjectiveAnswerStates[qid],
+      }
     }
   }
 }
@@ -310,10 +314,10 @@ function storeAnswerFromResponse(qid: number, answerResponse: AnswerMinimal) {
     }
     savedMcqAnswerStates.value[qid] = { ...mcqAnswerStates[qid] }
   } else {
-    generalAnswerStates[qid] = {
-      text: (answerResponse.answer as GeneralAnswer).text,
+    subjectiveAnswerStates[qid] = {
+      text: (answerResponse.answer as SubjectiveAnswer).text,
     }
-    savedGeneralAnswerStates.value[qid] = { ...generalAnswerStates[qid] }
+    savedSubjectiveAnswerStates.value[qid] = { ...subjectiveAnswerStates[qid] }
   }
 }
 
@@ -327,13 +331,17 @@ function saveUpdatedAnswers() {
       })
     }
   }
-  for (const [qid, generalAnswer] of Object.entries(generalAnswerStates)) {
-    const savedState = savedGeneralAnswerStates.value[qid]
-    if (savedState.text !== generalAnswer.text) {
-      saveGeneralAnswer(parseInt(qid), savedState, generalAnswer).then(res => {
-        if (isNullOrUndefined(res)) return
-        savedState.text = (res.answer as GeneralAnswer).text
-      })
+  for (const [qid, subjectiveAnswer] of Object.entries(
+    subjectiveAnswerStates
+  )) {
+    const savedState = savedSubjectiveAnswerStates.value[qid]
+    if (savedState.text !== subjectiveAnswer.text) {
+      saveSubjectiveAnswer(parseInt(qid), savedState, subjectiveAnswer).then(
+        res => {
+          if (isNullOrUndefined(res)) return
+          savedState.text = (res.answer as SubjectiveAnswer).text
+        }
+      )
     }
   }
 }
@@ -371,15 +379,15 @@ function saveMcqAnswer(
   return upsertAnswer(examId, upsertAnswerBody)
 }
 
-/** Save answer for a general question */
-function saveGeneralAnswer(
+/** Save answer for a subjective question */
+function saveSubjectiveAnswer(
   questionId: number,
-  savedAnswer: GeneralAnswer,
-  newAnswer: GeneralAnswer
+  savedAnswer: SubjectiveAnswer,
+  newAnswer: SubjectiveAnswer
 ) {
   const upsertAnswerBody = {
     question_id: questionId,
-    answer: null as GeneralAnswer | null,
+    answer: null as SubjectiveAnswer | null,
   }
 
   const currentText = savedAnswer ? savedAnswer.text : ''

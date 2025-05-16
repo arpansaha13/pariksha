@@ -89,12 +89,12 @@ func createMCQQuestion(t *testing.T, builder QuestionBuilder) models.Question {
 	return question
 }
 
-// createGeneralQuestion creates a test Short/Long question
-func createGeneralQuestion(t *testing.T, builder QuestionBuilder) models.Question {
-	general := structs.GeneralQuestion{
+// createSubjectiveQuestion creates a test Subjective question
+func createSubjectiveQuestion(t *testing.T, builder QuestionBuilder) models.Question {
+	subjective := structs.SubjectiveQuestion{
 		Statement: builder.Statement,
 	}
-	rawQuestion, err := json.Marshal(general)
+	rawQuestion, err := json.Marshal(subjective)
 	require.NoError(t, err)
 
 	question := models.Question{
@@ -117,8 +117,7 @@ func verifyQuestionCounts(t *testing.T, paperID int64, expected models.QuestionC
 	counts, err := paper.GetQuestionCounts()
 	require.NoError(t, err)
 	assert.Equal(t, expected.MCQ, counts.MCQ, "MCQ count mismatch")
-	assert.Equal(t, expected.Short, counts.Short, "Short count mismatch")
-	assert.Equal(t, expected.Long, counts.Long, "Long count mismatch")
+	assert.Equal(t, expected.Subjective, counts.Subjective, "Subjective count mismatch")
 }
 
 // verifyMCQContent validates the content of an MCQ question
@@ -152,7 +151,7 @@ func setupTestQuestion(t *testing.T, userID int64, qType string, initialCounts s
 	if qType == constants.QUESTION_TYPE_MCQ {
 		question = createMCQQuestion(t, builder)
 	} else {
-		question = createGeneralQuestion(t, builder)
+		question = createSubjectiveQuestion(t, builder)
 	}
 
 	return &paper, &question

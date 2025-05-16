@@ -5,8 +5,7 @@ export enum QuestionId {
 
 export enum QuestionType {
   MCQ = 'MCQ',
-  SHORT = 'SHORT',
-  LONG = 'LONG',
+  SUBJECTIVE = 'SUBJECTIVE',
 }
 
 export interface QuestionCategory {
@@ -37,28 +36,14 @@ export interface QuestionShort {
   }
   order: number
   category_id: number
-  type: QuestionType.SHORT
+  type: QuestionType.SUBJECTIVE
   tags: string[]
   paper_id: number
   max_score: number
   correct_answer: string | null | undefined
 }
 
-export interface QuestionLong {
-  id: number
-  question: {
-    statement: string
-  }
-  order: number
-  category_id: number
-  type: QuestionType.LONG
-  tags: string[]
-  paper_id: number
-  max_score: number
-  correct_answer: string | null | undefined
-}
-
-export type Question = QuestionMcq | QuestionShort | QuestionLong
+export type Question = QuestionMcq | QuestionShort
 
 export interface QuestionMinimal {
   id: number

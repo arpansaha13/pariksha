@@ -1,9 +1,8 @@
 package dtos
 
 type QuestionCountDto struct {
-	MCQ   int32 `json:"mcq"`
-	Short int32 `json:"short"`
-	Long  int32 `json:"long"`
+	MCQ        int32 `json:"mcq"`
+	Subjective int32 `json:"subjective"`
 }
 
 type PaperResponseDto struct {

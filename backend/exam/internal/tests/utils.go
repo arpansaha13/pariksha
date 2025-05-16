@@ -119,14 +119,21 @@ func createTestAnswer(t *testing.T, examParticipant *models.ExamParticipant, que
 	return answer
 }
 
-func createTestExamQuestion(t *testing.T, exam *models.Exam, questionID int64, maxScore int16) models.ExamQuestion {
-	examQuestion := models.ExamQuestion{
-		ExamID:     exam.ID,
-		QuestionID: questionID,
-		CategoryID: 1,
-		Order:      1,
-		MaxScore:   maxScore,
+// createTestExamQuestion creates an exam question with provided data, using defaults for missing fields
+func createTestExamQuestion(t *testing.T, exam *models.Exam, question models.ExamQuestion) models.ExamQuestion {
+	// Set required fields if not provided
+	if question.ExamID == 0 {
+		question.ExamID = exam.ID
 	}
-	require.NoError(t, db.DB.Create(&examQuestion).Error)
-	return examQuestion
+	if question.Order == 0 {
+		question.Order = 1
+	}
+	if question.MaxScore == 0 {
+		question.MaxScore = 10
+	}
+	if question.Type == "" {
+		question.Type = constants.QUESTION_TYPE_MCQ
+	}
+	require.NoError(t, db.DB.Create(&question).Error)
+	return question
 }

@@ -15,12 +15,11 @@
         </p>
 
         <UButton
+          to="/papers/new"
           label="Create a paper"
           color="primary"
           variant="solid"
-          :loading="isLoading"
           class="mt-4"
-          @click="navigateTo('/papers/new')"
         />
       </div>
 

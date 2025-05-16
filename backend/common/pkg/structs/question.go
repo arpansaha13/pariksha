@@ -5,6 +5,6 @@ type MCQQuestion struct {
 	Options   []string `json:"options"`
 }
 
-type GeneralQuestion struct {
+type SubjectiveQuestion struct {
 	Statement string `json:"statement"`
 }

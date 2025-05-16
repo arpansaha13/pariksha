@@ -41,8 +41,8 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 		case *proto.QuestionMinimal_Mcq:
 			data, _ := json.Marshal(q.Mcq)
 			questionData = data
-		case *proto.QuestionMinimal_General:
-			data, _ := json.Marshal(q.General)
+		case *proto.QuestionMinimal_Subjective:
+			data, _ := json.Marshal(q.Subjective)
 			questionData = data
 		}
 
@@ -85,8 +85,8 @@ func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 	case *proto.QuestionResponse_Mcq:
 		data, _ := json.Marshal(q.Mcq)
 		questionData = data
-	case *proto.QuestionResponse_General:
-		data, _ := json.Marshal(q.General)
+	case *proto.QuestionResponse_Subjective:
+		data, _ := json.Marshal(q.Subjective)
 		questionData = data
 	}
 

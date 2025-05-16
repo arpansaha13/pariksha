@@ -39,17 +39,17 @@ func TestGetPaperQuestions(t *testing.T) {
 				mcq := createMCQQuestion(t, builder)
 
 				builder.Order = 2
-				builder.Type = constants.QUESTION_TYPE_SHORT
-				builder.Statement = "Short Question"
+				builder.Type = constants.QUESTION_TYPE_SUBJECTIVE
+				builder.Statement = "Subjective Question"
 				builder.MaxScore = 10
-				short := createGeneralQuestion(t, builder)
+				subjective := createSubjectiveQuestion(t, builder)
 
-				return paper, []models.Question{mcq, short}
+				return paper, []models.Question{mcq, subjective}
 			},
 			validate: func(t *testing.T, resp *proto.QuestionList) {
 				assert.Equal(t, 2, len(resp.Questions))
 				assert.Equal(t, "MCQ Question", resp.Questions[0].GetMcq().Statement)
-				assert.Equal(t, "Short Question", resp.Questions[1].GetGeneral().Statement)
+				assert.Equal(t, "Subjective Question", resp.Questions[1].GetSubjective().Statement)
 			},
 		},
 		{
@@ -122,13 +122,12 @@ func TestCreateQuestion(t *testing.T) {
 				counts, err := updatedPaper.GetQuestionCounts()
 				require.NoError(t, err)
 				assert.EqualValues(t, 1, counts.MCQ)
-				assert.EqualValues(t, 0, counts.Short)
-				assert.EqualValues(t, 0, counts.Long)
+				assert.EqualValues(t, 0, counts.Subjective)
 			},
 		},
 		{
 			BaseTestCase: BaseTestCase{
-				name:         "Success - Create SHORT question",
+				name:         "Success - Create SUBJECTIVE question",
 				userID:       userID,
 				expectedCode: codes.OK,
 			},
@@ -139,16 +138,16 @@ func TestCreateQuestion(t *testing.T) {
 				return &paper, &category
 			},
 			request: &proto.CreateQuestionRequest{
-				RawQuestion: []byte(`{"statement":"Test Short Answer"}`),
-				Type:        constants.QUESTION_TYPE_SHORT,
+				RawQuestion: []byte(`{"statement":"Test Subjective Answer"}`),
+				Type:        constants.QUESTION_TYPE_SUBJECTIVE,
 				MaxScore:    10,
 				CategoryId:  1,
 			},
 			validate: func(t *testing.T, paper *models.Paper, resp *proto.QuestionResponse) {
 				// Validate question response
-				assert.Equal(t, "Test Short Answer", resp.GetGeneral().Statement)
+				assert.Equal(t, "Test Subjective Answer", resp.GetSubjective().Statement)
 				assert.EqualValues(t, 10, resp.MaxScore)
-				assert.Equal(t, constants.QUESTION_TYPE_SHORT, resp.Type)
+				assert.Equal(t, constants.QUESTION_TYPE_SUBJECTIVE, resp.Type)
 
 				// Validate paper's question counts
 				var updatedPaper models.Paper
@@ -156,42 +155,7 @@ func TestCreateQuestion(t *testing.T) {
 				counts, err := updatedPaper.GetQuestionCounts()
 				require.NoError(t, err)
 				assert.EqualValues(t, 0, counts.MCQ)
-				assert.EqualValues(t, 1, counts.Short)
-				assert.EqualValues(t, 0, counts.Long)
-			},
-		},
-		{
-			BaseTestCase: BaseTestCase{
-				name:         "Success - Create LONG question",
-				userID:       userID,
-				expectedCode: codes.OK,
-			},
-			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
-				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
-				return &paper, &category
-			},
-			request: &proto.CreateQuestionRequest{
-				RawQuestion: []byte(`{"statement":"Test Long Answer"}`),
-				Type:        constants.QUESTION_TYPE_LONG,
-				MaxScore:    15,
-				CategoryId:  1,
-			},
-			validate: func(t *testing.T, paper *models.Paper, resp *proto.QuestionResponse) {
-				// Validate question response
-				assert.Equal(t, "Test Long Answer", resp.GetGeneral().Statement)
-				assert.EqualValues(t, 15, resp.MaxScore)
-				assert.Equal(t, constants.QUESTION_TYPE_LONG, resp.Type)
-
-				// Validate paper's question counts
-				var updatedPaper models.Paper
-				require.NoError(t, db.DB.First(&updatedPaper, paper.ID).Error)
-				counts, err := updatedPaper.GetQuestionCounts()
-				require.NoError(t, err)
-				assert.EqualValues(t, 0, counts.MCQ)
-				assert.EqualValues(t, 0, counts.Short)
-				assert.EqualValues(t, 1, counts.Long)
+				assert.EqualValues(t, 1, counts.Subjective)
 			},
 		},
 		{
@@ -256,7 +220,7 @@ func TestCreateQuestion(t *testing.T) {
 
 func TestUpdateQuestion(t *testing.T) {
 	maxScore := int32(10)
-	questionTypeShort := constants.QUESTION_TYPE_SHORT
+	questionTypeSubjective := constants.QUESTION_TYPE_SUBJECTIVE
 
 	tests := []UpdateQuestionCase{
 		{
@@ -266,7 +230,7 @@ func TestUpdateQuestion(t *testing.T) {
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				return setupTestQuestion(t, userID, constants.QUESTION_TYPE_MCQ, `{"mcq": 1, "short": 0, "long": 0}`)
+				return setupTestQuestion(t, userID, constants.QUESTION_TYPE_MCQ, `{"mcq": 1, "subjective": 0}`)
 			},
 			request: &proto.UpdateQuestionRequest{
 				RawQuestion: []byte(`{"statement":"Updated MCQ","options":["X","Y","Z"]}`),
@@ -279,9 +243,8 @@ func TestUpdateQuestion(t *testing.T) {
 				assert.EqualValues(t, 10, updated.MaxScore)
 
 				verifyQuestionCounts(t, paper.ID, models.QuestionCount{
-					MCQ:   1,
-					Short: 0,
-					Long:  0,
+					MCQ:        1,
+					Subjective: 0,
 				})
 			},
 		},
@@ -293,7 +256,7 @@ func TestUpdateQuestion(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
 				paper := createTestPaper(t, userID)
-				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 1, "short": 0, "long": 0}`).Error
+				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 1, "subjective": 0}`).Error
 				require.NoError(t, err)
 
 				var category models.QuestionCategory
@@ -311,15 +274,15 @@ func TestUpdateQuestion(t *testing.T) {
 				return &paper, &question
 			},
 			request: &proto.UpdateQuestionRequest{
-				Type:        &questionTypeShort,
-				RawQuestion: []byte(`{"statement":"Updated to Short"}`),
+				Type:        &questionTypeSubjective,
+				RawQuestion: []byte(`{"statement":"Updated to Subjective"}`),
 				MaxScore:    &maxScore,
 			},
 			validate: func(t *testing.T, paper *models.Paper, question *models.Question) {
 				// Verify question was updated
 				var updated models.Question
 				require.NoError(t, db.DB.First(&updated, question.ID).Error)
-				assert.Equal(t, constants.QUESTION_TYPE_SHORT, updated.Type)
+				assert.Equal(t, constants.QUESTION_TYPE_SUBJECTIVE, updated.Type)
 
 				// Verify question counts were updated
 				var updatedPaper models.Paper
@@ -327,8 +290,7 @@ func TestUpdateQuestion(t *testing.T) {
 				counts, err := updatedPaper.GetQuestionCounts()
 				require.NoError(t, err)
 				assert.EqualValues(t, 0, counts.MCQ, "MCQ count should decrease")
-				assert.EqualValues(t, 1, counts.Short, "Short count should increase")
-				assert.EqualValues(t, 0, counts.Long)
+				assert.EqualValues(t, 1, counts.Subjective, "Subjective count should increase")
 			},
 		},
 		{
@@ -338,7 +300,7 @@ func TestUpdateQuestion(t *testing.T) {
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				return setupLockedPaper(t, userID, `{"mcq": 1, "short": 0, "long": 0}`)
+				return setupLockedPaper(t, userID, `{"mcq": 1, "subjective": 0}`)
 			},
 			request: &proto.UpdateQuestionRequest{
 				RawQuestion: []byte(`{"statement":"Updated MCQ","options":["X","Y","Z"]}`),
@@ -386,7 +348,7 @@ func TestUpdateQuestion(t *testing.T) {
 				return &paper, &question
 			},
 			request: &proto.UpdateQuestionRequest{
-				Type: &questionTypeShort, // Trying to change type without providing question
+				Type: &questionTypeSubjective, // Trying to change type without providing question
 			},
 		},
 		{
@@ -412,8 +374,10 @@ func TestUpdateQuestion(t *testing.T) {
 				return &paper, &question
 			},
 			request: &proto.UpdateQuestionRequest{
-				Type:        &questionTypeShort,                                                   // Changing to SHORT type
-				RawQuestion: []byte(`{"statement":"Wrong content type","options":["X","Y","Z"]}`), // But providing MCQ content
+				// Changing to SUBJECTIVE type
+				Type: &questionTypeSubjective,
+				// But providing MCQ content
+				RawQuestion: []byte(`{"statement":"Wrong content type","options":["X","Y","Z"]}`),
 			},
 		},
 		{
@@ -463,7 +427,7 @@ func TestUpdateQuestion(t *testing.T) {
 		},
 		{
 			BaseTestCase: BaseTestCase{
-				name:         "Success - Update Short question",
+				name:         "Success - Update Subjective question",
 				userID:       userID,
 				expectedCode: codes.OK,
 			},
@@ -476,8 +440,8 @@ func TestUpdateQuestion(t *testing.T) {
 					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
 					CategoryID: category.ID,
 					Order:      1,
-					Type:       constants.QUESTION_TYPE_SHORT,
-					Question:   json.RawMessage(`{"statement":"Old Short Question"}`),
+					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+					Question:   json.RawMessage(`{"statement":"Old Subjective Question"}`),
 					MaxScore:   5,
 				}
 				require.NoError(t, db.DB.Create(&question).Error)
@@ -485,7 +449,7 @@ func TestUpdateQuestion(t *testing.T) {
 			},
 			request: &proto.UpdateQuestionRequest{
 				MaxScore:      &maxScore,
-				RawQuestion:   []byte(`{"statement":"Updated Short Question"}`),
+				RawQuestion:   []byte(`{"statement":"Updated Subjective Question"}`),
 				CorrectAnswer: &[]string{"Expected answer"}[0],
 			},
 			validate: func(t *testing.T, paper *models.Paper, question *models.Question) {
@@ -493,9 +457,9 @@ func TestUpdateQuestion(t *testing.T) {
 				require.NoError(t, db.DB.First(&updated, question.ID).Error)
 
 				// Verify question content
-				var general structs.GeneralQuestion
-				require.NoError(t, json.Unmarshal(updated.Question, &general))
-				assert.Equal(t, "Updated Short Question", general.Statement)
+				var subjective structs.SubjectiveQuestion
+				require.NoError(t, json.Unmarshal(updated.Question, &subjective))
+				assert.Equal(t, "Updated Subjective Question", subjective.Statement)
 
 				// Verify other fields
 				assert.EqualValues(t, 10, updated.MaxScore)
@@ -587,7 +551,7 @@ func TestDeleteQuestion(t *testing.T) {
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
 				paper := createTestPaper(t, userID)
 				// Set initial question counts
-				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 1, "short": 1, "long": 1}`).Error
+				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 1, "subjective": 1}`).Error
 				require.NoError(t, err)
 
 				var category models.QuestionCategory
@@ -616,8 +580,7 @@ func TestDeleteQuestion(t *testing.T) {
 				counts, err := updatedPaper.GetQuestionCounts()
 				require.NoError(t, err)
 				assert.EqualValues(t, 0, counts.MCQ, "MCQ count should decrease")
-				assert.EqualValues(t, 1, counts.Short)
-				assert.EqualValues(t, 1, counts.Long)
+				assert.EqualValues(t, 1, counts.Subjective)
 			},
 		},
 		{
@@ -629,7 +592,7 @@ func TestDeleteQuestion(t *testing.T) {
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
 				paper := createTestPaper(t, userID)
 				// Set initial question counts
-				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 2, "short": 1, "long": 0}`).Error
+				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 2, "subjective": 1}`).Error
 				require.NoError(t, err)
 
 				var category models.QuestionCategory
@@ -660,8 +623,7 @@ func TestDeleteQuestion(t *testing.T) {
 				counts, err := updatedPaper.GetQuestionCounts()
 				require.NoError(t, err)
 				assert.EqualValues(t, 1, counts.MCQ, "MCQ count should decrease")
-				assert.EqualValues(t, 1, counts.Short)
-				assert.EqualValues(t, 0, counts.Long)
+				assert.EqualValues(t, 1, counts.Subjective)
 			},
 		},
 	}

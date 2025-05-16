@@ -29,6 +29,12 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 			name: "Success - Get answer as evaluator",
 			setup: func(t *testing.T) (*models.ExamParticipant, int64) {
 				exam := createTestExam(t, 2) // Created by different user
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 1,
+					MaxScore:   10,
+					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+				})
 
 				// Create evaluator permission for test user
 				permission := models.ExamPermissions{
@@ -144,6 +150,11 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 			name: "Success - Get evaluation data as evaluator",
 			setup: func(t *testing.T) (*models.ExamParticipant, int64) {
 				exam := createTestExam(t, 2) // Created by different user
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 10,
+					MaxScore:   5,
+				})
 
 				// Create evaluator permission for test user
 				permission := models.ExamPermissions{
@@ -268,7 +279,12 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				require.NoError(t, db.DB.Save(&participant).Error)
 
 				// Create exam question with max score of 10
-				createTestExamQuestion(t, &exam, 1, 10)
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 1,
+					MaxScore:   10,
+					Type:       constants.QUESTION_TYPE_MCQ,
+				})
 
 				answer := createTestAnswer(t, &participant, 1)
 				answer.ScoreAwarded = 5 // Initial score
@@ -303,6 +319,12 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 			name: "Success - Update only comments",
 			setup: func(t *testing.T) *models.Answer {
 				exam := createTestExam(t, userID)
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 10,
+					MaxScore:   5,
+				})
+
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
@@ -312,7 +334,12 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 
 				// Create exam question with max score of 10
-				createTestExamQuestion(t, &exam, 1, 10)
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 1,
+					MaxScore:   10,
+					Type:       constants.QUESTION_TYPE_MCQ,
+				})
 
 				answer := createTestAnswer(t, &participant, 1)
 				return &answer
@@ -336,7 +363,11 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 			setup: func(t *testing.T) *models.Answer {
 				exam := createTestExam(t, userID)
 				// Create exam question even for non-existent answer to maintain consistency
-				createTestExamQuestion(t, &exam, 1, 10)
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 10,
+					MaxScore:   5,
+				})
 				return &models.Answer{ID: 9999}
 			},
 			request: &proto.UpdateAnswerRequest{
@@ -360,7 +391,12 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 
 				// Create exam question with max score of 10
-				createTestExamQuestion(t, &exam, 1, 10)
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 1,
+					MaxScore:   10,
+					Type:       constants.QUESTION_TYPE_MCQ,
+				})
 
 				answer := createTestAnswer(t, &participant, 1)
 				return &answer

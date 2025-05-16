@@ -1,8 +1,7 @@
-import type { GeneralAnswer, MCQAnswer } from './answer'
+import type { SubjectiveAnswer, MCQAnswer } from './answer'
 import type {
   Question,
   QuestionCategory,
-  QuestionLong,
   QuestionMcq,
   QuestionShort,
   QuestionType,
@@ -86,20 +85,20 @@ type ExamResultMCQ = {
   }
 }
 
-type ExamResultGeneral = {
-  readonly type: QuestionType.SHORT | QuestionType.LONG
+type ExamResultSubjective = {
+  readonly type: QuestionType.SUBJECTIVE
   readonly question: {
     readonly id: number
     readonly order: number
     readonly category_id: number
     readonly max_score: number
-    readonly content: QuestionShort['question'] | QuestionLong['question']
+    readonly content: QuestionShort['question']
   }
   readonly answer: {
-    readonly content: GeneralAnswer | null
+    readonly content: SubjectiveAnswer | null
     readonly score_awarded: number
     readonly comments: string
   }
 }
 
-export type ExamResult = ExamResultMCQ | ExamResultGeneral
+export type ExamResult = ExamResultMCQ | ExamResultSubjective

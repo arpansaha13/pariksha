@@ -43,7 +43,7 @@
 
     <UCard v-if="answerPending">
       <SkeletonQuestionMcqOptions v-if="question.type === QuestionType.MCQ" />
-      <SkeletonQuestionGeneralAnswer v-else />
+      <SkeletonQuestionSubjectiveAnswer v-else />
     </UCard>
 
     <UCard
@@ -75,7 +75,7 @@
         <EvaluationUnanswered v-if="isNullOrUndefined(answerData?.answer)" />
 
         <p v-else>
-          {{ (answerData!.answer as GeneralAnswer).text }}
+          {{ (answerData!.answer as SubjectiveAnswer).text }}
         </p>
       </template>
     </UCard>
@@ -153,7 +153,7 @@ import {
   QuestionType,
   type EvaluationAnswer,
   type ExamPermission,
-  type GeneralAnswer,
+  type SubjectiveAnswer,
   type MCQAnswer,
 } from '~/types'
 

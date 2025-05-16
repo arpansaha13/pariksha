@@ -22,7 +22,7 @@ type MCQAnswer struct {
 	OptionIndex *int `json:"optionIndex"`
 }
 
-type GeneralAnswer struct {
+type SubjectiveAnswer struct {
 	Text string `json:"text"`
 }
 
@@ -30,7 +30,7 @@ func (a *MCQAnswer) Value() (driver.Value, error) {
 	return json.Marshal(a)
 }
 
-func (a *GeneralAnswer) Value() (driver.Value, error) {
+func (a *SubjectiveAnswer) Value() (driver.Value, error) {
 	return json.Marshal(a)
 }
 

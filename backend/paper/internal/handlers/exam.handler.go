@@ -39,8 +39,8 @@ func (s *PaperServer) GetQuestionsByIds(ctx context.Context, req *proto.GetQuest
 				Mcq: questionData.(*proto.McqQuestion),
 			}
 		default:
-			batchItem.Question = &proto.QuestionBatchItem_General{
-				General: questionData.(*proto.GeneralQuestion),
+			batchItem.Question = &proto.QuestionBatchItem_Subjective{
+				Subjective: questionData.(*proto.SubjectiveQuestion),
 			}
 		}
 
@@ -94,8 +94,8 @@ func (s *PaperServer) GetExamQuestion(ctx context.Context, req *proto.QuestionRe
 			Mcq: questionData.(*proto.McqQuestion),
 		}
 	default:
-		response.Question = &proto.QuestionResponse_General{
-			General: questionData.(*proto.GeneralQuestion),
+		response.Question = &proto.QuestionResponse_Subjective{
+			Subjective: questionData.(*proto.SubjectiveQuestion),
 		}
 	}
 

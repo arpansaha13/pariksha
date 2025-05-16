@@ -202,14 +202,20 @@ func TestUpsertAnswer(t *testing.T) {
 			BaseTestCase: BaseTestCase{
 				name: "Success - Create new answer",
 				metadata: map[string]string{
-					"user_id":       strconv.FormatInt(userID, 10),
-					"question_type": constants.QUESTION_TYPE_LONG,
+					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.OK,
 				userID:       userID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2) // Created by different user
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 10,
+					MaxScore:   10,
+					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+				})
+
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
@@ -249,14 +255,20 @@ func TestUpsertAnswer(t *testing.T) {
 			BaseTestCase: BaseTestCase{
 				name: "Success - Update existing answer",
 				metadata: map[string]string{
-					"user_id":       strconv.FormatInt(userID, 10),
-					"question_type": constants.QUESTION_TYPE_LONG,
+					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.OK,
 				userID:       userID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 10,
+					MaxScore:   10,
+					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+				})
+
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
@@ -298,8 +310,7 @@ func TestUpsertAnswer(t *testing.T) {
 			BaseTestCase: BaseTestCase{
 				name: "Fail - Exam participant not found",
 				metadata: map[string]string{
-					"user_id":       strconv.FormatInt(userID, 10),
-					"question_type": constants.QUESTION_TYPE_LONG,
+					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.PermissionDenied,
 				userID:       userID,
@@ -320,8 +331,7 @@ func TestUpsertAnswer(t *testing.T) {
 			BaseTestCase: BaseTestCase{
 				name: "Fail - Exam not started",
 				metadata: map[string]string{
-					"user_id":       strconv.FormatInt(userID, 10),
-					"question_type": constants.QUESTION_TYPE_LONG,
+					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.FailedPrecondition,
 				userID:       userID,
@@ -347,8 +357,7 @@ func TestUpsertAnswer(t *testing.T) {
 			BaseTestCase: BaseTestCase{
 				name: "Fail - Exam ended",
 				metadata: map[string]string{
-					"user_id":       strconv.FormatInt(userID, 10),
-					"question_type": constants.QUESTION_TYPE_LONG,
+					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.FailedPrecondition,
 				userID:       userID,
@@ -375,16 +384,22 @@ func TestUpsertAnswer(t *testing.T) {
 		},
 		{
 			BaseTestCase: BaseTestCase{
-				name: "Success - Empty answer for SHORT question",
+				name: "Success - Empty answer for SUBJECTIVE question",
 				metadata: map[string]string{
-					"user_id":       strconv.FormatInt(userID, 10),
-					"question_type": constants.QUESTION_TYPE_SHORT,
+					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.OK,
 				userID:       userID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 10,
+					MaxScore:   10,
+					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+				})
+
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
@@ -420,14 +435,20 @@ func TestUpsertAnswer(t *testing.T) {
 			BaseTestCase: BaseTestCase{
 				name: "Success - Nil answer clears the answer",
 				metadata: map[string]string{
-					"user_id":       strconv.FormatInt(userID, 10),
-					"question_type": constants.QUESTION_TYPE_MCQ,
+					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.OK,
 				userID:       userID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 10,
+					MaxScore:   10,
+					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+				})
+
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
@@ -462,14 +483,20 @@ func TestUpsertAnswer(t *testing.T) {
 			BaseTestCase: BaseTestCase{
 				name: "Fail - Empty MCQ answer is invalid",
 				metadata: map[string]string{
-					"user_id":       strconv.FormatInt(userID, 10),
-					"question_type": constants.QUESTION_TYPE_MCQ,
+					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.InvalidArgument,
 				userID:       userID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 10,
+					MaxScore:   10,
+					Type:       constants.QUESTION_TYPE_MCQ,
+				})
+
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
@@ -497,14 +524,20 @@ func TestUpsertAnswer(t *testing.T) {
 			BaseTestCase: BaseTestCase{
 				name: "Fail - Nil optionIndex in MCQ answer is invalid",
 				metadata: map[string]string{
-					"user_id":       strconv.FormatInt(userID, 10),
-					"question_type": constants.QUESTION_TYPE_MCQ,
+					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.InvalidArgument,
 				userID:       userID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
+				createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 10,
+					MaxScore:   10,
+					Type:       constants.QUESTION_TYPE_MCQ,
+				})
+
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})

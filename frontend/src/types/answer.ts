@@ -2,7 +2,7 @@ export interface MCQAnswer {
   optionIndex: number | undefined
 }
 
-export interface GeneralAnswer {
+export interface SubjectiveAnswer {
   text: string
 }
 
@@ -12,7 +12,7 @@ export interface Answer {
   question_id: number
 
   /** `null` indicates that the question is unanswered */
-  answer: MCQAnswer | GeneralAnswer | null
+  answer: MCQAnswer | SubjectiveAnswer | null
   score_awarded: number
   comments: string
 }

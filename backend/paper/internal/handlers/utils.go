@@ -87,12 +87,12 @@ func unmarshalQuestionData(questionType string, rawQuestion json.RawMessage) (an
 			Options:   mcq.Options,
 		}, nil
 	default:
-		var general structs.GeneralQuestion
-		if err := json.Unmarshal(rawQuestion, &general); err != nil {
+		var subjective structs.SubjectiveQuestion
+		if err := json.Unmarshal(rawQuestion, &subjective); err != nil {
 			return nil, status.Error(codes.Internal, "invalid question data")
 		}
-		return &proto.GeneralQuestion{
-			Statement: general.Statement,
+		return &proto.SubjectiveQuestion{
+			Statement: subjective.Statement,
 		}, nil
 	}
 }
@@ -122,7 +122,7 @@ func questionToProto(question models.Question) (*proto.QuestionResponse, error) 
 	case constants.QUESTION_TYPE_MCQ:
 		response.Question = &proto.QuestionResponse_Mcq{Mcq: questionData.(*proto.McqQuestion)}
 	default:
-		response.Question = &proto.QuestionResponse_General{General: questionData.(*proto.GeneralQuestion)}
+		response.Question = &proto.QuestionResponse_Subjective{Subjective: questionData.(*proto.SubjectiveQuestion)}
 	}
 
 	return response, nil
@@ -145,7 +145,7 @@ func questionToMinimalProto(question models.Question) (*proto.QuestionMinimal, e
 	case constants.QUESTION_TYPE_MCQ:
 		response.Question = &proto.QuestionMinimal_Mcq{Mcq: questionData.(*proto.McqQuestion)}
 	default:
-		response.Question = &proto.QuestionMinimal_General{General: questionData.(*proto.GeneralQuestion)}
+		response.Question = &proto.QuestionMinimal_Subjective{Subjective: questionData.(*proto.SubjectiveQuestion)}
 	}
 
 	return response, nil
@@ -183,10 +183,8 @@ func updateQuestionCounts(rawCounts json.RawMessage, questionType string, delta 
 	switch questionType {
 	case constants.QUESTION_TYPE_MCQ:
 		counts.MCQ += delta
-	case constants.QUESTION_TYPE_SHORT:
-		counts.Short += delta
-	case constants.QUESTION_TYPE_LONG:
-		counts.Long += delta
+	case constants.QUESTION_TYPE_SUBJECTIVE:
+		counts.Subjective += delta
 	}
 
 	newCounts, err := json.Marshal(counts)
@@ -215,14 +213,14 @@ func validateQuestionData(questionType string, question interface{}) error {
 			return status.Error(codes.InvalidArgument, "MCQ questions cannot have more than 5 options")
 		}
 
-	case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
-		general, ok := question.(*structs.GeneralQuestion)
-		log.Println(general)
+	case constants.QUESTION_TYPE_SUBJECTIVE:
+		subjective, ok := question.(*structs.SubjectiveQuestion)
+		log.Println(subjective)
 		if !ok {
-			return status.Error(codes.InvalidArgument, "invalid general question format")
+			return status.Error(codes.InvalidArgument, "invalid subjective question format")
 		}
 
-		if strings.TrimSpace(general.Statement) == "" {
+		if strings.TrimSpace(subjective.Statement) == "" {
 			return status.Error(codes.InvalidArgument, "question statement cannot be empty")
 		}
 	}
@@ -250,11 +248,11 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 				return question, err
 			}
 		default:
-			var general structs.GeneralQuestion
-			if err := utils.StrictUnmarshal(req.RawQuestion, &general); err != nil {
-				return question, status.Error(codes.InvalidArgument, "invalid general question format")
+			var subjective structs.SubjectiveQuestion
+			if err := utils.StrictUnmarshal(req.RawQuestion, &subjective); err != nil {
+				return question, status.Error(codes.InvalidArgument, "invalid subjective question format")
 			}
-			if err := validateQuestionData(question.Type, &general); err != nil {
+			if err := validateQuestionData(question.Type, &subjective); err != nil {
 				return question, err
 			}
 		}

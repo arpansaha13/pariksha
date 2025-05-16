@@ -12,8 +12,8 @@ export interface CreateMcqQuestionBody {
   correct_answer: string | null | undefined
 }
 
-export interface CreateGeneralQuestionBody {
-  type: QuestionType.SHORT | QuestionType.LONG
+export interface CreateSubjectiveQuestionBody {
+  type: QuestionType.SUBJECTIVE
   category_id: number
   question: {
     statement: string
@@ -23,7 +23,7 @@ export interface CreateGeneralQuestionBody {
   correct_answer: string | null | undefined
 }
 
-type CreateQuestionBody = CreateMcqQuestionBody | CreateGeneralQuestionBody
+type CreateQuestionBody = CreateMcqQuestionBody | CreateSubjectiveQuestionBody
 
 export async function createQuestion(
   paperId: number,

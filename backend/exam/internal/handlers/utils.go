@@ -132,8 +132,8 @@ func validateAnswerJSON(answerJSON []byte, questionType string) error {
 		if *mcqAnswer.OptionIndex < 0 {
 			return status.Error(codes.InvalidArgument, "option index cannot be negative")
 		}
-	case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
-		var textAnswer models.GeneralAnswer
+	case constants.QUESTION_TYPE_SUBJECTIVE:
+		var textAnswer models.SubjectiveAnswer
 		if err := json.Unmarshal(answerJSON, &textAnswer); err != nil {
 			return status.Error(codes.InvalidArgument, "invalid text answer format")
 		}

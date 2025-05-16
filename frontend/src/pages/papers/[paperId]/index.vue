@@ -344,9 +344,9 @@ function startQuestionEdit() {
         options: [...mcqQuestion.options], // Store new array reference
       }
     } else {
-      const generalQuestion = question.value.question
+      const subjectiveQuestion = question.value.question
       editQuestionFormStates[currentQuestionId.value]!.question.statement =
-        generalQuestion.statement
+        subjectiveQuestion.statement
     }
 
     incUnsavedCount(question.value.category_id)

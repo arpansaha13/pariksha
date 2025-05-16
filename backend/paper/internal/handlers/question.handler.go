@@ -63,11 +63,11 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 			return nil, err
 		}
 	default:
-		var general structs.GeneralQuestion
-		if err := utils.StrictUnmarshal(req.RawQuestion, &general); err != nil {
-			return nil, status.Error(codes.InvalidArgument, "invalid general question format")
+		var subjective structs.SubjectiveQuestion
+		if err := utils.StrictUnmarshal(req.RawQuestion, &subjective); err != nil {
+			return nil, status.Error(codes.InvalidArgument, "invalid subjective question format")
 		}
-		if err := validateQuestionData(req.Type, &general); err != nil {
+		if err := validateQuestionData(req.Type, &subjective); err != nil {
 			return nil, err
 		}
 	}

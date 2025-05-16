@@ -46,8 +46,8 @@ func TestGetQuestionsByIds(t *testing.T) {
 						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
 						CategoryID: category.ID,
 						Order:      2,
-						Type:       constants.QUESTION_TYPE_SHORT,
-						Question:   json.RawMessage(`{"statement":"Short Question"}`),
+						Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+						Question:   json.RawMessage(`{"statement":"Subjective Question"}`),
 						MaxScore:   10,
 					},
 				}
@@ -69,12 +69,12 @@ func TestGetQuestionsByIds(t *testing.T) {
 				assert.Equal(t, "MCQ Question", mcqResp.GetMcq().Statement)
 				assert.Equal(t, []string{"A", "B", "C"}, mcqResp.GetMcq().Options)
 
-				// Validate Short question
-				shortResp := resp.Questions[1]
-				assert.Equal(t, questions[1].ID, shortResp.Id)
-				assert.Equal(t, questions[1].Type, shortResp.Type)
-				assert.EqualValues(t, questions[1].MaxScore, shortResp.MaxScore)
-				assert.Equal(t, "Short Question", shortResp.GetGeneral().Statement)
+				// Validate Subjective question
+				subjectiveResp := resp.Questions[1]
+				assert.Equal(t, questions[1].ID, subjectiveResp.Id)
+				assert.Equal(t, questions[1].Type, subjectiveResp.Type)
+				assert.EqualValues(t, questions[1].MaxScore, subjectiveResp.MaxScore)
+				assert.Equal(t, "Subjective Question", subjectiveResp.GetSubjective().Statement)
 			},
 		},
 		{

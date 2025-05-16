@@ -46,8 +46,8 @@ export function usePaperAutoCancelQuestionEdit(
       )
     }
 
-    const generalQuestion = oldQuestion.question
-    return formState.question.statement !== generalQuestion.statement
+    const subjectiveQuestion = oldQuestion.question
+    return formState.question.statement !== subjectiveQuestion.statement
   }
 
   watch(question, (_, oldQuestion) => {

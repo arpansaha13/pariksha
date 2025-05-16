@@ -28,7 +28,7 @@ Table papers {
   title varchar(255) [not null, default: 'Untitled Paper']
   max_score integer [default: 0, note: 'Maximum score that can be awarded in this paper - Sum of individual scores of each question']
   duration_minutes integer [not null, note: 'max duration_minutes can be 1440']
-  question_counts json [default: '{"mcq":0,"short":0,"long":0}', note: 'Count of each question type']
+  question_counts json [default: '{"mcq":0,"subjective":0}', note: 'Count of each question type']
   created_by bigint [not null]
 }
 
@@ -43,7 +43,7 @@ Table questions {
   category_id bigint [not null]
   question json [not null]
   order smallint [not null]
-  type varchar(20) [not null, note: 'MCQ, Short-answer, Long-answer']
+  type varchar(20) [not null, note: 'MCQ, Subjective']
   tags json [default: '[]']
   paper_id bigint
   max_score smallint [not null, note: "max_score ranges from 0 to 1000"]

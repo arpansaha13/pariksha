@@ -3,8 +3,7 @@ import type { PaperQuestionCounts } from '~/types'
 export function countTotalQuestions(question_counts: PaperQuestionCounts) {
   let count = 0
   count += question_counts.mcq ?? 0
-  count += question_counts.short ?? 0
-  count += question_counts.long ?? 0
+  count += question_counts.subjective ?? 0
   return count
 }
 

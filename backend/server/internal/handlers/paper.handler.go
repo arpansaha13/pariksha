@@ -33,9 +33,8 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 			MaxScore:        p.MaxScore,
 			DurationMinutes: p.DurationMinutes,
 			QuestionCounts: dtos.QuestionCountDto{
-				MCQ:   p.QuestionCounts.Mcq,
-				Short: p.QuestionCounts.Short,
-				Long:  p.QuestionCounts.Long,
+				MCQ:        p.QuestionCounts.Mcq,
+				Subjective: p.QuestionCounts.Subjective,
 			},
 			CreatedBy: p.CreatedBy,
 		}
@@ -70,9 +69,8 @@ func GetPaper(w http.ResponseWriter, r *http.Request) {
 		MaxScore:        response.MaxScore,
 		DurationMinutes: response.DurationMinutes,
 		QuestionCounts: dtos.QuestionCountDto{
-			MCQ:   response.QuestionCounts.Mcq,
-			Short: response.QuestionCounts.Short,
-			Long:  response.QuestionCounts.Long,
+			MCQ:        response.QuestionCounts.Mcq,
+			Subjective: response.QuestionCounts.Subjective,
 		},
 		CreatedBy: response.CreatedBy,
 	}

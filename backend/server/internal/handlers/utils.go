@@ -78,8 +78,8 @@ func mapQuestionToDto(resp *proto.QuestionResponse) dtos.QuestionResponseDto {
 	case *proto.QuestionResponse_Mcq:
 		data, _ := json.Marshal(q.Mcq)
 		response.Question = data
-	case *proto.QuestionResponse_General:
-		data, _ := json.Marshal(q.General)
+	case *proto.QuestionResponse_Subjective:
+		data, _ := json.Marshal(q.Subjective)
 		response.Question = data
 	}
 

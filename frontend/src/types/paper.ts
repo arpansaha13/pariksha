@@ -1,7 +1,6 @@
 export interface PaperQuestionCounts {
   mcq: number
-  short: number
-  long: number
+  subjective: number
 }
 
 export interface Paper {

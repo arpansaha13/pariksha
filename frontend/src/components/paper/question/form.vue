@@ -167,12 +167,8 @@ const questionTypes = [
     value: QuestionType.MCQ,
   },
   {
-    label: 'Short answer type',
-    value: QuestionType.SHORT,
-  },
-  {
-    label: 'Long answer type',
-    value: QuestionType.LONG,
+    label: 'Subjective',
+    value: QuestionType.SUBJECTIVE,
   },
 ]
 

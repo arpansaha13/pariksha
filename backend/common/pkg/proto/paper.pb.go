@@ -257,8 +257,7 @@ func (x *UpdatePaperRequest) GetDurationMinutes() int32 {
 type QuestionCount struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Mcq           int32                  `protobuf:"varint,1,opt,name=mcq,proto3" json:"mcq,omitempty"`
-	Short         int32                  `protobuf:"varint,2,opt,name=short,proto3" json:"short,omitempty"`
-	Long          int32                  `protobuf:"varint,3,opt,name=long,proto3" json:"long,omitempty"`
+	Subjective    int32                  `protobuf:"varint,2,opt,name=subjective,proto3" json:"subjective,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -300,16 +299,9 @@ func (x *QuestionCount) GetMcq() int32 {
 	return 0
 }
 
-func (x *QuestionCount) GetShort() int32 {
+func (x *QuestionCount) GetSubjective() int32 {
 	if x != nil {
-		return x.Short
-	}
-	return 0
-}
-
-func (x *QuestionCount) GetLong() int32 {
-	if x != nil {
-		return x.Long
+		return x.Subjective
 	}
 	return 0
 }
@@ -409,7 +401,7 @@ type QuestionResponse struct {
 	// Types that are valid to be assigned to Question:
 	//
 	//	*QuestionResponse_Mcq
-	//	*QuestionResponse_General
+	//	*QuestionResponse_Subjective
 	Question      isQuestionResponse_Question `protobuf_oneof:"question"`
 	CategoryId    int64                       `protobuf:"varint,4,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	Type          string                      `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
@@ -474,10 +466,10 @@ func (x *QuestionResponse) GetMcq() *McqQuestion {
 	return nil
 }
 
-func (x *QuestionResponse) GetGeneral() *GeneralQuestion {
+func (x *QuestionResponse) GetSubjective() *SubjectiveQuestion {
 	if x != nil {
-		if x, ok := x.Question.(*QuestionResponse_General); ok {
-			return x.General
+		if x, ok := x.Question.(*QuestionResponse_Subjective); ok {
+			return x.Subjective
 		}
 	}
 	return nil
@@ -533,13 +525,13 @@ type QuestionResponse_Mcq struct {
 	Mcq *McqQuestion `protobuf:"bytes,2,opt,name=mcq,proto3,oneof"`
 }
 
-type QuestionResponse_General struct {
-	General *GeneralQuestion `protobuf:"bytes,3,opt,name=general,proto3,oneof"`
+type QuestionResponse_Subjective struct {
+	Subjective *SubjectiveQuestion `protobuf:"bytes,3,opt,name=subjective,proto3,oneof"`
 }
 
 func (*QuestionResponse_Mcq) isQuestionResponse_Question() {}
 
-func (*QuestionResponse_General) isQuestionResponse_Question() {}
+func (*QuestionResponse_Subjective) isQuestionResponse_Question() {}
 
 type QuestionList struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -594,7 +586,7 @@ type QuestionMinimal struct {
 	// Types that are valid to be assigned to Question:
 	//
 	//	*QuestionMinimal_Mcq
-	//	*QuestionMinimal_General
+	//	*QuestionMinimal_Subjective
 	Question      isQuestionMinimal_Question `protobuf_oneof:"question"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -674,10 +666,10 @@ func (x *QuestionMinimal) GetMcq() *McqQuestion {
 	return nil
 }
 
-func (x *QuestionMinimal) GetGeneral() *GeneralQuestion {
+func (x *QuestionMinimal) GetSubjective() *SubjectiveQuestion {
 	if x != nil {
-		if x, ok := x.Question.(*QuestionMinimal_General); ok {
-			return x.General
+		if x, ok := x.Question.(*QuestionMinimal_Subjective); ok {
+			return x.Subjective
 		}
 	}
 	return nil
@@ -691,13 +683,13 @@ type QuestionMinimal_Mcq struct {
 	Mcq *McqQuestion `protobuf:"bytes,5,opt,name=mcq,proto3,oneof"`
 }
 
-type QuestionMinimal_General struct {
-	General *GeneralQuestion `protobuf:"bytes,6,opt,name=general,proto3,oneof"`
+type QuestionMinimal_Subjective struct {
+	Subjective *SubjectiveQuestion `protobuf:"bytes,6,opt,name=subjective,proto3,oneof"`
 }
 
 func (*QuestionMinimal_Mcq) isQuestionMinimal_Question() {}
 
-func (*QuestionMinimal_General) isQuestionMinimal_Question() {}
+func (*QuestionMinimal_Subjective) isQuestionMinimal_Question() {}
 
 type McqQuestion struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -751,27 +743,27 @@ func (x *McqQuestion) GetOptions() []string {
 	return nil
 }
 
-type GeneralQuestion struct {
+type SubjectiveQuestion struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Statement     string                 `protobuf:"bytes,1,opt,name=statement,proto3" json:"statement,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GeneralQuestion) Reset() {
-	*x = GeneralQuestion{}
+func (x *SubjectiveQuestion) Reset() {
+	*x = SubjectiveQuestion{}
 	mi := &file_paper_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GeneralQuestion) String() string {
+func (x *SubjectiveQuestion) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GeneralQuestion) ProtoMessage() {}
+func (*SubjectiveQuestion) ProtoMessage() {}
 
-func (x *GeneralQuestion) ProtoReflect() protoreflect.Message {
+func (x *SubjectiveQuestion) ProtoReflect() protoreflect.Message {
 	mi := &file_paper_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -783,12 +775,12 @@ func (x *GeneralQuestion) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GeneralQuestion.ProtoReflect.Descriptor instead.
-func (*GeneralQuestion) Descriptor() ([]byte, []int) {
+// Deprecated: Use SubjectiveQuestion.ProtoReflect.Descriptor instead.
+func (*SubjectiveQuestion) Descriptor() ([]byte, []int) {
 	return file_paper_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *GeneralQuestion) GetStatement() string {
+func (x *SubjectiveQuestion) GetStatement() string {
 	if x != nil {
 		return x.Statement
 	}
@@ -1125,7 +1117,7 @@ type QuestionBatchItem struct {
 	// Types that are valid to be assigned to Question:
 	//
 	//	*QuestionBatchItem_Mcq
-	//	*QuestionBatchItem_General
+	//	*QuestionBatchItem_Subjective
 	Question      isQuestionBatchItem_Question `protobuf_oneof:"question"`
 	MaxScore      int32                        `protobuf:"varint,4,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
 	Type          string                       `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
@@ -1186,10 +1178,10 @@ func (x *QuestionBatchItem) GetMcq() *McqQuestion {
 	return nil
 }
 
-func (x *QuestionBatchItem) GetGeneral() *GeneralQuestion {
+func (x *QuestionBatchItem) GetSubjective() *SubjectiveQuestion {
 	if x != nil {
-		if x, ok := x.Question.(*QuestionBatchItem_General); ok {
-			return x.General
+		if x, ok := x.Question.(*QuestionBatchItem_Subjective); ok {
+			return x.Subjective
 		}
 	}
 	return nil
@@ -1217,13 +1209,13 @@ type QuestionBatchItem_Mcq struct {
 	Mcq *McqQuestion `protobuf:"bytes,2,opt,name=mcq,proto3,oneof"`
 }
 
-type QuestionBatchItem_General struct {
-	General *GeneralQuestion `protobuf:"bytes,3,opt,name=general,proto3,oneof"`
+type QuestionBatchItem_Subjective struct {
+	Subjective *SubjectiveQuestion `protobuf:"bytes,3,opt,name=subjective,proto3,oneof"`
 }
 
 func (*QuestionBatchItem_Mcq) isQuestionBatchItem_Question() {}
 
-func (*QuestionBatchItem_General) isQuestionBatchItem_Question() {}
+func (*QuestionBatchItem_Subjective) isQuestionBatchItem_Question() {}
 
 // Category messages
 type GetCategoriesByIdsRequest struct {
@@ -1736,20 +1728,23 @@ const file_paper_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12.\n" +
 	"\x10duration_minutes\x18\x03 \x01(\x05H\x01R\x0fdurationMinutes\x88\x01\x01B\b\n" +
 	"\x06_titleB\x13\n" +
-	"\x11_duration_minutes\"K\n" +
+	"\x11_duration_minutes\"A\n" +
 	"\rQuestionCount\x12\x10\n" +
-	"\x03mcq\x18\x01 \x01(\x05R\x03mcq\x12\x14\n" +
-	"\x05short\x18\x02 \x01(\x05R\x05short\x12\x12\n" +
-	"\x04long\x18\x03 \x01(\x05R\x04long\"2\n" +
+	"\x03mcq\x18\x01 \x01(\x05R\x03mcq\x12\x1e\n" +
+	"\n" +
+	"subjective\x18\x02 \x01(\x05R\n" +
+	"subjective\"2\n" +
 	"\x13DeletePapersRequest\x12\x1b\n" +
 	"\tpaper_ids\x18\x01 \x03(\x03R\bpaperIds\"2\n" +
 	"\x0fQuestionRequest\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\x03R\n" +
-	"questionId\"\xca\x02\n" +
+	"questionId\"\xd3\x02\n" +
 	"\x10QuestionResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12&\n" +
-	"\x03mcq\x18\x02 \x01(\v2\x12.proto.McqQuestionH\x00R\x03mcq\x122\n" +
-	"\ageneral\x18\x03 \x01(\v2\x16.proto.GeneralQuestionH\x00R\ageneral\x12\x1f\n" +
+	"\x03mcq\x18\x02 \x01(\v2\x12.proto.McqQuestionH\x00R\x03mcq\x12;\n" +
+	"\n" +
+	"subjective\x18\x03 \x01(\v2\x19.proto.SubjectiveQuestionH\x00R\n" +
+	"subjective\x12\x1f\n" +
 	"\vcategory_id\x18\x04 \x01(\x03R\n" +
 	"categoryId\x12\x12\n" +
 	"\x04type\x18\x05 \x01(\tR\x04type\x12\x12\n" +
@@ -1761,21 +1756,23 @@ const file_paper_proto_rawDesc = "" +
 	"\bquestionB\x11\n" +
 	"\x0f_correct_answer\"D\n" +
 	"\fQuestionList\x124\n" +
-	"\tquestions\x18\x01 \x03(\v2\x16.proto.QuestionMinimalR\tquestions\"\xdb\x01\n" +
+	"\tquestions\x18\x01 \x03(\v2\x16.proto.QuestionMinimalR\tquestions\"\xe4\x01\n" +
 	"\x0fQuestionMinimal\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1f\n" +
 	"\vcategory_id\x18\x02 \x01(\x03R\n" +
 	"categoryId\x12\x19\n" +
 	"\bpaper_id\x18\x03 \x01(\x03R\apaperId\x12\x14\n" +
 	"\x05order\x18\x04 \x01(\x05R\x05order\x12&\n" +
-	"\x03mcq\x18\x05 \x01(\v2\x12.proto.McqQuestionH\x00R\x03mcq\x122\n" +
-	"\ageneral\x18\x06 \x01(\v2\x16.proto.GeneralQuestionH\x00R\ageneralB\n" +
+	"\x03mcq\x18\x05 \x01(\v2\x12.proto.McqQuestionH\x00R\x03mcq\x12;\n" +
+	"\n" +
+	"subjective\x18\x06 \x01(\v2\x19.proto.SubjectiveQuestionH\x00R\n" +
+	"subjectiveB\n" +
 	"\n" +
 	"\bquestion\"E\n" +
 	"\vMcqQuestion\x12\x1c\n" +
 	"\tstatement\x18\x01 \x01(\tR\tstatement\x12\x18\n" +
-	"\aoptions\x18\x02 \x03(\tR\aoptions\"/\n" +
-	"\x0fGeneralQuestion\x12\x1c\n" +
+	"\aoptions\x18\x02 \x03(\tR\aoptions\"2\n" +
+	"\x12SubjectiveQuestion\x12\x1c\n" +
 	"\tstatement\x18\x01 \x01(\tR\tstatement\"\xfa\x01\n" +
 	"\x15CreateQuestionRequest\x12\x19\n" +
 	"\bpaper_id\x18\x01 \x01(\x03R\apaperId\x12!\n" +
@@ -1810,11 +1807,13 @@ const file_paper_proto_rawDesc = "" +
 	"\x18GetQuestionsByIdsRequest\x12!\n" +
 	"\fquestion_ids\x18\x01 \x03(\x03R\vquestionIds\"O\n" +
 	"\x15QuestionBatchResponse\x126\n" +
-	"\tquestions\x18\x01 \x03(\v2\x18.proto.QuestionBatchItemR\tquestions\"\xbc\x01\n" +
+	"\tquestions\x18\x01 \x03(\v2\x18.proto.QuestionBatchItemR\tquestions\"\xc5\x01\n" +
 	"\x11QuestionBatchItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12&\n" +
-	"\x03mcq\x18\x02 \x01(\v2\x12.proto.McqQuestionH\x00R\x03mcq\x122\n" +
-	"\ageneral\x18\x03 \x01(\v2\x16.proto.GeneralQuestionH\x00R\ageneral\x12\x1b\n" +
+	"\x03mcq\x18\x02 \x01(\v2\x12.proto.McqQuestionH\x00R\x03mcq\x12;\n" +
+	"\n" +
+	"subjective\x18\x03 \x01(\v2\x19.proto.SubjectiveQuestionH\x00R\n" +
+	"subjective\x12\x1b\n" +
 	"\tmax_score\x18\x04 \x01(\x05R\bmaxScore\x12\x12\n" +
 	"\x04type\x18\x06 \x01(\tR\x04typeB\n" +
 	"\n" +
@@ -1899,7 +1898,7 @@ var file_paper_proto_goTypes = []any{
 	(*QuestionList)(nil),              // 8: proto.QuestionList
 	(*QuestionMinimal)(nil),           // 9: proto.QuestionMinimal
 	(*McqQuestion)(nil),               // 10: proto.McqQuestion
-	(*GeneralQuestion)(nil),           // 11: proto.GeneralQuestion
+	(*SubjectiveQuestion)(nil),        // 11: proto.SubjectiveQuestion
 	(*CreateQuestionRequest)(nil),     // 12: proto.CreateQuestionRequest
 	(*UpdateQuestionRequest)(nil),     // 13: proto.UpdateQuestionRequest
 	(*ReorderQuestionsRequest)(nil),   // 14: proto.ReorderQuestionsRequest
@@ -1922,13 +1921,13 @@ var file_paper_proto_depIdxs = []int32{
 	4,  // 0: proto.PaperResponse.question_counts:type_name -> proto.QuestionCount
 	1,  // 1: proto.PaperList.papers:type_name -> proto.PaperResponse
 	10, // 2: proto.QuestionResponse.mcq:type_name -> proto.McqQuestion
-	11, // 3: proto.QuestionResponse.general:type_name -> proto.GeneralQuestion
+	11, // 3: proto.QuestionResponse.subjective:type_name -> proto.SubjectiveQuestion
 	9,  // 4: proto.QuestionList.questions:type_name -> proto.QuestionMinimal
 	10, // 5: proto.QuestionMinimal.mcq:type_name -> proto.McqQuestion
-	11, // 6: proto.QuestionMinimal.general:type_name -> proto.GeneralQuestion
+	11, // 6: proto.QuestionMinimal.subjective:type_name -> proto.SubjectiveQuestion
 	17, // 7: proto.QuestionBatchResponse.questions:type_name -> proto.QuestionBatchItem
 	10, // 8: proto.QuestionBatchItem.mcq:type_name -> proto.McqQuestion
-	11, // 9: proto.QuestionBatchItem.general:type_name -> proto.GeneralQuestion
+	11, // 9: proto.QuestionBatchItem.subjective:type_name -> proto.SubjectiveQuestion
 	20, // 10: proto.CategoryBatchResponse.categories:type_name -> proto.CategoryBatchItem
 	22, // 11: proto.CategoryList.categories:type_name -> proto.CategoryResponse
 	28, // 12: proto.PaperService.GetUserPapers:input_type -> proto.Empty
@@ -1987,17 +1986,17 @@ func file_paper_proto_init() {
 	file_paper_proto_msgTypes[3].OneofWrappers = []any{}
 	file_paper_proto_msgTypes[7].OneofWrappers = []any{
 		(*QuestionResponse_Mcq)(nil),
-		(*QuestionResponse_General)(nil),
+		(*QuestionResponse_Subjective)(nil),
 	}
 	file_paper_proto_msgTypes[9].OneofWrappers = []any{
 		(*QuestionMinimal_Mcq)(nil),
-		(*QuestionMinimal_General)(nil),
+		(*QuestionMinimal_Subjective)(nil),
 	}
 	file_paper_proto_msgTypes[12].OneofWrappers = []any{}
 	file_paper_proto_msgTypes[13].OneofWrappers = []any{}
 	file_paper_proto_msgTypes[17].OneofWrappers = []any{
 		(*QuestionBatchItem_Mcq)(nil),
-		(*QuestionBatchItem_General)(nil),
+		(*QuestionBatchItem_Subjective)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

@@ -16,7 +16,7 @@ type Question struct {
 	CategoryID    int64            `gorm:"type:bigint;not null"`
 	Question      json.RawMessage  `gorm:"type:json;not null"`
 	Order         int16            `gorm:"type:smallint;not null"`
-	Type          string           `gorm:"type:varchar(20);not null;check:type IN ('MCQ', 'SHORT', 'LONG')"`
+	Type          string           `gorm:"type:varchar(20);not null;check:type IN ('MCQ', 'SUBJECTIVE')"`
 	Tags          json.RawMessage  `gorm:"type:json;default:'[]'"`
 	PaperID       sql.NullInt64    `gorm:"type:bigint"`
 	MaxScore      int16            `gorm:"type:smallint;not null;check:max_score >= 0 AND max_score <= 1000"`
@@ -36,12 +36,12 @@ func (q *Question) GetQuestion() (interface{}, error) {
 			return nil, err
 		}
 		return mcq, nil
-	case constants.QUESTION_TYPE_SHORT, constants.QUESTION_TYPE_LONG:
-		var general structs.GeneralQuestion
-		if err := json.Unmarshal(q.Question, &general); err != nil {
+	case constants.QUESTION_TYPE_SUBJECTIVE:
+		var subjective structs.SubjectiveQuestion
+		if err := json.Unmarshal(q.Question, &subjective); err != nil {
 			return nil, err
 		}
-		return general, nil
+		return subjective, nil
 	default:
 		return nil, errors.New("invalid question type")
 	}

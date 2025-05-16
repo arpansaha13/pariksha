@@ -22,9 +22,8 @@ const (
 )
 
 const (
-	QUESTION_TYPE_MCQ   string = "MCQ"
-	QUESTION_TYPE_SHORT string = "SHORT"
-	QUESTION_TYPE_LONG  string = "LONG"
+	QUESTION_TYPE_MCQ        string = "MCQ"
+	QUESTION_TYPE_SUBJECTIVE string = "SUBJECTIVE"
 )
 
 const (

@@ -133,9 +133,15 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 		return nil, status.Error(codes.Internal, "failed to upsert answer")
 	}
 
-	return &proto.UpsertAnswersResponse{
+	response := &proto.UpsertAnswersResponse{
 		AnswerId:   answer.ID,
 		QuestionId: req.Answer.QuestionId,
-		Answer:     *answer.Answer,
-	}, nil
+		Answer:     nil,
+	}
+
+	if answer.Answer != nil {
+		response.Answer = *answer.Answer
+	}
+
+	return response, nil
 }

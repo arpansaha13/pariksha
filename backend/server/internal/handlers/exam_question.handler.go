@@ -132,8 +132,8 @@ func GetExamQuestion(w http.ResponseWriter, r *http.Request) {
 	switch q := question.Question.(type) {
 	case *proto.QuestionResponse_Mcq:
 		questionContent, _ = json.Marshal(q.Mcq)
-	case *proto.QuestionResponse_General:
-		questionContent, _ = json.Marshal(q.General)
+	case *proto.QuestionResponse_Subjective:
+		questionContent, _ = json.Marshal(q.Subjective)
 	}
 
 	response := dtos.ExamQuestionResponseDto{
