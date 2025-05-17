@@ -119,17 +119,17 @@ func (s *ExamServer) UpdateAnswerForEvaluation(ctx context.Context, req *proto.U
 		}
 
 		if req.NewScore != nil {
-			participant, err := utils.FindRecord[models.ExamParticipant](tx, answer.ExamParticipantID, "exam participant not found")
-			if err != nil {
-				return err
-			}
-
-			participant.ScoreAwarded = participant.ScoreAwarded - int32(answer.ScoreAwarded) + req.GetNewScore()
-			answer.ScoreAwarded = int16(req.GetNewScore())
-
-			if err := tx.Save(participant).Error; err != nil {
+			// Use atomic update query to prevent race conditions
+			if err := tx.Exec(
+				`UPDATE exam_participants 
+				SET score_awarded = score_awarded - ? + ?
+				WHERE id = ?`,
+				answer.ScoreAwarded, req.GetNewScore(), answer.ExamParticipantID,
+			).Error; err != nil {
 				return status.Error(codes.Internal, "failed to update exam participant")
 			}
+
+			answer.ScoreAwarded = int16(req.GetNewScore())
 		}
 
 		if req.Evaluated != nil {
