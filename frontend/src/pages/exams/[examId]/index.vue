@@ -1,7 +1,8 @@
 <template>
-  <UContainer v-if="isParticipant" class="max-w-3xl py-6">
-    <ExamViewParticipant :exam-permission="examPermission!" />
-  </UContainer>
+  <ExamViewParticipant
+    v-if="isParticipant"
+    :exam-permission="examPermission!"
+  />
 
   <ExamViewOwner v-else />
 </template>
@@ -10,18 +11,7 @@
 import type { ExamPermission } from '~/types/exam'
 
 definePageMeta({
-  middleware: [
-    'check-exam-permission',
-    to => {
-      const examId = parseInt(to.params.examId as string)
-      const { data: examPermission } = useNuxtData<ExamPermission>(
-        AsyncDataKeys.EXAM_PERMISSION(examId)
-      )
-      if (examPermission.value!.can_participate) {
-        setPageLayout('blank')
-      }
-    },
-  ],
+  middleware: ['check-exam-permission'],
 })
 
 const route = useRoute()

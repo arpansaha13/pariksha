@@ -24,7 +24,7 @@ type ExamServer struct {
 	proto.UnimplementedExamServiceServer
 }
 
-// GetUserExams retrieves all exams created by the authenticated user
+// GetUserExams retrieves all exams created by or participated in by the authenticated user
 func (s *ExamServer) GetUserExams(ctx context.Context, _ *proto.Empty) (*proto.ExamList, error) {
 	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
@@ -32,7 +32,11 @@ func (s *ExamServer) GetUserExams(ctx context.Context, _ *proto.Empty) (*proto.E
 	}
 
 	var exams []models.Exam
-	if err := db.DB.Where("created_by = ?", userID).Find(&exams).Error; err != nil {
+	if err := db.DB.Where("created_by = ?", userID).
+		Or("id IN (?)", db.DB.Model(&models.ExamParticipant{}).
+			Select("exam_id").
+			Where("user_id = ?", userID)).
+		Find(&exams).Error; err != nil {
 		return nil, status.Error(codes.Internal, "failed to retrieve exams")
 	}
 
