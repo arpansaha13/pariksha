@@ -33,16 +33,61 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var response []dtos.AnswerResponseDto
-	for _, answer := range resp.Answers {
-		response = append(response, dtos.AnswerResponseDto{
-			ID:                answer.Id,
-			ExamParticipantID: answer.ExamParticipantId,
-			QuestionID:        answer.QuestionId,
-			Answer:            answer.Answer,
-			Comments:          answer.Comments,
-			ScoreAwarded:      int(answer.ScoreAwarded),
-		})
+	// Get question details from paper service
+	questionIDs := make([]int64, len(resp.Answers))
+	for i, result := range resp.Answers {
+		questionIDs[i] = result.QuestionId
+	}
+
+	paperService := services.GetPaperService()
+	paperCtx := paperService.CreateMetadata(userID)
+
+	questionDetails, err := paperService.Client().GetQuestionsByIds(paperCtx, &proto.GetQuestionsByIdsRequest{
+		QuestionIds: questionIDs,
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	// Create a map for quick lookup of question details
+	questionDetailsMap := make(map[int64]*proto.QuestionBatchItem)
+	for _, q := range questionDetails.Questions {
+		questionDetailsMap[q.Id] = q
+	}
+
+	response := make([]dtos.AnswerListItemDto, len(resp.Answers))
+	for i, result := range resp.Answers {
+		var questionBytes []byte
+		questionDetail := questionDetailsMap[result.QuestionId]
+		if questionDetail != nil {
+			switch q := questionDetail.Question.(type) {
+			case *proto.QuestionBatchItem_Mcq:
+				questionBytes, _ = json.Marshal(q.Mcq)
+			case *proto.QuestionBatchItem_Subjective:
+				questionBytes, _ = json.Marshal(q.Subjective)
+			}
+		}
+
+		response[i] = dtos.AnswerListItemDto{
+			Type: result.QuestionType,
+			Question: dtos.AnswerListQuestionDto{
+				ID:         result.QuestionId,
+				Order:      result.Order,
+				CategoryID: result.CategoryId,
+				Content:    questionBytes,
+				MaxScore:   result.MaxScore,
+			},
+			Answer: nil,
+		}
+
+		// AnswerId will be 0 is question is unanswered
+		if result.Id != 0 {
+			response[i].Answer = &dtos.AnswerListAnswerDto{
+				ID:      result.Id,
+				Content: result.Answer,
+			}
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

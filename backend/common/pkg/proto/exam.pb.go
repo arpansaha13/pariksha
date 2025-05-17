@@ -1130,10 +1130,13 @@ type AnswerResponse struct {
 	ExamParticipantId int64                  `protobuf:"varint,2,opt,name=exam_participant_id,json=examParticipantId,proto3" json:"exam_participant_id,omitempty"`
 	QuestionId        int64                  `protobuf:"varint,3,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
 	Answer            []byte                 `protobuf:"bytes,4,opt,name=answer,proto3" json:"answer,omitempty"` // JSON encoded answer
-	ScoreAwarded      int32                  `protobuf:"varint,5,opt,name=score_awarded,json=scoreAwarded,proto3" json:"score_awarded,omitempty"`
-	Comments          string                 `protobuf:"bytes,6,opt,name=comments,proto3" json:"comments,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// question fields
+	Order         int32  `protobuf:"varint,5,opt,name=order,proto3" json:"order,omitempty"`
+	CategoryId    int64  `protobuf:"varint,6,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	QuestionType  string `protobuf:"bytes,7,opt,name=question_type,json=questionType,proto3" json:"question_type,omitempty"`
+	MaxScore      int32  `protobuf:"varint,8,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AnswerResponse) Reset() {
@@ -1194,18 +1197,32 @@ func (x *AnswerResponse) GetAnswer() []byte {
 	return nil
 }
 
-func (x *AnswerResponse) GetScoreAwarded() int32 {
+func (x *AnswerResponse) GetOrder() int32 {
 	if x != nil {
-		return x.ScoreAwarded
+		return x.Order
 	}
 	return 0
 }
 
-func (x *AnswerResponse) GetComments() string {
+func (x *AnswerResponse) GetCategoryId() int64 {
 	if x != nil {
-		return x.Comments
+		return x.CategoryId
+	}
+	return 0
+}
+
+func (x *AnswerResponse) GetQuestionType() string {
+	if x != nil {
+		return x.QuestionType
 	}
 	return ""
+}
+
+func (x *AnswerResponse) GetMaxScore() int32 {
+	if x != nil {
+		return x.MaxScore
+	}
+	return 0
 }
 
 type AnswerList struct {
@@ -2270,15 +2287,18 @@ const file_exam_proto_rawDesc = "" +
 	"\vquestion_id\x18\x02 \x01(\x03R\n" +
 	"questionId\x12\x1b\n" +
 	"\x06answer\x18\x03 \x01(\fH\x00R\x06answer\x88\x01\x01B\t\n" +
-	"\a_answer\"\xca\x01\n" +
+	"\a_answer\"\x82\x02\n" +
 	"\x0eAnswerResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12.\n" +
 	"\x13exam_participant_id\x18\x02 \x01(\x03R\x11examParticipantId\x12\x1f\n" +
 	"\vquestion_id\x18\x03 \x01(\x03R\n" +
 	"questionId\x12\x16\n" +
-	"\x06answer\x18\x04 \x01(\fR\x06answer\x12#\n" +
-	"\rscore_awarded\x18\x05 \x01(\x05R\fscoreAwarded\x12\x1a\n" +
-	"\bcomments\x18\x06 \x01(\tR\bcomments\"=\n" +
+	"\x06answer\x18\x04 \x01(\fR\x06answer\x12\x14\n" +
+	"\x05order\x18\x05 \x01(\x05R\x05order\x12\x1f\n" +
+	"\vcategory_id\x18\x06 \x01(\x03R\n" +
+	"categoryId\x12#\n" +
+	"\rquestion_type\x18\a \x01(\tR\fquestionType\x12\x1b\n" +
+	"\tmax_score\x18\b \x01(\x05R\bmaxScore\"=\n" +
 	"\n" +
 	"AnswerList\x12/\n" +
 	"\aanswers\x18\x01 \x03(\v2\x15.proto.AnswerResponseR\aanswers\"\xc1\x01\n" +
@@ -2363,7 +2383,7 @@ const file_exam_proto_rawDesc = "" +
 	"\aresults\x18\x01 \x03(\v2\x15.proto.ExamResultItemR\aresults*,\n" +
 	"\x0eExamAccessType\x12\t\n" +
 	"\x05OWNER\x10\x00\x12\x0f\n" +
-	"\vPARTICIPANT\x10\x012\xbf\f\n" +
+	"\vPARTICIPANT\x10\x012\xd9\f\n" +
 	"\vExamService\x12/\n" +
 	"\fGetUserExams\x12\f.proto.Empty\x1a\x0f.proto.ExamList\"\x00\x12=\n" +
 	"\n" +
@@ -2385,8 +2405,8 @@ const file_exam_proto_rawDesc = "" +
 	"\x15GetParticipantAnswers\x12\x19.proto.ParticipantRequest\x1a\x11.proto.AnswerList\"\x00\x12K\n" +
 	"\x10GetAnswerForExam\x12\x17.proto.GetAnswerRequest\x1a\x1c.proto.AnswerMinimalResponse\"\x00\x12K\n" +
 	"\fUpsertAnswer\x12\x1b.proto.UpsertAnswersRequest\x1a\x1c.proto.UpsertAnswersResponse\"\x00\x12f\n" +
-	"\x17GetAnswerEvaluationData\x12!.proto.ParticipantQuestionRequest\x1a&.proto.GetAnswerEvaluationDataResponse\"\x00\x12G\n" +
-	"\x19UpdateAnswerForEvaluation\x12\x1a.proto.UpdateAnswerRequest\x1a\f.proto.Empty\"\x00\x12Z\n" +
+	"\x17GetAnswerEvaluationData\x12!.proto.ParticipantQuestionRequest\x1a&.proto.GetAnswerEvaluationDataResponse\"\x00\x12a\n" +
+	"\x19UpdateAnswerForEvaluation\x12\x1a.proto.UpdateAnswerRequest\x1a&.proto.GetAnswerEvaluationDataResponse\"\x00\x12Z\n" +
 	"\x1aMarkParticipantAsEvaluated\x12\x19.proto.ParticipantRequest\x1a\x1f.proto.EvaluationStatusResponse\"\x00\x12[\n" +
 	"\x16GetAnswerForEvaluation\x12!.proto.ParticipantQuestionRequest\x1a\x1c.proto.AnswerMinimalResponse\"\x00B\bZ\x06/protob\x06proto3"
 
@@ -2506,7 +2526,7 @@ var file_exam_proto_depIdxs = []int32{
 	22, // 58: proto.ExamService.GetAnswerForExam:output_type -> proto.AnswerMinimalResponse
 	17, // 59: proto.ExamService.UpsertAnswer:output_type -> proto.UpsertAnswersResponse
 	32, // 60: proto.ExamService.GetAnswerEvaluationData:output_type -> proto.GetAnswerEvaluationDataResponse
-	37, // 61: proto.ExamService.UpdateAnswerForEvaluation:output_type -> proto.Empty
+	32, // 61: proto.ExamService.UpdateAnswerForEvaluation:output_type -> proto.GetAnswerEvaluationDataResponse
 	14, // 62: proto.ExamService.MarkParticipantAsEvaluated:output_type -> proto.EvaluationStatusResponse
 	22, // 63: proto.ExamService.GetAnswerForEvaluation:output_type -> proto.AnswerMinimalResponse
 	42, // [42:64] is the sub-list for method output_type

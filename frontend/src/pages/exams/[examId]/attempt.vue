@@ -290,9 +290,12 @@ watchImmediate(currentQuestionId, async qid => {
     `/api/exams/${examId}/questions/${qid}/answer`
   )
 
-  if (data.question_id !== qid || isNullOrUndefined(data.answer)) {
+  if (isNullOrUndefined(data.answer)) return
+  if (data.question_id !== qid) {
+    answerFetched.value[qid] = false
     return
   }
+
   storeAnswerFromResponse(qid, data)
 })
 
@@ -419,8 +422,7 @@ const { remaining: redirectCountdown, start: startRedirectCountdown } =
   })
 
 async function handleExamSubmit() {
-  // Save any remaining unsaved answers
-  saveUpdatedAnswers()
+  saveUpdatedAnswers() // Save any remaining unsaved answers
   await endExam(examId)
   isExamEnded.value = true
   startRedirectCountdown()

@@ -18,21 +18,55 @@ import (
 )
 
 func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.ParticipantRequest) (*proto.AnswerList, error) {
-	var answers []models.Answer
-	if err := db.DB.Where("exam_participant_id = ?", req.ParticipantId).Find(&answers).Error; err != nil {
-		return nil, status.Error(codes.NotFound, "answers not found")
+	exam, ok := interceptors.GetExamFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
 
-	if len(answers) == 0 {
-		return nil, status.Error(codes.NotFound, "answers not found")
+	type QueryResult struct {
+		ID                int64            `gorm:"primaryKey;type:bigint"`
+		ExamParticipantID int64            `gorm:"type:bigint"`
+		Answer            *json.RawMessage `gorm:"type:json"`
+
+		QuestionID int64  `gorm:"type:bigint"`
+		Order      int16  `gorm:"column:order"`
+		CategoryID int64  `gorm:"column:category_id"`
+		Type       string `gorm:"column:type"`
+		MaxScore   int16  `gorm:"column:max_score"`
+	}
+
+	var results []QueryResult
+	err := db.DB.Table("exam_questions").
+		Select("exam_questions.question_id, exam_questions.order, exam_questions.category_id, exam_questions.type, exam_questions.max_score", "answers.id, answers.answer, answers.exam_participant_id").
+		Joins("LEFT JOIN answers ON exam_questions.question_id = answers.question_id AND answers.exam_participant_id = ?", req.ParticipantId).
+		Where("exam_questions.exam_id = ?", exam.ID).
+		Find(&results).Error
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to fetch answers")
+	}
+
+	if len(results) == 0 {
+		return nil, status.Error(codes.NotFound, "no questions found")
 	}
 
 	response := &proto.AnswerList{
-		Answers: make([]*proto.AnswerResponse, len(answers)),
+		Answers: make([]*proto.AnswerResponse, len(results)),
 	}
 
-	for i, answer := range answers {
-		response.Answers[i] = answerToProto(answer)
+	for i, result := range results {
+		response.Answers[i] = &proto.AnswerResponse{
+			Id:                result.ID, // Will be 0 if question is unanswered
+			ExamParticipantId: result.ExamParticipantID,
+			QuestionId:        result.QuestionID,
+			Order:             int32(result.Order),
+			CategoryId:        result.CategoryID,
+			QuestionType:      result.Type,
+			MaxScore:          int32(result.MaxScore),
+		}
+		if result.Answer != nil {
+			response.Answers[i].Answer = *result.Answer
+		}
 	}
 
 	return response, nil
@@ -40,8 +74,13 @@ func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.Parti
 
 // GetAnswerForExam finds an answer using participant ID and question ID and returns minimal info
 func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerRequest) (*proto.AnswerMinimalResponse, error) {
+	userID, err := utils.GetUserIDFromMetadata(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	var participant models.ExamParticipant
-	if err := db.DB.Where("exam_id = ?", req.ExamId).Take(&participant).Error; err != nil {
+	if err := db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, status.Error(codes.NotFound, "participant not found")
 		}
@@ -49,7 +88,7 @@ func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerR
 	}
 
 	var answer models.Answer
-	err := db.DB.Where("exam_participant_id = ? AND question_id = ? AND answer IS NOT NULL",
+	err = db.DB.Where("exam_participant_id = ? AND question_id = ? AND answer IS NOT NULL",
 		participant.ID, req.QuestionId).Take(&answer).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {

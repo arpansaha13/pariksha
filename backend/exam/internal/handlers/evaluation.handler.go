@@ -94,7 +94,7 @@ func (s *ExamServer) GetAnswerEvaluationData(ctx context.Context, req *proto.Par
 	}, nil
 }
 
-func (s *ExamServer) UpdateAnswerForEvaluation(ctx context.Context, req *proto.UpdateAnswerRequest) (*proto.Empty, error) {
+func (s *ExamServer) UpdateAnswerForEvaluation(ctx context.Context, req *proto.UpdateAnswerRequest) (*proto.GetAnswerEvaluationDataResponse, error) {
 	// Get max score from exam_questions using joins
 	var maxScore int16
 	if err := db.DB.Table("answers").
@@ -110,8 +110,10 @@ func (s *ExamServer) UpdateAnswerForEvaluation(ctx context.Context, req *proto.U
 		return nil, status.Error(codes.InvalidArgument, "new score exceeds max score for the question")
 	}
 
+	var answer *models.Answer
 	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		answer, err := utils.FindRecord[models.Answer](tx, req.AnswerId, "answer not found")
+		var err error
+		answer, err = utils.FindRecord[models.Answer](tx, req.AnswerId, "answer not found")
 		if err != nil {
 			return err
 		}
@@ -144,7 +146,12 @@ func (s *ExamServer) UpdateAnswerForEvaluation(ctx context.Context, req *proto.U
 		return nil, err
 	}
 
-	return &proto.Empty{}, nil
+	return &proto.GetAnswerEvaluationDataResponse{
+		Id:           answer.ID,
+		QuestionId:   answer.QuestionID,
+		ScoreAwarded: int32(answer.ScoreAwarded),
+		Comments:     answer.Comments.String,
+	}, nil
 }
 
 func (s *ExamServer) MarkParticipantAsEvaluated(ctx context.Context, req *proto.ParticipantRequest) (*proto.EvaluationStatusResponse, error) {

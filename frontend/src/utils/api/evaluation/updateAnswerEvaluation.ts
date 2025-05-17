@@ -1,3 +1,5 @@
+import type { EvaluationAnswer } from '~/types'
+
 interface UpdateAnswerEvaluationBody {
   new_score?: number
   evaluated?: boolean
@@ -10,7 +12,7 @@ export async function updateAnswerEvaluation(
 ) {
   const { $api } = useNuxtApp()
 
-  await $api(`/api/answers/${answerId}`, {
+  return $api<EvaluationAnswer>(`/api/answers/${answerId}`, {
     method: 'PATCH',
     body,
   })

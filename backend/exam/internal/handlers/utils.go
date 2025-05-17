@@ -97,21 +97,6 @@ func examToProto(exam *models.Exam) (*proto.ExamResponse, error) {
 	}, nil
 }
 
-// answerToProto converts a models.Answer to proto.AnswerResponse
-func answerToProto(answer models.Answer) *proto.AnswerResponse {
-	response := &proto.AnswerResponse{
-		Id:                answer.ID,
-		ExamParticipantId: answer.ExamParticipantID,
-		QuestionId:        answer.QuestionID,
-		ScoreAwarded:      int32(answer.ScoreAwarded),
-		Comments:          answer.Comments.String,
-	}
-	if answer.Answer != nil {
-		response.Answer = *answer.Answer
-	}
-	return response
-}
-
 // validateAnswerJSON validates the answer JSON based on question type
 func validateAnswerJSON(answerJSON []byte, questionType string) error {
 	if len(answerJSON) == 0 {

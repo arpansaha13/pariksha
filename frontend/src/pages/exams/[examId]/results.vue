@@ -2,7 +2,7 @@
   <main class="space-y-4">
     <UCard>
       <template #header>
-        <h2 class="heading">{{ examData?.title }} - Results</h2>
+        <h1 class="heading">{{ examData?.title }} - Results</h1>
       </template>
 
       <div>

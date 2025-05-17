@@ -28,34 +28,29 @@
         v-if="!isNullOrUndefined(currentQuestionId)"
         :current-question-id="currentQuestionId"
         :current-category-questions="currentCategoryQuestions"
-        :save-and-navigate-to="saveAndNavigateTo"
       />
     </UCard>
   </div>
 
   <div
-    v-if="question && currentQuestionId"
+    v-if="currentQuestionAnswer && currentQuestionId"
     class="col-span-2 flex flex-col gap-y-2.5"
   >
     <UCard>
-      <p class="font-medium">{{ question.question.statement }}</p>
-    </UCard>
-
-    <UCard v-if="answerPending">
-      <SkeletonQuestionMcqOptions v-if="question.type === QuestionType.MCQ" />
-      <SkeletonQuestionSubjectiveAnswer v-else />
+      <p class="font-medium">
+        {{ currentQuestionAnswer.question.content.statement }}
+      </p>
     </UCard>
 
     <UCard
-      v-else
       :ui="{
         root:
-          isNullOrUndefined(answerData!.answer) &&
-          question.type !== QuestionType.MCQ &&
+          isNullOrUndefined(currentQuestionAnswer.answer?.content) &&
+          currentQuestionAnswer.type !== QuestionType.MCQ &&
           'grow',
       }"
     >
-      <template v-if="question.type === QuestionType.MCQ">
+      <template v-if="currentQuestionAnswer.type === QuestionType.MCQ">
         <URadioGroup
           v-if="!isNullOrUndefined(currentQuestionMcqOptions)"
           v-model="selectedOptionIndex"
@@ -72,27 +67,27 @@
       </template>
 
       <template v-else>
-        <EvaluationUnanswered v-if="isNullOrUndefined(answerData?.answer)" />
+        <EvaluationUnanswered
+          v-if="isNullOrUndefined(currentQuestionAnswer.answer?.content)"
+        />
 
         <p v-else>
-          {{ (answerData!.answer as SubjectiveAnswer).text }}
+          {{ (currentQuestionAnswer.answer.content as SubjectiveAnswer).text }}
         </p>
       </template>
     </UCard>
 
-    <UCard v-if="answerPending" :ui="{ root: 'grow', body: 'space-y-1' }">
-      <SkeletonEvaluation />
-    </UCard>
-
     <!-- Show evaluation section for MCQ because EvaluationUnanswered for MCQ is shown here -->
     <UCard
-      v-else-if="
-        !isNullOrUndefined(answerData!.answer) ||
-        question.type === QuestionType.MCQ
+      v-if="
+        !isNullOrUndefined(currentQuestionAnswer.answer?.content) ||
+        currentQuestionAnswer.type === QuestionType.MCQ
       "
       :ui="{ root: 'grow' }"
     >
-      <EvaluationUnanswered v-if="isNullOrUndefined(answerData?.answer)" />
+      <EvaluationUnanswered
+        v-if="isNullOrUndefined(currentQuestionAnswer.answer?.content)"
+      />
       <UFormField
         v-else
         label="Score"
@@ -101,9 +96,11 @@
         required
       >
         <UInputNumber
-          v-model="evaluationStates[question.id].score_awarded"
+          v-model="
+            evaluationStates[currentQuestionAnswer.answer.id].score_awarded
+          "
           :min="0"
-          :max="currentQuestionMaxScore"
+          :max="currentQuestionAnswer.question.max_score"
           required
         />
       </UFormField>
@@ -111,7 +108,7 @@
   </div>
 
   <UCard
-    v-if="currentCategoryQuestions.length > 0"
+    v-if="currentCategoryQuestions.length > 1"
     :ui="{ root: 'col-span-2', body: 'flex' }"
   >
     <UButton
@@ -120,29 +117,14 @@
       color="neutral"
       variant="outline"
       :to="{ query: { ...route.query, question: prevQuestionId } }"
-      @click="
-        saveAndNavigateTo(
-          { query: { ...route.query, question: prevQuestionId } },
-          { replace: true }
-        )
-      "
+      replace
     />
     <UButton
       v-if="nextQuestionId"
+      :to="{ query: { ...route.query, question: nextQuestionId } }"
       label="Save and next"
       class="ml-auto"
-      @click="
-        saveAndNavigateTo(
-          { query: { ...route.query, question: nextQuestionId } },
-          { replace: true }
-        )
-      "
-    />
-    <UButton
-      v-else-if="!isNullOrUndefined(question)"
-      label="Save"
-      class="ml-auto"
-      @click="saveEvaluation(question.id!)"
+      replace
     />
   </UCard>
 </template>
@@ -155,6 +137,8 @@ import {
   type ExamPermission,
   type SubjectiveAnswer,
   type MCQAnswer,
+  type QuestionMcq,
+  type Answer,
 } from '~/types'
 
 definePageMeta({
@@ -180,16 +164,40 @@ const route = useRoute()
 const examId = parseInt(route.params.examId as string)
 const participantId = parseInt(route.params.participantId as string)
 
-const [{ data: exam }, { data: groupedQuestions }, { data: sortedCategories }] =
-  await Promise.all([
-    useExam(examId),
-    useExamQuestions(examId),
-    useExamCategories(examId),
-  ])
+const [
+  { data: exam },
+  { data: sortedCategories },
+  { data: groupedQuestionAnswers },
+] = await Promise.all([
+  useExam(examId),
+  useExamCategories(examId),
+  useExamParticipantAnswers(participantId),
+])
 
-const getQuestionIdForCategoryId = useExamQuestionIdForCategoryId({
-  groupedQuestions,
-})
+// _______________LAST VISITED QUESTION FOR CATEGORY________________
+function useLastVisitedQuestionForCategory() {
+  const lastVisitedQuestionForCategory = ref<Record<number, string>>({})
+
+  watchImmediate(route, newRoute => {
+    const query = newRoute.query
+    if (isNullOrUndefined(query) || isNullOrUndefined(query.category)) return
+    const categoryId = parseInt(query.category as string)
+    lastVisitedQuestionForCategory.value[categoryId] = query.question as string
+  })
+
+  function getQuestionIdForCategoryId(categoryId: number) {
+    const categoryItems = groupedQuestionAnswers.value?.[categoryId]
+    if (isNullOrUndefined(categoryItems)) return
+    const questionId =
+      lastVisitedQuestionForCategory.value[categoryId] ??
+      categoryItems[0].question.id
+    return questionId
+  }
+
+  return { getQuestionIdForCategoryId }
+}
+
+const { getQuestionIdForCategoryId } = useLastVisitedQuestionForCategory()
 
 // Add initial `category` and `question` queries, if missing
 if (!route.query.category && sortedCategories.value?.length) {
@@ -199,122 +207,186 @@ if (!route.query.category && sortedCategories.value?.length) {
   await navigateTo({ query }, { replace: true })
 }
 
+// ________________________ROUTE QUERY DATA_________________________
 const currentCategoryId = computed(() => {
   return route.query.category ? parseInt(route.query.category as string) : null
-})
-
-const currentCategoryQuestions = computed(() => {
-  if (!groupedQuestions.value || !currentCategoryId.value) return []
-  return groupedQuestions.value[currentCategoryId.value] ?? []
 })
 
 const currentQuestionId = computed(() => {
   return route.query.question ? parseInt(route.query.question as string) : null
 })
 
-const { prevQuestionId, nextQuestionId, currentQuestionIdx } =
-  useExamQuestionNavigation({
-    currentQuestionId,
-    currentCategoryQuestions,
+const currentCategoryQuestions = computed(() => {
+  if (!groupedQuestionAnswers.value || !currentCategoryId.value) return []
+  return groupedQuestionAnswers.value[currentCategoryId.value] ?? []
+})
+
+// ______________________QUESTION NAVIGATION________________________
+function useEvaluationQuestionNavigation() {
+  const currentQuestionIdx = computed(() => {
+    if (!currentCategoryQuestions.value || !currentQuestionId.value) return -1
+    return currentCategoryQuestions.value.findIndex(
+      item => item.question.id === currentQuestionId.value
+    )
   })
 
-// ____________________PREPARE EVALUATION STATES____________________
-const evaluationStates = reactive<Record<number, Partial<EvaluationAnswer>>>({})
+  const prevQuestionId = computed(() => {
+    if (!currentCategoryQuestions.value || currentQuestionIdx.value <= 0)
+      return null
+    return currentCategoryQuestions.value[currentQuestionIdx.value - 1].question
+      .id
+  })
 
-for (const questionMinimals of Object.values(groupedQuestions.value!)) {
-  for (const questionMinimal of questionMinimals) {
-    evaluationStates[questionMinimal.id] = {
-      score_awarded: undefined,
+  const nextQuestionId = computed(() => {
+    if (
+      !currentCategoryQuestions.value ||
+      currentQuestionIdx.value === -1 ||
+      currentQuestionIdx.value >= currentCategoryQuestions.value.length - 1
+    ) {
+      return null
+    }
+
+    return currentCategoryQuestions.value[currentQuestionIdx.value + 1].question
+      .id
+  })
+
+  return { prevQuestionId, nextQuestionId, currentQuestionIdx }
+}
+
+const { prevQuestionId, nextQuestionId, currentQuestionIdx } =
+  useEvaluationQuestionNavigation()
+
+// ___________________HELPER COMPUTED PROPERTIES____________________
+const currentQuestionAnswer = computed(() => {
+  const qIdx = currentQuestionIdx.value
+  if (qIdx === -1) return null
+  return currentCategoryQuestions.value[qIdx]
+})
+
+// ____________________PREPARE EVALUATION STATES____________________
+function useEvaluationStates() {
+  const evaluationFetched = ref<Record<string, boolean>>({})
+  const evaluationStates = reactive<
+    Record<Answer['id'], Partial<EvaluationAnswer>>
+  >({})
+  const savedEvaluationStates = shallowRef<
+    Record<Answer['id'], Partial<EvaluationAnswer>>
+  >({})
+
+  for (const items of Object.values(groupedQuestionAnswers.value!)) {
+    for (const item of items) {
+      if (isNullOrUndefined(item.answer)) continue
+
+      const ansId = item.answer.id
+      evaluationStates[ansId] = { score_awarded: undefined }
+      savedEvaluationStates.value[ansId] = { ...evaluationStates[ansId] }
     }
   }
+
+  const { $api } = useNuxtApp()
+  watchImmediate(currentQuestionAnswer, async qa => {
+    if (isNullOrUndefined(qa?.answer)) return
+
+    const qid = qa.question.id
+    const ansId = qa.answer.id
+
+    if (evaluationFetched.value[ansId]) return
+    evaluationFetched.value[ansId] = true
+
+    const data = await $api<EvaluationAnswer>(
+      `/api/participants/${participantId}/questions/${qid}/evaluation-data`
+    )
+
+    if (data.question_id !== qid) {
+      evaluationFetched.value[ansId] = false
+      return
+    }
+
+    evaluationStates[ansId].score_awarded = data.score_awarded
+    savedEvaluationStates.value[ansId] = { ...evaluationStates[ansId] }
+  })
+
+  return { evaluationStates, savedEvaluationStates }
 }
 
-const [
-  { data: question },
-  { data: answerData, pending: answerPending },
-  { data: evaluationAnswer },
-] = await Promise.all([
-  useExamQuestion(currentQuestionId),
-  useAnswerForEvaluation(participantId, currentQuestionId),
-  useAnswerEvaluationData(participantId, currentQuestionId),
-])
+const { evaluationStates, savedEvaluationStates } = useEvaluationStates()
 
-const currentQuestionMaxScore = computed(() => {
-  return currentCategoryQuestions.value[currentQuestionIdx.value].max_score
-})
+// ____________________PERIODIC SAVE EVALUATION_____________________
+function usePeriodicSaveEvaluation() {
+  /** Save answer for a specific question */
+  function saveEvaluation(
+    answerId: number,
+    savedState: Partial<EvaluationAnswer>,
+    currState: Partial<EvaluationAnswer>
+  ) {
+    if (currState.score_awarded === savedState.score_awarded) {
+      return Promise.resolve(null)
+    }
 
-// Update evaluationStates when evaluationAnswer is fetched
-watchImmediate(evaluationAnswer, newEvaluationAnswer => {
-  if (isNullOrUndefined(newEvaluationAnswer)) return
+    const updateEvaluationBody = {
+      new_score: currState.score_awarded,
+      evaluated: true,
+    }
 
-  evaluationStates[newEvaluationAnswer.question_id].score_awarded =
-    newEvaluationAnswer.score_awarded
-})
+    return updateAnswerEvaluation(answerId, updateEvaluationBody)
+  }
 
-// _________________________SAVE EVALUATION_________________________
-/** Save answer for a specific question */
-function saveEvaluation(questionId: number) {
-  const evaluationState = evaluationStates[questionId]
-  const { data: currentEvaluation } = useNuxtData<EvaluationAnswer | null>(
-    AsyncDataKeys.EVALUATION_ANSWER(participantId, questionId)
+  function saveUpdatedEvaluation() {
+    for (const [ansId, currState] of Object.entries(evaluationStates)) {
+      const savedState = savedEvaluationStates.value[parseInt(ansId)]
+      if (savedState.score_awarded !== currState.score_awarded) {
+        saveEvaluation(parseInt(ansId), savedState, currState).then(res => {
+          if (isNullOrUndefined(res)) return
+          savedState.score_awarded = res.score_awarded
+        })
+      }
+    }
+  }
+  useIntervalFn(
+    saveUpdatedEvaluation,
+    AUTO_SAVE_EVALUATION_INTERVAL_SECONDS * 1000
   )
 
-  if (
-    currentEvaluation.value &&
-    evaluationState.score_awarded === currentEvaluation.value.score_awarded
-  ) {
-    return
-  }
-
-  const updateEvaluationBody = {
-    new_score: evaluationState.score_awarded,
-    evaluated: true,
-  }
-
-  return updateAnswerEvaluation(answerData.value!.id, updateEvaluationBody)
+  return { saveUpdatedEvaluation }
 }
 
-const saveAndNavigateTo = (async (to, options) => {
-  if (question.value) saveEvaluation(question.value.id)
-  return navigateTo(to, options)
-}) as typeof navigateTo
+const { saveUpdatedEvaluation } = usePeriodicSaveEvaluation()
 
 // ______________________MCQ QUESTIONS DISPLAY______________________
 const selectedOptionIndex = ref<number>()
 
-watchImmediate(answerData, val => {
+watchImmediate(currentQuestionAnswer, val => {
   if (
-    isNullOrUndefined(question.value) ||
-    isNullOrUndefined(val?.answer) ||
-    question.value.type !== QuestionType.MCQ
+    isNullOrUndefined(val?.answer?.content) ||
+    val.type !== QuestionType.MCQ
   ) {
     selectedOptionIndex.value = undefined
   } else {
-    selectedOptionIndex.value = (val.answer as MCQAnswer).optionIndex
+    selectedOptionIndex.value = (val.answer.content as MCQAnswer).optionIndex
   }
 })
 
 const currentQuestionMcqOptions = computed(() => {
   if (
-    isNullOrUndefined(question.value) ||
-    question.value.type !== QuestionType.MCQ
-  )
+    isNullOrUndefined(currentQuestionAnswer.value) ||
+    currentQuestionAnswer.value.type !== QuestionType.MCQ
+  ) {
     return null
+  }
 
-  return question.value.question.options.map((option, i) => ({
+  const mcqQuestion = currentQuestionAnswer.value.question
+    .content as QuestionMcq['question']
+  return mcqQuestion.options.map((option, i) => ({
     value: i,
     label: option,
   }))
 })
 
 // ________________________SUBMIT EVALUATION________________________
-
 const toast = useToast()
 async function handleEvaluationSubmit() {
-  if (isNullOrUndefined(question.value)) return
-
   try {
-    await saveEvaluation(question.value.id)
+    saveUpdatedEvaluation() // Save any remaining unsaved evaluation data
     await markParticipantAsEvaluated(participantId)
     await navigateTo(`/exams/${examId}`)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

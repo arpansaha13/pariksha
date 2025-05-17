@@ -23,7 +23,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 	tests := []ParticipantTestCase[*proto.AnswerList]{
 		{
 			BaseTestCase: BaseTestCase{
-				name: "Success - Get multiple answers",
+				name: "Success - Get multiple answers with evaluation data",
 				metadata: map[string]string{
 					"user_id": strconv.FormatInt(userID, 10),
 				},
@@ -31,7 +31,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 				userID:       userID,
 			},
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, 2) // Created by different user
+				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: userID, Status: 1},
 				})
@@ -40,23 +40,71 @@ func TestGetParticipantAnswers(t *testing.T) {
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 
-				// Create multiple answers
-				createTestAnswer(t, &participant, 1)
-				createTestAnswer(t, &participant, 2)
+				// Create questions first
+				q1 := createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 10,
+					Order:      1,
+					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+					MaxScore:   10,
+				})
+				q2 := createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 2,
+					CategoryID: 10,
+					Order:      2,
+					Type:       constants.QUESTION_TYPE_MCQ,
+					MaxScore:   5,
+				})
+
+				// Create answers with different evaluation states
+				rawAnswer1 := json.RawMessage(`{"text": "Answer 1"}`)
+				answer1 := models.Answer{
+					ExamParticipantID: participant.ID,
+					QuestionID:        q1.QuestionID,
+					Answer:            &rawAnswer1,
+					ScoreAwarded:      8,
+					Comments:          sql.NullString{String: "Good answer", Valid: true},
+					Evaluated:         true,
+				}
+				require.NoError(t, db.DB.Create(&answer1).Error)
+
+				rawAnswer2 := json.RawMessage(`{"optionIndex": 1}`)
+				answer2 := models.Answer{
+					ExamParticipantID: participant.ID,
+					QuestionID:        q2.QuestionID,
+					Answer:            &rawAnswer2,
+					ScoreAwarded:      0, // Not evaluated yet
+					Evaluated:         false,
+				}
+				require.NoError(t, db.DB.Create(&answer2).Error)
 
 				return &participant
 			},
 			validate: func(t *testing.T, resp *proto.AnswerList) {
-				assert.EqualValues(t, 2, len(resp.Answers))
-				for _, answer := range resp.Answers {
-					var answerData struct {
-						Text string `json:"text"`
-					}
-					require.NoError(t, json.Unmarshal(answer.Answer, &answerData))
-					assert.Equal(t, "Test Answer", answerData.Text)
-					assert.Equal(t, "Test Comment", answer.Comments)
-					assert.EqualValues(t, 5, answer.ScoreAwarded)
+				require.Equal(t, 2, len(resp.Answers))
+
+				// Questions should be ordered by the order field
+				answer1 := resp.Answers[0]
+				assert.EqualValues(t, 1, answer1.Order)
+				assert.EqualValues(t, constants.QUESTION_TYPE_SUBJECTIVE, answer1.QuestionType)
+				assert.EqualValues(t, 10, answer1.MaxScore)
+
+				var answerData1 struct {
+					Text string `json:"text"`
 				}
+				require.NoError(t, json.Unmarshal(answer1.Answer, &answerData1))
+				assert.Equal(t, "Answer 1", answerData1.Text)
+
+				answer2 := resp.Answers[1]
+				assert.EqualValues(t, 2, answer2.Order)
+				assert.EqualValues(t, constants.QUESTION_TYPE_MCQ, answer2.QuestionType)
+				assert.EqualValues(t, 5, answer2.MaxScore)
+
+				var answerData2 struct {
+					OptionIndex int `json:"optionIndex"`
+				}
+				require.NoError(t, json.Unmarshal(answer2.Answer, &answerData2))
+				assert.Equal(t, 1, answerData2.OptionIndex)
 			},
 		},
 		{
@@ -91,6 +139,91 @@ func TestGetParticipantAnswers(t *testing.T) {
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 				return &participant
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name: "Success - Get answers as evaluator",
+				metadata: map[string]string{
+					"user_id": "2", // Using exam creator's ID (has EVALUATE permission)
+				},
+				expectedCode: codes.OK,
+				userID:       2,
+			},
+			setup: func(t *testing.T) *models.ExamParticipant {
+				exam := createTestExam(t, 2) // Created by user with ID 2, gets EVALUATE permission
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: 3, Status: 1}, // Different user as participant
+				})
+				require.NoError(t, err)
+
+				var participant models.ExamParticipant
+				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
+
+				q1 := createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 1,
+					CategoryID: 10,
+					Order:      1,
+					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+					MaxScore:   10,
+				})
+				q2 := createTestExamQuestion(t, &exam, models.ExamQuestion{
+					QuestionID: 2,
+					CategoryID: 10,
+					Order:      2,
+					Type:       constants.QUESTION_TYPE_MCQ,
+					MaxScore:   5,
+				})
+
+				// Create answers with different evaluation states
+				rawAnswer1 := json.RawMessage(`{"text": "Answer 1"}`)
+				answer1 := models.Answer{
+					ExamParticipantID: participant.ID,
+					QuestionID:        q1.QuestionID,
+					Answer:            &rawAnswer1,
+					ScoreAwarded:      8,
+					Comments:          sql.NullString{String: "Good answer", Valid: true},
+					Evaluated:         true,
+				}
+				require.NoError(t, db.DB.Create(&answer1).Error)
+
+				rawAnswer2 := json.RawMessage(`{"optionIndex": 1}`)
+				answer2 := models.Answer{
+					ExamParticipantID: participant.ID,
+					QuestionID:        q2.QuestionID,
+					Answer:            &rawAnswer2,
+					ScoreAwarded:      0,
+					Evaluated:         false,
+				}
+				require.NoError(t, db.DB.Create(&answer2).Error)
+
+				return &participant
+			},
+			validate: func(t *testing.T, resp *proto.AnswerList) {
+				require.Equal(t, 2, len(resp.Answers))
+
+				// Questions should be ordered by the order field
+				answer1 := resp.Answers[0]
+				assert.EqualValues(t, 1, answer1.Order)
+				assert.EqualValues(t, constants.QUESTION_TYPE_SUBJECTIVE, answer1.QuestionType)
+				assert.EqualValues(t, 10, answer1.MaxScore)
+
+				var answerData1 struct {
+					Text string `json:"text"`
+				}
+				require.NoError(t, json.Unmarshal(answer1.Answer, &answerData1))
+				assert.Equal(t, "Answer 1", answerData1.Text)
+
+				answer2 := resp.Answers[1]
+				assert.EqualValues(t, 2, answer2.Order)
+				assert.EqualValues(t, constants.QUESTION_TYPE_MCQ, answer2.QuestionType)
+				assert.EqualValues(t, 5, answer2.MaxScore)
+
+				var answerData2 struct {
+					OptionIndex int `json:"optionIndex"`
+				}
+				require.NoError(t, json.Unmarshal(answer2.Answer, &answerData2))
+				assert.Equal(t, 1, answerData2.OptionIndex)
 			},
 		},
 	}

@@ -68,6 +68,9 @@ var (
 		"/proto.ExamService/GetExamCategories": func(p *models.ExamPermissions) bool {
 			return p.CanParticipate() || p.CanEvaluate()
 		},
+		"/proto.ExamService/GetParticipantAnswers": func(p *models.ExamPermissions) bool {
+			return p.CanParticipate() || p.CanEvaluate()
+		},
 	}
 )
 

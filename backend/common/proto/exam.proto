@@ -34,7 +34,7 @@ service ExamService {
 
   // Evaluation
   rpc GetAnswerEvaluationData(ParticipantQuestionRequest) returns (GetAnswerEvaluationDataResponse) {}
-  rpc UpdateAnswerForEvaluation(UpdateAnswerRequest) returns (Empty) {}
+  rpc UpdateAnswerForEvaluation(UpdateAnswerRequest) returns (GetAnswerEvaluationDataResponse) {}
   rpc MarkParticipantAsEvaluated(ParticipantRequest) returns (EvaluationStatusResponse) {}
   rpc GetAnswerForEvaluation(ParticipantQuestionRequest) returns (AnswerMinimalResponse) {}
 }
@@ -154,8 +154,12 @@ message AnswerResponse {
   int64 exam_participant_id = 2;
   int64 question_id = 3;
   bytes answer = 4;  // JSON encoded answer
-  int32 score_awarded = 5;
-  string comments = 6;
+  
+  // question fields
+  int32 order = 5;
+  int64 category_id = 6;
+  string question_type = 7;
+  int32 max_score = 8;
 }
 
 message AnswerList {

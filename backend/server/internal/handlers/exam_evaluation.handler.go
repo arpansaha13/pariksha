@@ -88,13 +88,21 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send update request to exam service
-	_, err = examService.Client().UpdateAnswerForEvaluation(ctx, req)
+	resp, err := examService.Client().UpdateAnswerForEvaluation(ctx, req)
 	if err != nil {
 		handleGRPCError(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	updatedEvaluationData := dtos.GetAnswerEvaluationDataResponseDto{
+		ID:           resp.Id,
+		QuestionID:   resp.QuestionId,
+		ScoreAwarded: resp.ScoreAwarded,
+		Comments:     resp.Comments,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(updatedEvaluationData)
 }
 
 func MarkParticipantAsEvaluated(w http.ResponseWriter, r *http.Request) {

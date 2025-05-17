@@ -70,7 +70,7 @@ type ExamServiceClient interface {
 	UpsertAnswer(ctx context.Context, in *UpsertAnswersRequest, opts ...grpc.CallOption) (*UpsertAnswersResponse, error)
 	// Evaluation
 	GetAnswerEvaluationData(ctx context.Context, in *ParticipantQuestionRequest, opts ...grpc.CallOption) (*GetAnswerEvaluationDataResponse, error)
-	UpdateAnswerForEvaluation(ctx context.Context, in *UpdateAnswerRequest, opts ...grpc.CallOption) (*Empty, error)
+	UpdateAnswerForEvaluation(ctx context.Context, in *UpdateAnswerRequest, opts ...grpc.CallOption) (*GetAnswerEvaluationDataResponse, error)
 	MarkParticipantAsEvaluated(ctx context.Context, in *ParticipantRequest, opts ...grpc.CallOption) (*EvaluationStatusResponse, error)
 	GetAnswerForEvaluation(ctx context.Context, in *ParticipantQuestionRequest, opts ...grpc.CallOption) (*AnswerMinimalResponse, error)
 }
@@ -273,9 +273,9 @@ func (c *examServiceClient) GetAnswerEvaluationData(ctx context.Context, in *Par
 	return out, nil
 }
 
-func (c *examServiceClient) UpdateAnswerForEvaluation(ctx context.Context, in *UpdateAnswerRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *examServiceClient) UpdateAnswerForEvaluation(ctx context.Context, in *UpdateAnswerRequest, opts ...grpc.CallOption) (*GetAnswerEvaluationDataResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(GetAnswerEvaluationDataResponse)
 	err := c.cc.Invoke(ctx, ExamService_UpdateAnswerForEvaluation_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -330,7 +330,7 @@ type ExamServiceServer interface {
 	UpsertAnswer(context.Context, *UpsertAnswersRequest) (*UpsertAnswersResponse, error)
 	// Evaluation
 	GetAnswerEvaluationData(context.Context, *ParticipantQuestionRequest) (*GetAnswerEvaluationDataResponse, error)
-	UpdateAnswerForEvaluation(context.Context, *UpdateAnswerRequest) (*Empty, error)
+	UpdateAnswerForEvaluation(context.Context, *UpdateAnswerRequest) (*GetAnswerEvaluationDataResponse, error)
 	MarkParticipantAsEvaluated(context.Context, *ParticipantRequest) (*EvaluationStatusResponse, error)
 	GetAnswerForEvaluation(context.Context, *ParticipantQuestionRequest) (*AnswerMinimalResponse, error)
 	mustEmbedUnimplementedExamServiceServer()
@@ -400,7 +400,7 @@ func (UnimplementedExamServiceServer) UpsertAnswer(context.Context, *UpsertAnswe
 func (UnimplementedExamServiceServer) GetAnswerEvaluationData(context.Context, *ParticipantQuestionRequest) (*GetAnswerEvaluationDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAnswerEvaluationData not implemented")
 }
-func (UnimplementedExamServiceServer) UpdateAnswerForEvaluation(context.Context, *UpdateAnswerRequest) (*Empty, error) {
+func (UnimplementedExamServiceServer) UpdateAnswerForEvaluation(context.Context, *UpdateAnswerRequest) (*GetAnswerEvaluationDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateAnswerForEvaluation not implemented")
 }
 func (UnimplementedExamServiceServer) MarkParticipantAsEvaluated(context.Context, *ParticipantRequest) (*EvaluationStatusResponse, error) {
