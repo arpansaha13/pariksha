@@ -109,7 +109,7 @@
     </div>
 
     <UCard
-      v-if="currentCategoryQuestions.length > 0"
+      v-if="currentCategoryQuestions.length > 1"
       :ui="{ root: 'col-span-2', body: 'flex' }"
     >
       <UButton
@@ -325,13 +325,17 @@ function storeAnswerFromResponse(qid: number, answerResponse: AnswerMinimal) {
 }
 
 function saveUpdatedAnswers() {
+  const promises = []
+
   for (const [qid, mcqAnswer] of Object.entries(mcqAnswerStates)) {
     const savedState = savedMcqAnswerStates.value[qid]
     if (savedState.optionIndex !== mcqAnswer.optionIndex) {
-      saveMcqAnswer(parseInt(qid), savedState, mcqAnswer).then(res => {
-        if (isNullOrUndefined(res)) return
-        savedState.optionIndex = (res.answer as MCQAnswer).optionIndex
-      })
+      promises.push(
+        saveMcqAnswer(parseInt(qid), savedState, mcqAnswer).then(res => {
+          if (isNullOrUndefined(res)) return
+          savedState.optionIndex = (res.answer as MCQAnswer).optionIndex
+        })
+      )
     }
   }
   for (const [qid, subjectiveAnswer] of Object.entries(
@@ -339,14 +343,18 @@ function saveUpdatedAnswers() {
   )) {
     const savedState = savedSubjectiveAnswerStates.value[qid]
     if (savedState.text !== subjectiveAnswer.text) {
-      saveSubjectiveAnswer(parseInt(qid), savedState, subjectiveAnswer).then(
-        res => {
-          if (isNullOrUndefined(res)) return
-          savedState.text = (res.answer as SubjectiveAnswer).text
-        }
+      promises.push(
+        saveSubjectiveAnswer(parseInt(qid), savedState, subjectiveAnswer).then(
+          res => {
+            if (isNullOrUndefined(res)) return
+            savedState.text = (res.answer as SubjectiveAnswer).text
+          }
+        )
       )
     }
   }
+
+  return promises
 }
 useIntervalFn(saveUpdatedAnswers, AUTO_SAVE_EXAM_ANSWER_INTERVAL_SECONDS * 1000)
 
@@ -422,7 +430,7 @@ const { remaining: redirectCountdown, start: startRedirectCountdown } =
   })
 
 async function handleExamSubmit() {
-  saveUpdatedAnswers() // Save any remaining unsaved answers
+  await Promise.all(saveUpdatedAnswers()) // Save any remaining unsaved answers
   await endExam(examId)
   isExamEnded.value = true
   startRedirectCountdown()

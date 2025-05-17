@@ -332,15 +332,21 @@ function usePeriodicSaveEvaluation() {
   }
 
   function saveUpdatedEvaluation() {
+    const promises = []
+
     for (const [ansId, currState] of Object.entries(evaluationStates)) {
       const savedState = savedEvaluationStates.value[parseInt(ansId)]
       if (savedState.score_awarded !== currState.score_awarded) {
-        saveEvaluation(parseInt(ansId), savedState, currState).then(res => {
-          if (isNullOrUndefined(res)) return
-          savedState.score_awarded = res.score_awarded
-        })
+        promises.push(
+          saveEvaluation(parseInt(ansId), savedState, currState).then(res => {
+            if (isNullOrUndefined(res)) return
+            savedState.score_awarded = res.score_awarded
+          })
+        )
       }
     }
+
+    return promises
   }
   useIntervalFn(
     saveUpdatedEvaluation,
@@ -386,7 +392,7 @@ const currentQuestionMcqOptions = computed(() => {
 const toast = useToast()
 async function handleEvaluationSubmit() {
   try {
-    saveUpdatedEvaluation() // Save any remaining unsaved evaluation data
+    await Promise.all(saveUpdatedEvaluation()) // Save any remaining unsaved evaluation data
     await markParticipantAsEvaluated(participantId)
     await navigateTo(`/exams/${examId}`)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
