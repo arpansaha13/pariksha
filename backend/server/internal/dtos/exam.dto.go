@@ -85,6 +85,7 @@ type ExamQuestionResponseDto struct {
 
 type GetExamParticipantResponseDto struct {
 	ID               int64     `json:"id"`
+	ScoreAwarded     int32     `json:"score_awarded"`
 	StartedAt        time.Time `json:"started_at,omitempty"`
 	ScheduledEndTime time.Time `json:"scheduled_end_time,omitempty"`
 }

@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"encoding/json"
 	"strconv"
 	"testing"
 
@@ -25,21 +24,7 @@ func TestGetExamResults(t *testing.T) {
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, 2) // Created by different user
-
-				// Create questions for the exam
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 10,
-					MaxScore:   10,
-					Type:       constants.QUESTION_TYPE_MCQ,
-				})
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 2,
-					CategoryID: 10,
-					MaxScore:   5,
-					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
-				})
+				exam := createTestExam(t, 2)
 
 				// Create participant
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
@@ -51,7 +36,7 @@ func TestGetExamResults(t *testing.T) {
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
 
-				// Create answers for both questions
+				// Create answers
 				createTestAnswer(t, &participant, 1)
 				createTestAnswer(t, &participant, 2)
 
@@ -60,100 +45,16 @@ func TestGetExamResults(t *testing.T) {
 			validate: func(t *testing.T, resp *proto.ExamResultsResponse) {
 				require.Len(t, resp.Results, 2)
 
-				// Verify results are ordered correctly
-				assert.EqualValues(t, 1, resp.Results[0].QuestionId)
-				assert.EqualValues(t, 2, resp.Results[1].QuestionId)
-
 				for _, result := range resp.Results {
-					// Verify answer content
-					var answerData struct {
-						Text string `json:"text"`
-					}
-					require.NoError(t, json.Unmarshal(result.Answer, &answerData))
-					assert.Equal(t, "Test Answer", answerData.Text)
-
-					// Verify scores and comments
+					assert.NotZero(t, result.AnswerId)
 					assert.EqualValues(t, 5, result.ScoreAwarded)
 					assert.Equal(t, "Test Comment", result.Comments)
-
-					// Verify category and max score
-					assert.EqualValues(t, 10, result.CategoryId)
-					if result.QuestionId == 1 {
-						assert.EqualValues(t, 10, result.MaxScore)
-					} else {
-						assert.EqualValues(t, 5, result.MaxScore)
-					}
 				}
 			},
 		},
 		{
 			BaseTestCase: BaseTestCase{
-				name:         "Success - Get results with some unanswered questions",
-				userID:       userID,
-				expectedCode: codes.OK,
-			},
-			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, 2)
-
-				// Create questions
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 10,
-					MaxScore:   5,
-				})
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 2,
-					CategoryID: 10,
-					MaxScore:   5,
-				})
-
-				// Create participant
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_EVALUATED},
-				})
-				require.NoError(t, err)
-
-				var participant models.ExamParticipant
-				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
-
-				// Create answer for only one question
-				createTestAnswer(t, &participant, 1)
-
-				return &exam
-			},
-			validate: func(t *testing.T, resp *proto.ExamResultsResponse) {
-				require.Len(t, resp.Results, 2)
-
-				// First question should have answer
-				assert.NotNil(t, resp.Results[0].Answer)
-				assert.EqualValues(t, 5, resp.Results[0].ScoreAwarded)
-				assert.NotEmpty(t, resp.Results[0].Comments)
-
-				// Second question should have nil answer and zero values
-				assert.Nil(t, resp.Results[1].Answer)
-				assert.Zero(t, resp.Results[1].ScoreAwarded)
-				assert.Empty(t, resp.Results[1].Comments)
-			},
-		},
-		{
-			BaseTestCase: BaseTestCase{
-				name:         "Fail - User is not a participant",
-				userID:       userID,
-				expectedCode: codes.PermissionDenied,
-			},
-			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, 2)
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 2,
-					CategoryID: 10,
-					MaxScore:   10,
-				})
-				return &exam
-			},
-		},
-		{
-			BaseTestCase: BaseTestCase{
-				name:         "Success - Exam with no questions",
+				name:         "Success - Exam with no answers",
 				userID:       userID,
 				expectedCode: codes.OK,
 			},
@@ -167,6 +68,17 @@ func TestGetExamResults(t *testing.T) {
 			},
 			validate: func(t *testing.T, resp *proto.ExamResultsResponse) {
 				assert.Empty(t, resp.Results)
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Fail - User is not a participant",
+				userID:       userID,
+				expectedCode: codes.PermissionDenied,
+			},
+			setup: func(t *testing.T) *models.Exam {
+				exam := createTestExam(t, 2)
+				return &exam
 			},
 		},
 	}

@@ -194,8 +194,9 @@ message GetExamParticipantRequest {
 
 message GetExamParticipantResponse {
   int64 participant_id = 1;
-  optional google.protobuf.Timestamp started_at = 2;
-  optional google.protobuf.Timestamp scheduled_end_time = 3;
+  int32 score_awarded = 2;
+  optional google.protobuf.Timestamp started_at = 3;
+  optional google.protobuf.Timestamp scheduled_end_time = 4;
 }
 
 message ExamQuestion {
@@ -249,13 +250,9 @@ message DeleteExamsRequest {
 }
 
 message ExamResultItem {
-  int64 question_id = 1;
-  int32 order = 2;
-  int64 category_id = 3;
-  bytes answer = 4;  // JSON encoded answer, can be nil
-  int32 score_awarded = 5;
-  string comments = 6;
-  int32 max_score = 7;
+  int64 answer_id = 1;
+  int32 score_awarded = 2;
+  string comments = 3;
 }
 
 message ExamResultsResponse {

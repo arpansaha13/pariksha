@@ -95,7 +95,8 @@ func GetExamParticipant(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := dtos.GetExamParticipantResponseDto{
-		ID: participant.ParticipantId,
+		ID:           participant.ParticipantId,
+		ScoreAwarded: participant.ScoreAwarded,
 	}
 
 	if participant.StartedAt != nil {

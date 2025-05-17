@@ -1,11 +1,4 @@
-import type { SubjectiveAnswer, MCQAnswer } from './answer'
-import type {
-  Question,
-  QuestionCategory,
-  QuestionMcq,
-  QuestionShort,
-  QuestionType,
-} from './question'
+import type { Question, QuestionCategory } from './question'
 
 export enum ExamAccessType {
   LINK = 'LINK',
@@ -52,6 +45,7 @@ export type ExamCategory = Pick<QuestionCategory, 'id' | 'name' | 'order'>
 
 export interface ExamParticipant {
   id: number
+  score_awarded: number
   started_at: string
   scheduled_end_time: string
 }
@@ -69,36 +63,8 @@ export interface ExamParticipantResponse {
   email?: string
 }
 
-type ExamResultMCQ = {
-  readonly type: QuestionType.MCQ
-  readonly question: {
-    readonly id: number
-    readonly order: number
-    readonly category_id: number
-    readonly max_score: number
-    readonly content: QuestionMcq['question']
-  }
-  readonly answer: {
-    readonly content: MCQAnswer | null
-    readonly score_awarded: number
-    readonly comments: string
-  }
+export type ExamResult = {
+  readonly id: number
+  readonly score_awarded: number
+  readonly comments: string
 }
-
-type ExamResultSubjective = {
-  readonly type: QuestionType.SUBJECTIVE
-  readonly question: {
-    readonly id: number
-    readonly order: number
-    readonly category_id: number
-    readonly max_score: number
-    readonly content: QuestionShort['question']
-  }
-  readonly answer: {
-    readonly content: SubjectiveAnswer | null
-    readonly score_awarded: number
-    readonly comments: string
-  }
-}
-
-export type ExamResult = ExamResultMCQ | ExamResultSubjective

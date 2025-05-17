@@ -34,57 +34,13 @@ func GetExamResults(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get question details from paper service
-	questionIDs := make([]int64, len(results.Results))
-	for i, result := range results.Results {
-		questionIDs[i] = result.QuestionId
-	}
+	response := make([]dtos.ExamResultDto, len(results.Results))
 
-	paperService := services.GetPaperService()
-	paperCtx := paperService.CreateMetadata(userID)
-
-	questionDetails, err := paperService.Client().GetQuestionsByIds(paperCtx, &proto.GetQuestionsByIdsRequest{
-		QuestionIds: questionIDs,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	// Create a map for quick lookup of question details
-	questionDetailsMap := make(map[int64]*proto.QuestionBatchItem)
-	for _, q := range questionDetails.Questions {
-		questionDetailsMap[q.Id] = q
-	}
-
-	response := make([]dtos.ExamResultItemDTO, len(results.Results))
-
-	for i, result := range results.Results {
-		var questionBytes []byte
-		questionDetail := questionDetailsMap[result.QuestionId]
-		if questionDetail != nil {
-			switch q := questionDetail.Question.(type) {
-			case *proto.QuestionBatchItem_Mcq:
-				questionBytes, _ = json.Marshal(q.Mcq)
-			case *proto.QuestionBatchItem_Subjective:
-				questionBytes, _ = json.Marshal(q.Subjective)
-			}
-		}
-
-		response[i] = dtos.ExamResultItemDTO{
-			Type: questionDetail.GetType(),
-			Question: dtos.ExamResultQuestionDTO{
-				ID:         result.QuestionId,
-				Order:      result.Order,
-				CategoryID: result.CategoryId,
-				Content:    questionBytes,
-				MaxScore:   result.MaxScore,
-			},
-			Answer: dtos.ExamResultAnswerDTO{
-				Content:      result.Answer,
-				ScoreAwarded: result.ScoreAwarded,
-				Comments:     result.Comments,
-			},
+	for i, answer := range results.Results {
+		response[i] = dtos.ExamResultDto{
+			ID:           answer.AnswerId,
+			ScoreAwarded: answer.ScoreAwarded,
+			Comments:     answer.Comments,
 		}
 	}
 

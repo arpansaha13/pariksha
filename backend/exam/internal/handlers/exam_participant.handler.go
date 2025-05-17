@@ -176,6 +176,7 @@ func (s *ExamServer) GetExamParticipant(ctx context.Context, req *proto.GetExamP
 
 	response := &proto.GetExamParticipantResponse{
 		ParticipantId: participant.ID,
+		ScoreAwarded:  participant.ScoreAwarded,
 	}
 
 	if participant.StartedAt.Valid {

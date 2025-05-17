@@ -1540,8 +1540,9 @@ func (x *GetExamParticipantRequest) GetExamId() int64 {
 type GetExamParticipantResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	ParticipantId    int64                  `protobuf:"varint,1,opt,name=participant_id,json=participantId,proto3" json:"participant_id,omitempty"`
-	StartedAt        *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=started_at,json=startedAt,proto3,oneof" json:"started_at,omitempty"`
-	ScheduledEndTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=scheduled_end_time,json=scheduledEndTime,proto3,oneof" json:"scheduled_end_time,omitempty"`
+	ScoreAwarded     int32                  `protobuf:"varint,2,opt,name=score_awarded,json=scoreAwarded,proto3" json:"score_awarded,omitempty"`
+	StartedAt        *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=started_at,json=startedAt,proto3,oneof" json:"started_at,omitempty"`
+	ScheduledEndTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=scheduled_end_time,json=scheduledEndTime,proto3,oneof" json:"scheduled_end_time,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -1579,6 +1580,13 @@ func (*GetExamParticipantResponse) Descriptor() ([]byte, []int) {
 func (x *GetExamParticipantResponse) GetParticipantId() int64 {
 	if x != nil {
 		return x.ParticipantId
+	}
+	return 0
+}
+
+func (x *GetExamParticipantResponse) GetScoreAwarded() int32 {
+	if x != nil {
+		return x.ScoreAwarded
 	}
 	return 0
 }
@@ -2055,13 +2063,9 @@ func (x *DeleteExamsRequest) GetExamIds() []int64 {
 
 type ExamResultItem struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QuestionId    int64                  `protobuf:"varint,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
-	Order         int32                  `protobuf:"varint,2,opt,name=order,proto3" json:"order,omitempty"`
-	CategoryId    int64                  `protobuf:"varint,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	Answer        []byte                 `protobuf:"bytes,4,opt,name=answer,proto3" json:"answer,omitempty"` // JSON encoded answer, can be nil
-	ScoreAwarded  int32                  `protobuf:"varint,5,opt,name=score_awarded,json=scoreAwarded,proto3" json:"score_awarded,omitempty"`
-	Comments      string                 `protobuf:"bytes,6,opt,name=comments,proto3" json:"comments,omitempty"`
-	MaxScore      int32                  `protobuf:"varint,7,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
+	AnswerId      int64                  `protobuf:"varint,1,opt,name=answer_id,json=answerId,proto3" json:"answer_id,omitempty"`
+	ScoreAwarded  int32                  `protobuf:"varint,2,opt,name=score_awarded,json=scoreAwarded,proto3" json:"score_awarded,omitempty"`
+	Comments      string                 `protobuf:"bytes,3,opt,name=comments,proto3" json:"comments,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2096,32 +2100,11 @@ func (*ExamResultItem) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{33}
 }
 
-func (x *ExamResultItem) GetQuestionId() int64 {
+func (x *ExamResultItem) GetAnswerId() int64 {
 	if x != nil {
-		return x.QuestionId
+		return x.AnswerId
 	}
 	return 0
-}
-
-func (x *ExamResultItem) GetOrder() int32 {
-	if x != nil {
-		return x.Order
-	}
-	return 0
-}
-
-func (x *ExamResultItem) GetCategoryId() int64 {
-	if x != nil {
-		return x.CategoryId
-	}
-	return 0
-}
-
-func (x *ExamResultItem) GetAnswer() []byte {
-	if x != nil {
-		return x.Answer
-	}
-	return nil
 }
 
 func (x *ExamResultItem) GetScoreAwarded() int32 {
@@ -2136,13 +2119,6 @@ func (x *ExamResultItem) GetComments() string {
 		return x.Comments
 	}
 	return ""
-}
-
-func (x *ExamResultItem) GetMaxScore() int32 {
-	if x != nil {
-		return x.MaxScore
-	}
-	return 0
 }
 
 type ExamResultsResponse struct {
@@ -2324,12 +2300,13 @@ const file_exam_proto_rawDesc = "" +
 	"\x17CheckParticipantRequest\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\x03R\x06examId\"4\n" +
 	"\x19GetExamParticipantRequest\x12\x17\n" +
-	"\aexam_id\x18\x01 \x01(\x03R\x06examId\"\xf8\x01\n" +
+	"\aexam_id\x18\x01 \x01(\x03R\x06examId\"\x9d\x02\n" +
 	"\x1aGetExamParticipantResponse\x12%\n" +
-	"\x0eparticipant_id\x18\x01 \x01(\x03R\rparticipantId\x12>\n" +
+	"\x0eparticipant_id\x18\x01 \x01(\x03R\rparticipantId\x12#\n" +
+	"\rscore_awarded\x18\x02 \x01(\x05R\fscoreAwarded\x12>\n" +
 	"\n" +
-	"started_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\tstartedAt\x88\x01\x01\x12M\n" +
-	"\x12scheduled_end_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\x10scheduledEndTime\x88\x01\x01B\r\n" +
+	"started_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\tstartedAt\x88\x01\x01\x12M\n" +
+	"\x12scheduled_end_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\x10scheduledEndTime\x88\x01\x01B\r\n" +
 	"\v_started_atB\x15\n" +
 	"\x13_scheduled_end_time\"\x97\x01\n" +
 	"\fExamQuestion\x12\x1f\n" +
@@ -2368,17 +2345,11 @@ const file_exam_proto_rawDesc = "" +
 	"\rscore_awarded\x18\x05 \x01(\x05R\fscoreAwarded\x12\x1a\n" +
 	"\bcomments\x18\x06 \x01(\tR\bcomments\"/\n" +
 	"\x12DeleteExamsRequest\x12\x19\n" +
-	"\bexam_ids\x18\x01 \x03(\x03R\aexamIds\"\xde\x01\n" +
-	"\x0eExamResultItem\x12\x1f\n" +
-	"\vquestion_id\x18\x01 \x01(\x03R\n" +
-	"questionId\x12\x14\n" +
-	"\x05order\x18\x02 \x01(\x05R\x05order\x12\x1f\n" +
-	"\vcategory_id\x18\x03 \x01(\x03R\n" +
-	"categoryId\x12\x16\n" +
-	"\x06answer\x18\x04 \x01(\fR\x06answer\x12#\n" +
-	"\rscore_awarded\x18\x05 \x01(\x05R\fscoreAwarded\x12\x1a\n" +
-	"\bcomments\x18\x06 \x01(\tR\bcomments\x12\x1b\n" +
-	"\tmax_score\x18\a \x01(\x05R\bmaxScore\"F\n" +
+	"\bexam_ids\x18\x01 \x03(\x03R\aexamIds\"n\n" +
+	"\x0eExamResultItem\x12\x1b\n" +
+	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12#\n" +
+	"\rscore_awarded\x18\x02 \x01(\x05R\fscoreAwarded\x12\x1a\n" +
+	"\bcomments\x18\x03 \x01(\tR\bcomments\"F\n" +
 	"\x13ExamResultsResponse\x12/\n" +
 	"\aresults\x18\x01 \x03(\v2\x15.proto.ExamResultItemR\aresults*,\n" +
 	"\x0eExamAccessType\x12\t\n" +

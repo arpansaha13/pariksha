@@ -3,7 +3,19 @@ import type { ExamResult } from '~/types'
 export function useExamResults(examId: number) {
   const { $api } = useNuxtApp()
 
-  return useAsyncData<ExamResult[]>(AsyncDataKeys.EXAM_RESULTS(examId), () =>
-    $api(`/api/exams/${examId}/results`)
+  return useAsyncData(
+    AsyncDataKeys.EXAM_RESULTS(examId),
+    () => $api<ExamResult[]>(`/api/exams/${examId}/results`),
+    {
+      transform: res => {
+        const byAnswerId: Record<ExamResult['id'], ExamResult> = {}
+
+        for (const ans of res) {
+          byAnswerId[ans.id] = ans
+        }
+
+        return byAnswerId
+      },
+    }
   )
 }
