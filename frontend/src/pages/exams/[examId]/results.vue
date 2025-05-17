@@ -15,7 +15,12 @@
           class="flex items-center gap-x-2"
         >
           <span class="inline-block font-medium">Total score:</span>
-          <UBadge variant="subtle">
+          <UBadge
+            :color="
+              getScoreColor(participant.score_awarded, examData.max_score)
+            "
+            variant="subtle"
+          >
             {{ participant.score_awarded }} / {{ examData.max_score }}
           </UBadge>
         </p>
@@ -91,13 +96,20 @@
               v-if="isNullOrUndefined(item.answer)"
               color="error"
               variant="soft"
-              >Unanswered</UBadge
             >
+              Unanswered
+            </UBadge>
             <UBadge
               v-else-if="
                 isParticipantExamEvaluated && !isNullOrUndefined(resultsMap)
               "
-              variant="soft"
+              :color="
+                getScoreColor(
+                  resultsMap[item.answer.id].score_awarded,
+                  item.question.max_score
+                )
+              "
+              variant="subtle"
             >
               {{ resultsMap[item.answer.id].score_awarded }} /
               {{ item.question.max_score }}

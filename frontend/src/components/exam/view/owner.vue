@@ -363,7 +363,18 @@ const columns: TableColumn<ExamParticipantResponse>[] = [
     header: 'Score',
     cell: ({ row }) => {
       if (row.original.status !== ExamParticipantStatus.EVALUATED) return '--'
-      return row.original.score_awarded + '/' + exam.value?.max_score
+
+      return h(
+        UBadge,
+        {
+          variant: 'subtle',
+          color: getScoreColor(
+            row.original.score_awarded,
+            exam.value!.max_score
+          ),
+        },
+        () => `${row.original.score_awarded} / ${exam.value!.max_score}`
+      )
     },
   },
 ]
