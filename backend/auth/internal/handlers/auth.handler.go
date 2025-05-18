@@ -107,9 +107,9 @@ func (s *AuthServer) LoginWithPassword(ctx context.Context, req *proto.LoginWith
 
 	// Add session info to response headers
 	md := metadata.Pairs(
-		"session-key", session.Key.String(),
-		"csrf-token", session.CsrfToken,
-		"expires-at", session.ExpiresAt.Format(time.RFC3339),
+		constants.HEADER_SESSION_KEY, session.Key.String(),
+		constants.HEADER_CSRF_TOKEN, session.CsrfToken,
+		constants.HEADER_EXPIRES_AT, session.ExpiresAt.Format(time.RFC3339),
 	)
 	grpc.SetHeader(ctx, md)
 
@@ -263,9 +263,9 @@ func (s *AuthServer) VerifySignup(ctx context.Context, req *proto.VerificationRe
 		}
 
 		md := metadata.Pairs(
-			"session-key", session.Key.String(),
-			"csrf-token", session.CsrfToken,
-			"expires-at", session.ExpiresAt.Format(time.RFC3339),
+			constants.HEADER_SESSION_KEY, session.Key.String(),
+			constants.HEADER_CSRF_TOKEN, session.CsrfToken,
+			constants.HEADER_EXPIRES_AT, session.ExpiresAt.Format(time.RFC3339),
 		)
 		grpc.SetHeader(ctx, md)
 
@@ -315,9 +315,9 @@ func (s *AuthServer) VerifyLoginOtp(ctx context.Context, req *proto.Verification
 		}
 
 		md := metadata.Pairs(
-			"session-key", session.Key.String(),
-			"csrf-token", session.CsrfToken,
-			"expires-at", session.ExpiresAt.Format(time.RFC3339),
+			constants.HEADER_SESSION_KEY, session.Key.String(),
+			constants.HEADER_CSRF_TOKEN, session.CsrfToken,
+			constants.HEADER_EXPIRES_AT, session.ExpiresAt.Format(time.RFC3339),
 		)
 		grpc.SetHeader(ctx, md)
 
@@ -455,4 +455,23 @@ func (s *AuthServer) Authenticate(ctx context.Context, req *proto.AuthenticateRe
 
 	userID := int64(claims["user_id"].(float64))
 	return &proto.AuthenticateResponse{UserId: userID}, nil
+}
+
+func (s *AuthServer) Logout(ctx context.Context, req *proto.LogoutRequest) (*proto.Empty, error) {
+	if req.SessionKey == "" {
+		return nil, status.Error(codes.InvalidArgument, "session key is required")
+	}
+
+	// Set expires_at to a time in the past
+	// sessionsCron will delete it later
+	result := db.Sessions.Model(&models.Session{}).
+		Where("key = ?", req.SessionKey).
+		Update("expires_at", time.Now().Add(-24*time.Hour))
+
+	if result.Error != nil {
+		return nil, status.Error(codes.Internal, "failed to invalidate session")
+	}
+
+	// Return success even if session is not found in db
+	return &proto.Empty{}, nil
 }

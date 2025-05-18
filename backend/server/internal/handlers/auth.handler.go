@@ -11,15 +11,16 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
+	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/config/env"
 	"pariksha/server/internal/services"
 )
 
 func setCookiesFromMetadata(w http.ResponseWriter, md metadata.MD) {
-	sessionKey := md.Get("session-key")[0]
-	csrfToken := md.Get("csrf-token")[0]
-	expiresAt, _ := time.Parse(time.RFC3339, md.Get("expires-at")[0])
+	sessionKey := md.Get(constants.HEADER_SESSION_KEY)[0]
+	csrfToken := md.Get(constants.HEADER_CSRF_TOKEN)[0]
+	expiresAt, _ := time.Parse(time.RFC3339, md.Get(constants.HEADER_EXPIRES_AT)[0])
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     env.SESSION_COOKIE_NAME,
@@ -205,6 +206,46 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 		handleGRPCError(w, err)
 		return
 	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func Logout(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie(env.SESSION_COOKIE_NAME)
+	if err != nil {
+		http.Error(w, "No session found", http.StatusBadRequest)
+		return
+	}
+
+	authService := services.GetAuthService()
+	_, err = authService.Client().Logout(context.Background(), &proto.LogoutRequest{
+		SessionKey: cookie.Value,
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	// Delete cookies by setting expiration to past
+	http.SetCookie(w, &http.Cookie{
+		Name:     env.SESSION_COOKIE_NAME,
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Now().Add(-24 * time.Hour),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     env.CSRFTOKEN_COOKIE_NAME,
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Now().Add(-24 * time.Hour),
+		HttpOnly: false,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
 
 	w.WriteHeader(http.StatusNoContent)
 }

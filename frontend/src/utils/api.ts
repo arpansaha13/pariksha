@@ -1,5 +1,6 @@
 export { login } from './api/auth/login'
 export { signUp } from './api/auth/signup'
+export { logout } from './api/auth/logout'
 export { verifySignUpEmail } from './api/auth/verify-signup-email'
 export { forgotPassword } from './api/auth/forgot-password'
 export { resetPassword } from './api/auth/reset-password'

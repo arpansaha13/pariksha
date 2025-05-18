@@ -95,7 +95,7 @@
             <UBadge
               v-if="isNullOrUndefined(item.answer)"
               color="error"
-              variant="soft"
+              variant="subtle"
             >
               Unanswered
             </UBadge>

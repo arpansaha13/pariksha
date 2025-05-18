@@ -79,6 +79,14 @@ service AuthService {
   rpc GetUser(GetUserRequest) returns (UserProfileResponse) {}
   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse) {}
   rpc UpsertUser(UpsertUserRequest) returns (UserProfileResponse) {}
+
+  // Logout invalidates the current session
+  rpc Logout(LogoutRequest) returns (Empty) {
+    // Possible errors:
+    // - INVALID_ARGUMENT (400): Session key is required
+    // - NOT_FOUND (404): Session not found
+    // - INTERNAL (500): Failed to invalidate session
+  }
 }
 
 message LoginWithPasswordRequest {
@@ -131,4 +139,8 @@ message UpsertUserRequest {
   string email = 1;
   optional string first_name = 2;
   optional string last_name = 3;
+}
+
+message LogoutRequest {
+  string session_key = 1;
 }

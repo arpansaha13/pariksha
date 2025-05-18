@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
@@ -147,9 +148,9 @@ func TestVerifySignup(t *testing.T) {
 				assert.True(t, user.Verified)
 
 				// Verify session was created
-				assert.NotEmpty(t, md.Get("session-key"))
-				assert.NotEmpty(t, md.Get("csrf-token"))
-				assert.NotEmpty(t, md.Get("expires-at"))
+				assert.NotEmpty(t, md.Get(constants.HEADER_SESSION_KEY))
+				assert.NotEmpty(t, md.Get(constants.HEADER_CSRF_TOKEN))
+				assert.NotEmpty(t, md.Get(constants.HEADER_EXPIRES_AT))
 
 				// Verify OTP was deleted
 				var otp models.Otp
@@ -440,11 +441,11 @@ func TestLoginWithPassword(t *testing.T) {
 			validateFunc: func(t *testing.T, resp *proto.UserResponse, md metadata.MD) {
 				assert.Equal(t, testVerifiedEmail, resp.Email)
 				assert.Equal(t, "verified", resp.Username)
-				assert.NotEmpty(t, md.Get("session-key"))
-				assert.NotEmpty(t, md.Get("csrf-token"))
-				assert.NotEmpty(t, md.Get("expires-at"))
+				assert.NotEmpty(t, md.Get(constants.HEADER_SESSION_KEY))
+				assert.NotEmpty(t, md.Get(constants.HEADER_CSRF_TOKEN))
+				assert.NotEmpty(t, md.Get(constants.HEADER_EXPIRES_AT))
 
-				sessionKey := md.Get("session-key")[0]
+				sessionKey := md.Get(constants.HEADER_SESSION_KEY)[0]
 				var session models.Session
 				err := db.Sessions.Where("key = ?", sessionKey).First(&session).Error
 				assert.NoError(t, err)
@@ -620,8 +621,8 @@ func TestVerifyLoginOtp(t *testing.T) {
 			expectedCode: codes.OK,
 			validateFunc: func(t *testing.T, resp *proto.UserResponse, md metadata.MD) {
 				assert.Equal(t, testVerifiedEmail, resp.Email)
-				assert.NotEmpty(t, md.Get("session-key"))
-				assert.NotEmpty(t, md.Get("csrf-token"))
+				assert.NotEmpty(t, md.Get(constants.HEADER_SESSION_KEY))
+				assert.NotEmpty(t, md.Get(constants.HEADER_CSRF_TOKEN))
 
 				var otpEntry models.Otp
 				result := db.DB.Where("email = ?", testVerifiedEmail).First(&otpEntry)
@@ -681,6 +682,81 @@ func TestVerifyLoginOtp(t *testing.T) {
 				assert.NotNil(t, resp)
 				if tt.validateFunc != nil {
 					tt.validateFunc(t, resp, md)
+				}
+			}
+
+			clearTables(t)
+		})
+	}
+}
+
+func TestLogout(t *testing.T) {
+	tests := []struct {
+		name         string
+		setup        func(t *testing.T) string
+		req          *proto.LogoutRequest
+		expectedCode codes.Code
+		validateFunc func(t *testing.T, sessionKey string)
+	}{
+		{
+			name: "Successful logout",
+			setup: func(t *testing.T) string {
+				// Create a session that expires in future
+				session := &models.Session{
+					Key:       uuid.New(),
+					Token:     "valid_token",
+					ExpiresAt: time.Now().Add(24 * time.Hour),
+					CsrfToken: "csrf_token",
+				}
+				err := db.Sessions.Create(session).Error
+				assert.NoError(t, err)
+				return session.Key.String()
+			},
+			req:          &proto.LogoutRequest{}, // SessionKey will be set from setup
+			expectedCode: codes.OK,
+			validateFunc: func(t *testing.T, sessionKey string) {
+				var session models.Session
+				err := db.Sessions.Where("key = ?", sessionKey).First(&session).Error
+				assert.NoError(t, err)
+				assert.True(t, session.ExpiresAt.Before(time.Now()), "session should be expired")
+			},
+		},
+		{
+			name: "Missing session key",
+			req: &proto.LogoutRequest{
+				SessionKey: "",
+			},
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name: "Non-existent session",
+			req: &proto.LogoutRequest{
+				SessionKey: uuid.New().String(),
+			},
+			expectedCode: codes.OK, // We return success even if session doesn't exist
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var sessionKey string
+			if tt.setup != nil {
+				sessionKey = tt.setup(t)
+				tt.req.SessionKey = sessionKey
+			}
+
+			resp, err := client.Logout(context.Background(), tt.req)
+
+			if tt.expectedCode != codes.OK {
+				st, ok := status.FromError(err)
+				assert.True(t, ok)
+				assert.Equal(t, tt.expectedCode, st.Code())
+				assert.Nil(t, resp)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+				if tt.validateFunc != nil {
+					tt.validateFunc(t, sessionKey)
 				}
 			}
 

@@ -10,10 +10,10 @@ export default defineNuxtRouteMiddleware(async (to, _from) => {
     const { valid } = await $api<CheckAuthResponse>('/api/check-auth')
 
     if (valid && isUnprotectedRoute) {
-      return navigateTo('/')
+      return navigateTo('/', { replace: true })
     }
     if (!valid && !isUnprotectedRoute) {
-      return navigateTo('/auth/login')
+      return navigateTo('/auth/login', { replace: true })
     }
   }
 })

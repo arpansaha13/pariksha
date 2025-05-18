@@ -618,6 +618,50 @@ func (x *UpsertUserRequest) GetLastName() string {
 	return ""
 }
 
+type LogoutRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SessionKey    string                 `protobuf:"bytes,1,opt,name=session_key,json=sessionKey,proto3" json:"session_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutRequest) Reset() {
+	*x = LogoutRequest{}
+	mi := &file_auth_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutRequest) ProtoMessage() {}
+
+func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutRequest.ProtoReflect.Descriptor instead.
+func (*LogoutRequest) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *LogoutRequest) GetSessionKey() string {
+	if x != nil {
+		return x.SessionKey
+	}
+	return ""
+}
+
 var File_auth_proto protoreflect.FileDescriptor
 
 const file_auth_proto_rawDesc = "" +
@@ -667,7 +711,10 @@ const file_auth_proto_rawDesc = "" +
 	"\tlast_name\x18\x03 \x01(\tH\x01R\blastName\x88\x01\x01B\r\n" +
 	"\v_first_nameB\f\n" +
 	"\n" +
-	"_last_name2\xea\x05\n" +
+	"_last_name\"0\n" +
+	"\rLogoutRequest\x12\x1f\n" +
+	"\vsession_key\x18\x01 \x01(\tR\n" +
+	"sessionKey2\x9a\x06\n" +
 	"\vAuthService\x12K\n" +
 	"\x11LoginWithPassword\x12\x1f.proto.LoginWithPasswordRequest\x1a\x13.proto.UserResponse\"\x00\x12B\n" +
 	"\x14InitiateLoginWithOtp\x12\x1a.proto.LoginWithOtpRequest\x1a\f.proto.Empty\"\x00\x12C\n" +
@@ -681,7 +728,8 @@ const file_auth_proto_rawDesc = "" +
 	"\n" +
 	"UpdateUser\x12\x18.proto.UpdateUserRequest\x1a\x19.proto.UpdateUserResponse\"\x00\x12D\n" +
 	"\n" +
-	"UpsertUser\x12\x18.proto.UpsertUserRequest\x1a\x1a.proto.UserProfileResponse\"\x00B\bZ\x06/protob\x06proto3"
+	"UpsertUser\x12\x18.proto.UpsertUserRequest\x1a\x1a.proto.UserProfileResponse\"\x00\x12.\n" +
+	"\x06Logout\x12\x14.proto.LogoutRequest\x1a\f.proto.Empty\"\x00B\bZ\x06/protob\x06proto3"
 
 var (
 	file_auth_proto_rawDescOnce sync.Once
@@ -695,7 +743,7 @@ func file_auth_proto_rawDescGZIP() []byte {
 	return file_auth_proto_rawDescData
 }
 
-var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_auth_proto_goTypes = []any{
 	(*ErrorResponse)(nil),            // 0: proto.ErrorResponse
 	(*LoginWithPasswordRequest)(nil), // 1: proto.LoginWithPasswordRequest
@@ -708,11 +756,12 @@ var file_auth_proto_goTypes = []any{
 	(*AuthenticateRequest)(nil),      // 8: proto.AuthenticateRequest
 	(*AuthenticateResponse)(nil),     // 9: proto.AuthenticateResponse
 	(*UpsertUserRequest)(nil),        // 10: proto.UpsertUserRequest
-	(*GetUserRequest)(nil),           // 11: proto.GetUserRequest
-	(*UpdateUserRequest)(nil),        // 12: proto.UpdateUserRequest
-	(*Empty)(nil),                    // 13: proto.Empty
-	(*UserProfileResponse)(nil),      // 14: proto.UserProfileResponse
-	(*UpdateUserResponse)(nil),       // 15: proto.UpdateUserResponse
+	(*LogoutRequest)(nil),            // 11: proto.LogoutRequest
+	(*GetUserRequest)(nil),           // 12: proto.GetUserRequest
+	(*UpdateUserRequest)(nil),        // 13: proto.UpdateUserRequest
+	(*Empty)(nil),                    // 14: proto.Empty
+	(*UserProfileResponse)(nil),      // 15: proto.UserProfileResponse
+	(*UpdateUserResponse)(nil),       // 16: proto.UpdateUserResponse
 }
 var file_auth_proto_depIdxs = []int32{
 	1,  // 0: proto.AuthService.LoginWithPassword:input_type -> proto.LoginWithPasswordRequest
@@ -723,22 +772,24 @@ var file_auth_proto_depIdxs = []int32{
 	5,  // 5: proto.AuthService.ForgotPassword:input_type -> proto.ForgotPasswordRequest
 	6,  // 6: proto.AuthService.ResetPassword:input_type -> proto.ResetPasswordRequest
 	8,  // 7: proto.AuthService.Authenticate:input_type -> proto.AuthenticateRequest
-	11, // 8: proto.AuthService.GetUser:input_type -> proto.GetUserRequest
-	12, // 9: proto.AuthService.UpdateUser:input_type -> proto.UpdateUserRequest
+	12, // 8: proto.AuthService.GetUser:input_type -> proto.GetUserRequest
+	13, // 9: proto.AuthService.UpdateUser:input_type -> proto.UpdateUserRequest
 	10, // 10: proto.AuthService.UpsertUser:input_type -> proto.UpsertUserRequest
-	7,  // 11: proto.AuthService.LoginWithPassword:output_type -> proto.UserResponse
-	13, // 12: proto.AuthService.InitiateLoginWithOtp:output_type -> proto.Empty
-	7,  // 13: proto.AuthService.VerifyLoginOtp:output_type -> proto.UserResponse
-	13, // 14: proto.AuthService.SignUp:output_type -> proto.Empty
-	7,  // 15: proto.AuthService.VerifySignup:output_type -> proto.UserResponse
-	13, // 16: proto.AuthService.ForgotPassword:output_type -> proto.Empty
-	13, // 17: proto.AuthService.ResetPassword:output_type -> proto.Empty
-	9,  // 18: proto.AuthService.Authenticate:output_type -> proto.AuthenticateResponse
-	14, // 19: proto.AuthService.GetUser:output_type -> proto.UserProfileResponse
-	15, // 20: proto.AuthService.UpdateUser:output_type -> proto.UpdateUserResponse
-	14, // 21: proto.AuthService.UpsertUser:output_type -> proto.UserProfileResponse
-	11, // [11:22] is the sub-list for method output_type
-	0,  // [0:11] is the sub-list for method input_type
+	11, // 11: proto.AuthService.Logout:input_type -> proto.LogoutRequest
+	7,  // 12: proto.AuthService.LoginWithPassword:output_type -> proto.UserResponse
+	14, // 13: proto.AuthService.InitiateLoginWithOtp:output_type -> proto.Empty
+	7,  // 14: proto.AuthService.VerifyLoginOtp:output_type -> proto.UserResponse
+	14, // 15: proto.AuthService.SignUp:output_type -> proto.Empty
+	7,  // 16: proto.AuthService.VerifySignup:output_type -> proto.UserResponse
+	14, // 17: proto.AuthService.ForgotPassword:output_type -> proto.Empty
+	14, // 18: proto.AuthService.ResetPassword:output_type -> proto.Empty
+	9,  // 19: proto.AuthService.Authenticate:output_type -> proto.AuthenticateResponse
+	15, // 20: proto.AuthService.GetUser:output_type -> proto.UserProfileResponse
+	16, // 21: proto.AuthService.UpdateUser:output_type -> proto.UpdateUserResponse
+	15, // 22: proto.AuthService.UpsertUser:output_type -> proto.UserProfileResponse
+	14, // 23: proto.AuthService.Logout:output_type -> proto.Empty
+	12, // [12:24] is the sub-list for method output_type
+	0,  // [0:12] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
@@ -758,7 +809,7 @@ func file_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

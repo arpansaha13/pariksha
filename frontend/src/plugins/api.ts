@@ -23,9 +23,7 @@ export default defineNuxtPlugin(nuxtApp => {
     async onResponseError({ response }) {
       if (response.status === 401) {
         await nuxtApp.runWithContext(() => {
-          const route = useRoute()
-          const isProtectedRoute = !route.path.startsWith('/auth')
-          if (isProtectedRoute) navigateTo('/auth/login')
+          reloadNuxtApp({ persistState: false, path: '/auth/login' })
         })
       }
     },

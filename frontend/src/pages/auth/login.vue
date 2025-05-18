@@ -80,9 +80,9 @@ const loading = useState(() => false)
 
 async function onSubmit() {
   try {
-    loading.value = true
+    loading.value = true // Let the loading continue till page navigation
     await login(loginFormData.value)
-    await navigateTo('/')
+    reloadNuxtApp({ persistState: false, path: '/' })
   } catch {
     toast.clear()
     toast.add({
@@ -92,7 +92,6 @@ async function onSubmit() {
       description: 'Invalid email or password.',
       icon: 'i-heroicons-exclamation-circle',
     })
-  } finally {
     loading.value = false
   }
 }
