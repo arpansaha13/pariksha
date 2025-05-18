@@ -27,7 +27,7 @@ services:
     image: pariksha_sessions_cron
     container_name: sessions_cron
     env_file:
-      - ./auth/cron-sessions.env
+      - ./cron/sessions/env/cron-sessions.env
     develop:
       watch:
         - action: rebuild
@@ -56,19 +56,3 @@ services:
       - "5432"
     ports:
       - 6030:5432 # needed for pgAdmin
-
-  sessionsDb:
-    image: postgres:15.10-alpine
-    restart: always
-    container_name: sessions_db
-    env_file:
-      - ./auth/sessionsDb.env
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_SESSIONS}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    expose:
-      - "5432"
-    ports:
-      - 6010:5432 # needed for pgAdmin

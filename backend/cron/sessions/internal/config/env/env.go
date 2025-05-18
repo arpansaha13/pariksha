@@ -17,12 +17,12 @@ var (
 )
 
 var (
-	SESSIONS_DB_HOST    string
-	SESSIONS_DB_PORT    string
-	SESSIONS_DB_USER    string
-	SESSIONS_DB_PASS    string
-	SESSIONS_DB_NAME    string
-	SESSIONS_DB_SSLMODE string
+	USERS_DB_HOST    string
+	USERS_DB_PORT    string
+	USERS_DB_USER    string
+	USERS_DB_PASS    string
+	USERS_DB_NAME    string
+	USERS_DB_SSLMODE string
 )
 
 func init() {
@@ -42,33 +42,33 @@ func init() {
 
 	GO_ENV = os.Getenv("GO_ENV")
 
-	SESSIONS_DB_USER = os.Getenv("SESSIONS_DB_USER")
-	SESSIONS_DB_PASS = os.Getenv("SESSIONS_DB_PASS")
-	SESSIONS_DB_NAME = os.Getenv("SESSIONS_DB_NAME")
+	USERS_DB_USER = os.Getenv("USERS_DB_USER")
+	USERS_DB_PASS = os.Getenv("USERS_DB_PASS")
+	USERS_DB_NAME = os.Getenv("USERS_DB_NAME")
 	CRON_INTERVAL_HOURS, _ = strconv.Atoi(utils.GetEnvWithDefault("CRON_INTERVAL_HOURS", "1"))
 
 	if GO_ENV != constants.GO_ENV_TEST {
-		SESSIONS_DB_HOST = os.Getenv("SESSIONS_DB_HOST")
-		SESSIONS_DB_PORT = os.Getenv("SESSIONS_DB_PORT")
-		SESSIONS_DB_SSLMODE = os.Getenv("SESSIONS_DB_SSLMODE")
+		USERS_DB_HOST = os.Getenv("USERS_DB_HOST")
+		USERS_DB_PORT = os.Getenv("USERS_DB_PORT")
+		USERS_DB_SSLMODE = os.Getenv("USERS_DB_SSLMODE")
 	}
 }
 
 func getRequiredEnvVars() []string {
 	baseEnvVars := []string{
 		"GO_ENV",
-		"SESSIONS_DB_USER",
-		"SESSIONS_DB_PASS",
-		"SESSIONS_DB_NAME",
+		"USERS_DB_USER",
+		"USERS_DB_PASS",
+		"USERS_DB_NAME",
 		"CRON_INTERVAL_HOURS",
 	}
 
 	if os.Getenv("GO_ENV") != constants.GO_ENV_TEST {
 		// require these vars only when not in test environment
 		additionalEnvVars := []string{
-			"SESSIONS_DB_HOST",
-			"SESSIONS_DB_PORT",
-			"SESSIONS_DB_SSLMODE",
+			"USERS_DB_HOST",
+			"USERS_DB_PORT",
+			"USERS_DB_SSLMODE",
 		}
 		baseEnvVars = append(baseEnvVars, additionalEnvVars...)
 	}

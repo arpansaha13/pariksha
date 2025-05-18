@@ -7,10 +7,10 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"pariksha/auth/internal/config/env"
 	"pariksha/common/pkg/config"
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
+	"pariksha/cron/sessions/internal/config/env"
 )
 
 var DB *gorm.DB
@@ -39,8 +39,6 @@ func InitDB(host, port, user, password, dbname, sslmode string) error {
 // AutoMigrateDB runs migrations for the main database
 func autoMigrateDB() error {
 	err := DB.AutoMigrate(
-		&models.User{},
-		&models.Otp{},
 		&models.Session{},
 	)
 	if err != nil {

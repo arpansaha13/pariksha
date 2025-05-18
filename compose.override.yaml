@@ -33,8 +33,6 @@ services:
     depends_on:
       usersDb:
         condition: service_healthy
-      sessionsDb:
-        condition: service_healthy
       mailQueue:
         condition: service_healthy
     networks:
@@ -68,7 +66,7 @@ services:
 
   sessionsCron:
     depends_on:
-      sessionsDb:
+      usersDb:
         condition: service_healthy
     networks:
       - auth-network
@@ -103,15 +101,6 @@ services:
       - POSTGRES_DB=${POSTGRES_DB_USERS}
     volumes:
       - ./docker/data/usersDb:/var/lib/postgresql/data
-    networks:
-      - auth-network
-
-  sessionsDb:
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_DB=${POSTGRES_DB_SESSIONS}
-    volumes:
-      - ./docker/data/sessionsDb:/var/lib/postgresql/data
     networks:
       - auth-network
 

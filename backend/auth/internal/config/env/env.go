@@ -32,15 +32,6 @@ var (
 )
 
 var (
-	SESSIONS_DB_HOST    string
-	SESSIONS_DB_PORT    string
-	SESSIONS_DB_USER    string
-	SESSIONS_DB_PASS    string
-	SESSIONS_DB_NAME    string
-	SESSIONS_DB_SSLMODE string
-)
-
-var (
 	RABBIT_SERVER_HOST string
 	RABBIT_SERVER_PORT string
 )
@@ -74,18 +65,10 @@ func init() {
 	USERS_DB_PASS = os.Getenv("USERS_DB_PASS")
 	USERS_DB_NAME = os.Getenv("USERS_DB_NAME")
 
-	SESSIONS_DB_USER = os.Getenv("SESSIONS_DB_USER")
-	SESSIONS_DB_PASS = os.Getenv("SESSIONS_DB_PASS")
-	SESSIONS_DB_NAME = os.Getenv("SESSIONS_DB_NAME")
-
 	if GO_ENV != constants.GO_ENV_TEST {
 		USERS_DB_HOST = os.Getenv("USERS_DB_HOST")
 		USERS_DB_PORT = os.Getenv("USERS_DB_PORT")
 		USERS_DB_SSLMODE = os.Getenv("USERS_DB_SSLMODE")
-
-		SESSIONS_DB_HOST = os.Getenv("SESSIONS_DB_HOST")
-		SESSIONS_DB_PORT = os.Getenv("SESSIONS_DB_PORT")
-		SESSIONS_DB_SSLMODE = os.Getenv("SESSIONS_DB_SSLMODE")
 
 		RABBIT_SERVER_HOST = os.Getenv("RABBIT_SERVER_HOST")
 		RABBIT_SERVER_PORT = os.Getenv("RABBIT_SERVER_PORT")
@@ -100,9 +83,6 @@ func getRequiredEnvVars() []string {
 		"USERS_DB_USER",
 		"USERS_DB_PASS",
 		"USERS_DB_NAME",
-		"SESSIONS_DB_USER",
-		"SESSIONS_DB_PASS",
-		"SESSIONS_DB_NAME",
 	}
 
 	if os.Getenv("GO_ENV") != constants.GO_ENV_TEST {
@@ -111,9 +91,6 @@ func getRequiredEnvVars() []string {
 			"USERS_DB_HOST",
 			"USERS_DB_PORT",
 			"USERS_DB_SSLMODE",
-			"SESSIONS_DB_HOST",
-			"SESSIONS_DB_PORT",
-			"SESSIONS_DB_SSLMODE",
 			"RABBIT_SERVER_HOST",
 			"RABBIT_SERVER_PORT",
 		}

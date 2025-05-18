@@ -67,27 +67,6 @@ func setupContainers() func() {
 		log.Fatalf("Failed to setup container: %v", err)
 	}
 
-	// Start Sessions DB container
-	sessionsDb, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "postgres:15.10-alpine",
-			ExposedPorts: []string{"5432/tcp"},
-			Env: map[string]string{
-				"POSTGRES_USER":     env.SESSIONS_DB_USER,
-				"POSTGRES_PASSWORD": env.SESSIONS_DB_PASS,
-				"POSTGRES_DB":       env.SESSIONS_DB_NAME,
-			},
-			WaitingFor: wait.ForAll(
-				wait.ForLog("database system is ready to accept connections"),
-				wait.ForExposedPort(),
-			),
-		},
-		Started: true,
-	})
-	if err != nil {
-		log.Fatalf("Failed to setup container: %v", err)
-	}
-
 	// Start RabbitMQ container
 	rabbitmq, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
@@ -104,9 +83,7 @@ func setupContainers() func() {
 	// Get mapped host and ports
 	pgHost, _ := pgContainer.Host(ctx)
 	pgPort, _ := pgContainer.MappedPort(ctx, "5432")
-	sessionsHost, _ := sessionsDb.Host(ctx)
-	sessionsPort, _ := sessionsDb.MappedPort(ctx, "5432")
-	rabbitHost, _ := sessionsDb.Host(ctx)
+	rabbitHost, _ := rabbitmq.Host(ctx)
 	rabbitPort, _ := rabbitmq.MappedPort(ctx, "5672")
 
 	// Initialize connections with container
@@ -122,18 +99,6 @@ func setupContainers() func() {
 		log.Fatalf("Failed to initialize DB: %v", err)
 	}
 
-	err = db.InitSessionsDB(
-		sessionsHost,
-		sessionsPort.Port(),
-		env.SESSIONS_DB_USER,
-		env.SESSIONS_DB_PASS,
-		env.SESSIONS_DB_NAME,
-		"disable",
-	)
-	if err != nil {
-		log.Fatalf("Failed to initialize Sessions DB: %v", err)
-	}
-
 	err = services.InitRabbitMQ(rabbitHost, rabbitPort.Port())
 	if err != nil {
 		log.Fatalf("Failed to initialize RabbitMQ: %v", err)
@@ -142,7 +107,6 @@ func setupContainers() func() {
 	cleanup := func() {
 		services.CloseRabbit()
 		pgContainer.Terminate(ctx)
-		sessionsDb.Terminate(ctx)
 		rabbitmq.Terminate(ctx)
 	}
 
@@ -155,7 +119,7 @@ func clearTables(t *testing.T) {
 		err := db.DB.Exec(fmt.Sprintf("DELETE FROM %s", table)).Error
 		require.NoError(t, err)
 	}
-	err := db.Sessions.Exec("DELETE FROM " + constants.TABLE_SESSIONS).Error
+	err := db.DB.Exec("DELETE FROM " + constants.TABLE_SESSIONS).Error
 	require.NoError(t, err)
 }
 

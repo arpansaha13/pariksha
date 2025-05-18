@@ -447,7 +447,7 @@ func TestLoginWithPassword(t *testing.T) {
 
 				sessionKey := md.Get(constants.HEADER_SESSION_KEY)[0]
 				var session models.Session
-				err := db.Sessions.Where("key = ?", sessionKey).First(&session).Error
+				err := db.DB.Where("key = ?", sessionKey).First(&session).Error
 				assert.NoError(t, err)
 				assert.NotEmpty(t, session.Token)
 				assert.True(t, session.ExpiresAt.After(time.Now()))
@@ -708,7 +708,7 @@ func TestLogout(t *testing.T) {
 					ExpiresAt: time.Now().Add(24 * time.Hour),
 					CsrfToken: "csrf_token",
 				}
-				err := db.Sessions.Create(session).Error
+				err := db.DB.Create(session).Error
 				assert.NoError(t, err)
 				return session.Key.String()
 			},
@@ -716,7 +716,7 @@ func TestLogout(t *testing.T) {
 			expectedCode: codes.OK,
 			validateFunc: func(t *testing.T, sessionKey string) {
 				var session models.Session
-				err := db.Sessions.Where("key = ?", sessionKey).First(&session).Error
+				err := db.DB.Where("key = ?", sessionKey).First(&session).Error
 				assert.NoError(t, err)
 				assert.True(t, session.ExpiresAt.Before(time.Now()), "session should be expired")
 			},

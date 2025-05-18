@@ -10,7 +10,7 @@ import (
 )
 
 func cleanupExpiredSessions() error {
-	result := db.Sessions.Where("expires_at < ?", time.Now()).Delete(&models.Session{})
+	result := db.DB.Where("expires_at < ?", time.Now()).Delete(&models.Session{})
 	if result.Error != nil {
 		return result.Error
 	}
@@ -31,10 +31,17 @@ func main() {
 		log.Printf("Error during initial cleanup: %v", err)
 	}
 
+	defer closeConnections()
+
 	// Then run periodically
 	for range ticker.C {
 		if err := cleanupExpiredSessions(); err != nil {
 			log.Printf("Error during cleanup: %v", err)
 		}
 	}
+}
+
+func closeConnections() {
+	sqlDb, _ := db.DB.DB()
+	sqlDb.Close()
 }

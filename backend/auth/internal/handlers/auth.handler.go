@@ -79,7 +79,7 @@ func createSession(userID int64) (*models.Session, error) {
 		CsrfToken: csrfToken,
 	}
 
-	if err := db.Sessions.Create(session).Error; err != nil {
+	if err := db.DB.Create(session).Error; err != nil {
 		return nil, status.Error(codes.Internal, "failed to create session")
 	}
 
@@ -429,7 +429,7 @@ func (s *AuthServer) Authenticate(ctx context.Context, req *proto.AuthenticateRe
 	}
 
 	var session models.Session
-	if err := db.Sessions.Where("key = ?", req.SessionKey).Take(&session).Error; err != nil {
+	if err := db.DB.Where("key = ?", req.SessionKey).Take(&session).Error; err != nil {
 		return nil, status.Error(codes.Unauthenticated, "invalid session")
 	}
 
@@ -464,7 +464,7 @@ func (s *AuthServer) Logout(ctx context.Context, req *proto.LogoutRequest) (*pro
 
 	// Set expires_at to a time in the past
 	// sessionsCron will delete it later
-	result := db.Sessions.Model(&models.Session{}).
+	result := db.DB.Model(&models.Session{}).
 		Where("key = ?", req.SessionKey).
 		Update("expires_at", time.Now().Add(-24*time.Hour))
 

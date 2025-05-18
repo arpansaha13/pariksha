@@ -20,11 +20,7 @@ const (
 
 // authDb
 const (
-	TABLE_USERS = "users"
-	TABLE_OTPS  = "otps"
-)
-
-// sessionsDb
-const (
+	TABLE_USERS    = "users"
+	TABLE_OTPS     = "otps"
 	TABLE_SESSIONS = "sessions"
 )

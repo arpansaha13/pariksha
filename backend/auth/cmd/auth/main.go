@@ -37,8 +37,5 @@ func closeConnections() {
 	sqlDb, _ := db.DB.DB()
 	sqlDb.Close()
 
-	sessionsSqlDb, _ := db.Sessions.DB()
-	sessionsSqlDb.Close()
-
 	services.CloseRabbit()
 }
