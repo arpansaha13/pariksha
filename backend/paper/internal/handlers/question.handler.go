@@ -123,6 +123,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 	return questionToProto(question)
 }
 
+// UpdateQuestion handles question updates with proper locking to prevent race conditions
 func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuestionRequest) (*proto.Empty, error) {
 	pc, err := NewPaperContext(ctx)
 	if err != nil || pc.Question == nil {
@@ -137,14 +138,27 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 	}
 
 	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		oldType := question.Type
-		oldMaxScore := question.MaxScore
-
-		if question.Locked {
-			return handleLockedQuestionUpdate(tx, question, req, oldType, oldMaxScore)
+		// Row-level lock for both question and paper rows
+		var lockedQuestion models.Question
+		if err := tx.Set("gorm:query_option", "FOR UPDATE").
+			First(&lockedQuestion, question.ID).Error; err != nil {
+			return status.Error(codes.Internal, "failed to lock question")
 		}
 
-		return handleUnlockedQuestionUpdate(tx, question, req, oldType, oldMaxScore)
+		var paper models.Paper
+		if err := tx.Set("gorm:query_option", "FOR UPDATE").
+			First(&paper, lockedQuestion.PaperID.Int64).Error; err != nil {
+			return status.Error(codes.Internal, "failed to lock paper")
+		}
+
+		oldType := lockedQuestion.Type
+		oldMaxScore := lockedQuestion.MaxScore
+
+		if lockedQuestion.Locked {
+			return handleLockedQuestionUpdate(tx, lockedQuestion, req, oldType, oldMaxScore)
+		}
+
+		return handleUnlockedQuestionUpdate(tx, lockedQuestion, req, oldType, oldMaxScore)
 	})
 
 	if err != nil {
@@ -154,7 +168,7 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 	return &proto.Empty{}, nil
 }
 
-// handleLockedQuestionUpdate handles updates to a locked question by creating a new one
+// handleLockedQuestionUpdate handles updates to a locked (column) question by creating a new one
 func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, req *proto.UpdateQuestionRequest, oldType string, oldMaxScore int16) error {
 	newQuestion := question
 	newQuestion.ID = 0
@@ -169,7 +183,8 @@ func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, req *prot
 		return status.Error(codes.Internal, constants.ErrInternalServer)
 	}
 
-	if err := tx.Model(models.Question{}).
+	// Atomic update to unlink old question
+	if err := tx.Model(&models.Question{}).
 		Where("id = ?", question.ID).
 		Update("paper_id", sql.NullInt64{}).Error; err != nil {
 		return status.Error(codes.Internal, constants.ErrInternalServer)
@@ -178,7 +193,7 @@ func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, req *prot
 	return updateQuestionStats(tx, question.Paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
 }
 
-// handleUnlockedQuestionUpdate handles updates to an unlocked question
+// handleUnlockedQuestionUpdate handles updates to an unlocked (column) question
 func handleUnlockedQuestionUpdate(tx *gorm.DB, question models.Question, req *proto.UpdateQuestionRequest, oldType string, oldMaxScore int16) error {
 	updatedQuestion, err := applyQuestionUpdates(question, req)
 	if err != nil {
@@ -190,24 +205,6 @@ func handleUnlockedQuestionUpdate(tx *gorm.DB, question models.Question, req *pr
 	}
 
 	return updateQuestionStats(tx, updatedQuestion.Paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
-}
-
-// updateQuestionStats updates the paper's statistics after a question update
-func updateQuestionStats(tx *gorm.DB, paper models.Paper, oldType, newType string, oldScore, newScore int16) error {
-	scoreDiff := int32(newScore - oldScore)
-	newCounts := paper.QuestionCounts
-	var err error
-
-	if oldType != newType {
-		if newCounts, err = updateQuestionCounts(newCounts, oldType, -1); err != nil {
-			return err
-		}
-		if newCounts, err = updateQuestionCounts(newCounts, newType, 1); err != nil {
-			return err
-		}
-	}
-
-	return updatePaperStats(tx, paper, scoreDiff, newCounts)
 }
 
 func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.Empty, error) {

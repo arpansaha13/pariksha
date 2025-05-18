@@ -292,6 +292,24 @@ func updatePaperStats(tx *gorm.DB, paper models.Paper, scoreDiff int32, newQuest
 		}).Error
 }
 
+// updateQuestionStats updates the paper's statistics after a question update
+func updateQuestionStats(tx *gorm.DB, paper models.Paper, oldType, newType string, oldScore, newScore int16) error {
+	scoreDiff := int32(newScore - oldScore)
+	newCounts := paper.QuestionCounts
+	var err error
+
+	if oldType != newType {
+		if newCounts, err = updateQuestionCounts(newCounts, oldType, -1); err != nil {
+			return err
+		}
+		if newCounts, err = updateQuestionCounts(newCounts, newType, 1); err != nil {
+			return err
+		}
+	}
+
+	return updatePaperStats(tx, paper, scoreDiff, newCounts)
+}
+
 // validateMaxScore checks if the given score is within valid range (0 to MAX_SCORE_PER_QUESTION)
 func validateMaxScore(score int32) error {
 	if score < 0 || score > constants.MAX_SCORE_PER_QUESTION {
