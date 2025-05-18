@@ -26,6 +26,7 @@ service ExamService {
   rpc StartExam(StartExamRequest) returns (Empty) {}
   rpc EndExam(EndExamRequest) returns (Empty) {}
   rpc GetExamParticipant(GetExamParticipantRequest) returns (GetExamParticipantResponse) {}
+  rpc GetParticipantById(ParticipantRequest) returns (ParticipantResponse) {}
 
   // Answer operations
   rpc GetParticipantAnswers(ParticipantRequest) returns (AnswerList) {}
@@ -59,8 +60,8 @@ message UpdateExamRequest {
   optional string title = 2;
   optional google.protobuf.Timestamp starts_at = 3;
   optional google.protobuf.Timestamp ends_at = 4;
-  optional string type = 6;
-  optional int32 duration_minutes = 7;
+  optional string type = 5;
+  optional int32 duration_minutes = 6;
 }
 
 message ExamResponse {
@@ -96,11 +97,11 @@ message ParticipantRequest {
 message ParticipantResponse {
   int64 id = 1;
   int64 user_id = 2;
-  int32 status = 6;
-  int32 score_awarded = 7;
-  optional google.protobuf.Timestamp started_at = 8;
-  optional google.protobuf.Timestamp ended_at = 9;
-  optional google.protobuf.Timestamp scheduled_end_time = 10;
+  int32 status = 3;
+  int32 score_awarded = 4;
+  optional google.protobuf.Timestamp started_at = 5;
+  optional google.protobuf.Timestamp ended_at = 6;
+  optional google.protobuf.Timestamp scheduled_end_time = 7;
 }
 
 message ParticipantList {
@@ -240,9 +241,9 @@ message ParticipantQuestionRequest {
 
 message GetAnswerEvaluationDataResponse {
   int64 id = 1;
-  int64 question_id = 3;
-  int32 score_awarded = 5;
-  string comments = 6;
+  int64 question_id = 2;
+  int32 score_awarded = 3;
+  string comments = 4;
 }
 
 message DeleteExamsRequest {

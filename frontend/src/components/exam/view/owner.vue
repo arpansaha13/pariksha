@@ -324,11 +324,7 @@ const columns: TableColumn<ExamParticipantResponse>[] = [
 
       if (
         !examPermission.value?.can_evaluate ||
-        [
-          ExamParticipantStatus.UNATTENDED,
-          ExamParticipantStatus.INVITED,
-          ExamParticipantStatus.STARTED,
-        ].includes(row.original.status)
+        row.original.status !== ExamParticipantStatus.ENDED
       ) {
         return name
       }

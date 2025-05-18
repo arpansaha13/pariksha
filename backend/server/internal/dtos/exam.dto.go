@@ -101,3 +101,8 @@ type ExamPermissionResponseDto struct {
 type DeleteExamsDto struct {
 	ExamIds []int64 `json:"exam_ids" validate:"required,min=1"`
 }
+
+type ParticipantDetailResponseDto struct {
+	ID     int64 `json:"id"`
+	Status int32 `json:"status"`
+}

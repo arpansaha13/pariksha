@@ -95,18 +95,27 @@ func (s *ExamServer) GetAnswerEvaluationData(ctx context.Context, req *proto.Par
 }
 
 func (s *ExamServer) UpdateAnswerForEvaluation(ctx context.Context, req *proto.UpdateAnswerRequest) (*proto.GetAnswerEvaluationDataResponse, error) {
-	// Get max score from exam_questions using joins
-	var maxScore int16
+	// Get max score and participant_status using joins
+	type QueryResult struct {
+		MaxScore          int16 `gorm:"column:max_score"`
+		ParticipantStatus int16 `gorm:"column:status"`
+	}
+
+	queryResult := QueryResult{}
 	if err := db.DB.Table("answers").
 		Joins("INNER JOIN exam_participants ON exam_participants.id = answers.exam_participant_id").
 		Joins("INNER JOIN exam_questions ON exam_questions.exam_id = exam_participants.exam_id AND exam_questions.question_id = answers.question_id").
 		Where("answers.id = ?", req.AnswerId).
-		Select("exam_questions.max_score").
-		Take(&maxScore).Error; err != nil {
+		Select("exam_questions.max_score", "exam_participants.status").
+		Take(&queryResult).Error; err != nil {
 		return nil, utils.HandleDBError(err, "answer not found")
 	}
 
-	if req.NewScore != nil && req.GetNewScore() > int32(maxScore) {
+	if queryResult.ParticipantStatus != constants.PARTICIPANT_STATUS_ENDED {
+		return nil, status.Error(codes.FailedPrecondition, "participant cannot be evaluated")
+	}
+
+	if req.NewScore != nil && req.GetNewScore() > int32(queryResult.MaxScore) {
 		return nil, status.Error(codes.InvalidArgument, "new score exceeds max score for the question")
 	}
 

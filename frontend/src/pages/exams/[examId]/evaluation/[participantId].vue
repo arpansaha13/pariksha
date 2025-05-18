@@ -130,15 +130,17 @@
 </template>
 
 <script lang="ts" setup>
+import { ConfirmModal } from '#components'
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import {
   QuestionType,
+  ExamParticipantStatus,
+  type Answer,
   type EvaluationAnswer,
   type ExamPermission,
-  type SubjectiveAnswer,
   type MCQAnswer,
   type QuestionMcq,
-  type Answer,
+  type SubjectiveAnswer,
 } from '~/types'
 
 definePageMeta({
@@ -163,6 +165,24 @@ definePageMeta({
 const route = useRoute()
 const examId = parseInt(route.params.examId as string)
 const participantId = parseInt(route.params.participantId as string)
+
+// If participant has not ended their exam, or if they are already evaluated
+// then disallow access to this route
+await callOnce(
+  async () => {
+    const { data: participant } = await useExamParticipantById(participantId)
+    if (
+      isNullOrUndefined(participant.value) ||
+      participant.value.status !== ExamParticipantStatus.ENDED
+    ) {
+      throw createError({
+        statusCode: HttpStatus.FORBIDDEN,
+        message: 'Participant cannot be evaluated now.',
+      })
+    }
+  },
+  { mode: 'navigation' }
+)
 
 const [
   { data: exam },
@@ -390,7 +410,21 @@ const currentQuestionMcqOptions = computed(() => {
 
 // ________________________SUBMIT EVALUATION________________________
 const toast = useToast()
+const overlay = useOverlay()
+const confirmModal = overlay.create(ConfirmModal)
+
 async function handleEvaluationSubmit() {
+  const instance = confirmModal.open({
+    title: 'Submit evaluation',
+    description:
+      'Once submitted, this evaluation cannot be modified. Please review carefully before proceeding.',
+    confirmLabel: 'Submit',
+    variant: 'primary',
+  })
+
+  const shouldSubmit = await instance.result
+  if (!shouldSubmit) return
+
   try {
     await Promise.all(saveUpdatedEvaluation()) // Save any remaining unsaved evaluation data
     await markParticipantAsEvaluated(participantId)

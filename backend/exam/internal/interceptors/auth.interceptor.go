@@ -59,6 +59,7 @@ var (
 		"/proto.ExamService/UpdateAnswerForEvaluation":  true,
 		"/proto.ExamService/MarkParticipantAsEvaluated": true,
 		"/proto.ExamService/GetAnswerForEvaluation":     true,
+		"/proto.ExamService/GetParticipantById":         true,
 	}
 
 	handlerSpecificPermissionChecks = map[string]func(*models.ExamPermissions) bool{

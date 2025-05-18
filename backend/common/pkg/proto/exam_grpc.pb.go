@@ -34,6 +34,7 @@ const (
 	ExamService_StartExam_FullMethodName                  = "/proto.ExamService/StartExam"
 	ExamService_EndExam_FullMethodName                    = "/proto.ExamService/EndExam"
 	ExamService_GetExamParticipant_FullMethodName         = "/proto.ExamService/GetExamParticipant"
+	ExamService_GetParticipantById_FullMethodName         = "/proto.ExamService/GetParticipantById"
 	ExamService_GetParticipantAnswers_FullMethodName      = "/proto.ExamService/GetParticipantAnswers"
 	ExamService_GetAnswerForExam_FullMethodName           = "/proto.ExamService/GetAnswerForExam"
 	ExamService_UpsertAnswer_FullMethodName               = "/proto.ExamService/UpsertAnswer"
@@ -64,6 +65,7 @@ type ExamServiceClient interface {
 	StartExam(ctx context.Context, in *StartExamRequest, opts ...grpc.CallOption) (*Empty, error)
 	EndExam(ctx context.Context, in *EndExamRequest, opts ...grpc.CallOption) (*Empty, error)
 	GetExamParticipant(ctx context.Context, in *GetExamParticipantRequest, opts ...grpc.CallOption) (*GetExamParticipantResponse, error)
+	GetParticipantById(ctx context.Context, in *ParticipantRequest, opts ...grpc.CallOption) (*ParticipantResponse, error)
 	// Answer operations
 	GetParticipantAnswers(ctx context.Context, in *ParticipantRequest, opts ...grpc.CallOption) (*AnswerList, error)
 	GetAnswerForExam(ctx context.Context, in *GetAnswerRequest, opts ...grpc.CallOption) (*AnswerMinimalResponse, error)
@@ -233,6 +235,16 @@ func (c *examServiceClient) GetExamParticipant(ctx context.Context, in *GetExamP
 	return out, nil
 }
 
+func (c *examServiceClient) GetParticipantById(ctx context.Context, in *ParticipantRequest, opts ...grpc.CallOption) (*ParticipantResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ParticipantResponse)
+	err := c.cc.Invoke(ctx, ExamService_GetParticipantById_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *examServiceClient) GetParticipantAnswers(ctx context.Context, in *ParticipantRequest, opts ...grpc.CallOption) (*AnswerList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AnswerList)
@@ -324,6 +336,7 @@ type ExamServiceServer interface {
 	StartExam(context.Context, *StartExamRequest) (*Empty, error)
 	EndExam(context.Context, *EndExamRequest) (*Empty, error)
 	GetExamParticipant(context.Context, *GetExamParticipantRequest) (*GetExamParticipantResponse, error)
+	GetParticipantById(context.Context, *ParticipantRequest) (*ParticipantResponse, error)
 	// Answer operations
 	GetParticipantAnswers(context.Context, *ParticipantRequest) (*AnswerList, error)
 	GetAnswerForExam(context.Context, *GetAnswerRequest) (*AnswerMinimalResponse, error)
@@ -387,6 +400,9 @@ func (UnimplementedExamServiceServer) EndExam(context.Context, *EndExamRequest) 
 }
 func (UnimplementedExamServiceServer) GetExamParticipant(context.Context, *GetExamParticipantRequest) (*GetExamParticipantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamParticipant not implemented")
+}
+func (UnimplementedExamServiceServer) GetParticipantById(context.Context, *ParticipantRequest) (*ParticipantResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetParticipantById not implemented")
 }
 func (UnimplementedExamServiceServer) GetParticipantAnswers(context.Context, *ParticipantRequest) (*AnswerList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetParticipantAnswers not implemented")
@@ -700,6 +716,24 @@ func _ExamService_GetExamParticipant_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ExamService_GetParticipantById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ParticipantRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExamServiceServer).GetParticipantById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExamService_GetParticipantById_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExamServiceServer).GetParticipantById(ctx, req.(*ParticipantRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ExamService_GetParticipantAnswers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ParticipantRequest)
 	if err := dec(in); err != nil {
@@ -892,6 +926,10 @@ var ExamService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetExamParticipant",
 			Handler:    _ExamService_GetExamParticipant_Handler,
+		},
+		{
+			MethodName: "GetParticipantById",
+			Handler:    _ExamService_GetParticipantById_Handler,
 		},
 		{
 			MethodName: "GetParticipantAnswers",

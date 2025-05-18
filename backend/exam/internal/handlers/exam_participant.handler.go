@@ -189,3 +189,15 @@ func (s *ExamServer) GetExamParticipant(ctx context.Context, req *proto.GetExamP
 
 	return response, nil
 }
+
+func (s *ExamServer) GetParticipantById(ctx context.Context, req *proto.ParticipantRequest) (*proto.ParticipantResponse, error) {
+	var participant models.ExamParticipant
+	if err := db.DB.Take(&participant, req.ParticipantId).Error; err != nil {
+		return nil, utils.HandleDBError(err, "participant not found")
+	}
+
+	return &proto.ParticipantResponse{
+		Id:     participant.ID,
+		Status: int32(participant.Status),
+	}, nil
+}

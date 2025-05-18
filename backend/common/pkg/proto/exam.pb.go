@@ -211,8 +211,8 @@ type UpdateExamRequest struct {
 	Title           *string                `protobuf:"bytes,2,opt,name=title,proto3,oneof" json:"title,omitempty"`
 	StartsAt        *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=starts_at,json=startsAt,proto3,oneof" json:"starts_at,omitempty"`
 	EndsAt          *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=ends_at,json=endsAt,proto3,oneof" json:"ends_at,omitempty"`
-	Type            *string                `protobuf:"bytes,6,opt,name=type,proto3,oneof" json:"type,omitempty"`
-	DurationMinutes *int32                 `protobuf:"varint,7,opt,name=duration_minutes,json=durationMinutes,proto3,oneof" json:"duration_minutes,omitempty"`
+	Type            *string                `protobuf:"bytes,5,opt,name=type,proto3,oneof" json:"type,omitempty"`
+	DurationMinutes *int32                 `protobuf:"varint,6,opt,name=duration_minutes,json=durationMinutes,proto3,oneof" json:"duration_minutes,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -574,11 +574,11 @@ type ParticipantResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Id               int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	UserId           int64                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Status           int32                  `protobuf:"varint,6,opt,name=status,proto3" json:"status,omitempty"`
-	ScoreAwarded     int32                  `protobuf:"varint,7,opt,name=score_awarded,json=scoreAwarded,proto3" json:"score_awarded,omitempty"`
-	StartedAt        *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=started_at,json=startedAt,proto3,oneof" json:"started_at,omitempty"`
-	EndedAt          *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=ended_at,json=endedAt,proto3,oneof" json:"ended_at,omitempty"`
-	ScheduledEndTime *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=scheduled_end_time,json=scheduledEndTime,proto3,oneof" json:"scheduled_end_time,omitempty"`
+	Status           int32                  `protobuf:"varint,3,opt,name=status,proto3" json:"status,omitempty"`
+	ScoreAwarded     int32                  `protobuf:"varint,4,opt,name=score_awarded,json=scoreAwarded,proto3" json:"score_awarded,omitempty"`
+	StartedAt        *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=started_at,json=startedAt,proto3,oneof" json:"started_at,omitempty"`
+	EndedAt          *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=ended_at,json=endedAt,proto3,oneof" json:"ended_at,omitempty"`
+	ScheduledEndTime *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=scheduled_end_time,json=scheduledEndTime,proto3,oneof" json:"scheduled_end_time,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -1952,9 +1952,9 @@ func (x *ParticipantQuestionRequest) GetQuestionId() int64 {
 type GetAnswerEvaluationDataResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	QuestionId    int64                  `protobuf:"varint,3,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
-	ScoreAwarded  int32                  `protobuf:"varint,5,opt,name=score_awarded,json=scoreAwarded,proto3" json:"score_awarded,omitempty"`
-	Comments      string                 `protobuf:"bytes,6,opt,name=comments,proto3" json:"comments,omitempty"`
+	QuestionId    int64                  `protobuf:"varint,2,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	ScoreAwarded  int32                  `protobuf:"varint,3,opt,name=score_awarded,json=scoreAwarded,proto3" json:"score_awarded,omitempty"`
+	Comments      string                 `protobuf:"bytes,4,opt,name=comments,proto3" json:"comments,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2187,8 +2187,8 @@ const file_exam_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12<\n" +
 	"\tstarts_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\bstartsAt\x88\x01\x01\x128\n" +
 	"\aends_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampH\x02R\x06endsAt\x88\x01\x01\x12\x17\n" +
-	"\x04type\x18\x06 \x01(\tH\x03R\x04type\x88\x01\x01\x12.\n" +
-	"\x10duration_minutes\x18\a \x01(\x05H\x04R\x0fdurationMinutes\x88\x01\x01B\b\n" +
+	"\x04type\x18\x05 \x01(\tH\x03R\x04type\x88\x01\x01\x12.\n" +
+	"\x10duration_minutes\x18\x06 \x01(\x05H\x04R\x0fdurationMinutes\x88\x01\x01B\b\n" +
 	"\x06_titleB\f\n" +
 	"\n" +
 	"_starts_atB\n" +
@@ -2224,13 +2224,12 @@ const file_exam_proto_rawDesc = "" +
 	"\x13ParticipantResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\x03R\x06userId\x12\x16\n" +
-	"\x06status\x18\x06 \x01(\x05R\x06status\x12#\n" +
-	"\rscore_awarded\x18\a \x01(\x05R\fscoreAwarded\x12>\n" +
+	"\x06status\x18\x03 \x01(\x05R\x06status\x12#\n" +
+	"\rscore_awarded\x18\x04 \x01(\x05R\fscoreAwarded\x12>\n" +
 	"\n" +
-	"started_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampH\x00R\tstartedAt\x88\x01\x01\x12:\n" +
-	"\bended_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampH\x01R\aendedAt\x88\x01\x01\x12M\n" +
-	"\x12scheduled_end_time\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampH\x02R\x10scheduledEndTime\x88\x01\x01B\r\n" +
+	"started_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\tstartedAt\x88\x01\x01\x12:\n" +
+	"\bended_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\aendedAt\x88\x01\x01\x12M\n" +
+	"\x12scheduled_end_time\x18\a \x01(\v2\x1a.google.protobuf.TimestampH\x02R\x10scheduledEndTime\x88\x01\x01B\r\n" +
 	"\v_started_atB\v\n" +
 	"\t_ended_atB\x15\n" +
 	"\x13_scheduled_end_time\"Q\n" +
@@ -2340,10 +2339,10 @@ const file_exam_proto_rawDesc = "" +
 	"questionId\"\x93\x01\n" +
 	"\x1fGetAnswerEvaluationDataResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1f\n" +
-	"\vquestion_id\x18\x03 \x01(\x03R\n" +
+	"\vquestion_id\x18\x02 \x01(\x03R\n" +
 	"questionId\x12#\n" +
-	"\rscore_awarded\x18\x05 \x01(\x05R\fscoreAwarded\x12\x1a\n" +
-	"\bcomments\x18\x06 \x01(\tR\bcomments\"/\n" +
+	"\rscore_awarded\x18\x03 \x01(\x05R\fscoreAwarded\x12\x1a\n" +
+	"\bcomments\x18\x04 \x01(\tR\bcomments\"/\n" +
 	"\x12DeleteExamsRequest\x12\x19\n" +
 	"\bexam_ids\x18\x01 \x03(\x03R\aexamIds\"n\n" +
 	"\x0eExamResultItem\x12\x1b\n" +
@@ -2354,7 +2353,7 @@ const file_exam_proto_rawDesc = "" +
 	"\aresults\x18\x01 \x03(\v2\x15.proto.ExamResultItemR\aresults*,\n" +
 	"\x0eExamAccessType\x12\t\n" +
 	"\x05OWNER\x10\x00\x12\x0f\n" +
-	"\vPARTICIPANT\x10\x012\xd9\f\n" +
+	"\vPARTICIPANT\x10\x012\xa8\r\n" +
 	"\vExamService\x12/\n" +
 	"\fGetUserExams\x12\f.proto.Empty\x1a\x0f.proto.ExamList\"\x00\x12=\n" +
 	"\n" +
@@ -2372,7 +2371,8 @@ const file_exam_proto_rawDesc = "" +
 	"\x15RemoveExamParticipant\x12\x1f.proto.RemoveParticipantRequest\x1a\f.proto.Empty\"\x00\x124\n" +
 	"\tStartExam\x12\x17.proto.StartExamRequest\x1a\f.proto.Empty\"\x00\x120\n" +
 	"\aEndExam\x12\x15.proto.EndExamRequest\x1a\f.proto.Empty\"\x00\x12[\n" +
-	"\x12GetExamParticipant\x12 .proto.GetExamParticipantRequest\x1a!.proto.GetExamParticipantResponse\"\x00\x12G\n" +
+	"\x12GetExamParticipant\x12 .proto.GetExamParticipantRequest\x1a!.proto.GetExamParticipantResponse\"\x00\x12M\n" +
+	"\x12GetParticipantById\x12\x19.proto.ParticipantRequest\x1a\x1a.proto.ParticipantResponse\"\x00\x12G\n" +
 	"\x15GetParticipantAnswers\x12\x19.proto.ParticipantRequest\x1a\x11.proto.AnswerList\"\x00\x12K\n" +
 	"\x10GetAnswerForExam\x12\x17.proto.GetAnswerRequest\x1a\x1c.proto.AnswerMinimalResponse\"\x00\x12K\n" +
 	"\fUpsertAnswer\x12\x1b.proto.UpsertAnswersRequest\x1a\x1c.proto.UpsertAnswersResponse\"\x00\x12f\n" +
@@ -2471,37 +2471,39 @@ var file_exam_proto_depIdxs = []int32{
 	12, // 32: proto.ExamService.StartExam:input_type -> proto.StartExamRequest
 	13, // 33: proto.ExamService.EndExam:input_type -> proto.EndExamRequest
 	24, // 34: proto.ExamService.GetExamParticipant:input_type -> proto.GetExamParticipantRequest
-	7,  // 35: proto.ExamService.GetParticipantAnswers:input_type -> proto.ParticipantRequest
-	21, // 36: proto.ExamService.GetAnswerForExam:input_type -> proto.GetAnswerRequest
-	16, // 37: proto.ExamService.UpsertAnswer:input_type -> proto.UpsertAnswersRequest
-	31, // 38: proto.ExamService.GetAnswerEvaluationData:input_type -> proto.ParticipantQuestionRequest
-	20, // 39: proto.ExamService.UpdateAnswerForEvaluation:input_type -> proto.UpdateAnswerRequest
-	7,  // 40: proto.ExamService.MarkParticipantAsEvaluated:input_type -> proto.ParticipantRequest
-	31, // 41: proto.ExamService.GetAnswerForEvaluation:input_type -> proto.ParticipantQuestionRequest
-	5,  // 42: proto.ExamService.GetUserExams:output_type -> proto.ExamList
-	4,  // 43: proto.ExamService.CreateExam:output_type -> proto.ExamResponse
-	4,  // 44: proto.ExamService.UpdateExam:output_type -> proto.ExamResponse
-	4,  // 45: proto.ExamService.GetExam:output_type -> proto.ExamResponse
-	27, // 46: proto.ExamService.GetExamQuestions:output_type -> proto.ExamQuestionsResponse
-	29, // 47: proto.ExamService.GetExamCategories:output_type -> proto.ExamCategoriesResponse
-	30, // 48: proto.ExamService.GetExamPermission:output_type -> proto.ExamPermissionResponse
-	37, // 49: proto.ExamService.DeleteExams:output_type -> proto.Empty
-	35, // 50: proto.ExamService.GetExamResults:output_type -> proto.ExamResultsResponse
-	9,  // 51: proto.ExamService.GetExamParticipants:output_type -> proto.ParticipantList
-	8,  // 52: proto.ExamService.AddExamParticipant:output_type -> proto.ParticipantResponse
-	37, // 53: proto.ExamService.RemoveExamParticipant:output_type -> proto.Empty
-	37, // 54: proto.ExamService.StartExam:output_type -> proto.Empty
-	37, // 55: proto.ExamService.EndExam:output_type -> proto.Empty
-	25, // 56: proto.ExamService.GetExamParticipant:output_type -> proto.GetExamParticipantResponse
-	19, // 57: proto.ExamService.GetParticipantAnswers:output_type -> proto.AnswerList
-	22, // 58: proto.ExamService.GetAnswerForExam:output_type -> proto.AnswerMinimalResponse
-	17, // 59: proto.ExamService.UpsertAnswer:output_type -> proto.UpsertAnswersResponse
-	32, // 60: proto.ExamService.GetAnswerEvaluationData:output_type -> proto.GetAnswerEvaluationDataResponse
-	32, // 61: proto.ExamService.UpdateAnswerForEvaluation:output_type -> proto.GetAnswerEvaluationDataResponse
-	14, // 62: proto.ExamService.MarkParticipantAsEvaluated:output_type -> proto.EvaluationStatusResponse
-	22, // 63: proto.ExamService.GetAnswerForEvaluation:output_type -> proto.AnswerMinimalResponse
-	42, // [42:64] is the sub-list for method output_type
-	20, // [20:42] is the sub-list for method input_type
+	7,  // 35: proto.ExamService.GetParticipantById:input_type -> proto.ParticipantRequest
+	7,  // 36: proto.ExamService.GetParticipantAnswers:input_type -> proto.ParticipantRequest
+	21, // 37: proto.ExamService.GetAnswerForExam:input_type -> proto.GetAnswerRequest
+	16, // 38: proto.ExamService.UpsertAnswer:input_type -> proto.UpsertAnswersRequest
+	31, // 39: proto.ExamService.GetAnswerEvaluationData:input_type -> proto.ParticipantQuestionRequest
+	20, // 40: proto.ExamService.UpdateAnswerForEvaluation:input_type -> proto.UpdateAnswerRequest
+	7,  // 41: proto.ExamService.MarkParticipantAsEvaluated:input_type -> proto.ParticipantRequest
+	31, // 42: proto.ExamService.GetAnswerForEvaluation:input_type -> proto.ParticipantQuestionRequest
+	5,  // 43: proto.ExamService.GetUserExams:output_type -> proto.ExamList
+	4,  // 44: proto.ExamService.CreateExam:output_type -> proto.ExamResponse
+	4,  // 45: proto.ExamService.UpdateExam:output_type -> proto.ExamResponse
+	4,  // 46: proto.ExamService.GetExam:output_type -> proto.ExamResponse
+	27, // 47: proto.ExamService.GetExamQuestions:output_type -> proto.ExamQuestionsResponse
+	29, // 48: proto.ExamService.GetExamCategories:output_type -> proto.ExamCategoriesResponse
+	30, // 49: proto.ExamService.GetExamPermission:output_type -> proto.ExamPermissionResponse
+	37, // 50: proto.ExamService.DeleteExams:output_type -> proto.Empty
+	35, // 51: proto.ExamService.GetExamResults:output_type -> proto.ExamResultsResponse
+	9,  // 52: proto.ExamService.GetExamParticipants:output_type -> proto.ParticipantList
+	8,  // 53: proto.ExamService.AddExamParticipant:output_type -> proto.ParticipantResponse
+	37, // 54: proto.ExamService.RemoveExamParticipant:output_type -> proto.Empty
+	37, // 55: proto.ExamService.StartExam:output_type -> proto.Empty
+	37, // 56: proto.ExamService.EndExam:output_type -> proto.Empty
+	25, // 57: proto.ExamService.GetExamParticipant:output_type -> proto.GetExamParticipantResponse
+	8,  // 58: proto.ExamService.GetParticipantById:output_type -> proto.ParticipantResponse
+	19, // 59: proto.ExamService.GetParticipantAnswers:output_type -> proto.AnswerList
+	22, // 60: proto.ExamService.GetAnswerForExam:output_type -> proto.AnswerMinimalResponse
+	17, // 61: proto.ExamService.UpsertAnswer:output_type -> proto.UpsertAnswersResponse
+	32, // 62: proto.ExamService.GetAnswerEvaluationData:output_type -> proto.GetAnswerEvaluationDataResponse
+	32, // 63: proto.ExamService.UpdateAnswerForEvaluation:output_type -> proto.GetAnswerEvaluationDataResponse
+	14, // 64: proto.ExamService.MarkParticipantAsEvaluated:output_type -> proto.EvaluationStatusResponse
+	22, // 65: proto.ExamService.GetAnswerForEvaluation:output_type -> proto.AnswerMinimalResponse
+	43, // [43:66] is the sub-list for method output_type
+	20, // [20:43] is the sub-list for method input_type
 	20, // [20:20] is the sub-list for extension type_name
 	20, // [20:20] is the sub-list for extension extendee
 	0,  // [0:20] is the sub-list for field type_name

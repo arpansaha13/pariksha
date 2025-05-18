@@ -200,3 +200,31 @@ func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func GetParticipantById(w http.ResponseWriter, r *http.Request) {
+	participantID, err := getInt64FromVars(mux.Vars(r), "participantId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	examService := services.GetExamService()
+	ctx := examService.CreateMetadata(userID)
+
+	participant, err := examService.Client().GetParticipantById(ctx, &proto.ParticipantRequest{
+		ParticipantId: participantID,
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	response := dtos.ParticipantDetailResponseDto{
+		ID:     participant.Id,
+		Status: participant.Status,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}

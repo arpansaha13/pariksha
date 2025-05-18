@@ -44,16 +44,21 @@ export type ExamQuestionMinimal = Pick<
 export type ExamCategory = Pick<QuestionCategory, 'id' | 'name' | 'order'>
 
 export interface ExamParticipant {
-  id: number
-  score_awarded: number
-  started_at: string
-  scheduled_end_time: string
+  readonly id: number
+  readonly score_awarded: number
+  readonly started_at: string
+  readonly scheduled_end_time: string
+}
+
+export interface ExamParticipantById {
+  readonly id: number
+  readonly status: ExamParticipantStatus
 }
 
 export interface ExamParticipantResponse {
   id: number
   user_id: number
-  status: number
+  status: ExamParticipantStatus
   score_awarded: number
   started_at?: string
   ended_at?: string

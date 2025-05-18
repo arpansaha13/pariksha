@@ -377,3 +377,82 @@ func TestGetExamParticipant(t *testing.T) {
 		})
 	}
 }
+
+func TestGetParticipantById(t *testing.T) {
+	tests := []ParticipantTestCase[*proto.ParticipantResponse]{
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Get participant details",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) *models.ExamParticipant {
+				exam := createTestExam(t, userID)
+				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
+				require.NoError(t, db.DB.Save(&exam).Error)
+
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: 2, Status: constants.PARTICIPANT_STATUS_STARTED},
+				})
+				require.NoError(t, err)
+
+				var participant models.ExamParticipant
+				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
+				return &participant
+			},
+			validate: func(t *testing.T, resp *proto.ParticipantResponse) {
+				require.NotNil(t, resp)
+				assert.NotZero(t, resp.Id)
+				assert.Equal(t, int32(constants.PARTICIPANT_STATUS_STARTED), resp.Status)
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Fail - Participant not found",
+				userID:       userID,
+				expectedCode: codes.NotFound,
+			},
+			setup: func(t *testing.T) *models.ExamParticipant {
+				return &models.ExamParticipant{ID: 9999}
+			},
+			validate: func(t *testing.T, resp *proto.ParticipantResponse) {
+				assert.Nil(t, resp)
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Fail - No evaluate permission",
+				userID:       2, // Different user without evaluate permission
+				expectedCode: codes.PermissionDenied,
+			},
+			setup: func(t *testing.T) *models.ExamParticipant {
+				exam := createTestExam(t, userID)
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+					{UserID: 3, Status: constants.PARTICIPANT_STATUS_STARTED},
+				})
+				require.NoError(t, err)
+
+				var participant models.ExamParticipant
+				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
+				return &participant
+			},
+			validate: func(t *testing.T, resp *proto.ParticipantResponse) {
+				assert.Nil(t, resp)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+			participant := tt.setup(t)
+
+			ctx := createContextWithUserID(tt.userID)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				&proto.ParticipantRequest{ParticipantId: participant.ID},
+				client.GetParticipantById,
+				tt.validate,
+			)
+		})
+	}
+}
