@@ -9,6 +9,7 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
     '@nuxt/test-utils/module',
     'pinia-plugin-persistedstate/nuxt',
+    'nuxt-monaco-editor',
     // '@nuxtjs/html-validator',
   ],
 

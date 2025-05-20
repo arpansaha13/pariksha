@@ -2,6 +2,7 @@
 @import '@nuxt/ui';
 
 @config '../../../tailwind.config.ts';
+@plugin '@tailwindcss/typography';
 
 @theme {
   /* --font-sans: Poppins, sans-serif; */
