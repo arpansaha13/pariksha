@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/structs"
 	"pariksha/paper/internal/config/db"
@@ -55,61 +54,6 @@ func createTestPaper(t *testing.T, userID int64) models.Paper {
 	return paper
 }
 
-// QuestionBuilder holds configuration for creating test questions
-type QuestionBuilder struct {
-	PaperID    int64
-	CategoryID int64
-	Order      int16
-	Type       string
-	Statement  string
-	Options    []string
-	MaxScore   int16
-	Locked     bool
-}
-
-// createMCQQuestion creates a test MCQ question
-func createMCQQuestion(t *testing.T, builder QuestionBuilder) models.Question {
-	mcq := structs.MCQQuestion{
-		Statement: builder.Statement,
-		Options:   builder.Options,
-	}
-	rawQuestion, err := json.Marshal(mcq)
-	require.NoError(t, err)
-
-	question := models.Question{
-		PaperID:    sql.NullInt64{Int64: builder.PaperID, Valid: true},
-		CategoryID: builder.CategoryID,
-		Order:      builder.Order,
-		Type:       constants.QUESTION_TYPE_MCQ,
-		Question:   rawQuestion,
-		MaxScore:   builder.MaxScore,
-		Locked:     builder.Locked,
-	}
-	require.NoError(t, db.DB.Create(&question).Error)
-	return question
-}
-
-// createSubjectiveQuestion creates a test Subjective question
-func createSubjectiveQuestion(t *testing.T, builder QuestionBuilder) models.Question {
-	subjective := structs.SubjectiveQuestion{
-		Statement: builder.Statement,
-	}
-	rawQuestion, err := json.Marshal(subjective)
-	require.NoError(t, err)
-
-	question := models.Question{
-		PaperID:    sql.NullInt64{Int64: builder.PaperID, Valid: true},
-		CategoryID: builder.CategoryID,
-		Order:      builder.Order,
-		Type:       builder.Type,
-		Question:   rawQuestion,
-		MaxScore:   builder.MaxScore,
-		Locked:     builder.Locked,
-	}
-	require.NoError(t, db.DB.Create(&question).Error)
-	return question
-}
-
 // verifyQuestionCounts validates the question counts on a paper
 func verifyQuestionCounts(t *testing.T, paperID int64, expected models.QuestionCount) {
 	var paper models.Paper
@@ -128,57 +72,6 @@ func verifyMCQContent(t *testing.T, question models.Question, expectedStatement 
 	assert.Equal(t, expectedOptions, mcq.Options)
 }
 
-// setupTestQuestion creates a test question with the given configuration
-func setupTestQuestion(t *testing.T, userID int64, qType string, initialCounts string) (*models.Paper, *models.Question) {
-	paper := createTestPaper(t, userID)
-	err := db.DB.Model(&paper).Update("question_counts", initialCounts).Error
-	require.NoError(t, err)
-
-	var category models.QuestionCategory
-	require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
-
-	builder := QuestionBuilder{
-		PaperID:    paper.ID,
-		CategoryID: category.ID,
-		Order:      1,
-		Type:       qType,
-		Statement:  "Test Question",
-		Options:    []string{"A", "B", "C"},
-		MaxScore:   5,
-	}
-
-	var question models.Question
-	if qType == constants.QUESTION_TYPE_MCQ {
-		question = createMCQQuestion(t, builder)
-	} else {
-		question = createSubjectiveQuestion(t, builder)
-	}
-
-	return &paper, &question
-}
-
-// setupLockedPaper creates a test paper with specified question counts
-func setupLockedPaper(t *testing.T, builderID int64, counts string) (*models.Paper, *models.Question) {
-	paper := createTestPaper(t, builderID)
-	err := db.DB.Model(&paper).Update("question_counts", counts).Error
-	require.NoError(t, err)
-
-	var category models.QuestionCategory
-	require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
-
-	question := models.Question{
-		PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
-		CategoryID: category.ID,
-		Order:      1,
-		Type:       constants.QUESTION_TYPE_MCQ,
-		Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
-		MaxScore:   5,
-		Locked:     true,
-	}
-	require.NoError(t, db.DB.Create(&question).Error)
-	return &paper, &question
-}
-
 // verifyPaperPermissions validates the permissions of a user for a paper
 func verifyPaperPermissions(t *testing.T, paperID, userID int64, expectedRead, expectedWrite bool) {
 	var permissions models.PaperPermissions
@@ -186,25 +79,6 @@ func verifyPaperPermissions(t *testing.T, paperID, userID int64, expectedRead, e
 	require.NoError(t, err)
 	assert.Equal(t, expectedRead, permissions.CanRead(), "Read permission mismatch")
 	assert.Equal(t, expectedWrite, permissions.CanWrite(), "Write permission mismatch")
-}
-
-// setupPaperWithSharedAccess creates a paper owned by one user and shared with another
-func setupPaperWithSharedAccess(t *testing.T, ownerID, sharedWithID int64, readOnly bool) *models.Paper {
-	paper := createTestPaper(t, ownerID)
-
-	permissions := models.PaperPermissions{
-		UserID:  sharedWithID,
-		PaperID: paper.ID,
-	}
-	if readOnly {
-		permissions.SetRead()
-	} else {
-		permissions.SetWrite()
-	}
-	err := db.DB.Create(&permissions).Error
-	require.NoError(t, err)
-
-	return &paper
 }
 
 // updatePaperCounts updates a paper's question counts
@@ -226,23 +100,24 @@ func setupTestCategory(t *testing.T, userID int64, isLocked bool) (*models.Paper
 	return &paper, &category
 }
 
-// setupCategoryWithQuestions creates a category and adds questions to it
-func setupCategoryWithQuestions(t *testing.T, userID int64, isLocked bool, questionCount int32) (*models.Paper, *models.QuestionCategory) {
-	paper, category := setupTestCategory(t, userID, isLocked)
+// createTestQuestions creates test questions in the database with default values and auto-generated order
+func createTestQuestions(t *testing.T, questions []models.Question) []models.Question {
+	// Map to track order counter per category
+	categoryOrders := make(map[int64]int16)
 
-	for i := int32(0); i < questionCount; i++ {
-		builder := QuestionBuilder{
-			PaperID:    paper.ID,
-			CategoryID: category.ID,
-			Order:      int16(i + 1),
-			Type:       constants.QUESTION_TYPE_MCQ,
-			Statement:  "Test Question",
-			Options:    []string{"A", "B", "C"},
-			MaxScore:   5,
-			Locked:     isLocked,
+	for i := range questions {
+		// Set default MaxScore if not provided
+		if questions[i].MaxScore == 0 {
+			questions[i].MaxScore = 5
 		}
-		createMCQQuestion(t, builder)
+
+		// Auto-generate Order based on category
+		currentOrder := categoryOrders[questions[i].CategoryID] + 1
+		questions[i].Order = currentOrder
+		categoryOrders[questions[i].CategoryID] = currentOrder
 	}
 
-	return paper, category
+	err := db.DB.Create(&questions).Error
+	require.NoError(t, err)
+	return questions
 }

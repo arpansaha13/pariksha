@@ -347,7 +347,17 @@ func TestGetPaper(t *testing.T) {
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Paper {
-				return setupPaperWithSharedAccess(t, 2, userID, true)
+				paper := createTestPaper(t, 2)
+
+				permissions := models.PaperPermissions{
+					UserID:  userID,
+					PaperID: paper.ID,
+				}
+				permissions.SetRead()
+				err := db.DB.Create(&permissions).Error
+				require.NoError(t, err)
+
+				return &paper
 			},
 			validate: func(t *testing.T, resp *proto.PaperResponse) {
 				assert.NotZero(t, resp.Id)

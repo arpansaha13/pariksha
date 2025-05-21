@@ -207,7 +207,25 @@ func TestUpdateCategory(t *testing.T) {
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.QuestionCategory {
-				_, category := setupCategoryWithQuestions(t, userID, true, 2)
+				paper, category := setupTestCategory(t, userID, true)
+
+				createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"Test Question 1","options":["A","B","C"]}`),
+						Locked:     true,
+					},
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"Test Question 2","options":["A","B","C"]}`),
+						Locked:     true,
+					},
+				})
+
 				return category
 			},
 			newName: "Updated Name",
@@ -425,7 +443,19 @@ func TestDeleteCategory(t *testing.T) {
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.QuestionCategory {
-				_, category := setupCategoryWithQuestions(t, userID, true, 1)
+				paper, category := setupTestCategory(t, userID, true)
+
+				// Create test question
+				createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B","C"]}`),
+						Locked:     true,
+					},
+				})
+
 				return category
 			},
 			validate: func(t *testing.T, categoryID int64) {

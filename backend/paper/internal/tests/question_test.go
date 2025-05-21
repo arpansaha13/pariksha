@@ -27,24 +27,21 @@ func TestGetPaperQuestions(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, []models.Question) {
 				paper, category := setupTestCategory(t, userID, false)
-				builder := QuestionBuilder{
-					PaperID:    paper.ID,
-					CategoryID: category.ID,
-					Order:      1,
-					Type:       constants.QUESTION_TYPE_MCQ,
-					Statement:  "MCQ Question",
-					Options:    []string{"A", "B", "C"},
-					MaxScore:   5,
-				}
-				mcq := createMCQQuestion(t, builder)
-
-				builder.Order = 2
-				builder.Type = constants.QUESTION_TYPE_SUBJECTIVE
-				builder.Statement = "Subjective Question"
-				builder.MaxScore = 10
-				subjective := createSubjectiveQuestion(t, builder)
-
-				return paper, []models.Question{mcq, subjective}
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"MCQ Question","options":["A","B","C"]}`),
+					},
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+						Question:   json.RawMessage(`{"statement":"Subjective Question"}`),
+					},
+				})
+				return paper, questions
 			},
 			validate: func(t *testing.T, resp *proto.QuestionList) {
 				assert.Equal(t, 2, len(resp.Questions))
@@ -230,7 +227,22 @@ func TestUpdateQuestion(t *testing.T) {
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				return setupTestQuestion(t, userID, constants.QUESTION_TYPE_MCQ, `{"mcq": 1, "subjective": 0}`)
+				paper := createTestPaper(t, userID)
+				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 1, "subjective": 0}`).Error
+				require.NoError(t, err)
+
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"Test Question","options":["A","B","C"]}`),
+					},
+				})
+				return &paper, &questions[0]
 			},
 			request: &proto.UpdateQuestionRequest{
 				RawQuestion: []byte(`{"statement":"Updated MCQ","options":["X","Y","Z"]}`),
@@ -262,16 +274,15 @@ func TestUpdateQuestion(t *testing.T) {
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
-				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
-					CategoryID: category.ID,
-					Order:      1,
-					Type:       constants.QUESTION_TYPE_MCQ,
-					Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
-					MaxScore:   5,
-				}
-				require.NoError(t, db.DB.Create(&question).Error)
-				return &paper, &question
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
+					},
+				})
+				return &paper, &questions[0]
 			},
 			request: &proto.UpdateQuestionRequest{
 				Type:        &questionTypeSubjective,
@@ -300,7 +311,24 @@ func TestUpdateQuestion(t *testing.T) {
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				return setupLockedPaper(t, userID, `{"mcq": 1, "subjective": 0}`)
+				paper := createTestPaper(t, userID)
+				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 1, "subjective": 0}`).Error
+				require.NoError(t, err)
+
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				question := models.Question{
+					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+					CategoryID: category.ID,
+					Order:      1,
+					Type:       constants.QUESTION_TYPE_MCQ,
+					Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
+					MaxScore:   5,
+					Locked:     true,
+				}
+				require.NoError(t, db.DB.Create(&question).Error)
+				return &paper, &question
 			},
 			request: &proto.UpdateQuestionRequest{
 				RawQuestion: []byte(`{"statement":"Updated MCQ","options":["X","Y","Z"]}`),
@@ -342,7 +370,6 @@ func TestUpdateQuestion(t *testing.T) {
 					Order:      1,
 					Type:       constants.QUESTION_TYPE_MCQ,
 					Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
-					MaxScore:   5,
 				}
 				require.NoError(t, db.DB.Create(&question).Error)
 				return &paper, &question
@@ -368,7 +395,6 @@ func TestUpdateQuestion(t *testing.T) {
 					Order:      1,
 					Type:       constants.QUESTION_TYPE_MCQ,
 					Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
-					MaxScore:   5,
 				}
 				require.NoError(t, db.DB.Create(&question).Error)
 				return &paper, &question
@@ -391,17 +417,17 @@ func TestUpdateQuestion(t *testing.T) {
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
-				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
-					CategoryID: category.ID,
-					Order:      1,
-					Type:       constants.QUESTION_TYPE_MCQ,
-					Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
-					MaxScore:   5,
-					Tags:       json.RawMessage(`["old"]`),
-				}
-				require.NoError(t, db.DB.Create(&question).Error)
-				return &paper, &question
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
+
+						Tags: json.RawMessage(`["old"]`),
+					},
+				})
+				return &paper, &questions[0]
 			},
 			request: &proto.UpdateQuestionRequest{
 				MaxScore:    &maxScore,
@@ -436,16 +462,15 @@ func TestUpdateQuestion(t *testing.T) {
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
-				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
-					CategoryID: category.ID,
-					Order:      1,
-					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
-					Question:   json.RawMessage(`{"statement":"Old Subjective Question"}`),
-					MaxScore:   5,
-				}
-				require.NoError(t, db.DB.Create(&question).Error)
-				return &paper, &question
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+						Question:   json.RawMessage(`{"statement":"Old Subjective Question"}`),
+					},
+				})
+				return &paper, &questions[0]
 			},
 			request: &proto.UpdateQuestionRequest{
 				MaxScore:      &maxScore,
@@ -478,16 +503,15 @@ func TestUpdateQuestion(t *testing.T) {
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
-				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
-					CategoryID: category.ID,
-					Order:      1,
-					Type:       constants.QUESTION_TYPE_MCQ,
-					Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
-					MaxScore:   5,
-				}
-				require.NoError(t, db.DB.Create(&question).Error)
-				return &paper, &question
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
+					},
+				})
+				return &paper, &questions[0]
 			},
 			request: &proto.UpdateQuestionRequest{
 				MaxScore: &[]int32{1001}[0], // Exceeds maximum
@@ -504,16 +528,15 @@ func TestUpdateQuestion(t *testing.T) {
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
-				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
-					CategoryID: category.ID,
-					Order:      1,
-					Type:       constants.QUESTION_TYPE_MCQ,
-					Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
-					MaxScore:   5,
-				}
-				require.NoError(t, db.DB.Create(&question).Error)
-				return &paper, &question
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
+					},
+				})
+				return &paper, &questions[0]
 			},
 			request: &proto.UpdateQuestionRequest{
 				MaxScore: &[]int32{-1}[0], // Negative score
@@ -557,16 +580,15 @@ func TestDeleteQuestion(t *testing.T) {
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
-				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
-					CategoryID: category.ID,
-					Order:      1,
-					Type:       constants.QUESTION_TYPE_MCQ,
-					Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
-					MaxScore:   5,
-				}
-				require.NoError(t, db.DB.Create(&question).Error)
-				return &paper, &question
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
+					},
+				})
+				return &paper, &questions[0]
 			},
 			validate: func(t *testing.T, paper *models.Paper, questionID int64) {
 				// Verify question was deleted
@@ -604,8 +626,8 @@ func TestDeleteQuestion(t *testing.T) {
 					Order:      1,
 					Type:       constants.QUESTION_TYPE_MCQ,
 					Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
-					MaxScore:   5,
-					Locked:     true,
+
+					Locked: true,
 				}
 				require.NoError(t, db.DB.Create(&question).Error)
 				return &paper, &question
@@ -659,23 +681,20 @@ func TestReorderQuestions(t *testing.T) {
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
-				questions := []models.Question{
+				questions := createTestQuestions(t, []models.Question{
 					{
 						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
 						CategoryID: category.ID,
-						Order:      1,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Q1"}`),
 					},
 					{
 						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
 						CategoryID: category.ID,
-						Order:      2,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Q2"}`),
 					},
-				}
-				require.NoError(t, db.DB.Create(&questions).Error)
+				})
 				return &paper, &category, questions
 			},
 			request: &proto.ReorderQuestionsRequest{},
