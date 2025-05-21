@@ -128,17 +128,9 @@ func GetExamQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var questionContent json.RawMessage
-	switch q := question.Question.(type) {
-	case *proto.QuestionResponse_Mcq:
-		questionContent, _ = json.Marshal(q.Mcq)
-	case *proto.QuestionResponse_Subjective:
-		questionContent, _ = json.Marshal(q.Subjective)
-	}
-
 	response := dtos.ExamQuestionResponseDto{
 		ID:       question.Id,
-		Question: questionContent,
+		Question: question.RawQuestion,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -58,15 +58,10 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 
 	response := make([]dtos.AnswerListItemDto, len(resp.Answers))
 	for i, result := range resp.Answers {
-		var questionBytes []byte
 		questionDetail := questionDetailsMap[result.QuestionId]
+		var questionBytes []byte
 		if questionDetail != nil {
-			switch q := questionDetail.Question.(type) {
-			case *proto.QuestionBatchItem_Mcq:
-				questionBytes, _ = json.Marshal(q.Mcq)
-			case *proto.QuestionBatchItem_Subjective:
-				questionBytes, _ = json.Marshal(q.Subjective)
-			}
+			questionBytes = questionDetail.RawQuestion
 		}
 
 		response[i] = dtos.AnswerListItemDto{

@@ -64,7 +64,7 @@ func mapUserProfileToDto(profile *proto.UserProfileResponse) dtos.UserResponseDt
 func mapQuestionToDto(resp *proto.QuestionResponse) dtos.QuestionResponseDto {
 	tags, _ := json.Marshal(resp.Tags)
 
-	response := dtos.QuestionResponseDto{
+	return dtos.QuestionResponseDto{
 		ID:            resp.Id,
 		Type:          resp.Type,
 		Tags:          tags,
@@ -72,16 +72,6 @@ func mapQuestionToDto(resp *proto.QuestionResponse) dtos.QuestionResponseDto {
 		MaxScore:      resp.MaxScore,
 		CategoryID:    resp.CategoryId,
 		CorrectAnswer: resp.GetCorrectAnswer(),
+		Question:      resp.RawQuestion,
 	}
-
-	switch q := resp.Question.(type) {
-	case *proto.QuestionResponse_Mcq:
-		data, _ := json.Marshal(q.Mcq)
-		response.Question = data
-	case *proto.QuestionResponse_Subjective:
-		data, _ := json.Marshal(q.Subjective)
-		response.Question = data
-	}
-
-	return response
 }

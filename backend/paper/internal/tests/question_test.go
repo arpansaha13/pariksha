@@ -45,8 +45,19 @@ func TestGetPaperQuestions(t *testing.T) {
 			},
 			validate: func(t *testing.T, resp *proto.QuestionList) {
 				assert.Equal(t, 2, len(resp.Questions))
-				assert.Equal(t, "MCQ Question", resp.Questions[0].GetMcq().Statement)
-				assert.Equal(t, "Subjective Question", resp.Questions[1].GetSubjective().Statement)
+
+				// Validate first question (MCQ)
+				mcqJson, _ := json.Marshal(structs.MCQQuestion{
+					Statement: "MCQ Question",
+					Options:   []string{"A", "B", "C"},
+				})
+				assert.Equal(t, mcqJson, resp.Questions[0].RawQuestion)
+
+				// Validate second question (Subjective)
+				subjJson, _ := json.Marshal(structs.SubjectiveQuestion{
+					Statement: "Subjective Question",
+				})
+				assert.Equal(t, subjJson, resp.Questions[1].RawQuestion)
 			},
 		},
 		{
@@ -109,8 +120,8 @@ func TestCreateQuestion(t *testing.T) {
 			},
 			validate: func(t *testing.T, paper *models.Paper, resp *proto.QuestionResponse) {
 				// Validate question response
-				assert.Equal(t, "Test MCQ", resp.GetMcq().Statement)
-				assert.Equal(t, []string{"A", "B", "C"}, resp.GetMcq().Options)
+				assert.Equal(t, []byte(`{"statement":"Test MCQ","options":["A","B","C"]}`), resp.RawQuestion)
+				assert.Equal(t, constants.QUESTION_TYPE_MCQ, resp.Type)
 				assert.EqualValues(t, 5, resp.MaxScore)
 
 				// Validate paper's question counts were updated
@@ -142,9 +153,9 @@ func TestCreateQuestion(t *testing.T) {
 			},
 			validate: func(t *testing.T, paper *models.Paper, resp *proto.QuestionResponse) {
 				// Validate question response
-				assert.Equal(t, "Test Subjective Answer", resp.GetSubjective().Statement)
-				assert.EqualValues(t, 10, resp.MaxScore)
+				assert.Equal(t, []byte(`{"statement":"Test Subjective Answer"}`), resp.RawQuestion)
 				assert.Equal(t, constants.QUESTION_TYPE_SUBJECTIVE, resp.Type)
+				assert.EqualValues(t, 10, resp.MaxScore)
 
 				// Validate paper's question counts
 				var updatedPaper models.Paper

@@ -7,6 +7,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/structs"
 	"pariksha/paper/internal/config/db"
 	"testing"
 
@@ -33,13 +34,21 @@ func TestGetQuestionsByIds(t *testing.T) {
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
+				mcqContent, _ := json.Marshal(structs.MCQQuestion{
+					Statement: "MCQ Question",
+					Options:   []string{"A", "B", "C"},
+				})
+				subjectiveContent, _ := json.Marshal(structs.SubjectiveQuestion{
+					Statement: "Subjective Question",
+				})
+
 				questions := []models.Question{
 					{
 						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
 						CategoryID: category.ID,
 						Order:      1,
 						Type:       constants.QUESTION_TYPE_MCQ,
-						Question:   json.RawMessage(`{"statement":"MCQ Question","options":["A","B","C"]}`),
+						Question:   mcqContent,
 						MaxScore:   5,
 					},
 					{
@@ -47,7 +56,7 @@ func TestGetQuestionsByIds(t *testing.T) {
 						CategoryID: category.ID,
 						Order:      2,
 						Type:       constants.QUESTION_TYPE_SUBJECTIVE,
-						Question:   json.RawMessage(`{"statement":"Subjective Question"}`),
+						Question:   subjectiveContent,
 						MaxScore:   10,
 					},
 				}
@@ -66,15 +75,14 @@ func TestGetQuestionsByIds(t *testing.T) {
 				assert.Equal(t, questions[0].ID, mcqResp.Id)
 				assert.Equal(t, questions[0].Type, mcqResp.Type)
 				assert.EqualValues(t, questions[0].MaxScore, mcqResp.MaxScore)
-				assert.Equal(t, "MCQ Question", mcqResp.GetMcq().Statement)
-				assert.Equal(t, []string{"A", "B", "C"}, mcqResp.GetMcq().Options)
+				assert.Equal(t, questions[0].Question, json.RawMessage(mcqResp.RawQuestion))
 
 				// Validate Subjective question
 				subjectiveResp := resp.Questions[1]
 				assert.Equal(t, questions[1].ID, subjectiveResp.Id)
 				assert.Equal(t, questions[1].Type, subjectiveResp.Type)
 				assert.EqualValues(t, questions[1].MaxScore, subjectiveResp.MaxScore)
-				assert.Equal(t, "Subjective Question", subjectiveResp.GetSubjective().Statement)
+				assert.Equal(t, questions[1].Question, json.RawMessage(subjectiveResp.RawQuestion))
 			},
 		},
 		{

@@ -36,22 +36,12 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 	// Convert proto response to HTTP response
 	httpResponse := make([]dtos.QuestionMinimalResponseDto, len(response.Questions))
 	for i, q := range response.Questions {
-		var questionData json.RawMessage
-		switch q := q.Question.(type) {
-		case *proto.QuestionMinimal_Mcq:
-			data, _ := json.Marshal(q.Mcq)
-			questionData = data
-		case *proto.QuestionMinimal_Subjective:
-			data, _ := json.Marshal(q.Subjective)
-			questionData = data
-		}
-
 		httpResponse[i] = dtos.QuestionMinimalResponseDto{
 			ID:         q.Id,
 			CategoryID: q.CategoryId,
 			PaperID:    q.PaperId,
 			Order:      q.Order,
-			Question:   questionData,
+			Question:   q.RawQuestion,
 		}
 	}
 
@@ -79,28 +69,17 @@ func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Convert proto response to HTTP response
-	var questionData json.RawMessage
-	switch q := response.Question.(type) {
-	case *proto.QuestionResponse_Mcq:
-		data, _ := json.Marshal(q.Mcq)
-		questionData = data
-	case *proto.QuestionResponse_Subjective:
-		data, _ := json.Marshal(q.Subjective)
-		questionData = data
-	}
-
 	tags, _ := json.Marshal(response.Tags)
 
 	httpResponse := dtos.QuestionResponseDto{
 		ID:            response.Id,
-		Question:      questionData,
+		Question:      response.RawQuestion,
 		CategoryID:    response.CategoryId,
 		Type:          response.Type,
 		Tags:          tags,
 		PaperID:       response.PaperId,
 		MaxScore:      response.MaxScore,
-		CorrectAnswer: *response.CorrectAnswer,
+		CorrectAnswer: response.GetCorrectAnswer(),
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -76,10 +76,7 @@ message QuestionRequest {
 
 message QuestionResponse {
   int64 id = 1;
-  oneof question {
-    McqQuestion mcq = 2;
-    SubjectiveQuestion subjective = 3;
-  }
+  bytes raw_question = 2;
   int64 category_id = 4;
   string type = 5;
   repeated string tags = 6;
@@ -97,10 +94,7 @@ message QuestionMinimal {
   int64 category_id = 2;
   int64 paper_id = 3;
   int32 order = 4;
-  oneof question {
-    McqQuestion mcq = 5;
-    SubjectiveQuestion subjective = 6;
-  }
+  bytes raw_question = 5;
 }
 
 message McqQuestion {
@@ -147,10 +141,7 @@ message QuestionBatchResponse {
 
 message QuestionBatchItem {
   int64 id = 1;
-  oneof question {
-    McqQuestion mcq = 2;
-    SubjectiveQuestion subjective = 3;
-  }
+  bytes raw_question = 2;
   int32 max_score = 4;
   string type = 6;
 }

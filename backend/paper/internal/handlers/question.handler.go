@@ -59,7 +59,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		if err := utils.StrictUnmarshal(req.RawQuestion, &mcq); err != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid MCQ question format")
 		}
-		if err := validateQuestionData(req.Type, &mcq); err != nil {
+		if err := validateMcqQuestionData(&mcq); err != nil {
 			return nil, err
 		}
 	default:
@@ -67,7 +67,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		if err := utils.StrictUnmarshal(req.RawQuestion, &subjective); err != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid subjective question format")
 		}
-		if err := validateQuestionData(req.Type, &subjective); err != nil {
+		if err := validateSubjectiveQuestionData(&subjective); err != nil {
 			return nil, err
 		}
 	}
@@ -212,7 +212,6 @@ func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionReq
 		return nil, status.Error(codes.Internal, "question data not found in context")
 	}
 
-	var transactionErr error
 	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		// Update paper max score
 		if err := tx.Model(&question.Paper).
@@ -247,10 +246,7 @@ func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionReq
 	})
 
 	if err != nil {
-		if transactionErr != nil {
-			return nil, transactionErr
-		}
-		return nil, status.Error(codes.Internal, "failed to delete question")
+		return nil, err
 	}
 
 	return &proto.Empty{}, nil

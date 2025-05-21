@@ -22,29 +22,12 @@ func (s *PaperServer) GetQuestionsByIds(ctx context.Context, req *proto.GetQuest
 	}
 
 	for i, question := range questions {
-		questionData, err := unmarshalQuestionData(question.Type, question.Question)
-		if err != nil {
-			return nil, err
+		response.Questions[i] = &proto.QuestionBatchItem{
+			Id:          question.ID,
+			MaxScore:    int32(question.MaxScore),
+			Type:        question.Type,
+			RawQuestion: question.Question,
 		}
-
-		batchItem := &proto.QuestionBatchItem{
-			Id:       question.ID,
-			MaxScore: int32(question.MaxScore),
-			Type:     question.Type,
-		}
-
-		switch question.Type {
-		case constants.QUESTION_TYPE_MCQ:
-			batchItem.Question = &proto.QuestionBatchItem_Mcq{
-				Mcq: questionData.(*proto.McqQuestion),
-			}
-		default:
-			batchItem.Question = &proto.QuestionBatchItem_Subjective{
-				Subjective: questionData.(*proto.SubjectiveQuestion),
-			}
-		}
-
-		response.Questions[i] = batchItem
 	}
 
 	return response, nil
@@ -79,25 +62,9 @@ func (s *PaperServer) GetExamQuestion(ctx context.Context, req *proto.QuestionRe
 		return nil, status.Error(codes.NotFound, constants.ErrNotFound)
 	}
 
-	questionData, err := unmarshalQuestionData(question.Type, question.Question)
-	if err != nil {
-		return nil, err
-	}
-
-	response := &proto.QuestionResponse{
-		Id: question.ID,
-	}
-
-	switch question.Type {
-	case constants.QUESTION_TYPE_MCQ:
-		response.Question = &proto.QuestionResponse_Mcq{
-			Mcq: questionData.(*proto.McqQuestion),
-		}
-	default:
-		response.Question = &proto.QuestionResponse_Subjective{
-			Subjective: questionData.(*proto.SubjectiveQuestion),
-		}
-	}
-
-	return response, nil
+	return &proto.QuestionResponse{
+		Id:          question.ID,
+		Type:        question.Type,
+		RawQuestion: question.Question,
+	}, nil
 }
