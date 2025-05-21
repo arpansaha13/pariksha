@@ -199,13 +199,18 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 		request.CorrectAnswer = &updateDto.CorrectAnswer
 	}
 
-	_, err = paperService.Client().UpdateQuestion(ctx, request)
+	response, err := paperService.Client().UpdateQuestion(ctx, request)
 	if err != nil {
 		handleGRPCError(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	responseDto := dtos.UpdateQuestionResponseDto{
+		ID: response.QuestionId,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(responseDto)
 }
 
 func DeleteQuestion(w http.ResponseWriter, r *http.Request) {

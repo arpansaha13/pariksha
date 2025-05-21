@@ -2,6 +2,7 @@ import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { Question, QuestionMcq, QuestionMinimal } from '~/types'
 
 type UpdateQuestionBody = Partial<Question>
+type UpdateQuestionReturn = Pick<Question, 'id'>
 
 export async function updateQuestion(
   questionId: number,
@@ -44,14 +45,33 @@ export async function updateQuestion(
   }
 
   try {
-    await $api(`/api/questions/${questionId}`, {
-      method: 'PATCH',
-      body: requestBody,
-    })
+    const res = await $api<UpdateQuestionReturn>(
+      `/api/questions/${questionId}`,
+      {
+        method: 'PATCH',
+        body: requestBody,
+      }
+    )
 
-    const refreshPromises = [
-      refreshNuxtData(AsyncDataKeys.QUESTION(questionId)),
-    ]
+    const refreshPromises = []
+
+    if (res.id === questionId) {
+      refreshPromises.push([
+        refreshNuxtData(AsyncDataKeys.QUESTION(questionId)),
+      ])
+    } else {
+      // If a locked question is updated, a new questionId will be returned
+      const route = useRoute()
+      const replaceOldQuestionIdWithNew = async () => {
+        await navigateTo(
+          { query: { ...route.query, question: res.id } }, // update the route query
+          { replace: true }
+        )
+        if (minimalQuestion) minimalQuestion.id = res.id // update questionId in groupedQuestions list
+        clearNuxtData(AsyncDataKeys.QUESTION(questionId)) // clear old question data
+      }
+      refreshPromises.push(replaceOldQuestionIdWithNew())
+    }
 
     // requestBody will only have the updated fields
     const isMaxScoreUpdated = !isNullOrUndefined(requestBody.max_score)
@@ -109,8 +129,7 @@ function getRequestBody(
   if (!isNullOrUndefined(newData.question)) {
     const oldQ = previousQuestion.question
     const newQ = newData.question
-    console.log(oldQ)
-    console.log(newQ)
+
     if (oldQ.statement !== newQ.statement || !areOpionsEqual(newQ, oldQ)) {
       requestBody.question = newQ
     }

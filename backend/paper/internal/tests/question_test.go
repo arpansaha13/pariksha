@@ -565,8 +565,14 @@ func TestUpdateQuestion(t *testing.T) {
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				tt.request,
 				client.UpdateQuestion,
-				func(t *testing.T, resp *proto.Empty) {
+				func(t *testing.T, resp *proto.UpdateQuestionResponse) {
 					if tt.validate != nil {
+						// For locked questions, response should have new question ID
+						if question.Locked {
+							assert.NotEqual(t, question.ID, resp.QuestionId, "Locked question should have new ID")
+						} else {
+							assert.Equal(t, question.ID, resp.QuestionId, "Question ID should remain same")
+						}
 						tt.validate(t, paper, question)
 					}
 				})

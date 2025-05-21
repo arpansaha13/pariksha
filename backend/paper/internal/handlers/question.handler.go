@@ -124,7 +124,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 }
 
 // UpdateQuestion handles question updates with proper locking to prevent race conditions
-func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuestionRequest) (*proto.Empty, error) {
+func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuestionRequest) (*proto.UpdateQuestionResponse, error) {
 	pc, err := NewPaperContext(ctx)
 	if err != nil || pc.Question == nil {
 		return nil, status.Error(codes.Internal, "question data not found in context")
@@ -136,6 +136,7 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 		}
 	}
 
+	var updatedQuestionID *int64
 	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		// Row-level lock for both question and paper rows
 		var question models.Question
@@ -154,9 +155,12 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 		oldMaxScore := question.MaxScore
 
 		if question.Locked {
-			return handleLockedQuestionUpdate(tx, question, paper, req, oldType, oldMaxScore)
+			updatedQuestionID, err = handleLockedQuestionUpdate(tx, question, paper, req, oldType, oldMaxScore)
+			return err
 		}
 
+		// In case of unlocked question, the the questionId will remain same
+		updatedQuestionID = &question.ID
 		return handleUnlockedQuestionUpdate(tx, question, paper, req, oldType, oldMaxScore)
 	})
 
@@ -164,32 +168,37 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 		return nil, err
 	}
 
-	return &proto.Empty{}, nil
+	return &proto.UpdateQuestionResponse{QuestionId: *updatedQuestionID}, nil
 }
 
 // handleLockedQuestionUpdate handles updates to a locked (column) question by creating a new one
-func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper models.Paper, req *proto.UpdateQuestionRequest, oldType string, oldMaxScore int16) error {
+func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper models.Paper, req *proto.UpdateQuestionRequest, oldType string, oldMaxScore int16) (*int64, error) {
 	newQuestion := question
 	newQuestion.ID = 0
 	newQuestion.Locked = false
 
 	updatedQuestion, err := applyQuestionUpdates(newQuestion, req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := tx.Create(&updatedQuestion).Error; err != nil {
-		return status.Error(codes.Internal, constants.ErrInternalServer)
+		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
 	}
 
 	// Atomic update to unlink old question
 	if err := tx.Model(&models.Question{}).
 		Where("id = ?", question.ID).
 		Update("paper_id", sql.NullInt64{}).Error; err != nil {
-		return status.Error(codes.Internal, constants.ErrInternalServer)
+		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
 	}
 
-	return updateQuestionStats(tx, paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
+	err = updateQuestionStats(tx, paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
+	if err != nil {
+		return nil, err
+	}
+
+	return &updatedQuestion.ID, nil
 }
 
 // handleUnlockedQuestionUpdate handles updates to an unlocked (column) question

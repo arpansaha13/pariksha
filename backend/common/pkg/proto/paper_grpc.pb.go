@@ -56,7 +56,7 @@ type PaperServiceClient interface {
 	GetPaperQuestions(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*QuestionList, error)
 	GetPaperQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error)
 	CreateQuestion(ctx context.Context, in *CreateQuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error)
-	UpdateQuestion(ctx context.Context, in *UpdateQuestionRequest, opts ...grpc.CallOption) (*Empty, error)
+	UpdateQuestion(ctx context.Context, in *UpdateQuestionRequest, opts ...grpc.CallOption) (*UpdateQuestionResponse, error)
 	DeleteQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*Empty, error)
 	ReorderQuestions(ctx context.Context, in *ReorderQuestionsRequest, opts ...grpc.CallOption) (*Empty, error)
 	// Category operations
@@ -169,9 +169,9 @@ func (c *paperServiceClient) CreateQuestion(ctx context.Context, in *CreateQuest
 	return out, nil
 }
 
-func (c *paperServiceClient) UpdateQuestion(ctx context.Context, in *UpdateQuestionRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *paperServiceClient) UpdateQuestion(ctx context.Context, in *UpdateQuestionRequest, opts ...grpc.CallOption) (*UpdateQuestionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(UpdateQuestionResponse)
 	err := c.cc.Invoke(ctx, PaperService_UpdateQuestion_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -294,7 +294,7 @@ type PaperServiceServer interface {
 	GetPaperQuestions(context.Context, *PaperRequest) (*QuestionList, error)
 	GetPaperQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error)
 	CreateQuestion(context.Context, *CreateQuestionRequest) (*QuestionResponse, error)
-	UpdateQuestion(context.Context, *UpdateQuestionRequest) (*Empty, error)
+	UpdateQuestion(context.Context, *UpdateQuestionRequest) (*UpdateQuestionResponse, error)
 	DeleteQuestion(context.Context, *QuestionRequest) (*Empty, error)
 	ReorderQuestions(context.Context, *ReorderQuestionsRequest) (*Empty, error)
 	// Category operations
@@ -344,7 +344,7 @@ func (UnimplementedPaperServiceServer) GetPaperQuestion(context.Context, *Questi
 func (UnimplementedPaperServiceServer) CreateQuestion(context.Context, *CreateQuestionRequest) (*QuestionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateQuestion not implemented")
 }
-func (UnimplementedPaperServiceServer) UpdateQuestion(context.Context, *UpdateQuestionRequest) (*Empty, error) {
+func (UnimplementedPaperServiceServer) UpdateQuestion(context.Context, *UpdateQuestionRequest) (*UpdateQuestionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateQuestion not implemented")
 }
 func (UnimplementedPaperServiceServer) DeleteQuestion(context.Context, *QuestionRequest) (*Empty, error) {
