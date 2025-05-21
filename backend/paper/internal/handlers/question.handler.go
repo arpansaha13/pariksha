@@ -129,7 +129,6 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 	if err != nil || pc.Question == nil {
 		return nil, status.Error(codes.Internal, "question data not found in context")
 	}
-	question := *pc.Question
 
 	if req.MaxScore != nil {
 		if err := validateMaxScore(*req.MaxScore); err != nil {
@@ -139,26 +138,26 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 
 	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		// Row-level lock for both question and paper rows
-		var lockedQuestion models.Question
+		var question models.Question
 		if err := tx.Set("gorm:query_option", "FOR UPDATE").
-			First(&lockedQuestion, question.ID).Error; err != nil {
+			First(&question, pc.Question.ID).Error; err != nil {
 			return status.Error(codes.Internal, "failed to lock question")
 		}
 
 		var paper models.Paper
 		if err := tx.Set("gorm:query_option", "FOR UPDATE").
-			First(&paper, lockedQuestion.PaperID.Int64).Error; err != nil {
+			Take(&paper, question.PaperID.Int64).Error; err != nil {
 			return status.Error(codes.Internal, "failed to lock paper")
 		}
 
-		oldType := lockedQuestion.Type
-		oldMaxScore := lockedQuestion.MaxScore
+		oldType := question.Type
+		oldMaxScore := question.MaxScore
 
-		if lockedQuestion.Locked {
-			return handleLockedQuestionUpdate(tx, lockedQuestion, req, oldType, oldMaxScore)
+		if question.Locked {
+			return handleLockedQuestionUpdate(tx, question, paper, req, oldType, oldMaxScore)
 		}
 
-		return handleUnlockedQuestionUpdate(tx, lockedQuestion, req, oldType, oldMaxScore)
+		return handleUnlockedQuestionUpdate(tx, question, paper, req, oldType, oldMaxScore)
 	})
 
 	if err != nil {
@@ -169,7 +168,7 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 }
 
 // handleLockedQuestionUpdate handles updates to a locked (column) question by creating a new one
-func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, req *proto.UpdateQuestionRequest, oldType string, oldMaxScore int16) error {
+func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper models.Paper, req *proto.UpdateQuestionRequest, oldType string, oldMaxScore int16) error {
 	newQuestion := question
 	newQuestion.ID = 0
 	newQuestion.Locked = false
@@ -190,11 +189,11 @@ func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, req *prot
 		return status.Error(codes.Internal, constants.ErrInternalServer)
 	}
 
-	return updateQuestionStats(tx, question.Paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
+	return updateQuestionStats(tx, paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
 }
 
 // handleUnlockedQuestionUpdate handles updates to an unlocked (column) question
-func handleUnlockedQuestionUpdate(tx *gorm.DB, question models.Question, req *proto.UpdateQuestionRequest, oldType string, oldMaxScore int16) error {
+func handleUnlockedQuestionUpdate(tx *gorm.DB, question models.Question, paper models.Paper, req *proto.UpdateQuestionRequest, oldType string, oldMaxScore int16) error {
 	updatedQuestion, err := applyQuestionUpdates(question, req)
 	if err != nil {
 		return err
@@ -204,7 +203,7 @@ func handleUnlockedQuestionUpdate(tx *gorm.DB, question models.Question, req *pr
 		return status.Error(codes.Internal, constants.ErrInternalServer)
 	}
 
-	return updateQuestionStats(tx, updatedQuestion.Paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
+	return updateQuestionStats(tx, paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
 }
 
 func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.Empty, error) {

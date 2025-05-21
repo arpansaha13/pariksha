@@ -286,7 +286,7 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 // Helper function to update paper stats (max score and question counts)
 func updatePaperStats(tx *gorm.DB, paper models.Paper, scoreDiff int32, newQuestionCounts json.RawMessage) error {
 	return tx.Model(&paper).
-		Updates(map[string]interface{}{
+		Updates(map[string]any{
 			"max_score":       gorm.Expr("max_score + ?", scoreDiff),
 			"question_counts": newQuestionCounts,
 		}).Error
@@ -307,7 +307,10 @@ func updateQuestionStats(tx *gorm.DB, paper models.Paper, oldType, newType strin
 		}
 	}
 
-	return updatePaperStats(tx, paper, scoreDiff, newCounts)
+	if scoreDiff != 0 || oldType != newType {
+		return updatePaperStats(tx, paper, scoreDiff, newCounts)
+	}
+	return nil
 }
 
 // validateMaxScore checks if the given score is within valid range (0 to MAX_SCORE_PER_QUESTION)
