@@ -168,6 +168,74 @@ func TestCreateQuestion(t *testing.T) {
 		},
 		{
 			BaseTestCase: BaseTestCase{
+				name:         "Success - Create coding question",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				return &paper, &category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{
+					"title": "Sum of Numbers",
+					"statement": "Write a program to add two numbers",
+					"examples": [
+						{
+							"input": "2 3",
+							"output": "5",
+							"explanation": "2 + 3 = 5"
+						},
+						{
+							"input": "0 0",
+							"output": "0"
+						}
+					]
+				}`),
+				Type:     constants.QUESTION_TYPE_CODING,
+				MaxScore: 15,
+			},
+			validate: func(t *testing.T, paper *models.Paper, resp *proto.QuestionResponse) {
+				// Validate question response
+				assert.Equal(t, constants.QUESTION_TYPE_CODING, resp.Type)
+				assert.EqualValues(t, 15, resp.MaxScore)
+
+				var codingQ structs.CodingQuestion
+				err := json.Unmarshal(resp.RawQuestion, &codingQ)
+				require.NoError(t, err)
+				assert.Equal(t, "Sum of Numbers", codingQ.Title)
+				assert.Equal(t, "Write a program to add two numbers", codingQ.Statement)
+				assert.Len(t, codingQ.Examples, 2)
+
+				// Validate paper's question counts were updated
+				verifyQuestionCounts(t, paper.ID, &models.QuestionCount{Coding: 1})
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Error - Invalid coding question format",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				return &paper, &category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{
+					"title": "",
+					"statement": "Write a program",
+					"examples": []
+				}`),
+				Type: constants.QUESTION_TYPE_CODING,
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
 				name:         "Error - Max score too high",
 				userID:       userID,
 				expectedCode: codes.InvalidArgument,
@@ -265,10 +333,7 @@ func TestUpdateQuestion(t *testing.T) {
 				verifyMCQContent(t, updated, "Updated MCQ", []string{"X", "Y", "Z"})
 				assert.EqualValues(t, 10, updated.MaxScore)
 
-				verifyQuestionCounts(t, paper.ID, models.QuestionCount{
-					MCQ:        1,
-					Subjective: 0,
-				})
+				verifyQuestionCounts(t, paper.ID, &models.QuestionCount{MCQ: 1})
 			},
 		},
 		{
@@ -307,12 +372,7 @@ func TestUpdateQuestion(t *testing.T) {
 				assert.Equal(t, constants.QUESTION_TYPE_SUBJECTIVE, updated.Type)
 
 				// Verify question counts were updated
-				var updatedPaper models.Paper
-				require.NoError(t, db.DB.First(&updatedPaper, paper.ID).Error)
-				counts, err := updatedPaper.GetQuestionCounts()
-				require.NoError(t, err)
-				assert.EqualValues(t, 0, counts.MCQ, "MCQ count should decrease")
-				assert.EqualValues(t, 1, counts.Subjective, "Subjective count should increase")
+				verifyQuestionCounts(t, paper.ID, &models.QuestionCount{Subjective: 1})
 			},
 		},
 		{
@@ -551,6 +611,72 @@ func TestUpdateQuestion(t *testing.T) {
 			},
 			request: &proto.UpdateQuestionRequest{
 				MaxScore: &[]int32{-1}[0], // Negative score
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Update coding question",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.Question) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_CODING,
+						Question: json.RawMessage(`{
+							"title": "Old Title",
+							"statement": "Old statement",
+							"examples": [
+								{
+									"input": "1 1",
+									"output": "2"
+								}
+							]
+						}`),
+						Tags: json.RawMessage(`["old"]`),
+					},
+				})
+				return &paper, &questions[0]
+			},
+			request: &proto.UpdateQuestionRequest{
+				MaxScore: &maxScore,
+				Tags:     []string{"updated", "coding"},
+				RawQuestion: []byte(`{
+					"title": "Updated Coding Question",
+					"statement": "Write an optimized solution",
+					"examples": [
+						{
+							"input": "4 5",
+							"output": "9",
+							"explanation": "4 + 5 = 9"
+						}
+					]
+				}`),
+			},
+			validate: func(t *testing.T, paper *models.Paper, question *models.Question) {
+				var updated models.Question
+				require.NoError(t, db.DB.First(&updated, question.ID).Error)
+
+				// Verify question content
+				var coding structs.CodingQuestion
+				require.NoError(t, json.Unmarshal(updated.Question, &coding))
+				assert.Equal(t, "Updated Coding Question", coding.Title)
+				assert.Equal(t, "Write an optimized solution", coding.Statement)
+				assert.Len(t, coding.Examples, 1)
+				assert.Equal(t, "4 5", coding.Examples[0].Input)
+				assert.Equal(t, "9", coding.Examples[0].Output)
+
+				// Verify other fields
+				assert.EqualValues(t, 10, updated.MaxScore)
+				var tags []string
+				require.NoError(t, json.Unmarshal(updated.Tags, &tags))
+				assert.ElementsMatch(t, []string{"updated", "coding"}, tags)
 			},
 		},
 	}

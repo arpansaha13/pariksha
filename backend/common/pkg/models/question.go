@@ -16,7 +16,7 @@ type Question struct {
 	CategoryID    int64            `gorm:"type:bigint;not null"`
 	Question      json.RawMessage  `gorm:"type:json;not null"`
 	Order         int16            `gorm:"type:smallint;not null"`
-	Type          string           `gorm:"type:varchar(20);not null;check:type IN ('MCQ', 'SUBJECTIVE')"`
+	Type          string           `gorm:"type:varchar(20);not null;check:type IN ('MCQ', 'SUBJECTIVE', 'CODING')"`
 	Tags          json.RawMessage  `gorm:"type:json;default:'[]'"`
 	PaperID       sql.NullInt64    `gorm:"type:bigint"`
 	MaxScore      int16            `gorm:"type:smallint;not null;check:max_score >= 0 AND max_score <= 1000"`
@@ -28,7 +28,7 @@ type Question struct {
 }
 
 // Unmarshal the raw JSON data into the appropriate struct based on the Type field
-func (q *Question) GetQuestion() (interface{}, error) {
+func (q *Question) GetQuestion() (any, error) {
 	switch q.Type {
 	case constants.QUESTION_TYPE_MCQ:
 		var mcq structs.MCQQuestion
@@ -42,6 +42,12 @@ func (q *Question) GetQuestion() (interface{}, error) {
 			return nil, err
 		}
 		return subjective, nil
+	case constants.QUESTION_TYPE_CODING:
+		var coding structs.CodingQuestion
+		if err := json.Unmarshal(q.Question, &coding); err != nil {
+			return nil, err
+		}
+		return coding, nil
 	default:
 		return nil, errors.New("invalid question type")
 	}

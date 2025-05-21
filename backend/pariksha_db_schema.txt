@@ -43,7 +43,7 @@ Table questions {
   category_id bigint [not null]
   question json [not null]
   order smallint [not null]
-  type varchar(20) [not null, note: 'MCQ, Subjective']
+  type varchar(20) [not null, note: 'MCQ, Subjective, Coding']
   tags json [default: '[]']
   paper_id bigint
   max_score smallint [not null, note: "max_score ranges from 0 to 1000"]

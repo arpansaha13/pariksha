@@ -7,7 +7,7 @@ import (
 type ExamQuestion struct {
 	ID         int64  `gorm:"primaryKey;type:bigint"`
 	ExamID     int64  `gorm:"type:bigint;not null"`
-	Type       string `gorm:"type:varchar(20);not null;check:type IN ('MCQ', 'SUBJECTIVE')"`
+	Type       string `gorm:"type:varchar(20);not null;check:type IN ('MCQ', 'SUBJECTIVE', 'CODING')"`
 	QuestionID int64  `gorm:"type:bigint;not null"`
 	CategoryID int64  `gorm:"type:bigint;not null"`
 	Order      int16  `gorm:"type:smallint;not null"`

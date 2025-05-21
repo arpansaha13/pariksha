@@ -63,6 +63,7 @@ message UpdatePaperRequest {
 message QuestionCount {
   int32 mcq = 1;
   int32 subjective = 2;
+  int32 coding = 3;
 }
 
 message DeletePapersRequest {
@@ -104,6 +105,18 @@ message McqQuestion {
 
 message SubjectiveQuestion {
   string statement = 1;
+}
+
+message CodingQuestion {
+  string title = 1;
+  string statement = 2;
+  repeated CodingQuestionExample examples = 3;
+}
+
+message CodingQuestionExample {
+  string input = 1;
+  string output = 2;
+  optional string explanation = 3;
 }
 
 message CreateQuestionRequest {

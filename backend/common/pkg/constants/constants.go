@@ -24,6 +24,7 @@ const (
 const (
 	QUESTION_TYPE_MCQ        string = "MCQ"
 	QUESTION_TYPE_SUBJECTIVE string = "SUBJECTIVE"
+	QUESTION_TYPE_CODING     string = "CODING"
 )
 
 const (

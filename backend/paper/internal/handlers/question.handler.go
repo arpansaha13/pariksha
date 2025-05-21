@@ -62,7 +62,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		if err := validateMcqQuestionData(&mcq); err != nil {
 			return nil, err
 		}
-	default:
+	case constants.QUESTION_TYPE_SUBJECTIVE:
 		var subjective structs.SubjectiveQuestion
 		if err := utils.StrictUnmarshal(req.RawQuestion, &subjective); err != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid subjective question format")
@@ -70,6 +70,16 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		if err := validateSubjectiveQuestionData(&subjective); err != nil {
 			return nil, err
 		}
+	case constants.QUESTION_TYPE_CODING:
+		var coding structs.CodingQuestion
+		if err := utils.StrictUnmarshal(req.RawQuestion, &coding); err != nil {
+			return nil, status.Error(codes.InvalidArgument, "invalid coding question format")
+		}
+		if err := validateCodingQuestionData(&coding); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, status.Error(codes.InvalidArgument, "invalid question type")
 	}
 
 	tags, _ := json.Marshal(req.Tags)

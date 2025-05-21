@@ -55,13 +55,14 @@ func createTestPaper(t *testing.T, userID int64) models.Paper {
 }
 
 // verifyQuestionCounts validates the question counts on a paper
-func verifyQuestionCounts(t *testing.T, paperID int64, expected models.QuestionCount) {
+func verifyQuestionCounts(t *testing.T, paperID int64, expected *models.QuestionCount) {
 	var paper models.Paper
-	require.NoError(t, db.DB.First(&paper, paperID).Error)
+	require.NoError(t, db.DB.Take(&paper, paperID).Error)
 	counts, err := paper.GetQuestionCounts()
 	require.NoError(t, err)
 	assert.Equal(t, expected.MCQ, counts.MCQ, "MCQ count mismatch")
 	assert.Equal(t, expected.Subjective, counts.Subjective, "Subjective count mismatch")
+	assert.Equal(t, expected.Coding, counts.Coding, "Coding count mismatch")
 }
 
 // verifyMCQContent validates the content of an MCQ question

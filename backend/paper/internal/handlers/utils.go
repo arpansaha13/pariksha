@@ -139,6 +139,10 @@ func updateQuestionCounts(rawCounts json.RawMessage, questionType string, delta 
 		counts.MCQ += delta
 	case constants.QUESTION_TYPE_SUBJECTIVE:
 		counts.Subjective += delta
+	case constants.QUESTION_TYPE_CODING:
+		counts.Coding += delta
+	default:
+		return nil, status.Error(codes.InvalidArgument, "invalid question type")
 	}
 
 	newCounts, err := json.Marshal(counts)
@@ -171,6 +175,31 @@ func validateSubjectiveQuestionData(subjective *structs.SubjectiveQuestion) erro
 	return nil
 }
 
+// validateCodingQuestionData validates coding question data
+func validateCodingQuestionData(coding *structs.CodingQuestion) error {
+	if strings.TrimSpace(coding.Title) == "" {
+		return status.Error(codes.InvalidArgument, "question title cannot be empty")
+	}
+	if strings.TrimSpace(coding.Statement) == "" {
+		return status.Error(codes.InvalidArgument, "question statement cannot be empty")
+	}
+	if len(coding.Examples) < 1 {
+		return status.Error(codes.InvalidArgument, "coding questions must have at least one example")
+	}
+	for _, example := range coding.Examples {
+		if strings.TrimSpace(example.Input) == "" {
+			return status.Error(codes.InvalidArgument, "example input cannot be empty")
+		}
+		if strings.TrimSpace(example.Output) == "" {
+			return status.Error(codes.InvalidArgument, "example output cannot be empty")
+		}
+		if example.Explanation != nil && strings.TrimSpace(*example.Explanation) == "" {
+			return status.Error(codes.InvalidArgument, "example explanation cannot be empty if provided")
+		}
+	}
+	return nil
+}
+
 // Helper function to apply updates to a question
 func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionRequest) (models.Question, error) {
 	if req.Type != nil {
@@ -190,7 +219,7 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 			if err := validateMcqQuestionData(&mcq); err != nil {
 				return question, err
 			}
-		default:
+		case constants.QUESTION_TYPE_SUBJECTIVE:
 			var subjective structs.SubjectiveQuestion
 			if err := utils.StrictUnmarshal(req.RawQuestion, &subjective); err != nil {
 				return question, status.Error(codes.InvalidArgument, "invalid subjective question format")
@@ -198,6 +227,16 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 			if err := validateSubjectiveQuestionData(&subjective); err != nil {
 				return question, err
 			}
+		case constants.QUESTION_TYPE_CODING:
+			var coding structs.CodingQuestion
+			if err := utils.StrictUnmarshal(req.RawQuestion, &coding); err != nil {
+				return question, status.Error(codes.InvalidArgument, "invalid coding question format")
+			}
+			if err := validateCodingQuestionData(&coding); err != nil {
+				return question, err
+			}
+		default:
+			return question, status.Error(codes.InvalidArgument, "invalid question type")
 		}
 		question.Question = json.RawMessage(req.RawQuestion)
 	}
