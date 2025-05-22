@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"pariksha/common/pkg/proto"
@@ -58,20 +57,5 @@ func mapUserProfileToDto(profile *proto.UserProfileResponse) dtos.UserResponseDt
 		Email:     profile.Email,
 		FirstName: profile.FirstName,
 		LastName:  profile.LastName,
-	}
-}
-
-func mapQuestionToDto(resp *proto.QuestionResponse) dtos.QuestionResponseDto {
-	tags, _ := json.Marshal(resp.Tags)
-
-	return dtos.QuestionResponseDto{
-		ID:            resp.Id,
-		Type:          resp.Type,
-		Tags:          tags,
-		PaperID:       resp.PaperId,
-		MaxScore:      resp.MaxScore,
-		CategoryID:    resp.CategoryId,
-		CorrectAnswer: resp.GetCorrectAnswer(),
-		Question:      resp.RawQuestion,
 	}
 }

@@ -6,6 +6,7 @@ export enum QuestionId {
 export enum QuestionType {
   MCQ = 'MCQ',
   SUBJECTIVE = 'SUBJECTIVE',
+  CODING = 'CODING',
 }
 
 export interface QuestionCategory {
@@ -14,41 +15,55 @@ export interface QuestionCategory {
   order: number
 }
 
-export interface QuestionMcq {
+export interface QuestionMcqContent {
+  statement: string
+  options: string[]
+}
+
+export interface QuestionSubjectiveContent {
+  statement: string
+}
+
+export interface QuestionCodingContentExample {
+  input: string
+  output: string
+  explanation?: string
+}
+
+export interface QuestionCodingContent {
+  title: string
+  statement: string
+  examples?: QuestionCodingContentExample[]
+}
+
+export interface BaseQuestion {
   id: number
-  question: {
-    statement: string
-    options: string[]
-  }
   order: number
   category_id: number
+  tags: string[]
+  paper_id: number
+  max_score: number
+  correct_answer: string | null | undefined
+}
+
+export interface QuestionMcq extends BaseQuestion {
   type: QuestionType.MCQ
-  tags: string[]
-  paper_id: number
-  max_score: number
-  correct_answer: string | null | undefined
+  question: QuestionMcqContent
 }
 
-export interface QuestionShort {
-  id: number
-  question: {
-    statement: string
-  }
-  order: number
-  category_id: number
+export interface QuestionSubjective extends BaseQuestion {
   type: QuestionType.SUBJECTIVE
-  tags: string[]
-  paper_id: number
-  max_score: number
-  correct_answer: string | null | undefined
+  question: QuestionSubjectiveContent
 }
 
-export type Question = QuestionMcq | QuestionShort
-
-export interface QuestionMinimal {
-  id: number
-  category_id: number
-  order: number
-  paper_id: number
-  question: Question['question']
+export interface QuestionCoding extends BaseQuestion {
+  type: QuestionType.CODING
+  question: QuestionCodingContent
 }
+
+export type Question = QuestionMcq | QuestionSubjective | QuestionCoding
+
+export type QuestionMinimal = Pick<
+  Question,
+  'id' | 'category_id' | 'order' | 'paper_id' | 'question'
+>

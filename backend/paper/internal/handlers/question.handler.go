@@ -47,7 +47,7 @@ func (s *PaperServer) GetPaperQuestion(ctx context.Context, req *proto.QuestionR
 	return questionToProto(*pc.Question)
 }
 
-func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuestionRequest) (*proto.QuestionResponse, error) {
+func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuestionRequest) (*proto.CreateQuestionResponse, error) {
 	if err := validateMaxScore(req.MaxScore); err != nil {
 		return nil, err
 	}
@@ -130,7 +130,9 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		return nil, err
 	}
 
-	return questionToProto(question)
+	return &proto.CreateQuestionResponse{
+		Id: question.ID,
+	}, nil
 }
 
 // UpdateQuestion handles question updates with proper locking to prevent race conditions

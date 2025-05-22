@@ -138,8 +138,12 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	responseDto := dtos.CreateQuestionResponseDto{
+		ID: response.Id,
+	}
+
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(mapQuestionToDto(response))
+	json.NewEncoder(w).Encode(responseDto)
 }
 
 func UpdateQuestion(w http.ResponseWriter, r *http.Request) {

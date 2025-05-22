@@ -141,7 +141,7 @@ import {
   type ExamPermission,
   type SubjectiveAnswer,
   type MCQAnswer,
-  type QuestionMcq,
+  type QuestionMcqContent,
 } from '~/types'
 
 definePageMeta({
@@ -236,7 +236,7 @@ const mcqOptions = computed(() => {
   ) {
     return
   }
-  return (question.value.question as QuestionMcq['question']).options.map(
+  return (question.value.question as QuestionMcqContent).options.map(
     (option, i) => ({
       value: i,
       label: option,

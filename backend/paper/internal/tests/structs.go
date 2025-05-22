@@ -57,7 +57,7 @@ type CreateQuestionCase struct {
 	BaseTestCase
 	setup    func(t *testing.T) (*models.Paper, *models.QuestionCategory)
 	request  *proto.CreateQuestionRequest
-	validate func(t *testing.T, paper *models.Paper, resp *proto.QuestionResponse)
+	validate func(t *testing.T, paper *models.Paper, resp *proto.CreateQuestionResponse)
 }
 
 type UpdateQuestionCase struct {

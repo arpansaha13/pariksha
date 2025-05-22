@@ -1,13 +1,27 @@
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import type { Question, QuestionMcq, QuestionMinimal } from '~/types'
+import {
+  QuestionType,
+  type Question,
+  type QuestionCoding,
+  type QuestionCodingContent,
+  type QuestionMcq,
+  type QuestionMcqContent,
+  type QuestionMinimal,
+  type QuestionSubjective,
+  type QuestionSubjectiveContent,
+} from '~/types'
 
-type UpdateQuestionBody = Partial<Question>
+import { extractQuestionContent, type MergedQuestion } from './utils'
+
+type UpdateQuestionBody = Partial<
+  QuestionMcq | QuestionSubjective | QuestionCoding
+>
 type UpdateQuestionReturn = Pick<Question, 'id'>
 
 export async function updateQuestion(
   questionId: number,
   paperId: number,
-  newData: UpdateQuestionBody
+  mergedQuestion: MergedQuestion
 ): Promise<void> {
   const { $api } = useNuxtApp()
 
@@ -19,7 +33,7 @@ export async function updateQuestion(
   >(AsyncDataKeys.PAPERS_PAPER_QUESTIONS(paperId))
 
   const previousQuestion = question.value!
-  const requestBody = getRequestBody(previousQuestion, newData)
+  const requestBody = getRequestBody(previousQuestion, mergedQuestion)
 
   // If no changes, return early
   if (Object.keys(requestBody).length === 0) return
@@ -34,7 +48,7 @@ export async function updateQuestion(
   // Optimistically update the full question
   question.value = {
     ...question.value!,
-    ...(newData as (typeof question)['value']),
+    ...(requestBody as (typeof question)['value']),
   }
 
   // Update the particular question in paperQuestions
@@ -101,64 +115,121 @@ export async function updateQuestion(
 }
 
 /** Only include fields that are updated */
-
 function getRequestBody(
   previousQuestion: Readonly<Question>,
-  newData: UpdateQuestionBody
-) {
+  mergedQuestion: MergedQuestion
+): UpdateQuestionBody {
   const requestBody: UpdateQuestionBody = {}
 
-  /** Compares options assuming MCQ question */
-  const areOpionsEqual = (a: Question['question'], b: Question['question']) => {
-    return arrayEquals(
-      (a as QuestionMcq['question']).options ?? [],
-      (b as QuestionMcq['question']).options ?? []
+  const isTypeUpdated =
+    !isNullOrUndefined(mergedQuestion.type) &&
+    mergedQuestion.type !== previousQuestion.type
+  if (isTypeUpdated) {
+    if (isNullOrUndefined(mergedQuestion.question)) {
+      logWarning('Must include question data when type changes')
+      return {}
+    }
+    requestBody.type = mergedQuestion.type
+    requestBody.question = extractQuestionContent(mergedQuestion)!
+  } else if (
+    !isNullOrUndefined(mergedQuestion.question) &&
+    isQuestionContentUpdated(
+      mergedQuestion.type,
+      mergedQuestion,
+      previousQuestion
     )
+  ) {
+    requestBody.question = extractQuestionContent(mergedQuestion)!
   }
 
   if (
-    !isNullOrUndefined(newData.type) &&
-    newData.type !== previousQuestion.type
+    !isNullOrUndefined(mergedQuestion.max_score) &&
+    mergedQuestion.max_score !== previousQuestion.max_score
   ) {
-    requestBody.type = newData.type
-    if (isNullOrUndefined(newData.question)) {
-      throw new Error('Must include question data when type changes')
-    }
+    requestBody.max_score = mergedQuestion.max_score
   }
 
-  if (!isNullOrUndefined(newData.question)) {
-    const oldQ = previousQuestion.question
-    const newQ = newData.question
+  // if (
+  //   !isNullOrUndefined(mergedQuestion.tags) &&
+  //   !arrayEquals(mergedQuestion.tags, previousQuestion.tags)
+  // ) {
+  //   requestBody.tags = mergedQuestion.tags
+  // }
 
-    if (oldQ.statement !== newQ.statement || !areOpionsEqual(newQ, oldQ)) {
-      requestBody.question = newQ
-    }
-  }
-
-  if (
-    !isNullOrUndefined(newData.max_score) &&
-    newData.max_score !== previousQuestion.max_score
-  ) {
-    requestBody.max_score = newData.max_score
-  }
-
-  if (
-    !isNullOrUndefined(newData.tags) &&
-    !arrayEquals(newData.tags, previousQuestion.tags)
-  ) {
-    requestBody.tags = newData.tags
-  }
-
-  // if (newData.category_id !== previousQuestion.category.id) {
-  //   requestBody.category_id = newData.category_id
+  // if (mergedQuestion.category_id !== previousQuestion.category.id) {
+  //   requestBody.category_id = mergedQuestion.category_id
   // }
 
   if (
-    !isNullOrUndefined(newData.correct_answer) &&
-    newData.correct_answer !== previousQuestion.correct_answer
+    !isNullOrUndefined(mergedQuestion.correct_answer) &&
+    mergedQuestion.correct_answer !== previousQuestion.correct_answer
   ) {
-    requestBody.correct_answer = newData.correct_answer
+    requestBody.correct_answer = mergedQuestion.correct_answer
   }
 
   return requestBody
+}
+
+const isQuestionContentUpdated = (
+  type: QuestionType,
+  newQ: MergedQuestion,
+  oldQ: Question
+) => {
+  const newQContent = newQ.question
+  const oldQContent = oldQ.question
+
+  if (type === QuestionType.MCQ) {
+    return isMcqQuestionContentUpdated(
+      newQContent,
+      oldQContent as QuestionMcqContent
+    )
+  }
+  if (type === QuestionType.SUBJECTIVE) {
+    return isSubjectiveQuestionContentUpdated(
+      newQContent,
+      oldQContent as QuestionSubjectiveContent
+    )
+  }
+  if (type === QuestionType.CODING) {
+    return isCodingQuestionContentUpdated(
+      newQContent,
+      oldQContent as QuestionCodingContent
+    )
+  }
+  logWarning(`Invalid mergedQuestion type: ${type}`)
+  return false
+}
+
+const isMcqQuestionContentUpdated = (
+  newQContent: QuestionMcqContent,
+  oldQContent: QuestionMcqContent
+) => {
+  return (
+    newQContent.statement.length !== oldQContent.statement.length ||
+    newQContent.statement !== oldQContent.statement ||
+    !arrayEquals(newQContent.options ?? [], oldQContent.options ?? [])
+  )
+}
+
+const isSubjectiveQuestionContentUpdated = (
+  newQContent: QuestionSubjectiveContent,
+  oldQContent: QuestionSubjectiveContent
+) => {
+  return (
+    newQContent.statement.length !== oldQContent.statement.length ||
+    newQContent.statement !== oldQContent.statement
+  )
+}
+
+const isCodingQuestionContentUpdated = (
+  newQContent: QuestionCodingContent,
+  oldQContent: QuestionCodingContent
+) => {
+  return (
+    newQContent.title.length !== oldQContent.title.length ||
+    newQContent.title !== oldQContent.title ||
+    newQContent.statement.length !== oldQContent.statement.length ||
+    newQContent.statement !== oldQContent.statement ||
+    !arrayEquals(newQContent.examples ?? [], oldQContent.examples ?? [])
+  )
 }

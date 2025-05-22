@@ -118,13 +118,17 @@ func TestCreateQuestion(t *testing.T) {
 				MaxScore:    5,
 				CategoryId:  1,
 			},
-			validate: func(t *testing.T, paper *models.Paper, resp *proto.QuestionResponse) {
-				// Validate question response
-				assert.Equal(t, []byte(`{"statement":"Test MCQ","options":["A","B","C"]}`), resp.RawQuestion)
-				assert.Equal(t, constants.QUESTION_TYPE_MCQ, resp.Type)
-				assert.EqualValues(t, 5, resp.MaxScore)
+			validate: func(t *testing.T, paper *models.Paper, resp *proto.CreateQuestionResponse) {
+				// Fetch the created question from database
+				var question models.Question
+				require.NoError(t, db.DB.First(&question, resp.Id).Error)
 
-				// Validate paper's question counts were updated
+				// Validate question data
+				assert.Equal(t, []byte(`{"statement":"Test MCQ","options":["A","B","C"]}`), question.Question)
+				assert.Equal(t, constants.QUESTION_TYPE_MCQ, question.Type)
+				assert.EqualValues(t, 5, question.MaxScore)
+
+				// Validate paper's question counts
 				var updatedPaper models.Paper
 				require.NoError(t, db.DB.First(&updatedPaper, paper.ID).Error)
 				counts, err := updatedPaper.GetQuestionCounts()
@@ -151,11 +155,15 @@ func TestCreateQuestion(t *testing.T) {
 				MaxScore:    10,
 				CategoryId:  1,
 			},
-			validate: func(t *testing.T, paper *models.Paper, resp *proto.QuestionResponse) {
-				// Validate question response
-				assert.Equal(t, []byte(`{"statement":"Test Subjective Answer"}`), resp.RawQuestion)
-				assert.Equal(t, constants.QUESTION_TYPE_SUBJECTIVE, resp.Type)
-				assert.EqualValues(t, 10, resp.MaxScore)
+			validate: func(t *testing.T, paper *models.Paper, resp *proto.CreateQuestionResponse) {
+				// Fetch the created question from database
+				var question models.Question
+				require.NoError(t, db.DB.First(&question, resp.Id).Error)
+
+				// Validate question data
+				assert.Equal(t, []byte(`{"statement":"Test Subjective Answer"}`), question.Question)
+				assert.Equal(t, constants.QUESTION_TYPE_SUBJECTIVE, question.Type)
+				assert.EqualValues(t, 10, question.MaxScore)
 
 				// Validate paper's question counts
 				var updatedPaper models.Paper
@@ -197,13 +205,17 @@ func TestCreateQuestion(t *testing.T) {
 				Type:     constants.QUESTION_TYPE_CODING,
 				MaxScore: 15,
 			},
-			validate: func(t *testing.T, paper *models.Paper, resp *proto.QuestionResponse) {
-				// Validate question response
-				assert.Equal(t, constants.QUESTION_TYPE_CODING, resp.Type)
-				assert.EqualValues(t, 15, resp.MaxScore)
+			validate: func(t *testing.T, paper *models.Paper, resp *proto.CreateQuestionResponse) {
+				// Fetch the created question from database
+				var question models.Question
+				require.NoError(t, db.DB.First(&question, resp.Id).Error)
+
+				// Validate question data
+				assert.Equal(t, constants.QUESTION_TYPE_CODING, question.Type)
+				assert.EqualValues(t, 15, question.MaxScore)
 
 				var codingQ structs.CodingQuestion
-				err := json.Unmarshal(resp.RawQuestion, &codingQ)
+				err := json.Unmarshal(question.Question, &codingQ)
 				require.NoError(t, err)
 				assert.Equal(t, "Sum of Numbers", codingQ.Title)
 				assert.Equal(t, "Write a program to add two numbers", codingQ.Statement)
@@ -285,7 +297,7 @@ func TestCreateQuestion(t *testing.T) {
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				tt.request,
 				client.CreateQuestion,
-				func(t *testing.T, resp *proto.QuestionResponse) {
+				func(t *testing.T, resp *proto.CreateQuestionResponse) {
 					if tt.validate != nil {
 						tt.validate(t, paper, resp)
 					}

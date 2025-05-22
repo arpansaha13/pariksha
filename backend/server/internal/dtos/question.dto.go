@@ -49,6 +49,10 @@ type ReorderQuestionsDto struct {
 	Questions []int64 `json:"questions" validate:"required,min=1"`
 }
 
+type CreateQuestionResponseDto struct {
+	ID int64 `json:"id"`
+}
+
 type UpdateQuestionResponseDto struct {
 	ID int64 `json:"id"`
 }

@@ -18,11 +18,11 @@
 
 <script setup lang="ts">
 import type { PropType } from 'vue'
-import type { QuestionMcq } from '~/types'
+import type { QuestionMcqContent } from '~/types'
 
 const props = defineProps({
   question: {
-    type: Object as PropType<QuestionMcq['question']>,
+    type: Object as PropType<QuestionMcqContent>,
     required: true,
   },
 })

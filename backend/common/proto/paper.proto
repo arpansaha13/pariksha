@@ -18,7 +18,7 @@ service PaperService {
   // Question operations
   rpc GetPaperQuestions(PaperRequest) returns (QuestionList) {}
   rpc GetPaperQuestion(QuestionRequest) returns (QuestionResponse) {}
-  rpc CreateQuestion(CreateQuestionRequest) returns (QuestionResponse) {}
+  rpc CreateQuestion(CreateQuestionRequest) returns (CreateQuestionResponse) {}
   rpc UpdateQuestion(UpdateQuestionRequest) returns (UpdateQuestionResponse) {}
   rpc DeleteQuestion(QuestionRequest) returns (Empty) {}
   rpc ReorderQuestions(ReorderQuestionsRequest) returns (Empty) {}
@@ -127,6 +127,10 @@ message CreateQuestionRequest {
   repeated string tags = 5;
   int32 max_score = 6;
   optional string correct_answer = 7;
+}
+
+message CreateQuestionResponse {
+  int64 id = 1;
 }
 
 message UpdateQuestionRequest {

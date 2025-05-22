@@ -139,7 +139,7 @@ import {
   type EvaluationAnswer,
   type ExamPermission,
   type MCQAnswer,
-  type QuestionMcq,
+  type QuestionMcqContent,
   type SubjectiveAnswer,
 } from '~/types'
 
@@ -401,7 +401,7 @@ const currentQuestionMcqOptions = computed(() => {
   }
 
   const mcqQuestion = currentQuestionAnswer.value.question
-    .content as QuestionMcq['question']
+    .content as QuestionMcqContent
   return mcqQuestion.options.map((option, i) => ({
     value: i,
     label: option,

@@ -1,4 +1,8 @@
-import type { QuestionMcq, QuestionShort, QuestionType } from './question'
+import type {
+  QuestionMcqContent,
+  QuestionSubjectiveContent,
+  QuestionType,
+} from './question'
 
 export interface MCQAnswer {
   optionIndex: number | undefined
@@ -28,7 +32,7 @@ type QuestionAnswerMCQ = {
     readonly order: number
     readonly category_id: number
     readonly max_score: number
-    readonly content: QuestionMcq['question']
+    readonly content: QuestionMcqContent
   }
   readonly answer: {
     readonly id: number
@@ -43,7 +47,7 @@ type QuestionAnswerSubjective = {
     readonly order: number
     readonly category_id: number
     readonly max_score: number
-    readonly content: QuestionShort['question']
+    readonly content: QuestionSubjectiveContent
   }
   readonly answer: {
     readonly id: number

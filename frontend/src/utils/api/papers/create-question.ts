@@ -1,44 +1,51 @@
-import type { Question, QuestionType } from '~/types'
+import type {
+  Question,
+  QuestionCoding,
+  QuestionMcq,
+  QuestionSubjective,
+} from '~/types'
+import {
+  extractQuestionContent,
+  type MergedQuestion,
+  type MergedQuestionOmit,
+} from './utils'
 
-export interface CreateMcqQuestionBody {
-  type: QuestionType.MCQ
-  category_id: number
-  question: {
-    statement: string
-    options: string[]
-  }
-  max_score: number
-  tags: string[]
-  correct_answer: string | null | undefined
-}
+type CreateQuestionBody =
+  | Omit<QuestionMcq, MergedQuestionOmit>
+  | Omit<QuestionSubjective, MergedQuestionOmit>
+  | Omit<QuestionCoding, MergedQuestionOmit>
 
-export interface CreateSubjectiveQuestionBody {
-  type: QuestionType.SUBJECTIVE
-  category_id: number
-  question: {
-    statement: string
-  }
-  max_score: number
-  tags: string[]
-  correct_answer: string | null | undefined
-}
-
-type CreateQuestionBody = CreateMcqQuestionBody | CreateSubjectiveQuestionBody
+type CreateQuestionReturn = Pick<Question, 'id'>
 
 export async function createQuestion(
   paperId: number,
-  body: CreateQuestionBody
-): Promise<void> {
+  categoryId: number,
+  mergedQuestion: MergedQuestion
+): Promise<number | null> {
   const { $api } = useNuxtApp()
 
-  await $api<Question>(`/api/papers/${paperId}/questions`, {
-    method: 'POST',
-    body,
-  })
+  const body = {
+    type: mergedQuestion.type,
+    max_score: mergedQuestion.max_score,
+    tags: mergedQuestion.tags,
+    correct_answer: mergedQuestion.correct_answer,
+    category_id: categoryId,
+    question: extractQuestionContent(mergedQuestion)!,
+  } as CreateQuestionBody
+
+  const res = await $api<CreateQuestionReturn>(
+    `/api/papers/${paperId}/questions`,
+    {
+      method: 'POST',
+      body,
+    }
+  )
 
   // Refresh both questions and paper data since max_score and question_counts change
   await Promise.all([
     refreshNuxtData(AsyncDataKeys.PAPERS_PAPER_QUESTIONS(paperId)),
     refreshNuxtData(AsyncDataKeys.PAPERS_PAPER(paperId)),
   ])
+
+  return res.id
 }

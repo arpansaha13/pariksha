@@ -55,7 +55,7 @@ type PaperServiceClient interface {
 	// Question operations
 	GetPaperQuestions(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*QuestionList, error)
 	GetPaperQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error)
-	CreateQuestion(ctx context.Context, in *CreateQuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error)
+	CreateQuestion(ctx context.Context, in *CreateQuestionRequest, opts ...grpc.CallOption) (*CreateQuestionResponse, error)
 	UpdateQuestion(ctx context.Context, in *UpdateQuestionRequest, opts ...grpc.CallOption) (*UpdateQuestionResponse, error)
 	DeleteQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*Empty, error)
 	ReorderQuestions(ctx context.Context, in *ReorderQuestionsRequest, opts ...grpc.CallOption) (*Empty, error)
@@ -159,9 +159,9 @@ func (c *paperServiceClient) GetPaperQuestion(ctx context.Context, in *QuestionR
 	return out, nil
 }
 
-func (c *paperServiceClient) CreateQuestion(ctx context.Context, in *CreateQuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error) {
+func (c *paperServiceClient) CreateQuestion(ctx context.Context, in *CreateQuestionRequest, opts ...grpc.CallOption) (*CreateQuestionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QuestionResponse)
+	out := new(CreateQuestionResponse)
 	err := c.cc.Invoke(ctx, PaperService_CreateQuestion_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -293,7 +293,7 @@ type PaperServiceServer interface {
 	// Question operations
 	GetPaperQuestions(context.Context, *PaperRequest) (*QuestionList, error)
 	GetPaperQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error)
-	CreateQuestion(context.Context, *CreateQuestionRequest) (*QuestionResponse, error)
+	CreateQuestion(context.Context, *CreateQuestionRequest) (*CreateQuestionResponse, error)
 	UpdateQuestion(context.Context, *UpdateQuestionRequest) (*UpdateQuestionResponse, error)
 	DeleteQuestion(context.Context, *QuestionRequest) (*Empty, error)
 	ReorderQuestions(context.Context, *ReorderQuestionsRequest) (*Empty, error)
@@ -341,7 +341,7 @@ func (UnimplementedPaperServiceServer) GetPaperQuestions(context.Context, *Paper
 func (UnimplementedPaperServiceServer) GetPaperQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPaperQuestion not implemented")
 }
-func (UnimplementedPaperServiceServer) CreateQuestion(context.Context, *CreateQuestionRequest) (*QuestionResponse, error) {
+func (UnimplementedPaperServiceServer) CreateQuestion(context.Context, *CreateQuestionRequest) (*CreateQuestionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateQuestion not implemented")
 }
 func (UnimplementedPaperServiceServer) UpdateQuestion(context.Context, *UpdateQuestionRequest) (*UpdateQuestionResponse, error) {

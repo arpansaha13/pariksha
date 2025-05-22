@@ -154,10 +154,12 @@
 </template>
 
 <script setup lang="ts">
+import { defu } from 'defu'
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import { ConfirmModal, PaperQuestionForm } from '#components'
 import { QuestionId, QuestionType } from '~/types'
+import type { MergedQuestion } from '~/utils/api'
 
 definePageMeta({
   layout: 'paper',
@@ -217,36 +219,17 @@ const { questionNavigation } = usePaperQuestionNavigation({
 const { data: question } = await usePaperQuestion(currentQuestionId)
 
 // ________________CREATE/EDIT QUESTION PREREQUISITES_______________
-const defaultCreateQuestionFormState = {
-  type: '' as QuestionType,
+const defaultCreateQuestionFormState: MergedQuestion = {
+  type: '',
   question: {
+    title: '',
     statement: '',
     options: ['', ''],
+    examples: [],
   },
   max_score: 0,
-  tags: [] as string[],
-  correct_answer: '' as string | null | undefined,
-}
-
-type QuestionFormState = typeof defaultCreateQuestionFormState
-
-function createQuestionRequestBody(formState: QuestionFormState) {
-  const payload = {
-    type: formState.type,
-    category_id: currentCategoryId.value,
-    question: {
-      statement: formState.question.statement,
-    },
-    max_score: formState.max_score,
-    tags: [],
-    correct_answer: formState.correct_answer,
-  } as Parameters<typeof createQuestion>[1]
-
-  if (payload.type === QuestionType.MCQ) {
-    payload.question.options = formState.question.options
-  }
-
-  return payload
+  tags: [],
+  correct_answer: '',
 }
 
 // ___________UNSAVED COUNT FOR CHIPS ON CATEGORY LINKS___________
@@ -273,7 +256,7 @@ const createQuestionFormRef =
   useTemplateRef<ComponentExposed<typeof PaperQuestionForm>>(
     'createQuestionForm'
   )
-const createQuestionFormStates = reactive<Record<number, QuestionFormState>>({})
+const createQuestionFormStates = reactive<Record<number, MergedQuestion>>({})
 
 watchImmediate(currentCategoryId, categoryId => {
   if (categoryId && isNullOrUndefined(createQuestionFormStates[categoryId])) {
@@ -284,27 +267,25 @@ watchImmediate(currentCategoryId, categoryId => {
 })
 
 async function onCreateQuestionSubmit() {
-  if (isNullOrUndefined(currentCategoryId.value)) return
+  const catId = currentCategoryId.value
+  if (isNullOrUndefined(catId)) return
 
-  const formState = createQuestionFormStates[currentCategoryId.value]
+  const formState = createQuestionFormStates[catId]
   if (isNullOrUndefined(formState)) return
 
-  const payload = createQuestionRequestBody(formState)
-
   try {
-    await createQuestion(paperId, payload)
+    const newQuestionId = await createQuestion(paperId, catId, formState)
 
     // Navigate to the newly created question
-    // currentCategoryQuestions will be refreshed by createQuestion
-    const latestQuestion = currentCategoryQuestions.value.at(-1)
-    if (latestQuestion) {
+    if (!isNullOrUndefined(newQuestionId)) {
       navigateTo({
-        query: { ...route.query, question: latestQuestion.id },
+        query: { ...route.query, question: newQuestionId },
+        replace: true,
       })
     }
 
     // Reset formState after submission
-    createQuestionFormStates[currentCategoryId.value] = structuredClone(
+    createQuestionFormStates[catId] = structuredClone(
       defaultCreateQuestionFormState
     )
   } catch (error) {
@@ -315,9 +296,9 @@ async function onCreateQuestionSubmit() {
 // ________________________EDIT QUESTION__________________________
 const editQuestionFormRef =
   useTemplateRef<ComponentExposed<typeof PaperQuestionForm>>('editQuestionForm')
-const editQuestionFormStates = reactive<
-  Record<number, QuestionFormState | null>
->({})
+const editQuestionFormStates = reactive<Record<number, MergedQuestion | null>>(
+  {}
+)
 
 function startQuestionEdit() {
   if (!question.value || !currentQuestionId.value) return
@@ -325,28 +306,32 @@ function startQuestionEdit() {
 
   // Create form state for editing if it doesn't exist
   if (isNullOrUndefined(editQuestionFormStates[currentQuestionId.value])) {
-    editQuestionFormStates[currentQuestionId.value] = {
-      type: question.value.type,
-      question: {
-        statement: '',
-        options: ['', ''],
+    editQuestionFormStates[currentQuestionId.value] = defu(
+      {
+        type: question.value.type,
+        max_score: question.value.max_score,
+        tags: [...question.value.tags],
+        correct_answer: question.value.correct_answer ?? undefined,
+        question: {
+          statement: question.value.question.statement,
+        },
       },
-      max_score: question.value.max_score,
-      tags: [...question.value.tags],
-      correct_answer: question.value.correct_answer ?? undefined,
-    }
+      defaultCreateQuestionFormState
+    )
 
     // Parse and populate question data based on type
-    if (question.value.type === QuestionType.MCQ) {
+    const formState = editQuestionFormStates[currentQuestionId.value]!.question
+    const qType = question.value.type
+
+    if (qType === QuestionType.MCQ) {
       const mcqQuestion = question.value.question
-      editQuestionFormStates[currentQuestionId.value]!.question = {
-        statement: mcqQuestion.statement,
-        options: [...mcqQuestion.options], // Store new array reference
+      formState.options = [...mcqQuestion.options] // Store new array reference
+    } else if (qType === QuestionType.CODING) {
+      const codingQuestion = question.value.question
+      formState.title = codingQuestion.title
+      if (codingQuestion.examples) {
+        formState.examples = structuredClone(codingQuestion.examples)
       }
-    } else {
-      const subjectiveQuestion = question.value.question
-      editQuestionFormStates[currentQuestionId.value]!.question.statement =
-        subjectiveQuestion.statement
     }
 
     incUnsavedCount(question.value.category_id)
@@ -360,16 +345,15 @@ function cancelQuestionEdit() {
 }
 
 async function onEditQuestionSubmit() {
-  if (!currentQuestionId.value) return
-  if (currentQuestionId.value === QuestionId.ADD) return
+  const qid = currentQuestionId.value
+  if (!qid || qid === QuestionId.ADD) return
 
-  const formState = editQuestionFormStates[currentQuestionId.value]!
-  const payload = createQuestionRequestBody(formState)
+  const formState = editQuestionFormStates[qid]!
 
   try {
-    await updateQuestion(currentQuestionId.value, paperId, payload)
+    await updateQuestion(qid, paperId, formState)
     // Clear edit form state after successful update
-    editQuestionFormStates[currentQuestionId.value] = null
+    editQuestionFormStates[qid] = null
     decUnsavedCount(currentCategoryId.value!)
   } catch (error) {
     console.error('Failed to update question:', error)

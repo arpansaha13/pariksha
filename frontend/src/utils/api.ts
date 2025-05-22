@@ -14,7 +14,10 @@ export { updateCategory } from './api/papers/update-category'
 export { deleteCategory } from './api/papers/delete-category'
 export { reorderCategories } from './api/papers/reorder-categories'
 
-export { createQuestion } from './api/papers/create-question'
+export {
+  createQuestion,
+  type MergedQuestion,
+} from './api/papers/create-question'
 export { updateQuestion } from './api/papers/update-question'
 export { deleteQuestion } from './api/papers/delete-question'
 export { reorderQuestions } from './api/papers/reorder-questions'

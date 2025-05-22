@@ -33,6 +33,7 @@
     <UForm
       v-if="formState.type === QuestionType.MCQ"
       :state="formState"
+      attach
       class="space-y-2"
     >
       <UFormField
@@ -113,18 +114,10 @@
 
 <script setup lang="ts">
 import type { FormError } from '@nuxt/ui'
-import { type Question, QuestionType } from '~/types'
+import { QuestionType } from '~/types'
+import type { MergedQuestion } from '~/utils/api'
 
-interface CreateQuestionFormState
-  extends Pick<Question, 'max_score' | 'tags' | 'correct_answer'> {
-  type: QuestionType
-  question: {
-    statement: string
-    options: string[]
-  }
-}
-
-const formState = defineModel<CreateQuestionFormState>('form-data', {
+const formState = defineModel<MergedQuestion>('form-data', {
   required: true,
 })
 
@@ -136,14 +129,14 @@ defineExpose({
 })
 
 const emit = defineEmits<{
-  submit: [form: CreateQuestionFormState]
+  submit: [form: MergedQuestion]
 }>()
 
 async function onSubmit() {
   emit('submit', formState.value)
 }
 
-function validate(formState: CreateQuestionFormState): FormError[] {
+function validate(formState: MergedQuestion): FormError[] {
   const errors = []
 
   if (formState.max_score === 0) {

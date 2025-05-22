@@ -12,7 +12,7 @@ export function getScoreColor(
   maxScore: number
 ): ScoreColor {
   if (maxScore <= 0) {
-    console.log('getScoreColor: Invalid max score')
+    logWarning('Invalid max score')
     return 'primary' // Prevent division by zero
   }
 
