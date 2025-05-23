@@ -18,7 +18,6 @@
 import { ConfirmModal } from '#components'
 import type { DropdownMenuItem, TableColumn } from '@nuxt/ui'
 import { formatTimeAgo } from '@vueuse/core'
-import type { Exam } from '~/types'
 
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')

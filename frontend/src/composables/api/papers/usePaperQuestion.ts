@@ -1,5 +1,4 @@
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import { QuestionId, type Question } from '~/types'
 
 export function usePaperQuestion(questionId: ComputedRef<number | null>) {
   const { $api } = useNuxtApp()
@@ -9,7 +8,7 @@ export function usePaperQuestion(questionId: ComputedRef<number | null>) {
   )
 
   return useAsyncData(useQuestionKey, async () => {
-    if (questionId.value === QuestionId.ADD) return Promise.resolve(null)
+    if (questionId.value === QUESTION_ID_ADD) return Promise.resolve(null)
 
     const data = await $api<Question>(`/api/questions/${questionId.value}`)
 

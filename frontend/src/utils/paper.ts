@@ -1,5 +1,3 @@
-import type { PaperQuestionCounts } from '~/types'
-
 export function countTotalQuestions(question_counts: PaperQuestionCounts) {
   let count = 0
   count += question_counts.mcq ?? 0

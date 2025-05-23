@@ -1,5 +1,3 @@
-import type { ExamQuestionMinimal } from '~/types'
-
 interface UseExamQuestionNavigationOptions {
   currentQuestionId: ComputedRef<number | null>
   currentCategoryQuestions: ComputedRef<ExamQuestionMinimal[]>

@@ -1,5 +1,3 @@
-import type { Paper } from '~/types/paper'
-
 export async function createPaper() {
   const { $api } = useNuxtApp()
 

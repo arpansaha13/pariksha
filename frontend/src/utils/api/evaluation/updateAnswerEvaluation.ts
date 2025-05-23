@@ -1,5 +1,3 @@
-import type { EvaluationAnswer } from '~/types'
-
 interface UpdateAnswerEvaluationBody {
   new_score?: number
   evaluated?: boolean

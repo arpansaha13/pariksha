@@ -1,5 +1,3 @@
-import type { PaperPermission } from '~/types/paper'
-
 export function usePaperPermission(paperId: number) {
   const { $api } = useNuxtApp()
 

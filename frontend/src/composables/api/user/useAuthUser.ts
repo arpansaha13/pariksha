@@ -1,5 +1,3 @@
-import type { User } from '~/types/user'
-
 export function useAuthUser() {
   const { $api } = useNuxtApp()
 

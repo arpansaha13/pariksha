@@ -25,18 +25,10 @@
 </template>
 
 <script setup lang="ts">
-import type { ExamCategory } from '~/types'
-
-const props = defineProps({
-  sortedCategories: {
-    type: Array as PropType<ExamCategory[]>,
-    required: true,
-  },
-  getQuestionIdForCategoryId: {
-    type: Function as PropType<(categoryId: number) => string | undefined>,
-    required: true,
-  },
-})
+const props = defineProps<{
+  sortedCategories: ExamCategory[]
+  getQuestionIdForCategoryId: (categoryId: CategoryId) => string | undefined
+}>()
 
 const categoryLinks = computed(() => {
   return props.sortedCategories.map(category => ({

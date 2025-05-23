@@ -1,5 +1,4 @@
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import type { Answer } from '~/types'
 
 export function useAnswerForEvaluation(
   participantId: number,

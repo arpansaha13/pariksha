@@ -1,5 +1,3 @@
-import { QuestionType, type Question } from '~/types'
-
 interface UsePaperAutoCancelQuestionEditArgs {
   question: Ref<Question | null>
   editQuestionFormStates: Record<number, MergedQuestion | null>

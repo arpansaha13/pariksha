@@ -18,7 +18,6 @@
 <script setup lang="ts">
 import { ConfirmModal } from '#components'
 import type { DropdownMenuItem, TableColumn } from '@nuxt/ui'
-import type { Paper, PaperQuestionCounts } from '~/types'
 
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')

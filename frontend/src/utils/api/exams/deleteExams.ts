@@ -1,5 +1,3 @@
-import type { Exam } from '~/types'
-
 /**
  * Delete multiple exams by their IDs
  */

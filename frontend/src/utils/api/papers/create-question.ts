@@ -1,9 +1,3 @@
-import type {
-  Question,
-  QuestionCoding,
-  QuestionMcq,
-  QuestionSubjective,
-} from '~/types'
 import {
   extractQuestionContent,
   type MergedQuestion,

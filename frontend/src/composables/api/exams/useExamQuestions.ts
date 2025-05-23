@@ -1,5 +1,3 @@
-import type { ExamQuestionMinimal } from '~/types'
-
 export function useExamQuestions(examId: number) {
   const { $api } = useNuxtApp()
 
@@ -8,7 +6,7 @@ export function useExamQuestions(examId: number) {
     () => $api<ExamQuestionMinimal[]>(`/api/exams/${examId}/questions`),
     {
       transform: questions => {
-        const byCategory = {} as Record<number, ExamQuestionMinimal[]>
+        const byCategory = {} as Record<CategoryId, ExamQuestionMinimal[]>
 
         for (const question of questions) {
           const categoryId = question.category_id

@@ -1,5 +1,3 @@
-import type { QuestionMinimal } from '~/types'
-
 export async function deleteQuestion(
   questionId: number,
   paperId: number,

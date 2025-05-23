@@ -1,5 +1,3 @@
-import type { User } from '../../../types/user'
-
 export interface UpdateUserPayload {
   username?: string
   first_name?: string

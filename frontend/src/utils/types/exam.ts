@@ -14,15 +14,15 @@ export enum ExamParticipantStatus {
 }
 
 export interface Exam {
-  id: number
+  id: ExamId
   title: string
   starts_at: string
   ends_at: string
-  created_by: number
+  created_by: UserId
   type: ExamAccessType
   max_candidates_count: number
   max_score: number
-  paper_id: number
+  paper_id: PaperId
   duration_minutes: number
 }
 
@@ -44,20 +44,20 @@ export type ExamQuestionMinimal = Pick<
 export type ExamCategory = Pick<QuestionCategory, 'id' | 'name' | 'order'>
 
 export interface ExamParticipant {
-  readonly id: number
+  readonly id: ExamParticipantId
   readonly score_awarded: number
   readonly started_at: string
   readonly scheduled_end_time: string
 }
 
 export interface ExamParticipantById {
-  readonly id: number
+  readonly id: ExamParticipantId
   readonly status: ExamParticipantStatus
 }
 
 export interface ExamParticipantResponse {
-  id: number
-  user_id: number
+  id: ExamParticipantId
+  user_id: UserId
   status: ExamParticipantStatus
   score_awarded: number
   started_at?: string
@@ -69,7 +69,7 @@ export interface ExamParticipantResponse {
 }
 
 export type ExamResult = {
-  readonly id: number
+  readonly id: AnswerId
   readonly score_awarded: number
   readonly comments: string
 }

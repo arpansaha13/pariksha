@@ -1,7 +1,4 @@
-export enum QuestionId {
-  /** Special case for add question */
-  ADD = 0,
-}
+export const QUESTION_ID_ADD = 0 as QuestionId
 
 export enum QuestionType {
   MCQ = 'MCQ',
@@ -10,7 +7,7 @@ export enum QuestionType {
 }
 
 export interface QuestionCategory {
-  id: number
+  id: CategoryId
   name: string
   order: number
 }
@@ -37,11 +34,11 @@ export interface QuestionCodingContent {
 }
 
 export interface BaseQuestion {
-  id: number
+  id: QuestionId
   order: number
-  category_id: number
+  category_id: CategoryId
   tags: string[]
-  paper_id: number
+  paper_id: PaperId
   max_score: number
   correct_answer?: string
 }

@@ -1,5 +1,3 @@
-import type { Paper } from '~/types'
-
 interface UpdatePaperTitleBody {
   title?: string
   duration_minutes?: number

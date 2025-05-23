@@ -152,11 +152,6 @@ import {
 import type { TableColumn } from '@nuxt/ui'
 import { debounceFilter } from '@vueuse/core'
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import {
-  ExamParticipantStatus,
-  type ExamParticipantResponse,
-  type ExamPermission,
-} from '~/types'
 
 const UButton = resolveComponent('UButton')
 const UBadge = resolveComponent('UBadge')

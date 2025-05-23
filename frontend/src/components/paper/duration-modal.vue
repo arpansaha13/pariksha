@@ -28,8 +28,6 @@
 </template>
 
 <script setup lang="ts">
-import type { Paper } from '~/types/paper'
-
 const props = defineProps({
   paper: {
     type: Object as PropType<Paper>,

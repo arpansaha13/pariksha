@@ -1,5 +1,3 @@
-import type { ExamPermission } from '~/types/exam'
-
 export function useExamPermission(examId: number) {
   const { $api } = useNuxtApp()
 

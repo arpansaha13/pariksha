@@ -1,5 +1,4 @@
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import { QuestionId, type QuestionMinimal } from '~/types'
 
 interface UsePaperQuestionIdForCategoryIdArgs {
   groupedQuestions: Ref<Record<number, QuestionMinimal[]> | null>
@@ -11,18 +10,18 @@ export function usePaperQuestionIdForCategoryId(
   const { groupedQuestions } = args
 
   const route = useRoute()
-  const lastVisitedQuestionForCategory = ref<Record<number, string>>({})
+  const lastVisitedQuestionForCategory = ref<Record<CategoryId, string>>({})
 
   watchImmediate(route, newRoute => {
     const query = newRoute.query
     if (isNullOrUndefined(query) || isNullOrUndefined(query.category)) return
-    const categoryId = parseInt(query.category as string)
+    const categoryId = parseInt(query.category as string) as CategoryId
     lastVisitedQuestionForCategory.value[categoryId] = query.question as string
   })
 
-  function getQuestionIdForCategoryId(categoryId: number) {
+  function getQuestionIdForCategoryId(categoryId: CategoryId) {
     const categoryQuestions = groupedQuestions.value?.[categoryId]
-    if (isNullOrUndefined(categoryQuestions)) return QuestionId.ADD
+    if (isNullOrUndefined(categoryQuestions)) return QUESTION_ID_ADD
     const questionId =
       lastVisitedQuestionForCategory.value[categoryId] ??
       categoryQuestions[0].id

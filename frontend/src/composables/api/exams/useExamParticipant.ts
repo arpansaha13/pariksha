@@ -1,5 +1,3 @@
-import type { ExamParticipant } from '~/types'
-
 export function useExamParticipant(examId: number) {
   const { $api } = useNuxtApp()
 

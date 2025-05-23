@@ -1,15 +1,4 @@
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import {
-  QuestionType,
-  type Question,
-  type QuestionCoding,
-  type QuestionCodingContent,
-  type QuestionMcq,
-  type QuestionMcqContent,
-  type QuestionMinimal,
-  type QuestionSubjective,
-  type QuestionSubjectiveContent,
-} from '~/types'
 
 import { extractQuestionContent, type MergedQuestion } from './utils'
 

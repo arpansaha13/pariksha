@@ -1,6 +1,0 @@
-export * from './paper'
-export * from './question'
-export * from './exam'
-export * from './answer'
-export * from './evaluation'
-export * from './editor'

@@ -13,16 +13,10 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps({
-  startedAt: {
-    type: String,
-    required: true,
-  },
-  scheduledEndTime: {
-    type: String,
-    required: true,
-  },
-})
+const props = defineProps<{
+  startedAt: string
+  scheduledEndTime: string
+}>()
 const emit = defineEmits(['timeout'])
 
 // Time constants in milliseconds

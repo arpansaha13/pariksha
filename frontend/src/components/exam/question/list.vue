@@ -16,18 +16,10 @@
 </template>
 
 <script setup lang="ts">
-import type { ExamQuestionMinimal } from '~/types'
-
-defineProps({
-  currentQuestionId: {
-    type: Number,
-    required: true,
-  },
-  currentCategoryQuestions: {
-    type: Array as PropType<ExamQuestionMinimal[]>,
-    required: true,
-  },
-})
+defineProps<{
+  currentQuestionId: QuestionId
+  currentCategoryQuestions: ExamQuestionMinimal[]
+}>()
 
 const route = useRoute()
 </script>

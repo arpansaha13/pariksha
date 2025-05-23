@@ -1,5 +1,3 @@
-import type { AnswerMinimal, SubjectiveAnswer, MCQAnswer } from '~/types'
-
 interface UpsertAnswerBody {
   question_id: number
   /** `null` answers clears the saved answer */

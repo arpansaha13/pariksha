@@ -18,7 +18,6 @@
 
 <script setup lang="ts">
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import type { Paper } from '~/types'
 
 const props = defineProps({
   paper: {

@@ -8,14 +8,8 @@
 </template>
 
 <script setup lang="ts">
-defineProps({
-  icon: {
-    type: String,
-    required: true,
-  },
-  description: {
-    type: String,
-    required: true,
-  },
-})
+defineProps<{
+  icon: string
+  description: string
+}>()
 </script>

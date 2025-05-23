@@ -68,33 +68,14 @@
 <script setup lang="ts">
 import Draggable from 'vuedraggable'
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import { QuestionId, type QuestionMinimal } from '~/types'
 
-const props = defineProps({
-  currentQuestionId: {
-    type: Number,
-    required: true,
-  },
-  currentCategoryId: {
-    type: Number,
-    required: true,
-  },
-  currentCategoryQuestions: {
-    type: Array as PropType<QuestionMinimal[]>,
-    required: true,
-  },
-  editQuestionFormStates: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    type: Object as PropType<Record<number, any>>,
-    required: true,
-  },
-  questionNavigation: {
-    type: Object as PropType<
-      Record<'prev' | 'next', number | null | QuestionId>
-    >,
-    required: true,
-  },
-})
+const props = defineProps<{
+  currentQuestionId: QuestionId
+  currentCategoryId: CategoryId
+  currentCategoryQuestions: QuestionMinimal[]
+  editQuestionFormStates: Record<number, MergedQuestion | null>
+  questionNavigation: Record<'prev' | 'next', number | null | QuestionId>
+}>()
 
 const route = useRoute()
 const paperId = parseInt(route.params.paperId as string)
@@ -162,7 +143,7 @@ async function handleDeleteQuestion(questionId: number) {
         question:
           props.questionNavigation.prev ??
           props.questionNavigation.next ??
-          QuestionId.ADD,
+          QUESTION_ID_ADD,
       },
     })
   }

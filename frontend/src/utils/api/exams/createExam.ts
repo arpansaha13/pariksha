@@ -1,5 +1,3 @@
-import type { Exam, ExamAccessType } from '~/types/exam'
-
 interface CreateExamBody {
   title: string
   starts_at: Date

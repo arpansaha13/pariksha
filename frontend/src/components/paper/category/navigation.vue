@@ -33,8 +33,6 @@
 </template>
 
 <script setup lang="ts">
-import type { QuestionCategory, QuestionId } from '~/types'
-
 const props = defineProps({
   sortedCategories: {
     type: Array as PropType<QuestionCategory[]>,
@@ -45,7 +43,7 @@ const props = defineProps({
     required: true,
   },
   getQuestionIdForCategoryId: {
-    type: Function as PropType<(categoryId: number) => string | QuestionId.ADD>,
+    type: Function as PropType<(categoryId: number) => string | QuestionId>,
     required: true,
   },
 })

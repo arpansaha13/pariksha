@@ -134,15 +134,6 @@
 <script setup lang="ts">
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import { ConfirmModal } from '#components'
-import {
-  ExamParticipantStatus,
-  QuestionType,
-  type AnswerMinimal,
-  type ExamPermission,
-  type SubjectiveAnswer,
-  type MCQAnswer,
-  type QuestionMcqContent,
-} from '~/types'
 
 definePageMeta({
   layout: 'paper',
@@ -203,7 +194,9 @@ if (!route.query.category && sortedCategories.value?.length) {
 }
 
 const currentCategoryId = computed(() => {
-  return route.query.category ? parseInt(route.query.category as string) : null
+  return route.query.category
+    ? (parseInt(route.query.category as string) as CategoryId)
+    : null
 })
 
 const currentCategoryQuestions = computed(() => {
@@ -212,7 +205,9 @@ const currentCategoryQuestions = computed(() => {
 })
 
 const currentQuestionId = computed(() => {
-  return route.query.question ? parseInt(route.query.question as string) : null
+  return route.query.question
+    ? (parseInt(route.query.question as string) as QuestionId)
+    : null
 })
 
 const { prevQuestionId, nextQuestionId, currentQuestionIdx } =

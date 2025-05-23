@@ -200,7 +200,6 @@
 <script setup lang="ts">
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { FormError } from '@nuxt/ui'
-import { QuestionType } from '~/types'
 
 const formState = defineModel<MergedQuestion>('form-data', {
   required: true,

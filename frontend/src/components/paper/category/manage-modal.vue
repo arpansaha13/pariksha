@@ -97,26 +97,13 @@
 
 <script setup lang="ts">
 import Draggable from 'vuedraggable'
-import type { QuestionCategory, QuestionId, QuestionMinimal } from '~/types'
 
-const props = defineProps({
-  sortedCategories: {
-    type: Array as PropType<QuestionCategory[]>,
-    required: true,
-  },
-  groupedQuestions: {
-    type: Object as PropType<Record<number, QuestionMinimal[]>>,
-    required: true,
-  },
-  currentCategoryId: {
-    type: Number,
-    required: true,
-  },
-  getQuestionIdForCategoryId: {
-    type: Function as PropType<(categoryId: number) => string | QuestionId.ADD>,
-    required: true,
-  },
-})
+const props = defineProps<{
+  sortedCategories: QuestionCategory[]
+  groupedQuestions: Record<number, QuestionMinimal[]>
+  currentCategoryId: CategoryId
+  getQuestionIdForCategoryId: (categoryId: CategoryId) => string | QuestionId
+}>()
 
 const route = useRoute()
 const paperId = parseInt(route.params.paperId as string)

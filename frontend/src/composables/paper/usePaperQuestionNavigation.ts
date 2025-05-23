@@ -1,5 +1,3 @@
-import { QuestionId, type QuestionMinimal } from '~/types'
-
 interface UsePaperQuestionNavigationArgs {
   currentQuestionId: ComputedRef<number | null>
   currentCategoryQuestions: ComputedRef<QuestionMinimal[]>
@@ -19,7 +17,7 @@ export function usePaperQuestionNavigation(
 
   const currentQuestionIdx = computed(() => {
     if (!currentQuestionId.value) return QuestionIndex.NON_EXISTENT
-    if (currentQuestionId.value === QuestionId.ADD) return QuestionIndex.ADD
+    if (currentQuestionId.value === QUESTION_ID_ADD) return QuestionIndex.ADD
     return (
       currentCategoryQuestions.value?.findIndex(
         q => q.id === currentQuestionId.value
@@ -33,14 +31,14 @@ export function usePaperQuestionNavigation(
     }
 
     // If on add question page
-    if (currentQuestionId.value === QuestionId.ADD) {
+    if (currentQuestionId.value === QUESTION_ID_ADD) {
       return {
         prev: currentCategoryQuestions.value.at(-1)?.id ?? null, // show last question as prev
         next: null, // there is no next
       }
     }
 
-    // Non-existent question check should be after QuestionId.ADD
+    // Non-existent question check should be after QUESTION_ID_ADD
     if (currentQuestionIdx.value < 0) {
       return { prev: null, next: null }
     }
@@ -49,7 +47,7 @@ export function usePaperQuestionNavigation(
     if (currentQuestionIdx.value === 0) {
       return {
         prev: null,
-        next: currentCategoryQuestions.value[1]?.id ?? QuestionId.ADD,
+        next: currentCategoryQuestions.value[1]?.id ?? QUESTION_ID_ADD,
       }
     }
 
@@ -60,7 +58,7 @@ export function usePaperQuestionNavigation(
     ) {
       return {
         prev: currentCategoryQuestions.value.at(-2)?.id ?? null,
-        next: QuestionId.ADD, // show add question as next
+        next: QUESTION_ID_ADD, // show add question as next
       }
     }
 

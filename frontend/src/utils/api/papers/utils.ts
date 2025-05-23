@@ -1,12 +1,3 @@
-import {
-  QuestionType,
-  type BaseQuestion,
-  type QuestionCodingContent,
-  type QuestionMcqContent,
-  type QuestionSubjectiveContent,
-} from '~/types'
-import { logWarning } from '~/utils/logWarning'
-
 export type MergedQuestionOmit = 'id' | 'paper_id' | 'order'
 
 export interface MergedQuestion

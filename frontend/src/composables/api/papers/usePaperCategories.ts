@@ -1,5 +1,3 @@
-import type { QuestionCategory } from '~/types'
-
 export function usePaperCategories(paperId: number) {
   const { $api } = useNuxtApp()
 

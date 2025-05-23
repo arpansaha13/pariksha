@@ -1,5 +1,3 @@
-import type { QuestionCategory } from '~/types'
-
 export async function reorderCategories(
   paperId: number,
   categoryIds: number[]

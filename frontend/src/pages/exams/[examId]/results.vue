@@ -132,12 +132,6 @@
 <script setup lang="ts">
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { RadioGroupItem } from '@nuxt/ui'
-import {
-  type ExamPermission,
-  type Question,
-  ExamParticipantStatus,
-  QuestionType,
-} from '~/types'
 
 definePageMeta({
   middleware: [

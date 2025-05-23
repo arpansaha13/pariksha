@@ -1,5 +1,3 @@
-import type { Exam } from '~/types/exam'
-
 interface UpdateExamBody {
   title?: string
   starts_at?: Date

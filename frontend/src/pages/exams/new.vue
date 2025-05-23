@@ -167,7 +167,6 @@ import {
   getLocalTimeZone,
 } from '@internationalized/date'
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import { type Exam, ExamAccessType, type PaperQuestionCounts } from '~/types'
 
 const newExamStore = useNewExamStore()
 

@@ -1,5 +1,3 @@
-import type { QuestionCategory } from '~/types'
-
 interface UpdateCategoryBody {
   name: string
 }

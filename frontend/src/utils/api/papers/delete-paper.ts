@@ -1,5 +1,3 @@
-import type { Paper } from '~/types'
-
 export async function deletePapers(paperIds: number[]): Promise<void> {
   if (paperIds.length === 0) {
     console.warn('deletePaper called with empty argument.')

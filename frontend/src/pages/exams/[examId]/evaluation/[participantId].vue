@@ -132,16 +132,6 @@
 <script lang="ts" setup>
 import { ConfirmModal } from '#components'
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import {
-  QuestionType,
-  ExamParticipantStatus,
-  type Answer,
-  type EvaluationAnswer,
-  type ExamPermission,
-  type MCQAnswer,
-  type QuestionMcqContent,
-  type SubjectiveAnswer,
-} from '~/types'
 
 definePageMeta({
   layout: 'paper',
@@ -196,16 +186,16 @@ const [
 
 // _______________LAST VISITED QUESTION FOR CATEGORY________________
 function useLastVisitedQuestionForCategory() {
-  const lastVisitedQuestionForCategory = ref<Record<number, string>>({})
+  const lastVisitedQuestionForCategory = ref<Record<CategoryId, string>>({})
 
   watchImmediate(route, newRoute => {
     const query = newRoute.query
     if (isNullOrUndefined(query) || isNullOrUndefined(query.category)) return
-    const categoryId = parseInt(query.category as string)
+    const categoryId = parseInt(query.category as string) as CategoryId
     lastVisitedQuestionForCategory.value[categoryId] = query.question as string
   })
 
-  function getQuestionIdForCategoryId(categoryId: number) {
+  function getQuestionIdForCategoryId(categoryId: CategoryId) {
     const categoryItems = groupedQuestionAnswers.value?.[categoryId]
     if (isNullOrUndefined(categoryItems)) return
     const questionId =
@@ -229,11 +219,15 @@ if (!route.query.category && sortedCategories.value?.length) {
 
 // ________________________ROUTE QUERY DATA_________________________
 const currentCategoryId = computed(() => {
-  return route.query.category ? parseInt(route.query.category as string) : null
+  return route.query.category
+    ? (parseInt(route.query.category as string) as CategoryId)
+    : null
 })
 
 const currentQuestionId = computed(() => {
-  return route.query.question ? parseInt(route.query.question as string) : null
+  return route.query.question
+    ? (parseInt(route.query.question as string) as QuestionId)
+    : null
 })
 
 const currentCategoryQuestions = computed(() => {
@@ -285,12 +279,12 @@ const currentQuestionAnswer = computed(() => {
 
 // ____________________PREPARE EVALUATION STATES____________________
 function useEvaluationStates() {
-  const evaluationFetched = ref<Record<string, boolean>>({})
+  const evaluationFetched = ref<Record<AnswerId, boolean>>({})
   const evaluationStates = reactive<
-    Record<Answer['id'], Partial<EvaluationAnswer>>
+    Record<AnswerId, Partial<EvaluationAnswer>>
   >({})
   const savedEvaluationStates = shallowRef<
-    Record<Answer['id'], Partial<EvaluationAnswer>>
+    Record<AnswerId, Partial<EvaluationAnswer>>
   >({})
 
   for (const items of Object.values(groupedQuestionAnswers.value!)) {
@@ -355,7 +349,8 @@ function usePeriodicSaveEvaluation() {
     const promises = []
 
     for (const [ansId, currState] of Object.entries(evaluationStates)) {
-      const savedState = savedEvaluationStates.value[parseInt(ansId)]
+      const savedState =
+        savedEvaluationStates.value[ansId as unknown as AnswerId]
       if (savedState.score_awarded !== currState.score_awarded) {
         promises.push(
           saveEvaluation(parseInt(ansId), savedState, currState).then(res => {

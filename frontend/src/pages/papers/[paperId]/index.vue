@@ -62,11 +62,11 @@
 
     <template #footer>
       <UButton
-        :to="{ query: { ...route.query, question: QuestionId.ADD } }"
+        :to="{ query: { ...route.query, question: QUESTION_ID_ADD } }"
         icon="i-heroicons-plus"
         label="New question"
-        :color="currentQuestionId === QuestionId.ADD ? 'primary' : 'neutral'"
-        :variant="currentQuestionId === QuestionId.ADD ? 'subtle' : 'outline'"
+        :color="currentQuestionId === QUESTION_ID_ADD ? 'primary' : 'neutral'"
+        :variant="currentQuestionId === QUESTION_ID_ADD ? 'subtle' : 'outline'"
         replace
       />
     </template>
@@ -77,7 +77,7 @@
   >
     <PaperQuestionForm
       v-if="
-        currentQuestionId === QuestionId.ADD &&
+        currentQuestionId === QUESTION_ID_ADD &&
         currentCategoryId &&
         createQuestionFormStates[currentCategoryId]
       "
@@ -116,7 +116,7 @@
     </div>
     <div class="space-x-2">
       <UButton
-        v-if="currentQuestionId === QuestionId.ADD"
+        v-if="currentQuestionId === QUESTION_ID_ADD"
         label="Add question"
         color="primary"
         variant="solid"
@@ -163,7 +163,6 @@ import { defu } from 'defu'
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import { ConfirmModal, PaperQuestionForm } from '#components'
-import { QuestionId, QuestionType } from '~/types'
 
 definePageMeta({
   layout: 'paper',
@@ -203,7 +202,9 @@ if (
 }
 
 const currentCategoryId = computed(() => {
-  return route.query.category ? parseInt(route.query.category as string) : null
+  return route.query.category
+    ? (parseInt(route.query.category as string) as CategoryId)
+    : null
 })
 
 const currentCategoryQuestions = computed(() => {
@@ -212,7 +213,9 @@ const currentCategoryQuestions = computed(() => {
 })
 
 const currentQuestionId = computed(() => {
-  return route.query.question ? parseInt(route.query.question as string) : null
+  return route.query.question
+    ? (parseInt(route.query.question as string) as QuestionId)
+    : null
 })
 
 const { questionNavigation } = usePaperQuestionNavigation({
@@ -307,7 +310,7 @@ const editQuestionFormStates = reactive<Record<number, MergedQuestion | null>>(
 function startQuestionEdit() {
   const qid = currentQuestionId.value
   if (!question.value || !qid) return
-  if (qid === QuestionId.ADD) return
+  if (qid === QUESTION_ID_ADD) return
 
   // Create form state for editing if it doesn't exist
   if (isNullOrUndefined(editQuestionFormStates[qid])) {
@@ -354,7 +357,7 @@ function cancelQuestionEdit() {
 
 async function onEditQuestionSubmit() {
   const qid = currentQuestionId.value
-  if (!qid || qid === QuestionId.ADD) return
+  if (!qid || qid === QUESTION_ID_ADD) return
 
   const formState = editQuestionFormStates[qid]!
 

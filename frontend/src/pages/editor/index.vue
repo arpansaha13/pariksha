@@ -80,8 +80,6 @@
 </template>
 
 <script lang="ts" setup>
-import type { EditorLanguage } from '~/types'
-
 definePageMeta({
   layout: 'blank',
 })

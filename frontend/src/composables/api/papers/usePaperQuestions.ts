@@ -1,5 +1,3 @@
-import type { QuestionMinimal } from '~/types'
-
 export function usePaperQuestions(paperId: number) {
   const { $api } = useNuxtApp()
 

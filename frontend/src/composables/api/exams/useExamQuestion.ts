@@ -1,5 +1,4 @@
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import type { Question } from '~/types'
 
 export function useExamQuestion(questionId: ComputedRef<number | null>) {
   const { $api } = useNuxtApp()

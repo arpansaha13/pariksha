@@ -145,7 +145,6 @@ import { ExamViewUpdateUserForm } from '#components'
 import { formatTimeAgo } from '@vueuse/core'
 import { DateFormatter, getLocalTimeZone } from '@internationalized/date'
 import type { ComponentExposed } from 'vue-component-type-helpers'
-import { ExamParticipantStatus } from '~/types'
 
 const props = defineProps({
   examPermission: {
