@@ -3,7 +3,7 @@ interface CreateExamBody {
   starts_at: Date
   ends_at: Date
   type: ExamAccessType
-  paper_id: number
+  paper_id: PaperId
   duration_minutes: number
 }
 

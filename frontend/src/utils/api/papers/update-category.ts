@@ -4,7 +4,7 @@ interface UpdateCategoryBody {
 
 export async function updateCategory(
   categoryId: number,
-  paperId: number,
+  paperId: PaperId,
   body: UpdateCategoryBody
 ): Promise<void> {
   const { $api } = useNuxtApp()

@@ -1,4 +1,4 @@
-export function usePaperQuestions(paperId: number) {
+export function usePaperQuestions(paperId: PaperId) {
   const { $api } = useNuxtApp()
 
   return useAsyncData(

@@ -15,7 +15,7 @@ definePageMeta({
 })
 
 const route = useRoute()
-const examId = parseInt(route.params.examId as string)
+const examId = route.params.examId as ExamId
 
 const { data: examPermission } = useNuxtData<ExamPermission>(
   AsyncDataKeys.EXAM_PERMISSION(examId)

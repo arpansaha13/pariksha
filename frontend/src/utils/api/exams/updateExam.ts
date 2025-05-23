@@ -6,7 +6,7 @@ interface UpdateExamBody {
   duration_minutes?: number
 }
 
-export async function updateExam(examId: number, body: UpdateExamBody) {
+export async function updateExam(examId: ExamId, body: UpdateExamBody) {
   const { $api } = useNuxtApp()
 
   const res = await $api<string>(`/api/exams/${examId}`, {

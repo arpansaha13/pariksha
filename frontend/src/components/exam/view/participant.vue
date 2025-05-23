@@ -165,7 +165,7 @@ const isParticipantExamEvaluated =
   props.examPermission.participant_status === ExamParticipantStatus.EVALUATED
 
 const route = useRoute()
-const examId = parseInt(route.params.examId as string)
+const examId = route.params.examId as ExamId
 
 const [{ data: exam }, { data: user }] = await Promise.all([
   useExam(examId),

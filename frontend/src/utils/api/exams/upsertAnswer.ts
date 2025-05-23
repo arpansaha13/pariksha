@@ -4,7 +4,7 @@ interface UpsertAnswerBody {
   answer: MCQAnswer | SubjectiveAnswer | null
 }
 
-export async function upsertAnswer(examId: number, body: UpsertAnswerBody) {
+export async function upsertAnswer(examId: ExamId, body: UpsertAnswerBody) {
   const { $api } = useNuxtApp()
 
   return $api<AnswerMinimal>(`/api/exams/${examId}/answers`, {

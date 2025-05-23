@@ -13,12 +13,7 @@ import (
 )
 
 func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
-	examID, err := getInt64FromVars(mux.Vars(r), "examId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
+	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
@@ -48,12 +43,7 @@ func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetExamCategories(w http.ResponseWriter, r *http.Request) {
-	examID, err := getInt64FromVars(mux.Vars(r), "examId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
+	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)

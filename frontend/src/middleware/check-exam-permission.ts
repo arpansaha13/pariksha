@@ -2,7 +2,7 @@ export default defineNuxtRouteMiddleware(async (to, _from) => {
   try {
     await callOnce(
       async () => {
-        const examId = parseInt(to.params.examId as string)
+        const examId = to.params.examId as ExamId
         const { data, error, status } = await useExamPermission(examId)
         if (status.value === 'error') {
           throw error.value

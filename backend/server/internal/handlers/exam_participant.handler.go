@@ -15,13 +15,8 @@ import (
 )
 
 func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
-	examID, err := getInt64FromVars(mux.Vars(r), "examId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
@@ -76,12 +71,7 @@ func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
 
 // GetExamParticipant gets the participant data for the current user
 func GetExamParticipant(w http.ResponseWriter, r *http.Request) {
-	examID, err := getInt64FromVars(mux.Vars(r), "examId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
+	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
@@ -111,11 +101,7 @@ func GetExamParticipant(w http.ResponseWriter, r *http.Request) {
 }
 
 func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
-	examID, err := getInt64FromVars(mux.Vars(r), "examId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
 
 	var participantDto dtos.AddExamParticipantDto
 	if err := json.NewDecoder(r.Body).Decode(&participantDto); err != nil {
@@ -173,13 +159,8 @@ func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
 }
 
 func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	examID, err := getInt64FromVars(vars, "examId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	participantID, err := getInt64FromVars(vars, "participantId")
+	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
+	participantID, err := getInt64FromVars(mux.Vars(r), "participantId")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

@@ -1,6 +1,6 @@
 export async function deleteCategory(
   categoryId: number,
-  paperId: number
+  paperId: PaperId
 ): Promise<void> {
   const { $api } = useNuxtApp()
 

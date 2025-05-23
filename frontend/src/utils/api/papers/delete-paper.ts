@@ -1,4 +1,4 @@
-export async function deletePapers(paperIds: number[]): Promise<void> {
+export async function deletePapers(paperIds: PaperId[]): Promise<void> {
   if (paperIds.length === 0) {
     console.warn('deletePaper called with empty argument.')
     return

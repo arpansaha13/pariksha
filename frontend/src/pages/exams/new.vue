@@ -171,7 +171,7 @@ import { isNullOrUndefined } from '@arpansaha13/utils'
 const newExamStore = useNewExamStore()
 
 interface ExamFormState extends Pick<Exam, 'title' | 'type'> {
-  paper_id: number | undefined
+  paper_id: PaperId | undefined
   duration_hours: number
   duration_minutes: number
 }

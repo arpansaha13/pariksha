@@ -126,7 +126,7 @@ const columns: TableColumn<Paper>[] = [
           label: 'Copy link',
           icon: 'i-lucide-link',
           onSelect() {
-            copy(getLinkToPaper(row.original.id))
+            copy(window.location.origin + getLinkToPaper(row.original.id))
 
             toast.add({
               id: ToastId.COPIED_TO_CLIPBOARD,
@@ -164,7 +164,7 @@ const columns: TableColumn<Paper>[] = [
   },
 ]
 
-function getLinkToPaper(paperId: number) {
+function getLinkToPaper(paperId: PaperId) {
   return `/papers/${paperId}`
 }
 

@@ -14,11 +14,7 @@ import (
 )
 
 func GetPaperCategories(w http.ResponseWriter, r *http.Request) {
-	paperID, err := getInt64FromVars(mux.Vars(r), "paperId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	paperID := r.Context().Value(middlewares.DecryptedPaperID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
@@ -47,11 +43,7 @@ func GetPaperCategories(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateCategory(w http.ResponseWriter, r *http.Request) {
-	paperID, err := getInt64FromVars(mux.Vars(r), "paperId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	paperID := r.Context().Value(middlewares.DecryptedPaperID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
@@ -133,7 +125,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReorderCategories(w http.ResponseWriter, r *http.Request) {
-	paperID, err := getInt64FromVars(mux.Vars(r), "paperId")
+	paperID := r.Context().Value(middlewares.DecryptedPaperID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	var reorderDto dtos.ReorderCategoryDto
@@ -155,7 +147,7 @@ func ReorderCategories(w http.ResponseWriter, r *http.Request) {
 		categoryIDs[i] = id
 	}
 
-	_, err = paperService.Client().ReorderCategories(ctx, &proto.ReorderCategoriesRequest{
+	_, err := paperService.Client().ReorderCategories(ctx, &proto.ReorderCategoriesRequest{
 		PaperId:     paperID,
 		CategoryIds: categoryIDs,
 	})

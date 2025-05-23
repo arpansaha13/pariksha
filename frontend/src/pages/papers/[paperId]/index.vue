@@ -170,7 +170,7 @@ definePageMeta({
 })
 
 const route = useRoute()
-const paperId = parseInt(route.params.paperId as string)
+const paperId = route.params.paperId as PaperId
 
 const overlay = useOverlay()
 const confirmModal = overlay.create(ConfirmModal as Component)

@@ -3,12 +3,13 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"pariksha/common/pkg/proto"
-	"pariksha/server/internal/dtos"
 	"strconv"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"pariksha/common/pkg/proto"
+	"pariksha/server/internal/dtos"
 )
 
 func handleGRPCError(w http.ResponseWriter, err error) {

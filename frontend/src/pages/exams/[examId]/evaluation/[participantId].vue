@@ -138,7 +138,7 @@ definePageMeta({
   middleware: [
     'check-exam-permission',
     to => {
-      const examId = parseInt(to.params.examId as string)
+      const examId = to.params.examId as ExamId
       const { data: examPermission } = useNuxtData<ExamPermission>(
         AsyncDataKeys.EXAM_PERMISSION(examId)
       )
@@ -153,8 +153,10 @@ definePageMeta({
 })
 
 const route = useRoute()
-const examId = parseInt(route.params.examId as string)
-const participantId = parseInt(route.params.participantId as string)
+const examId = route.params.examId as ExamId
+const participantId = parseInt(
+  route.params.participantId as string
+) as ExamParticipantId
 
 // If participant has not ended their exam, or if they are already evaluated
 // then disallow access to this route

@@ -106,7 +106,7 @@ const props = defineProps<{
 }>()
 
 const route = useRoute()
-const paperId = parseInt(route.params.paperId as string)
+const paperId = route.params.paperId as PaperId
 
 const isDragging = ref(false)
 const sortedCategories = toRef(props, 'sortedCategories')

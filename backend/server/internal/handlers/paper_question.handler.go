@@ -14,11 +14,7 @@ import (
 )
 
 func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
-	paperID, err := getInt64FromVars(mux.Vars(r), "paperId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	paperID := r.Context().Value(middlewares.DecryptedPaperID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
@@ -87,12 +83,7 @@ func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateQuestion(w http.ResponseWriter, r *http.Request) {
-	paperID, err := getInt64FromVars(mux.Vars(r), "paperId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
+	paperID := r.Context().Value(middlewares.DecryptedPaperID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	var questionDto dtos.CreateQuestionDto

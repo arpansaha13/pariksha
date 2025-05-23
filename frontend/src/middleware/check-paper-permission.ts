@@ -2,7 +2,7 @@ export default defineNuxtRouteMiddleware(async (to, _from) => {
   try {
     await callOnce(
       async () => {
-        const paperId = parseInt(to.params.paperId as string)
+        const paperId = to.params.paperId as PaperId
         const { data, error, status } = await usePaperPermission(paperId)
         if (status.value === 'error') {
           throw error.value

@@ -1,4 +1,4 @@
-export function useExam(examId: number) {
+export function useExam(examId: ExamId) {
   const { $api } = useNuxtApp()
 
   return useAsyncData<Exam>(AsyncDataKeys.EXAM(examId), () =>

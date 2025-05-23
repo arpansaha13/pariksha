@@ -9,7 +9,7 @@ type UpdateQuestionReturn = Pick<Question, 'id'>
 
 export async function updateQuestion(
   questionId: number,
-  paperId: number,
+  paperId: PaperId,
   mergedQuestion: MergedQuestion
 ): Promise<void> {
   const { $api } = useNuxtApp()

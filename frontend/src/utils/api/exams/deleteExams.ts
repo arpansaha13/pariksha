@@ -1,7 +1,7 @@
 /**
  * Delete multiple exams by their IDs
  */
-export async function deleteExams(examIds: number[]): Promise<void> {
+export async function deleteExams(examIds: ExamId[]): Promise<void> {
   if (examIds.length === 0) {
     console.warn('deleteExams called with empty argument.')
     return

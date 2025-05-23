@@ -12,7 +12,7 @@ type CreateQuestionBody =
 type CreateQuestionReturn = Pick<Question, 'id'>
 
 export async function createQuestion(
-  paperId: number,
+  paperId: PaperId,
   categoryId: number,
   mergedQuestion: MergedQuestion
 ): Promise<number | null> {

@@ -1,4 +1,4 @@
-export function useExamParticipant(examId: number) {
+export function useExamParticipant(examId: ExamId) {
   const { $api } = useNuxtApp()
 
   return useAsyncData<ExamParticipant>(

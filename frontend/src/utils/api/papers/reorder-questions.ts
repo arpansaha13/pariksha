@@ -1,5 +1,5 @@
 export async function reorderQuestions(
-  paperId: number,
+  paperId: PaperId,
   categoryId: number,
   questionIds: number[]
 ): Promise<void> {

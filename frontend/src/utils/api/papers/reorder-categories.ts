@@ -1,5 +1,5 @@
 export async function reorderCategories(
-  paperId: number,
+  paperId: PaperId,
   categoryIds: number[]
 ): Promise<void> {
   const { $api } = useNuxtApp()

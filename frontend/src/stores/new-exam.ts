@@ -6,7 +6,7 @@ export const useNewExamStore = defineStore('new-exam', {
   state: () => ({
     title: null as string | null,
     type: null as ExamAccessType | null,
-    paper_id: null as number | null,
+    paper_id: null as PaperId | null,
     startDate: null as CalendarDateTime | null,
     endDate: null as CalendarDateTime | null,
     duration_hours: null as number | null,

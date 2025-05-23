@@ -33,20 +33,11 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps({
-  sortedCategories: {
-    type: Array as PropType<QuestionCategory[]>,
-    required: true,
-  },
-  unsavedCount: {
-    type: Object as PropType<Record<number, number>>,
-    required: true,
-  },
-  getQuestionIdForCategoryId: {
-    type: Function as PropType<(categoryId: number) => string | QuestionId>,
-    required: true,
-  },
-})
+const props = defineProps<{
+  sortedCategories: QuestionCategory[]
+  unsavedCount: Record<CategoryId, number>
+  getQuestionIdForCategoryId: (categoryId: CategoryId) => string | QuestionId
+}>()
 
 const categoryLinks = computed(() => {
   return props.sortedCategories.map(category => ({

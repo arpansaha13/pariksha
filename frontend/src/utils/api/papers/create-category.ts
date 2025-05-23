@@ -1,4 +1,4 @@
-export async function createCategory(paperId: number): Promise<void> {
+export async function createCategory(paperId: PaperId): Promise<void> {
   const { $api } = useNuxtApp()
 
   await $api(`/api/papers/${paperId}/categories`, {

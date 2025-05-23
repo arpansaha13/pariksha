@@ -3,7 +3,10 @@ interface UpdatePaperTitleBody {
   duration_minutes?: number
 }
 
-export async function updatePaper(paperId: number, body: UpdatePaperTitleBody) {
+export async function updatePaper(
+  paperId: PaperId,
+  body: UpdatePaperTitleBody
+) {
   const { $api } = useNuxtApp()
 
   const { data: paper } = useNuxtData<Paper>(

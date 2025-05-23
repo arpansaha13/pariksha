@@ -23,7 +23,7 @@ type UpdateExamDto struct {
 }
 
 type ExamResponseDto struct {
-	ID                 int64     `json:"id"`
+	ID                 string    `json:"id"`
 	Title              string    `json:"title"`
 	StartsAt           time.Time `json:"starts_at"`
 	EndsAt             time.Time `json:"ends_at"`
@@ -99,7 +99,7 @@ type ExamPermissionResponseDto struct {
 }
 
 type DeleteExamsDto struct {
-	ExamIds []int64 `json:"exam_ids" validate:"required,min=1"`
+	ExamIds []string `json:"exam_ids" validate:"required,min=1"`
 }
 
 type ParticipantDetailResponseDto struct {

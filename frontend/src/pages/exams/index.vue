@@ -43,7 +43,7 @@ async function handleDeleteExam(exam: Exam) {
   }
 }
 
-function getLinkToExam(examId: number) {
+function getLinkToExam(examId: ExamId) {
   return `/exams/${examId}`
 }
 
@@ -91,7 +91,7 @@ const columns: TableColumn<Exam>[] = [
             label: 'Copy link',
             icon: 'i-lucide-link',
             onSelect() {
-              copy(getLinkToExam(row.original.id))
+              copy(window.location.origin + getLinkToExam(row.original.id))
 
               toast.add({
                 id: ToastId.COPIED_TO_CLIPBOARD,

@@ -90,14 +90,8 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAnswerForExam(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	examID, err := getInt64FromVars(vars, "examId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	questionID, err := getInt64FromVars(vars, "questionId")
+	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
+	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -138,11 +132,7 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	examID, err := getInt64FromVars(mux.Vars(r), "examId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
 
 	upsertAnswerRequest := &proto.UpsertAnswersRequest{
 		ExamId: examID,

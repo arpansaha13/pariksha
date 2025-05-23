@@ -6,7 +6,7 @@ type QuestionCountDto struct {
 }
 
 type PaperResponseDto struct {
-	ID              int64            `json:"id"`
+	ID              string           `json:"id"`
 	Title           string           `json:"title"`
 	MaxScore        int32            `json:"max_score"`
 	DurationMinutes int32            `json:"duration_minutes"`
@@ -25,5 +25,5 @@ type PaperPermissionsDto struct {
 }
 
 type DeletePaperDto struct {
-	PaperIDs []int64 `json:"paper_ids" validate:"required,min=1"`
+	PaperIDs []string `json:"paper_ids" validate:"required,min=1"`
 }

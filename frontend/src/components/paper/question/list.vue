@@ -78,7 +78,7 @@ const props = defineProps<{
 }>()
 
 const route = useRoute()
-const paperId = parseInt(route.params.paperId as string)
+const paperId = route.params.paperId as PaperId
 
 const confirmModal = inject(InjectionKeys.ConfirmModal)!
 
