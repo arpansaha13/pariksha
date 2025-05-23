@@ -5,6 +5,7 @@ import {
   type QuestionMcqContent,
   type QuestionSubjectiveContent,
 } from '~/types'
+import { logWarning } from '~/utils/logWarning'
 
 export type MergedQuestionOmit = 'id' | 'paper_id' | 'order'
 
@@ -57,9 +58,27 @@ const extractSubjectiveQuestionContent = (
 const extractCodingQuestionContent = (
   mergedQuestion: MergedQuestion
 ): QuestionCodingContent => {
+  const examples = mergedQuestion.question.examples?.filter(example => {
+    // Skip if all fields are empty
+    if (!example.input && !example.output && !example.explanation) {
+      return false
+    }
+
+    // Validate input/output pair
+    if (
+      (example.input && !example.output) ||
+      (!example.input && example.output)
+    ) {
+      logWarning('Example must have both input and output or neither')
+      return false
+    }
+
+    return true
+  })
+
   return {
     title: mergedQuestion.question.title,
     statement: mergedQuestion.question.statement,
-    examples: mergedQuestion.question.examples,
+    examples: examples?.length ? examples : undefined,
   }
 }

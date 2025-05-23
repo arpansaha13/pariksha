@@ -183,9 +183,6 @@ func validateCodingQuestionData(coding *structs.CodingQuestion) error {
 	if strings.TrimSpace(coding.Statement) == "" {
 		return status.Error(codes.InvalidArgument, "question statement cannot be empty")
 	}
-	if len(coding.Examples) < 1 {
-		return status.Error(codes.InvalidArgument, "coding questions must have at least one example")
-	}
 	for _, example := range coding.Examples {
 		if strings.TrimSpace(example.Input) == "" {
 			return status.Error(codes.InvalidArgument, "example input cannot be empty")

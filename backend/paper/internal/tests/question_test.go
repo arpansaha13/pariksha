@@ -124,7 +124,7 @@ func TestCreateQuestion(t *testing.T) {
 				require.NoError(t, db.DB.First(&question, resp.Id).Error)
 
 				// Validate question data
-				assert.Equal(t, []byte(`{"statement":"Test MCQ","options":["A","B","C"]}`), question.Question)
+				assert.Equal(t, json.RawMessage(`{"statement":"Test MCQ","options":["A","B","C"]}`), question.Question)
 				assert.Equal(t, constants.QUESTION_TYPE_MCQ, question.Type)
 				assert.EqualValues(t, 5, question.MaxScore)
 
@@ -161,7 +161,7 @@ func TestCreateQuestion(t *testing.T) {
 				require.NoError(t, db.DB.First(&question, resp.Id).Error)
 
 				// Validate question data
-				assert.Equal(t, []byte(`{"statement":"Test Subjective Answer"}`), question.Question)
+				assert.Equal(t, json.RawMessage(`{"statement":"Test Subjective Answer"}`), question.Question)
 				assert.Equal(t, constants.QUESTION_TYPE_SUBJECTIVE, question.Type)
 				assert.EqualValues(t, 10, question.MaxScore)
 

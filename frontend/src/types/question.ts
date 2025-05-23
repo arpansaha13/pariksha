@@ -43,7 +43,7 @@ export interface BaseQuestion {
   tags: string[]
   paper_id: number
   max_score: number
-  correct_answer: string | null | undefined
+  correct_answer?: string
 }
 
 export interface QuestionMcq extends BaseQuestion {

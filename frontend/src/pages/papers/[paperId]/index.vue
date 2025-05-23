@@ -91,11 +91,16 @@
       v-model:form-data="editQuestionFormStates[currentQuestionId]!"
       @submit="onEditQuestionSubmit"
     />
-    <PaperQuestionMcq
-      v-else-if="question && question.type === QuestionType.MCQ"
-      :question="question.question"
-    />
-    <PaperQuestionNonMcq v-else-if="question" :question="question.question" />
+    <template v-else-if="question">
+      <PaperQuestionMcq
+        v-if="question.type === QuestionType.MCQ"
+        :question="question.question"
+      />
+      <PaperQuestionSubjective
+        v-else-if="question.type === QuestionType.SUBJECTIVE"
+        :question="question.question"
+      />
+    </template>
   </UCard>
 
   <UCard :ui="{ root: 'col-span-2', body: 'flex justify-between' }">
@@ -159,7 +164,6 @@ import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import { ConfirmModal, PaperQuestionForm } from '#components'
 import { QuestionId, QuestionType } from '~/types'
-import type { MergedQuestion } from '~/utils/api'
 
 definePageMeta({
   layout: 'paper',
@@ -220,7 +224,7 @@ const { data: question } = await usePaperQuestion(currentQuestionId)
 
 // ________________CREATE/EDIT QUESTION PREREQUISITES_______________
 const defaultCreateQuestionFormState: MergedQuestion = {
-  type: '',
+  type: '' as QuestionType,
   question: {
     title: '',
     statement: '',
@@ -229,7 +233,7 @@ const defaultCreateQuestionFormState: MergedQuestion = {
   },
   max_score: 0,
   tags: [],
-  correct_answer: '',
+  correct_answer: undefined,
 }
 
 // ___________UNSAVED COUNT FOR CHIPS ON CATEGORY LINKS___________
@@ -301,17 +305,17 @@ const editQuestionFormStates = reactive<Record<number, MergedQuestion | null>>(
 )
 
 function startQuestionEdit() {
-  if (!question.value || !currentQuestionId.value) return
-  if (currentQuestionId.value === QuestionId.ADD) return
+  const qid = currentQuestionId.value
+  if (!question.value || !qid) return
+  if (qid === QuestionId.ADD) return
 
   // Create form state for editing if it doesn't exist
-  if (isNullOrUndefined(editQuestionFormStates[currentQuestionId.value])) {
-    editQuestionFormStates[currentQuestionId.value] = defu(
+  if (isNullOrUndefined(editQuestionFormStates[qid])) {
+    editQuestionFormStates[qid] = defu(
       {
         type: question.value.type,
         max_score: question.value.max_score,
         tags: [...question.value.tags],
-        correct_answer: question.value.correct_answer ?? undefined,
         question: {
           statement: question.value.question.statement,
         },
@@ -319,8 +323,12 @@ function startQuestionEdit() {
       defaultCreateQuestionFormState
     )
 
+    // defu adds a null type to correct_answer causing ts-error
+    // add correct_answer separately
+    editQuestionFormStates[qid].correct_answer = question.value.correct_answer
+
     // Parse and populate question data based on type
-    const formState = editQuestionFormStates[currentQuestionId.value]!.question
+    const formState = editQuestionFormStates[qid]!.question
     const qType = question.value.type
 
     if (qType === QuestionType.MCQ) {

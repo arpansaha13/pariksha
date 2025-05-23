@@ -2,19 +2,8 @@ import { QuestionType, type Question } from '~/types'
 
 interface UsePaperAutoCancelQuestionEditArgs {
   question: Ref<Question | null>
-  editQuestionFormStates: Record<number, QuestionFormState | null>
+  editQuestionFormStates: Record<number, MergedQuestion | null>
   decUnsavedCount: (categoryId: number) => void
-}
-
-type QuestionFormState = {
-  type: QuestionType
-  question: {
-    statement: string
-    options: string[]
-  }
-  max_score: number
-  tags: string[]
-  correct_answer: string | null | undefined
 }
 
 export function usePaperAutoCancelQuestionEdit(
@@ -24,7 +13,7 @@ export function usePaperAutoCancelQuestionEdit(
 
   function isEditFormStateDirty(
     oldQuestion: Question,
-    formState: QuestionFormState
+    formState: MergedQuestion
   ): boolean {
     if (!oldQuestion || !formState) return false
 
