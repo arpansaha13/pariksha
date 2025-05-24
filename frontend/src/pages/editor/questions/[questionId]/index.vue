@@ -1,5 +1,28 @@
 <template>
-  <main class="h-screen w-screen px-4 py-2">
+  <main class="flex h-screen w-screen flex-col gap-2 px-4 py-2">
+    <div class="grid grid-cols-3 gap-4">
+      <div>
+        <UButton
+          label="Back"
+          icon="i-heroicons-arrow-uturn-left"
+          color="neutral"
+          variant="soft"
+          :to="backButtonPath"
+        />
+      </div>
+
+      <div class="flex justify-center gap-2">
+        <UButton
+          label="Run"
+          icon="heroicons:play"
+          color="neutral"
+          variant="soft"
+        />
+
+        <UButton label="Save" icon="heroicons:cloud-arrow-up" variant="soft" />
+      </div>
+    </div>
+
     <ClientOnly>
       <SplitterGroup
         id="splitter-group-1"
@@ -46,6 +69,7 @@
               v-if="editorStore.isEditorPrepared"
               v-model="value"
               :lang="editorLang"
+              :options="editorStore.getEditorOptions"
               class="h-full"
             />
           </UCard>
@@ -60,17 +84,27 @@ import { isNullOrUndefined } from '@arpansaha13/utils'
 
 definePageMeta({
   layout: 'blank',
+  middleware: 'store-previous-path',
 })
 
 const route = useRoute()
 const questionId = parseInt(route.params.questionId as string) as QuestionId
 
-const editorStore = useEditorStore()
 const {
   data: questionData,
   error: questionError,
   status: questionStatus,
 } = await usePaperQuestion(questionId)
+
+const previousPath = useState(UseStateKeys.PreviousPath)
+
+const backButtonPath = computed(() => {
+  if (previousPath.value) return previousPath.value
+  if (isNullOrUndefined(questionData.value)) return undefined
+  return `/papers/${questionData.value.paper_id}`
+})
+
+const editorStore = useEditorStore()
 
 await callOnce(
   () => {

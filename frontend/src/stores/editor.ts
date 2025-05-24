@@ -1,15 +1,23 @@
 import { shikiToMonaco } from '@shikijs/monaco'
 import { defineStore, skipHydrate } from 'pinia'
 import { createHighlighter } from 'shiki'
+import type { editor } from 'monaco-editor'
 
 export const useEditorStore = defineStore('editor', {
   // Create the highlighter, it can be reused
-  state: () =>
-    skipHydrate({
+  state: () => ({
+    ...skipHydrate({
       highlighter: null as Awaited<ReturnType<typeof createHighlighter>> | null,
-      isEditorPrepared: false,
     }),
 
+    isEditorPrepared: false,
+  }),
+  getters: {
+    getEditorOptions: (): editor.IStandaloneEditorConstructionOptions => ({
+      minimap: { enabled: false },
+      fontFamily: `'Fira Code', 'Cascadia Code', 'Monaco'`,
+    }),
+  },
   actions: {
     async createEditorHighlighter() {
       if (import.meta.server) {

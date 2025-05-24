@@ -46,6 +46,10 @@ export enum HttpStatus {
   INTERNAL_SERVER_ERROR = 500,
 }
 
+export enum UseStateKeys {
+  PreviousPath = 'previous-path',
+}
+
 export const AsyncDataKeys = {
   PAPERS: 'PAPERS',
   PAPERS_PAPER: (paperId: PaperId) => `PAPERS_PAPER_${paperId}`,
