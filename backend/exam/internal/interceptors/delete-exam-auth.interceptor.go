@@ -14,7 +14,7 @@ import (
 )
 
 var deleteExamShouldIntercept = map[string]bool{
-	"/proto.ExamService/DeleteExams": true,
+	"/proto.Exam/DeleteExams": true,
 }
 
 // DeleteExamsAuthInterceptor checks if user has WRITE permissions for all exams being deleted

@@ -29,7 +29,7 @@ func main() {
 			interceptors.EndExamInterceptor(),
 		),
 	)
-	proto.RegisterExamServiceServer(grpcServer, &handlers.ExamServer{})
+	proto.RegisterExamServer(grpcServer, &handlers.ExamServer{})
 
 	log.Printf("Exam gRPC server is running on port %s\n", port)
 	if err := grpcServer.Serve(lis); err != nil {

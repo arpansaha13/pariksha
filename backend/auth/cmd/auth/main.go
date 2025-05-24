@@ -23,7 +23,7 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer()
-	proto.RegisterAuthServiceServer(grpcServer, &handlers.AuthServer{})
+	proto.RegisterAuthServer(grpcServer, &handlers.AuthServer{})
 
 	log.Printf("Auth gRPC server is running on port %s\n", port)
 	if err := grpcServer.Serve(lis); err != nil {

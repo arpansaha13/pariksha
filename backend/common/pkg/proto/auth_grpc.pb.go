@@ -19,24 +19,24 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_LoginWithPassword_FullMethodName    = "/proto.AuthService/LoginWithPassword"
-	AuthService_InitiateLoginWithOtp_FullMethodName = "/proto.AuthService/InitiateLoginWithOtp"
-	AuthService_VerifyLoginOtp_FullMethodName       = "/proto.AuthService/VerifyLoginOtp"
-	AuthService_SignUp_FullMethodName               = "/proto.AuthService/SignUp"
-	AuthService_VerifySignup_FullMethodName         = "/proto.AuthService/VerifySignup"
-	AuthService_ForgotPassword_FullMethodName       = "/proto.AuthService/ForgotPassword"
-	AuthService_ResetPassword_FullMethodName        = "/proto.AuthService/ResetPassword"
-	AuthService_Authenticate_FullMethodName         = "/proto.AuthService/Authenticate"
-	AuthService_GetUser_FullMethodName              = "/proto.AuthService/GetUser"
-	AuthService_UpdateUser_FullMethodName           = "/proto.AuthService/UpdateUser"
-	AuthService_UpsertUser_FullMethodName           = "/proto.AuthService/UpsertUser"
-	AuthService_Logout_FullMethodName               = "/proto.AuthService/Logout"
+	Auth_LoginWithPassword_FullMethodName    = "/proto.Auth/LoginWithPassword"
+	Auth_InitiateLoginWithOtp_FullMethodName = "/proto.Auth/InitiateLoginWithOtp"
+	Auth_VerifyLoginOtp_FullMethodName       = "/proto.Auth/VerifyLoginOtp"
+	Auth_SignUp_FullMethodName               = "/proto.Auth/SignUp"
+	Auth_VerifySignup_FullMethodName         = "/proto.Auth/VerifySignup"
+	Auth_ForgotPassword_FullMethodName       = "/proto.Auth/ForgotPassword"
+	Auth_ResetPassword_FullMethodName        = "/proto.Auth/ResetPassword"
+	Auth_Authenticate_FullMethodName         = "/proto.Auth/Authenticate"
+	Auth_GetUser_FullMethodName              = "/proto.Auth/GetUser"
+	Auth_UpdateUser_FullMethodName           = "/proto.Auth/UpdateUser"
+	Auth_UpsertUser_FullMethodName           = "/proto.Auth/UpsertUser"
+	Auth_Logout_FullMethodName               = "/proto.Auth/Logout"
 )
 
-// AuthServiceClient is the client API for AuthService service.
+// AuthClient is the client API for Auth service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type AuthServiceClient interface {
+type AuthClient interface {
 	// Login with password
 	LoginWithPassword(ctx context.Context, in *LoginWithPasswordRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	// Login with OTP flow
@@ -58,138 +58,138 @@ type AuthServiceClient interface {
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
-type authServiceClient struct {
+type authClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewAuthServiceClient(cc grpc.ClientConnInterface) AuthServiceClient {
-	return &authServiceClient{cc}
+func NewAuthClient(cc grpc.ClientConnInterface) AuthClient {
+	return &authClient{cc}
 }
 
-func (c *authServiceClient) LoginWithPassword(ctx context.Context, in *LoginWithPasswordRequest, opts ...grpc.CallOption) (*UserResponse, error) {
+func (c *authClient) LoginWithPassword(ctx context.Context, in *LoginWithPasswordRequest, opts ...grpc.CallOption) (*UserResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UserResponse)
-	err := c.cc.Invoke(ctx, AuthService_LoginWithPassword_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Auth_LoginWithPassword_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) InitiateLoginWithOtp(ctx context.Context, in *LoginWithOtpRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *authClient) InitiateLoginWithOtp(ctx context.Context, in *LoginWithOtpRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, AuthService_InitiateLoginWithOtp_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Auth_InitiateLoginWithOtp_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) VerifyLoginOtp(ctx context.Context, in *VerificationRequest, opts ...grpc.CallOption) (*UserResponse, error) {
+func (c *authClient) VerifyLoginOtp(ctx context.Context, in *VerificationRequest, opts ...grpc.CallOption) (*UserResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UserResponse)
-	err := c.cc.Invoke(ctx, AuthService_VerifyLoginOtp_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Auth_VerifyLoginOtp_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) SignUp(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *authClient) SignUp(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, AuthService_SignUp_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Auth_SignUp_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) VerifySignup(ctx context.Context, in *VerificationRequest, opts ...grpc.CallOption) (*UserResponse, error) {
+func (c *authClient) VerifySignup(ctx context.Context, in *VerificationRequest, opts ...grpc.CallOption) (*UserResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UserResponse)
-	err := c.cc.Invoke(ctx, AuthService_VerifySignup_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Auth_VerifySignup_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *authClient) ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, AuthService_ForgotPassword_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Auth_ForgotPassword_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *authClient) ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, AuthService_ResetPassword_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Auth_ResetPassword_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) Authenticate(ctx context.Context, in *AuthenticateRequest, opts ...grpc.CallOption) (*AuthenticateResponse, error) {
+func (c *authClient) Authenticate(ctx context.Context, in *AuthenticateRequest, opts ...grpc.CallOption) (*AuthenticateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AuthenticateResponse)
-	err := c.cc.Invoke(ctx, AuthService_Authenticate_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Auth_Authenticate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*UserProfileResponse, error) {
+func (c *authClient) GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*UserProfileResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UserProfileResponse)
-	err := c.cc.Invoke(ctx, AuthService_GetUser_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Auth_GetUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UpdateUserResponse, error) {
+func (c *authClient) UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UpdateUserResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateUserResponse)
-	err := c.cc.Invoke(ctx, AuthService_UpdateUser_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Auth_UpdateUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) UpsertUser(ctx context.Context, in *UpsertUserRequest, opts ...grpc.CallOption) (*UserProfileResponse, error) {
+func (c *authClient) UpsertUser(ctx context.Context, in *UpsertUserRequest, opts ...grpc.CallOption) (*UserProfileResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UserProfileResponse)
-	err := c.cc.Invoke(ctx, AuthService_UpsertUser_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Auth_UpsertUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *authClient) Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, AuthService_Logout_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Auth_Logout_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// AuthServiceServer is the server API for AuthService service.
-// All implementations must embed UnimplementedAuthServiceServer
+// AuthServer is the server API for Auth service.
+// All implementations must embed UnimplementedAuthServer
 // for forward compatibility.
-type AuthServiceServer interface {
+type AuthServer interface {
 	// Login with password
 	LoginWithPassword(context.Context, *LoginWithPasswordRequest) (*UserResponse, error)
 	// Login with OTP flow
@@ -209,343 +209,343 @@ type AuthServiceServer interface {
 	UpsertUser(context.Context, *UpsertUserRequest) (*UserProfileResponse, error)
 	// Logout invalidates the current session
 	Logout(context.Context, *LogoutRequest) (*Empty, error)
-	mustEmbedUnimplementedAuthServiceServer()
+	mustEmbedUnimplementedAuthServer()
 }
 
-// UnimplementedAuthServiceServer must be embedded to have
+// UnimplementedAuthServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedAuthServiceServer struct{}
+type UnimplementedAuthServer struct{}
 
-func (UnimplementedAuthServiceServer) LoginWithPassword(context.Context, *LoginWithPasswordRequest) (*UserResponse, error) {
+func (UnimplementedAuthServer) LoginWithPassword(context.Context, *LoginWithPasswordRequest) (*UserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginWithPassword not implemented")
 }
-func (UnimplementedAuthServiceServer) InitiateLoginWithOtp(context.Context, *LoginWithOtpRequest) (*Empty, error) {
+func (UnimplementedAuthServer) InitiateLoginWithOtp(context.Context, *LoginWithOtpRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InitiateLoginWithOtp not implemented")
 }
-func (UnimplementedAuthServiceServer) VerifyLoginOtp(context.Context, *VerificationRequest) (*UserResponse, error) {
+func (UnimplementedAuthServer) VerifyLoginOtp(context.Context, *VerificationRequest) (*UserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyLoginOtp not implemented")
 }
-func (UnimplementedAuthServiceServer) SignUp(context.Context, *SignUpRequest) (*Empty, error) {
+func (UnimplementedAuthServer) SignUp(context.Context, *SignUpRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SignUp not implemented")
 }
-func (UnimplementedAuthServiceServer) VerifySignup(context.Context, *VerificationRequest) (*UserResponse, error) {
+func (UnimplementedAuthServer) VerifySignup(context.Context, *VerificationRequest) (*UserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifySignup not implemented")
 }
-func (UnimplementedAuthServiceServer) ForgotPassword(context.Context, *ForgotPasswordRequest) (*Empty, error) {
+func (UnimplementedAuthServer) ForgotPassword(context.Context, *ForgotPasswordRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ForgotPassword not implemented")
 }
-func (UnimplementedAuthServiceServer) ResetPassword(context.Context, *ResetPasswordRequest) (*Empty, error) {
+func (UnimplementedAuthServer) ResetPassword(context.Context, *ResetPasswordRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResetPassword not implemented")
 }
-func (UnimplementedAuthServiceServer) Authenticate(context.Context, *AuthenticateRequest) (*AuthenticateResponse, error) {
+func (UnimplementedAuthServer) Authenticate(context.Context, *AuthenticateRequest) (*AuthenticateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Authenticate not implemented")
 }
-func (UnimplementedAuthServiceServer) GetUser(context.Context, *GetUserRequest) (*UserProfileResponse, error) {
+func (UnimplementedAuthServer) GetUser(context.Context, *GetUserRequest) (*UserProfileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUser not implemented")
 }
-func (UnimplementedAuthServiceServer) UpdateUser(context.Context, *UpdateUserRequest) (*UpdateUserResponse, error) {
+func (UnimplementedAuthServer) UpdateUser(context.Context, *UpdateUserRequest) (*UpdateUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUser not implemented")
 }
-func (UnimplementedAuthServiceServer) UpsertUser(context.Context, *UpsertUserRequest) (*UserProfileResponse, error) {
+func (UnimplementedAuthServer) UpsertUser(context.Context, *UpsertUserRequest) (*UserProfileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpsertUser not implemented")
 }
-func (UnimplementedAuthServiceServer) Logout(context.Context, *LogoutRequest) (*Empty, error) {
+func (UnimplementedAuthServer) Logout(context.Context, *LogoutRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
 }
-func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
-func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
+func (UnimplementedAuthServer) mustEmbedUnimplementedAuthServer() {}
+func (UnimplementedAuthServer) testEmbeddedByValue()              {}
 
-// UnsafeAuthServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to AuthServiceServer will
+// UnsafeAuthServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AuthServer will
 // result in compilation errors.
-type UnsafeAuthServiceServer interface {
-	mustEmbedUnimplementedAuthServiceServer()
+type UnsafeAuthServer interface {
+	mustEmbedUnimplementedAuthServer()
 }
 
-func RegisterAuthServiceServer(s grpc.ServiceRegistrar, srv AuthServiceServer) {
-	// If the following call pancis, it indicates UnimplementedAuthServiceServer was
+func RegisterAuthServer(s grpc.ServiceRegistrar, srv AuthServer) {
+	// If the following call pancis, it indicates UnimplementedAuthServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&AuthService_ServiceDesc, srv)
+	s.RegisterService(&Auth_ServiceDesc, srv)
 }
 
-func _AuthService_LoginWithPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auth_LoginWithPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LoginWithPasswordRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).LoginWithPassword(ctx, in)
+		return srv.(AuthServer).LoginWithPassword(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_LoginWithPassword_FullMethodName,
+		FullMethod: Auth_LoginWithPassword_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).LoginWithPassword(ctx, req.(*LoginWithPasswordRequest))
+		return srv.(AuthServer).LoginWithPassword(ctx, req.(*LoginWithPasswordRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_InitiateLoginWithOtp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auth_InitiateLoginWithOtp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LoginWithOtpRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).InitiateLoginWithOtp(ctx, in)
+		return srv.(AuthServer).InitiateLoginWithOtp(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_InitiateLoginWithOtp_FullMethodName,
+		FullMethod: Auth_InitiateLoginWithOtp_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).InitiateLoginWithOtp(ctx, req.(*LoginWithOtpRequest))
+		return srv.(AuthServer).InitiateLoginWithOtp(ctx, req.(*LoginWithOtpRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_VerifyLoginOtp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auth_VerifyLoginOtp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(VerificationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).VerifyLoginOtp(ctx, in)
+		return srv.(AuthServer).VerifyLoginOtp(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_VerifyLoginOtp_FullMethodName,
+		FullMethod: Auth_VerifyLoginOtp_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).VerifyLoginOtp(ctx, req.(*VerificationRequest))
+		return srv.(AuthServer).VerifyLoginOtp(ctx, req.(*VerificationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_SignUp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auth_SignUp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SignUpRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).SignUp(ctx, in)
+		return srv.(AuthServer).SignUp(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_SignUp_FullMethodName,
+		FullMethod: Auth_SignUp_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).SignUp(ctx, req.(*SignUpRequest))
+		return srv.(AuthServer).SignUp(ctx, req.(*SignUpRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_VerifySignup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auth_VerifySignup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(VerificationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).VerifySignup(ctx, in)
+		return srv.(AuthServer).VerifySignup(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_VerifySignup_FullMethodName,
+		FullMethod: Auth_VerifySignup_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).VerifySignup(ctx, req.(*VerificationRequest))
+		return srv.(AuthServer).VerifySignup(ctx, req.(*VerificationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_ForgotPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auth_ForgotPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ForgotPasswordRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).ForgotPassword(ctx, in)
+		return srv.(AuthServer).ForgotPassword(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_ForgotPassword_FullMethodName,
+		FullMethod: Auth_ForgotPassword_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).ForgotPassword(ctx, req.(*ForgotPasswordRequest))
+		return srv.(AuthServer).ForgotPassword(ctx, req.(*ForgotPasswordRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_ResetPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auth_ResetPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResetPasswordRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).ResetPassword(ctx, in)
+		return srv.(AuthServer).ResetPassword(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_ResetPassword_FullMethodName,
+		FullMethod: Auth_ResetPassword_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).ResetPassword(ctx, req.(*ResetPasswordRequest))
+		return srv.(AuthServer).ResetPassword(ctx, req.(*ResetPasswordRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_Authenticate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auth_Authenticate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AuthenticateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).Authenticate(ctx, in)
+		return srv.(AuthServer).Authenticate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_Authenticate_FullMethodName,
+		FullMethod: Auth_Authenticate_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).Authenticate(ctx, req.(*AuthenticateRequest))
+		return srv.(AuthServer).Authenticate(ctx, req.(*AuthenticateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_GetUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auth_GetUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetUserRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).GetUser(ctx, in)
+		return srv.(AuthServer).GetUser(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_GetUser_FullMethodName,
+		FullMethod: Auth_GetUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).GetUser(ctx, req.(*GetUserRequest))
+		return srv.(AuthServer).GetUser(ctx, req.(*GetUserRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_UpdateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auth_UpdateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateUserRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).UpdateUser(ctx, in)
+		return srv.(AuthServer).UpdateUser(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_UpdateUser_FullMethodName,
+		FullMethod: Auth_UpdateUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).UpdateUser(ctx, req.(*UpdateUserRequest))
+		return srv.(AuthServer).UpdateUser(ctx, req.(*UpdateUserRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_UpsertUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auth_UpsertUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpsertUserRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).UpsertUser(ctx, in)
+		return srv.(AuthServer).UpsertUser(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_UpsertUser_FullMethodName,
+		FullMethod: Auth_UpsertUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).UpsertUser(ctx, req.(*UpsertUserRequest))
+		return srv.(AuthServer).UpsertUser(ctx, req.(*UpsertUserRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auth_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LogoutRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).Logout(ctx, in)
+		return srv.(AuthServer).Logout(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_Logout_FullMethodName,
+		FullMethod: Auth_Logout_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).Logout(ctx, req.(*LogoutRequest))
+		return srv.(AuthServer).Logout(ctx, req.(*LogoutRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
+// Auth_ServiceDesc is the grpc.ServiceDesc for Auth service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var AuthService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.AuthService",
-	HandlerType: (*AuthServiceServer)(nil),
+var Auth_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.Auth",
+	HandlerType: (*AuthServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "LoginWithPassword",
-			Handler:    _AuthService_LoginWithPassword_Handler,
+			Handler:    _Auth_LoginWithPassword_Handler,
 		},
 		{
 			MethodName: "InitiateLoginWithOtp",
-			Handler:    _AuthService_InitiateLoginWithOtp_Handler,
+			Handler:    _Auth_InitiateLoginWithOtp_Handler,
 		},
 		{
 			MethodName: "VerifyLoginOtp",
-			Handler:    _AuthService_VerifyLoginOtp_Handler,
+			Handler:    _Auth_VerifyLoginOtp_Handler,
 		},
 		{
 			MethodName: "SignUp",
-			Handler:    _AuthService_SignUp_Handler,
+			Handler:    _Auth_SignUp_Handler,
 		},
 		{
 			MethodName: "VerifySignup",
-			Handler:    _AuthService_VerifySignup_Handler,
+			Handler:    _Auth_VerifySignup_Handler,
 		},
 		{
 			MethodName: "ForgotPassword",
-			Handler:    _AuthService_ForgotPassword_Handler,
+			Handler:    _Auth_ForgotPassword_Handler,
 		},
 		{
 			MethodName: "ResetPassword",
-			Handler:    _AuthService_ResetPassword_Handler,
+			Handler:    _Auth_ResetPassword_Handler,
 		},
 		{
 			MethodName: "Authenticate",
-			Handler:    _AuthService_Authenticate_Handler,
+			Handler:    _Auth_Authenticate_Handler,
 		},
 		{
 			MethodName: "GetUser",
-			Handler:    _AuthService_GetUser_Handler,
+			Handler:    _Auth_GetUser_Handler,
 		},
 		{
 			MethodName: "UpdateUser",
-			Handler:    _AuthService_UpdateUser_Handler,
+			Handler:    _Auth_UpdateUser_Handler,
 		},
 		{
 			MethodName: "UpsertUser",
-			Handler:    _AuthService_UpsertUser_Handler,
+			Handler:    _Auth_UpsertUser_Handler,
 		},
 		{
 			MethodName: "Logout",
-			Handler:    _AuthService_Logout_Handler,
+			Handler:    _Auth_Logout_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

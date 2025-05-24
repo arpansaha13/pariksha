@@ -87,7 +87,6 @@ func examToProto(exam *models.Exam) (*proto.ExamResponse, error) {
 		MaxCandidatesCount: exam.MaxCandidatesCount,
 		MaxScore:           exam.MaxScore,
 		DurationMinutes:    int32(exam.DurationMinutes),
-		PaperId:            exam.PaperID,
 		ParticipantCounts: &proto.ParticipantCount{
 			Unattended: int32(counts.Unattended),
 			Invited:    int32(counts.Invited),

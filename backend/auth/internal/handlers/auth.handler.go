@@ -27,7 +27,7 @@ import (
 )
 
 type AuthServer struct {
-	proto.UnimplementedAuthServiceServer
+	proto.UnimplementedAuthServer
 }
 
 func generateUniqueUsername(tx *gorm.DB, emailPrefix string) (string, error) {

@@ -21,7 +21,7 @@ import (
 )
 
 type ExamServer struct {
-	proto.UnimplementedExamServiceServer
+	proto.UnimplementedExamServer
 }
 
 // GetUserExams retrieves all exams created by or participated in by the authenticated user

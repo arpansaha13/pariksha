@@ -21,7 +21,7 @@ var (
 )
 
 type ExamService struct {
-	client proto.ExamServiceClient
+	client proto.ExamClient
 	conn   *grpc.ClientConn
 }
 
@@ -41,7 +41,7 @@ func (s *ExamService) connect() {
 	}
 
 	s.conn = conn
-	s.client = proto.NewExamServiceClient(conn)
+	s.client = proto.NewExamClient(conn)
 }
 
 func (s *ExamService) Close() error {
@@ -55,7 +55,7 @@ func init() {
 	GetExamService()
 }
 
-func (s *ExamService) Client() proto.ExamServiceClient {
+func (s *ExamService) Client() proto.ExamClient {
 	return s.client
 }
 

@@ -7,14 +7,7 @@ option go_package = "/proto";
 import "common.proto";
 import "user.proto";
 
-// Common error response structure
-message ErrorResponse {
-  int32 code = 1;        // HTTP status code
-  string message = 2;    // Error message
-  string details = 3;    // Optional additional error details
-}
-
-service AuthService {
+service Auth {
   // Login with password
   rpc LoginWithPassword(LoginWithPasswordRequest) returns (UserResponse) {
     // Possible errors:

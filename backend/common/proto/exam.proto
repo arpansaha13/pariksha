@@ -7,7 +7,7 @@ option go_package = "/proto";
 import "google/protobuf/timestamp.proto";
 import "common.proto";
 
-service ExamService {
+service Exam {
   // Exam operations
   rpc GetUserExams(Empty) returns (ExamList) {}
   rpc CreateExam(CreateExamRequest) returns (ExamResponse) {}

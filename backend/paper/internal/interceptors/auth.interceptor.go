@@ -19,22 +19,22 @@ type QuestionCtxKey struct{}
 type PermissionsCtxKey struct{}
 
 var requiresRead = map[string]bool{
-	"/proto.PaperService/GetPaper":            true,
-	"/proto.PaperService/GetPaperCategories":  true,
-	"/proto.PaperService/GetPaperQuestions":   true,
-	"/proto.PaperService/GetPaperQuestion":    true,
-	"/proto.PaperService/GetPaperPermissions": true,
+	"/proto.Paper/GetPaper":            true,
+	"/proto.Paper/GetPaperCategories":  true,
+	"/proto.Paper/GetPaperQuestions":   true,
+	"/proto.Paper/GetPaperQuestion":    true,
+	"/proto.Paper/GetPaperPermissions": true,
 }
 
 var requiresWrite = map[string]bool{
-	"/proto.PaperService/UpdatePaper":       true,
-	"/proto.PaperService/CreateCategory":    true,
-	"/proto.PaperService/UpdateCategory":    true,
-	"/proto.PaperService/DeleteCategory":    true,
-	"/proto.PaperService/ReorderCategories": true,
-	"/proto.PaperService/UpdateQuestion":    true,
-	"/proto.PaperService/DeleteQuestion":    true,
-	"/proto.PaperService/CreateQuestion":    true,
+	"/proto.Paper/UpdatePaper":       true,
+	"/proto.Paper/CreateCategory":    true,
+	"/proto.Paper/UpdateCategory":    true,
+	"/proto.Paper/DeleteCategory":    true,
+	"/proto.Paper/ReorderCategories": true,
+	"/proto.Paper/UpdateQuestion":    true,
+	"/proto.Paper/DeleteQuestion":    true,
+	"/proto.Paper/CreateQuestion":    true,
 }
 
 func PaperAuthInterceptor() grpc.UnaryServerInterceptor {

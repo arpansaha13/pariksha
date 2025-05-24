@@ -16,7 +16,7 @@ import (
 )
 
 type PaperServer struct {
-	proto.UnimplementedPaperServiceServer
+	proto.UnimplementedPaperServer
 }
 
 func (s *PaperServer) GetUserPapers(ctx context.Context, _ *proto.Empty) (*proto.PaperList, error) {

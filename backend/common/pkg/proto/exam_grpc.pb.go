@@ -19,35 +19,35 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ExamService_GetUserExams_FullMethodName               = "/proto.ExamService/GetUserExams"
-	ExamService_CreateExam_FullMethodName                 = "/proto.ExamService/CreateExam"
-	ExamService_UpdateExam_FullMethodName                 = "/proto.ExamService/UpdateExam"
-	ExamService_GetExam_FullMethodName                    = "/proto.ExamService/GetExam"
-	ExamService_GetExamQuestions_FullMethodName           = "/proto.ExamService/GetExamQuestions"
-	ExamService_GetExamCategories_FullMethodName          = "/proto.ExamService/GetExamCategories"
-	ExamService_GetExamPermission_FullMethodName          = "/proto.ExamService/GetExamPermission"
-	ExamService_DeleteExams_FullMethodName                = "/proto.ExamService/DeleteExams"
-	ExamService_GetExamResults_FullMethodName             = "/proto.ExamService/GetExamResults"
-	ExamService_GetExamParticipants_FullMethodName        = "/proto.ExamService/GetExamParticipants"
-	ExamService_AddExamParticipant_FullMethodName         = "/proto.ExamService/AddExamParticipant"
-	ExamService_RemoveExamParticipant_FullMethodName      = "/proto.ExamService/RemoveExamParticipant"
-	ExamService_StartExam_FullMethodName                  = "/proto.ExamService/StartExam"
-	ExamService_EndExam_FullMethodName                    = "/proto.ExamService/EndExam"
-	ExamService_GetExamParticipant_FullMethodName         = "/proto.ExamService/GetExamParticipant"
-	ExamService_GetParticipantById_FullMethodName         = "/proto.ExamService/GetParticipantById"
-	ExamService_GetParticipantAnswers_FullMethodName      = "/proto.ExamService/GetParticipantAnswers"
-	ExamService_GetAnswerForExam_FullMethodName           = "/proto.ExamService/GetAnswerForExam"
-	ExamService_UpsertAnswer_FullMethodName               = "/proto.ExamService/UpsertAnswer"
-	ExamService_GetAnswerEvaluationData_FullMethodName    = "/proto.ExamService/GetAnswerEvaluationData"
-	ExamService_UpdateAnswerForEvaluation_FullMethodName  = "/proto.ExamService/UpdateAnswerForEvaluation"
-	ExamService_MarkParticipantAsEvaluated_FullMethodName = "/proto.ExamService/MarkParticipantAsEvaluated"
-	ExamService_GetAnswerForEvaluation_FullMethodName     = "/proto.ExamService/GetAnswerForEvaluation"
+	Exam_GetUserExams_FullMethodName               = "/proto.Exam/GetUserExams"
+	Exam_CreateExam_FullMethodName                 = "/proto.Exam/CreateExam"
+	Exam_UpdateExam_FullMethodName                 = "/proto.Exam/UpdateExam"
+	Exam_GetExam_FullMethodName                    = "/proto.Exam/GetExam"
+	Exam_GetExamQuestions_FullMethodName           = "/proto.Exam/GetExamQuestions"
+	Exam_GetExamCategories_FullMethodName          = "/proto.Exam/GetExamCategories"
+	Exam_GetExamPermission_FullMethodName          = "/proto.Exam/GetExamPermission"
+	Exam_DeleteExams_FullMethodName                = "/proto.Exam/DeleteExams"
+	Exam_GetExamResults_FullMethodName             = "/proto.Exam/GetExamResults"
+	Exam_GetExamParticipants_FullMethodName        = "/proto.Exam/GetExamParticipants"
+	Exam_AddExamParticipant_FullMethodName         = "/proto.Exam/AddExamParticipant"
+	Exam_RemoveExamParticipant_FullMethodName      = "/proto.Exam/RemoveExamParticipant"
+	Exam_StartExam_FullMethodName                  = "/proto.Exam/StartExam"
+	Exam_EndExam_FullMethodName                    = "/proto.Exam/EndExam"
+	Exam_GetExamParticipant_FullMethodName         = "/proto.Exam/GetExamParticipant"
+	Exam_GetParticipantById_FullMethodName         = "/proto.Exam/GetParticipantById"
+	Exam_GetParticipantAnswers_FullMethodName      = "/proto.Exam/GetParticipantAnswers"
+	Exam_GetAnswerForExam_FullMethodName           = "/proto.Exam/GetAnswerForExam"
+	Exam_UpsertAnswer_FullMethodName               = "/proto.Exam/UpsertAnswer"
+	Exam_GetAnswerEvaluationData_FullMethodName    = "/proto.Exam/GetAnswerEvaluationData"
+	Exam_UpdateAnswerForEvaluation_FullMethodName  = "/proto.Exam/UpdateAnswerForEvaluation"
+	Exam_MarkParticipantAsEvaluated_FullMethodName = "/proto.Exam/MarkParticipantAsEvaluated"
+	Exam_GetAnswerForEvaluation_FullMethodName     = "/proto.Exam/GetAnswerForEvaluation"
 )
 
-// ExamServiceClient is the client API for ExamService service.
+// ExamClient is the client API for Exam service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type ExamServiceClient interface {
+type ExamClient interface {
 	// Exam operations
 	GetUserExams(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ExamList, error)
 	CreateExam(ctx context.Context, in *CreateExamRequest, opts ...grpc.CallOption) (*ExamResponse, error)
@@ -77,248 +77,248 @@ type ExamServiceClient interface {
 	GetAnswerForEvaluation(ctx context.Context, in *ParticipantQuestionRequest, opts ...grpc.CallOption) (*AnswerMinimalResponse, error)
 }
 
-type examServiceClient struct {
+type examClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewExamServiceClient(cc grpc.ClientConnInterface) ExamServiceClient {
-	return &examServiceClient{cc}
+func NewExamClient(cc grpc.ClientConnInterface) ExamClient {
+	return &examClient{cc}
 }
 
-func (c *examServiceClient) GetUserExams(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ExamList, error) {
+func (c *examClient) GetUserExams(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ExamList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExamList)
-	err := c.cc.Invoke(ctx, ExamService_GetUserExams_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_GetUserExams_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) CreateExam(ctx context.Context, in *CreateExamRequest, opts ...grpc.CallOption) (*ExamResponse, error) {
+func (c *examClient) CreateExam(ctx context.Context, in *CreateExamRequest, opts ...grpc.CallOption) (*ExamResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExamResponse)
-	err := c.cc.Invoke(ctx, ExamService_CreateExam_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_CreateExam_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) UpdateExam(ctx context.Context, in *UpdateExamRequest, opts ...grpc.CallOption) (*ExamResponse, error) {
+func (c *examClient) UpdateExam(ctx context.Context, in *UpdateExamRequest, opts ...grpc.CallOption) (*ExamResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExamResponse)
-	err := c.cc.Invoke(ctx, ExamService_UpdateExam_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_UpdateExam_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) GetExam(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamResponse, error) {
+func (c *examClient) GetExam(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExamResponse)
-	err := c.cc.Invoke(ctx, ExamService_GetExam_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_GetExam_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) GetExamQuestions(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamQuestionsResponse, error) {
+func (c *examClient) GetExamQuestions(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamQuestionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExamQuestionsResponse)
-	err := c.cc.Invoke(ctx, ExamService_GetExamQuestions_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_GetExamQuestions_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) GetExamCategories(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamCategoriesResponse, error) {
+func (c *examClient) GetExamCategories(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamCategoriesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExamCategoriesResponse)
-	err := c.cc.Invoke(ctx, ExamService_GetExamCategories_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_GetExamCategories_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) GetExamPermission(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamPermissionResponse, error) {
+func (c *examClient) GetExamPermission(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamPermissionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExamPermissionResponse)
-	err := c.cc.Invoke(ctx, ExamService_GetExamPermission_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_GetExamPermission_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) DeleteExams(ctx context.Context, in *DeleteExamsRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *examClient) DeleteExams(ctx context.Context, in *DeleteExamsRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, ExamService_DeleteExams_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_DeleteExams_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) GetExamResults(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamResultsResponse, error) {
+func (c *examClient) GetExamResults(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamResultsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExamResultsResponse)
-	err := c.cc.Invoke(ctx, ExamService_GetExamResults_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_GetExamResults_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) GetExamParticipants(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ParticipantList, error) {
+func (c *examClient) GetExamParticipants(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ParticipantList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ParticipantList)
-	err := c.cc.Invoke(ctx, ExamService_GetExamParticipants_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_GetExamParticipants_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) AddExamParticipant(ctx context.Context, in *AddParticipantRequest, opts ...grpc.CallOption) (*ParticipantResponse, error) {
+func (c *examClient) AddExamParticipant(ctx context.Context, in *AddParticipantRequest, opts ...grpc.CallOption) (*ParticipantResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ParticipantResponse)
-	err := c.cc.Invoke(ctx, ExamService_AddExamParticipant_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_AddExamParticipant_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) RemoveExamParticipant(ctx context.Context, in *RemoveParticipantRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *examClient) RemoveExamParticipant(ctx context.Context, in *RemoveParticipantRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, ExamService_RemoveExamParticipant_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_RemoveExamParticipant_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) StartExam(ctx context.Context, in *StartExamRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *examClient) StartExam(ctx context.Context, in *StartExamRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, ExamService_StartExam_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_StartExam_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) EndExam(ctx context.Context, in *EndExamRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *examClient) EndExam(ctx context.Context, in *EndExamRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, ExamService_EndExam_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_EndExam_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) GetExamParticipant(ctx context.Context, in *GetExamParticipantRequest, opts ...grpc.CallOption) (*GetExamParticipantResponse, error) {
+func (c *examClient) GetExamParticipant(ctx context.Context, in *GetExamParticipantRequest, opts ...grpc.CallOption) (*GetExamParticipantResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetExamParticipantResponse)
-	err := c.cc.Invoke(ctx, ExamService_GetExamParticipant_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_GetExamParticipant_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) GetParticipantById(ctx context.Context, in *ParticipantRequest, opts ...grpc.CallOption) (*ParticipantResponse, error) {
+func (c *examClient) GetParticipantById(ctx context.Context, in *ParticipantRequest, opts ...grpc.CallOption) (*ParticipantResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ParticipantResponse)
-	err := c.cc.Invoke(ctx, ExamService_GetParticipantById_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_GetParticipantById_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) GetParticipantAnswers(ctx context.Context, in *ParticipantRequest, opts ...grpc.CallOption) (*AnswerList, error) {
+func (c *examClient) GetParticipantAnswers(ctx context.Context, in *ParticipantRequest, opts ...grpc.CallOption) (*AnswerList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AnswerList)
-	err := c.cc.Invoke(ctx, ExamService_GetParticipantAnswers_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_GetParticipantAnswers_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) GetAnswerForExam(ctx context.Context, in *GetAnswerRequest, opts ...grpc.CallOption) (*AnswerMinimalResponse, error) {
+func (c *examClient) GetAnswerForExam(ctx context.Context, in *GetAnswerRequest, opts ...grpc.CallOption) (*AnswerMinimalResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AnswerMinimalResponse)
-	err := c.cc.Invoke(ctx, ExamService_GetAnswerForExam_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_GetAnswerForExam_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) UpsertAnswer(ctx context.Context, in *UpsertAnswersRequest, opts ...grpc.CallOption) (*UpsertAnswersResponse, error) {
+func (c *examClient) UpsertAnswer(ctx context.Context, in *UpsertAnswersRequest, opts ...grpc.CallOption) (*UpsertAnswersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpsertAnswersResponse)
-	err := c.cc.Invoke(ctx, ExamService_UpsertAnswer_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_UpsertAnswer_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) GetAnswerEvaluationData(ctx context.Context, in *ParticipantQuestionRequest, opts ...grpc.CallOption) (*GetAnswerEvaluationDataResponse, error) {
+func (c *examClient) GetAnswerEvaluationData(ctx context.Context, in *ParticipantQuestionRequest, opts ...grpc.CallOption) (*GetAnswerEvaluationDataResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetAnswerEvaluationDataResponse)
-	err := c.cc.Invoke(ctx, ExamService_GetAnswerEvaluationData_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_GetAnswerEvaluationData_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) UpdateAnswerForEvaluation(ctx context.Context, in *UpdateAnswerRequest, opts ...grpc.CallOption) (*GetAnswerEvaluationDataResponse, error) {
+func (c *examClient) UpdateAnswerForEvaluation(ctx context.Context, in *UpdateAnswerRequest, opts ...grpc.CallOption) (*GetAnswerEvaluationDataResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetAnswerEvaluationDataResponse)
-	err := c.cc.Invoke(ctx, ExamService_UpdateAnswerForEvaluation_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_UpdateAnswerForEvaluation_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) MarkParticipantAsEvaluated(ctx context.Context, in *ParticipantRequest, opts ...grpc.CallOption) (*EvaluationStatusResponse, error) {
+func (c *examClient) MarkParticipantAsEvaluated(ctx context.Context, in *ParticipantRequest, opts ...grpc.CallOption) (*EvaluationStatusResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EvaluationStatusResponse)
-	err := c.cc.Invoke(ctx, ExamService_MarkParticipantAsEvaluated_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_MarkParticipantAsEvaluated_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *examServiceClient) GetAnswerForEvaluation(ctx context.Context, in *ParticipantQuestionRequest, opts ...grpc.CallOption) (*AnswerMinimalResponse, error) {
+func (c *examClient) GetAnswerForEvaluation(ctx context.Context, in *ParticipantQuestionRequest, opts ...grpc.CallOption) (*AnswerMinimalResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AnswerMinimalResponse)
-	err := c.cc.Invoke(ctx, ExamService_GetAnswerForEvaluation_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Exam_GetAnswerForEvaluation_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// ExamServiceServer is the server API for ExamService service.
-// All implementations must embed UnimplementedExamServiceServer
+// ExamServer is the server API for Exam service.
+// All implementations must embed UnimplementedExamServer
 // for forward compatibility.
-type ExamServiceServer interface {
+type ExamServer interface {
 	// Exam operations
 	GetUserExams(context.Context, *Empty) (*ExamList, error)
 	CreateExam(context.Context, *CreateExamRequest) (*ExamResponse, error)
@@ -346,618 +346,618 @@ type ExamServiceServer interface {
 	UpdateAnswerForEvaluation(context.Context, *UpdateAnswerRequest) (*GetAnswerEvaluationDataResponse, error)
 	MarkParticipantAsEvaluated(context.Context, *ParticipantRequest) (*EvaluationStatusResponse, error)
 	GetAnswerForEvaluation(context.Context, *ParticipantQuestionRequest) (*AnswerMinimalResponse, error)
-	mustEmbedUnimplementedExamServiceServer()
+	mustEmbedUnimplementedExamServer()
 }
 
-// UnimplementedExamServiceServer must be embedded to have
+// UnimplementedExamServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedExamServiceServer struct{}
+type UnimplementedExamServer struct{}
 
-func (UnimplementedExamServiceServer) GetUserExams(context.Context, *Empty) (*ExamList, error) {
+func (UnimplementedExamServer) GetUserExams(context.Context, *Empty) (*ExamList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserExams not implemented")
 }
-func (UnimplementedExamServiceServer) CreateExam(context.Context, *CreateExamRequest) (*ExamResponse, error) {
+func (UnimplementedExamServer) CreateExam(context.Context, *CreateExamRequest) (*ExamResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateExam not implemented")
 }
-func (UnimplementedExamServiceServer) UpdateExam(context.Context, *UpdateExamRequest) (*ExamResponse, error) {
+func (UnimplementedExamServer) UpdateExam(context.Context, *UpdateExamRequest) (*ExamResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateExam not implemented")
 }
-func (UnimplementedExamServiceServer) GetExam(context.Context, *ExamRequest) (*ExamResponse, error) {
+func (UnimplementedExamServer) GetExam(context.Context, *ExamRequest) (*ExamResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExam not implemented")
 }
-func (UnimplementedExamServiceServer) GetExamQuestions(context.Context, *ExamRequest) (*ExamQuestionsResponse, error) {
+func (UnimplementedExamServer) GetExamQuestions(context.Context, *ExamRequest) (*ExamQuestionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamQuestions not implemented")
 }
-func (UnimplementedExamServiceServer) GetExamCategories(context.Context, *ExamRequest) (*ExamCategoriesResponse, error) {
+func (UnimplementedExamServer) GetExamCategories(context.Context, *ExamRequest) (*ExamCategoriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamCategories not implemented")
 }
-func (UnimplementedExamServiceServer) GetExamPermission(context.Context, *ExamRequest) (*ExamPermissionResponse, error) {
+func (UnimplementedExamServer) GetExamPermission(context.Context, *ExamRequest) (*ExamPermissionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamPermission not implemented")
 }
-func (UnimplementedExamServiceServer) DeleteExams(context.Context, *DeleteExamsRequest) (*Empty, error) {
+func (UnimplementedExamServer) DeleteExams(context.Context, *DeleteExamsRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteExams not implemented")
 }
-func (UnimplementedExamServiceServer) GetExamResults(context.Context, *ExamRequest) (*ExamResultsResponse, error) {
+func (UnimplementedExamServer) GetExamResults(context.Context, *ExamRequest) (*ExamResultsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamResults not implemented")
 }
-func (UnimplementedExamServiceServer) GetExamParticipants(context.Context, *ExamRequest) (*ParticipantList, error) {
+func (UnimplementedExamServer) GetExamParticipants(context.Context, *ExamRequest) (*ParticipantList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamParticipants not implemented")
 }
-func (UnimplementedExamServiceServer) AddExamParticipant(context.Context, *AddParticipantRequest) (*ParticipantResponse, error) {
+func (UnimplementedExamServer) AddExamParticipant(context.Context, *AddParticipantRequest) (*ParticipantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddExamParticipant not implemented")
 }
-func (UnimplementedExamServiceServer) RemoveExamParticipant(context.Context, *RemoveParticipantRequest) (*Empty, error) {
+func (UnimplementedExamServer) RemoveExamParticipant(context.Context, *RemoveParticipantRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveExamParticipant not implemented")
 }
-func (UnimplementedExamServiceServer) StartExam(context.Context, *StartExamRequest) (*Empty, error) {
+func (UnimplementedExamServer) StartExam(context.Context, *StartExamRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartExam not implemented")
 }
-func (UnimplementedExamServiceServer) EndExam(context.Context, *EndExamRequest) (*Empty, error) {
+func (UnimplementedExamServer) EndExam(context.Context, *EndExamRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EndExam not implemented")
 }
-func (UnimplementedExamServiceServer) GetExamParticipant(context.Context, *GetExamParticipantRequest) (*GetExamParticipantResponse, error) {
+func (UnimplementedExamServer) GetExamParticipant(context.Context, *GetExamParticipantRequest) (*GetExamParticipantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamParticipant not implemented")
 }
-func (UnimplementedExamServiceServer) GetParticipantById(context.Context, *ParticipantRequest) (*ParticipantResponse, error) {
+func (UnimplementedExamServer) GetParticipantById(context.Context, *ParticipantRequest) (*ParticipantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetParticipantById not implemented")
 }
-func (UnimplementedExamServiceServer) GetParticipantAnswers(context.Context, *ParticipantRequest) (*AnswerList, error) {
+func (UnimplementedExamServer) GetParticipantAnswers(context.Context, *ParticipantRequest) (*AnswerList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetParticipantAnswers not implemented")
 }
-func (UnimplementedExamServiceServer) GetAnswerForExam(context.Context, *GetAnswerRequest) (*AnswerMinimalResponse, error) {
+func (UnimplementedExamServer) GetAnswerForExam(context.Context, *GetAnswerRequest) (*AnswerMinimalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAnswerForExam not implemented")
 }
-func (UnimplementedExamServiceServer) UpsertAnswer(context.Context, *UpsertAnswersRequest) (*UpsertAnswersResponse, error) {
+func (UnimplementedExamServer) UpsertAnswer(context.Context, *UpsertAnswersRequest) (*UpsertAnswersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpsertAnswer not implemented")
 }
-func (UnimplementedExamServiceServer) GetAnswerEvaluationData(context.Context, *ParticipantQuestionRequest) (*GetAnswerEvaluationDataResponse, error) {
+func (UnimplementedExamServer) GetAnswerEvaluationData(context.Context, *ParticipantQuestionRequest) (*GetAnswerEvaluationDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAnswerEvaluationData not implemented")
 }
-func (UnimplementedExamServiceServer) UpdateAnswerForEvaluation(context.Context, *UpdateAnswerRequest) (*GetAnswerEvaluationDataResponse, error) {
+func (UnimplementedExamServer) UpdateAnswerForEvaluation(context.Context, *UpdateAnswerRequest) (*GetAnswerEvaluationDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateAnswerForEvaluation not implemented")
 }
-func (UnimplementedExamServiceServer) MarkParticipantAsEvaluated(context.Context, *ParticipantRequest) (*EvaluationStatusResponse, error) {
+func (UnimplementedExamServer) MarkParticipantAsEvaluated(context.Context, *ParticipantRequest) (*EvaluationStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MarkParticipantAsEvaluated not implemented")
 }
-func (UnimplementedExamServiceServer) GetAnswerForEvaluation(context.Context, *ParticipantQuestionRequest) (*AnswerMinimalResponse, error) {
+func (UnimplementedExamServer) GetAnswerForEvaluation(context.Context, *ParticipantQuestionRequest) (*AnswerMinimalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAnswerForEvaluation not implemented")
 }
-func (UnimplementedExamServiceServer) mustEmbedUnimplementedExamServiceServer() {}
-func (UnimplementedExamServiceServer) testEmbeddedByValue()                     {}
+func (UnimplementedExamServer) mustEmbedUnimplementedExamServer() {}
+func (UnimplementedExamServer) testEmbeddedByValue()              {}
 
-// UnsafeExamServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ExamServiceServer will
+// UnsafeExamServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ExamServer will
 // result in compilation errors.
-type UnsafeExamServiceServer interface {
-	mustEmbedUnimplementedExamServiceServer()
+type UnsafeExamServer interface {
+	mustEmbedUnimplementedExamServer()
 }
 
-func RegisterExamServiceServer(s grpc.ServiceRegistrar, srv ExamServiceServer) {
-	// If the following call pancis, it indicates UnimplementedExamServiceServer was
+func RegisterExamServer(s grpc.ServiceRegistrar, srv ExamServer) {
+	// If the following call pancis, it indicates UnimplementedExamServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&ExamService_ServiceDesc, srv)
+	s.RegisterService(&Exam_ServiceDesc, srv)
 }
 
-func _ExamService_GetUserExams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_GetUserExams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).GetUserExams(ctx, in)
+		return srv.(ExamServer).GetUserExams(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_GetUserExams_FullMethodName,
+		FullMethod: Exam_GetUserExams_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).GetUserExams(ctx, req.(*Empty))
+		return srv.(ExamServer).GetUserExams(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_CreateExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_CreateExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateExamRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).CreateExam(ctx, in)
+		return srv.(ExamServer).CreateExam(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_CreateExam_FullMethodName,
+		FullMethod: Exam_CreateExam_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).CreateExam(ctx, req.(*CreateExamRequest))
+		return srv.(ExamServer).CreateExam(ctx, req.(*CreateExamRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_UpdateExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_UpdateExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateExamRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).UpdateExam(ctx, in)
+		return srv.(ExamServer).UpdateExam(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_UpdateExam_FullMethodName,
+		FullMethod: Exam_UpdateExam_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).UpdateExam(ctx, req.(*UpdateExamRequest))
+		return srv.(ExamServer).UpdateExam(ctx, req.(*UpdateExamRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_GetExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_GetExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ExamRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).GetExam(ctx, in)
+		return srv.(ExamServer).GetExam(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_GetExam_FullMethodName,
+		FullMethod: Exam_GetExam_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).GetExam(ctx, req.(*ExamRequest))
+		return srv.(ExamServer).GetExam(ctx, req.(*ExamRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_GetExamQuestions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_GetExamQuestions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ExamRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).GetExamQuestions(ctx, in)
+		return srv.(ExamServer).GetExamQuestions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_GetExamQuestions_FullMethodName,
+		FullMethod: Exam_GetExamQuestions_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).GetExamQuestions(ctx, req.(*ExamRequest))
+		return srv.(ExamServer).GetExamQuestions(ctx, req.(*ExamRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_GetExamCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_GetExamCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ExamRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).GetExamCategories(ctx, in)
+		return srv.(ExamServer).GetExamCategories(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_GetExamCategories_FullMethodName,
+		FullMethod: Exam_GetExamCategories_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).GetExamCategories(ctx, req.(*ExamRequest))
+		return srv.(ExamServer).GetExamCategories(ctx, req.(*ExamRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_GetExamPermission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_GetExamPermission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ExamRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).GetExamPermission(ctx, in)
+		return srv.(ExamServer).GetExamPermission(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_GetExamPermission_FullMethodName,
+		FullMethod: Exam_GetExamPermission_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).GetExamPermission(ctx, req.(*ExamRequest))
+		return srv.(ExamServer).GetExamPermission(ctx, req.(*ExamRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_DeleteExams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_DeleteExams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteExamsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).DeleteExams(ctx, in)
+		return srv.(ExamServer).DeleteExams(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_DeleteExams_FullMethodName,
+		FullMethod: Exam_DeleteExams_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).DeleteExams(ctx, req.(*DeleteExamsRequest))
+		return srv.(ExamServer).DeleteExams(ctx, req.(*DeleteExamsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_GetExamResults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_GetExamResults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ExamRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).GetExamResults(ctx, in)
+		return srv.(ExamServer).GetExamResults(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_GetExamResults_FullMethodName,
+		FullMethod: Exam_GetExamResults_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).GetExamResults(ctx, req.(*ExamRequest))
+		return srv.(ExamServer).GetExamResults(ctx, req.(*ExamRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_GetExamParticipants_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_GetExamParticipants_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ExamRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).GetExamParticipants(ctx, in)
+		return srv.(ExamServer).GetExamParticipants(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_GetExamParticipants_FullMethodName,
+		FullMethod: Exam_GetExamParticipants_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).GetExamParticipants(ctx, req.(*ExamRequest))
+		return srv.(ExamServer).GetExamParticipants(ctx, req.(*ExamRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_AddExamParticipant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_AddExamParticipant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AddParticipantRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).AddExamParticipant(ctx, in)
+		return srv.(ExamServer).AddExamParticipant(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_AddExamParticipant_FullMethodName,
+		FullMethod: Exam_AddExamParticipant_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).AddExamParticipant(ctx, req.(*AddParticipantRequest))
+		return srv.(ExamServer).AddExamParticipant(ctx, req.(*AddParticipantRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_RemoveExamParticipant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_RemoveExamParticipant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RemoveParticipantRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).RemoveExamParticipant(ctx, in)
+		return srv.(ExamServer).RemoveExamParticipant(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_RemoveExamParticipant_FullMethodName,
+		FullMethod: Exam_RemoveExamParticipant_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).RemoveExamParticipant(ctx, req.(*RemoveParticipantRequest))
+		return srv.(ExamServer).RemoveExamParticipant(ctx, req.(*RemoveParticipantRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_StartExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_StartExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StartExamRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).StartExam(ctx, in)
+		return srv.(ExamServer).StartExam(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_StartExam_FullMethodName,
+		FullMethod: Exam_StartExam_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).StartExam(ctx, req.(*StartExamRequest))
+		return srv.(ExamServer).StartExam(ctx, req.(*StartExamRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_EndExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_EndExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EndExamRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).EndExam(ctx, in)
+		return srv.(ExamServer).EndExam(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_EndExam_FullMethodName,
+		FullMethod: Exam_EndExam_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).EndExam(ctx, req.(*EndExamRequest))
+		return srv.(ExamServer).EndExam(ctx, req.(*EndExamRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_GetExamParticipant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_GetExamParticipant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetExamParticipantRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).GetExamParticipant(ctx, in)
+		return srv.(ExamServer).GetExamParticipant(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_GetExamParticipant_FullMethodName,
+		FullMethod: Exam_GetExamParticipant_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).GetExamParticipant(ctx, req.(*GetExamParticipantRequest))
+		return srv.(ExamServer).GetExamParticipant(ctx, req.(*GetExamParticipantRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_GetParticipantById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_GetParticipantById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ParticipantRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).GetParticipantById(ctx, in)
+		return srv.(ExamServer).GetParticipantById(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_GetParticipantById_FullMethodName,
+		FullMethod: Exam_GetParticipantById_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).GetParticipantById(ctx, req.(*ParticipantRequest))
+		return srv.(ExamServer).GetParticipantById(ctx, req.(*ParticipantRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_GetParticipantAnswers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_GetParticipantAnswers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ParticipantRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).GetParticipantAnswers(ctx, in)
+		return srv.(ExamServer).GetParticipantAnswers(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_GetParticipantAnswers_FullMethodName,
+		FullMethod: Exam_GetParticipantAnswers_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).GetParticipantAnswers(ctx, req.(*ParticipantRequest))
+		return srv.(ExamServer).GetParticipantAnswers(ctx, req.(*ParticipantRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_GetAnswerForExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_GetAnswerForExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetAnswerRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).GetAnswerForExam(ctx, in)
+		return srv.(ExamServer).GetAnswerForExam(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_GetAnswerForExam_FullMethodName,
+		FullMethod: Exam_GetAnswerForExam_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).GetAnswerForExam(ctx, req.(*GetAnswerRequest))
+		return srv.(ExamServer).GetAnswerForExam(ctx, req.(*GetAnswerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_UpsertAnswer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_UpsertAnswer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpsertAnswersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).UpsertAnswer(ctx, in)
+		return srv.(ExamServer).UpsertAnswer(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_UpsertAnswer_FullMethodName,
+		FullMethod: Exam_UpsertAnswer_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).UpsertAnswer(ctx, req.(*UpsertAnswersRequest))
+		return srv.(ExamServer).UpsertAnswer(ctx, req.(*UpsertAnswersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_GetAnswerEvaluationData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_GetAnswerEvaluationData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ParticipantQuestionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).GetAnswerEvaluationData(ctx, in)
+		return srv.(ExamServer).GetAnswerEvaluationData(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_GetAnswerEvaluationData_FullMethodName,
+		FullMethod: Exam_GetAnswerEvaluationData_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).GetAnswerEvaluationData(ctx, req.(*ParticipantQuestionRequest))
+		return srv.(ExamServer).GetAnswerEvaluationData(ctx, req.(*ParticipantQuestionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_UpdateAnswerForEvaluation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_UpdateAnswerForEvaluation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateAnswerRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).UpdateAnswerForEvaluation(ctx, in)
+		return srv.(ExamServer).UpdateAnswerForEvaluation(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_UpdateAnswerForEvaluation_FullMethodName,
+		FullMethod: Exam_UpdateAnswerForEvaluation_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).UpdateAnswerForEvaluation(ctx, req.(*UpdateAnswerRequest))
+		return srv.(ExamServer).UpdateAnswerForEvaluation(ctx, req.(*UpdateAnswerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_MarkParticipantAsEvaluated_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_MarkParticipantAsEvaluated_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ParticipantRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).MarkParticipantAsEvaluated(ctx, in)
+		return srv.(ExamServer).MarkParticipantAsEvaluated(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_MarkParticipantAsEvaluated_FullMethodName,
+		FullMethod: Exam_MarkParticipantAsEvaluated_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).MarkParticipantAsEvaluated(ctx, req.(*ParticipantRequest))
+		return srv.(ExamServer).MarkParticipantAsEvaluated(ctx, req.(*ParticipantRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExamService_GetAnswerForEvaluation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Exam_GetAnswerForEvaluation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ParticipantQuestionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExamServiceServer).GetAnswerForEvaluation(ctx, in)
+		return srv.(ExamServer).GetAnswerForEvaluation(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExamService_GetAnswerForEvaluation_FullMethodName,
+		FullMethod: Exam_GetAnswerForEvaluation_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServiceServer).GetAnswerForEvaluation(ctx, req.(*ParticipantQuestionRequest))
+		return srv.(ExamServer).GetAnswerForEvaluation(ctx, req.(*ParticipantQuestionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// ExamService_ServiceDesc is the grpc.ServiceDesc for ExamService service.
+// Exam_ServiceDesc is the grpc.ServiceDesc for Exam service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var ExamService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.ExamService",
-	HandlerType: (*ExamServiceServer)(nil),
+var Exam_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.Exam",
+	HandlerType: (*ExamServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetUserExams",
-			Handler:    _ExamService_GetUserExams_Handler,
+			Handler:    _Exam_GetUserExams_Handler,
 		},
 		{
 			MethodName: "CreateExam",
-			Handler:    _ExamService_CreateExam_Handler,
+			Handler:    _Exam_CreateExam_Handler,
 		},
 		{
 			MethodName: "UpdateExam",
-			Handler:    _ExamService_UpdateExam_Handler,
+			Handler:    _Exam_UpdateExam_Handler,
 		},
 		{
 			MethodName: "GetExam",
-			Handler:    _ExamService_GetExam_Handler,
+			Handler:    _Exam_GetExam_Handler,
 		},
 		{
 			MethodName: "GetExamQuestions",
-			Handler:    _ExamService_GetExamQuestions_Handler,
+			Handler:    _Exam_GetExamQuestions_Handler,
 		},
 		{
 			MethodName: "GetExamCategories",
-			Handler:    _ExamService_GetExamCategories_Handler,
+			Handler:    _Exam_GetExamCategories_Handler,
 		},
 		{
 			MethodName: "GetExamPermission",
-			Handler:    _ExamService_GetExamPermission_Handler,
+			Handler:    _Exam_GetExamPermission_Handler,
 		},
 		{
 			MethodName: "DeleteExams",
-			Handler:    _ExamService_DeleteExams_Handler,
+			Handler:    _Exam_DeleteExams_Handler,
 		},
 		{
 			MethodName: "GetExamResults",
-			Handler:    _ExamService_GetExamResults_Handler,
+			Handler:    _Exam_GetExamResults_Handler,
 		},
 		{
 			MethodName: "GetExamParticipants",
-			Handler:    _ExamService_GetExamParticipants_Handler,
+			Handler:    _Exam_GetExamParticipants_Handler,
 		},
 		{
 			MethodName: "AddExamParticipant",
-			Handler:    _ExamService_AddExamParticipant_Handler,
+			Handler:    _Exam_AddExamParticipant_Handler,
 		},
 		{
 			MethodName: "RemoveExamParticipant",
-			Handler:    _ExamService_RemoveExamParticipant_Handler,
+			Handler:    _Exam_RemoveExamParticipant_Handler,
 		},
 		{
 			MethodName: "StartExam",
-			Handler:    _ExamService_StartExam_Handler,
+			Handler:    _Exam_StartExam_Handler,
 		},
 		{
 			MethodName: "EndExam",
-			Handler:    _ExamService_EndExam_Handler,
+			Handler:    _Exam_EndExam_Handler,
 		},
 		{
 			MethodName: "GetExamParticipant",
-			Handler:    _ExamService_GetExamParticipant_Handler,
+			Handler:    _Exam_GetExamParticipant_Handler,
 		},
 		{
 			MethodName: "GetParticipantById",
-			Handler:    _ExamService_GetParticipantById_Handler,
+			Handler:    _Exam_GetParticipantById_Handler,
 		},
 		{
 			MethodName: "GetParticipantAnswers",
-			Handler:    _ExamService_GetParticipantAnswers_Handler,
+			Handler:    _Exam_GetParticipantAnswers_Handler,
 		},
 		{
 			MethodName: "GetAnswerForExam",
-			Handler:    _ExamService_GetAnswerForExam_Handler,
+			Handler:    _Exam_GetAnswerForExam_Handler,
 		},
 		{
 			MethodName: "UpsertAnswer",
-			Handler:    _ExamService_UpsertAnswer_Handler,
+			Handler:    _Exam_UpsertAnswer_Handler,
 		},
 		{
 			MethodName: "GetAnswerEvaluationData",
-			Handler:    _ExamService_GetAnswerEvaluationData_Handler,
+			Handler:    _Exam_GetAnswerEvaluationData_Handler,
 		},
 		{
 			MethodName: "UpdateAnswerForEvaluation",
-			Handler:    _ExamService_UpdateAnswerForEvaluation_Handler,
+			Handler:    _Exam_UpdateAnswerForEvaluation_Handler,
 		},
 		{
 			MethodName: "MarkParticipantAsEvaluated",
-			Handler:    _ExamService_MarkParticipantAsEvaluated_Handler,
+			Handler:    _Exam_MarkParticipantAsEvaluated_Handler,
 		},
 		{
 			MethodName: "GetAnswerForEvaluation",
-			Handler:    _ExamService_GetAnswerForEvaluation_Handler,
+			Handler:    _Exam_GetAnswerForEvaluation_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -111,7 +111,6 @@ func TestCreateExam(t *testing.T) {
 				assert.Equal(t, userID, resp.CreatedBy)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
 				assert.EqualValues(t, 50, resp.MaxCandidatesCount)
-				assert.EqualValues(t, 1, resp.PaperId)
 				assert.EqualValues(t, 120, resp.DurationMinutes)
 
 				var exam models.Exam
@@ -1282,7 +1281,6 @@ func TestGetExam(t *testing.T) {
 				assert.Equal(t, userID, resp.CreatedBy)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
 				assert.EqualValues(t, 10, resp.MaxCandidatesCount)
-				assert.EqualValues(t, 1, resp.PaperId)
 				assert.EqualValues(t, 60, resp.DurationMinutes)
 
 				// Validate participant counts

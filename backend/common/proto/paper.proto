@@ -6,7 +6,7 @@ option go_package = "/proto";
 
 import "common.proto";
 
-service PaperService {
+service Paper {
   // Paper operations
   rpc GetUserPapers(Empty) returns (PaperList) {}
   rpc GetPaper(PaperRequest) returns (PaperResponse) {}

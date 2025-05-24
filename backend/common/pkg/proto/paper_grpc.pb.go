@@ -19,32 +19,32 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PaperService_GetUserPapers_FullMethodName       = "/proto.PaperService/GetUserPapers"
-	PaperService_GetPaper_FullMethodName            = "/proto.PaperService/GetPaper"
-	PaperService_CreatePaper_FullMethodName         = "/proto.PaperService/CreatePaper"
-	PaperService_UpdatePaper_FullMethodName         = "/proto.PaperService/UpdatePaper"
-	PaperService_DeletePapers_FullMethodName        = "/proto.PaperService/DeletePapers"
-	PaperService_GetPaperPermissions_FullMethodName = "/proto.PaperService/GetPaperPermissions"
-	PaperService_GetPaperQuestions_FullMethodName   = "/proto.PaperService/GetPaperQuestions"
-	PaperService_GetPaperQuestion_FullMethodName    = "/proto.PaperService/GetPaperQuestion"
-	PaperService_CreateQuestion_FullMethodName      = "/proto.PaperService/CreateQuestion"
-	PaperService_UpdateQuestion_FullMethodName      = "/proto.PaperService/UpdateQuestion"
-	PaperService_DeleteQuestion_FullMethodName      = "/proto.PaperService/DeleteQuestion"
-	PaperService_ReorderQuestions_FullMethodName    = "/proto.PaperService/ReorderQuestions"
-	PaperService_GetPaperCategories_FullMethodName  = "/proto.PaperService/GetPaperCategories"
-	PaperService_CreateCategory_FullMethodName      = "/proto.PaperService/CreateCategory"
-	PaperService_UpdateCategory_FullMethodName      = "/proto.PaperService/UpdateCategory"
-	PaperService_DeleteCategory_FullMethodName      = "/proto.PaperService/DeleteCategory"
-	PaperService_ReorderCategories_FullMethodName   = "/proto.PaperService/ReorderCategories"
-	PaperService_GetQuestionsByIds_FullMethodName   = "/proto.PaperService/GetQuestionsByIds"
-	PaperService_GetCategoriesByIds_FullMethodName  = "/proto.PaperService/GetCategoriesByIds"
-	PaperService_GetExamQuestion_FullMethodName     = "/proto.PaperService/GetExamQuestion"
+	Paper_GetUserPapers_FullMethodName       = "/proto.Paper/GetUserPapers"
+	Paper_GetPaper_FullMethodName            = "/proto.Paper/GetPaper"
+	Paper_CreatePaper_FullMethodName         = "/proto.Paper/CreatePaper"
+	Paper_UpdatePaper_FullMethodName         = "/proto.Paper/UpdatePaper"
+	Paper_DeletePapers_FullMethodName        = "/proto.Paper/DeletePapers"
+	Paper_GetPaperPermissions_FullMethodName = "/proto.Paper/GetPaperPermissions"
+	Paper_GetPaperQuestions_FullMethodName   = "/proto.Paper/GetPaperQuestions"
+	Paper_GetPaperQuestion_FullMethodName    = "/proto.Paper/GetPaperQuestion"
+	Paper_CreateQuestion_FullMethodName      = "/proto.Paper/CreateQuestion"
+	Paper_UpdateQuestion_FullMethodName      = "/proto.Paper/UpdateQuestion"
+	Paper_DeleteQuestion_FullMethodName      = "/proto.Paper/DeleteQuestion"
+	Paper_ReorderQuestions_FullMethodName    = "/proto.Paper/ReorderQuestions"
+	Paper_GetPaperCategories_FullMethodName  = "/proto.Paper/GetPaperCategories"
+	Paper_CreateCategory_FullMethodName      = "/proto.Paper/CreateCategory"
+	Paper_UpdateCategory_FullMethodName      = "/proto.Paper/UpdateCategory"
+	Paper_DeleteCategory_FullMethodName      = "/proto.Paper/DeleteCategory"
+	Paper_ReorderCategories_FullMethodName   = "/proto.Paper/ReorderCategories"
+	Paper_GetQuestionsByIds_FullMethodName   = "/proto.Paper/GetQuestionsByIds"
+	Paper_GetCategoriesByIds_FullMethodName  = "/proto.Paper/GetCategoriesByIds"
+	Paper_GetExamQuestion_FullMethodName     = "/proto.Paper/GetExamQuestion"
 )
 
-// PaperServiceClient is the client API for PaperService service.
+// PaperClient is the client API for Paper service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type PaperServiceClient interface {
+type PaperClient interface {
 	// Paper operations
 	GetUserPapers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PaperList, error)
 	GetPaper(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*PaperResponse, error)
@@ -71,218 +71,218 @@ type PaperServiceClient interface {
 	GetExamQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error)
 }
 
-type paperServiceClient struct {
+type paperClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewPaperServiceClient(cc grpc.ClientConnInterface) PaperServiceClient {
-	return &paperServiceClient{cc}
+func NewPaperClient(cc grpc.ClientConnInterface) PaperClient {
+	return &paperClient{cc}
 }
 
-func (c *paperServiceClient) GetUserPapers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PaperList, error) {
+func (c *paperClient) GetUserPapers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PaperList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PaperList)
-	err := c.cc.Invoke(ctx, PaperService_GetUserPapers_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_GetUserPapers_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) GetPaper(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*PaperResponse, error) {
+func (c *paperClient) GetPaper(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*PaperResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PaperResponse)
-	err := c.cc.Invoke(ctx, PaperService_GetPaper_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_GetPaper_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) CreatePaper(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PaperResponse, error) {
+func (c *paperClient) CreatePaper(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PaperResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PaperResponse)
-	err := c.cc.Invoke(ctx, PaperService_CreatePaper_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_CreatePaper_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) UpdatePaper(ctx context.Context, in *UpdatePaperRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *paperClient) UpdatePaper(ctx context.Context, in *UpdatePaperRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, PaperService_UpdatePaper_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_UpdatePaper_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) DeletePapers(ctx context.Context, in *DeletePapersRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *paperClient) DeletePapers(ctx context.Context, in *DeletePapersRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, PaperService_DeletePapers_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_DeletePapers_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) GetPaperPermissions(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*PaperPermissionsResponse, error) {
+func (c *paperClient) GetPaperPermissions(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*PaperPermissionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PaperPermissionsResponse)
-	err := c.cc.Invoke(ctx, PaperService_GetPaperPermissions_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_GetPaperPermissions_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) GetPaperQuestions(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*QuestionList, error) {
+func (c *paperClient) GetPaperQuestions(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*QuestionList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QuestionList)
-	err := c.cc.Invoke(ctx, PaperService_GetPaperQuestions_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_GetPaperQuestions_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) GetPaperQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error) {
+func (c *paperClient) GetPaperQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QuestionResponse)
-	err := c.cc.Invoke(ctx, PaperService_GetPaperQuestion_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_GetPaperQuestion_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) CreateQuestion(ctx context.Context, in *CreateQuestionRequest, opts ...grpc.CallOption) (*CreateQuestionResponse, error) {
+func (c *paperClient) CreateQuestion(ctx context.Context, in *CreateQuestionRequest, opts ...grpc.CallOption) (*CreateQuestionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateQuestionResponse)
-	err := c.cc.Invoke(ctx, PaperService_CreateQuestion_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_CreateQuestion_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) UpdateQuestion(ctx context.Context, in *UpdateQuestionRequest, opts ...grpc.CallOption) (*UpdateQuestionResponse, error) {
+func (c *paperClient) UpdateQuestion(ctx context.Context, in *UpdateQuestionRequest, opts ...grpc.CallOption) (*UpdateQuestionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateQuestionResponse)
-	err := c.cc.Invoke(ctx, PaperService_UpdateQuestion_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_UpdateQuestion_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) DeleteQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *paperClient) DeleteQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, PaperService_DeleteQuestion_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_DeleteQuestion_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) ReorderQuestions(ctx context.Context, in *ReorderQuestionsRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *paperClient) ReorderQuestions(ctx context.Context, in *ReorderQuestionsRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, PaperService_ReorderQuestions_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_ReorderQuestions_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) GetPaperCategories(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*CategoryList, error) {
+func (c *paperClient) GetPaperCategories(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*CategoryList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CategoryList)
-	err := c.cc.Invoke(ctx, PaperService_GetPaperCategories_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_GetPaperCategories_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) CreateCategory(ctx context.Context, in *CreateCategoryRequest, opts ...grpc.CallOption) (*CategoryResponse, error) {
+func (c *paperClient) CreateCategory(ctx context.Context, in *CreateCategoryRequest, opts ...grpc.CallOption) (*CategoryResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CategoryResponse)
-	err := c.cc.Invoke(ctx, PaperService_CreateCategory_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_CreateCategory_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) UpdateCategory(ctx context.Context, in *UpdateCategoryRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *paperClient) UpdateCategory(ctx context.Context, in *UpdateCategoryRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, PaperService_UpdateCategory_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_UpdateCategory_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) DeleteCategory(ctx context.Context, in *CategoryRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *paperClient) DeleteCategory(ctx context.Context, in *CategoryRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, PaperService_DeleteCategory_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_DeleteCategory_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) ReorderCategories(ctx context.Context, in *ReorderCategoriesRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *paperClient) ReorderCategories(ctx context.Context, in *ReorderCategoriesRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, PaperService_ReorderCategories_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_ReorderCategories_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) GetQuestionsByIds(ctx context.Context, in *GetQuestionsByIdsRequest, opts ...grpc.CallOption) (*QuestionBatchResponse, error) {
+func (c *paperClient) GetQuestionsByIds(ctx context.Context, in *GetQuestionsByIdsRequest, opts ...grpc.CallOption) (*QuestionBatchResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QuestionBatchResponse)
-	err := c.cc.Invoke(ctx, PaperService_GetQuestionsByIds_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_GetQuestionsByIds_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) GetCategoriesByIds(ctx context.Context, in *GetCategoriesByIdsRequest, opts ...grpc.CallOption) (*CategoryBatchResponse, error) {
+func (c *paperClient) GetCategoriesByIds(ctx context.Context, in *GetCategoriesByIdsRequest, opts ...grpc.CallOption) (*CategoryBatchResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CategoryBatchResponse)
-	err := c.cc.Invoke(ctx, PaperService_GetCategoriesByIds_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_GetCategoriesByIds_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *paperServiceClient) GetExamQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error) {
+func (c *paperClient) GetExamQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QuestionResponse)
-	err := c.cc.Invoke(ctx, PaperService_GetExamQuestion_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Paper_GetExamQuestion_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// PaperServiceServer is the server API for PaperService service.
-// All implementations must embed UnimplementedPaperServiceServer
+// PaperServer is the server API for Paper service.
+// All implementations must embed UnimplementedPaperServer
 // for forward compatibility.
-type PaperServiceServer interface {
+type PaperServer interface {
 	// Paper operations
 	GetUserPapers(context.Context, *Empty) (*PaperList, error)
 	GetPaper(context.Context, *PaperRequest) (*PaperResponse, error)
@@ -307,543 +307,543 @@ type PaperServiceServer interface {
 	GetQuestionsByIds(context.Context, *GetQuestionsByIdsRequest) (*QuestionBatchResponse, error)
 	GetCategoriesByIds(context.Context, *GetCategoriesByIdsRequest) (*CategoryBatchResponse, error)
 	GetExamQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error)
-	mustEmbedUnimplementedPaperServiceServer()
+	mustEmbedUnimplementedPaperServer()
 }
 
-// UnimplementedPaperServiceServer must be embedded to have
+// UnimplementedPaperServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedPaperServiceServer struct{}
+type UnimplementedPaperServer struct{}
 
-func (UnimplementedPaperServiceServer) GetUserPapers(context.Context, *Empty) (*PaperList, error) {
+func (UnimplementedPaperServer) GetUserPapers(context.Context, *Empty) (*PaperList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserPapers not implemented")
 }
-func (UnimplementedPaperServiceServer) GetPaper(context.Context, *PaperRequest) (*PaperResponse, error) {
+func (UnimplementedPaperServer) GetPaper(context.Context, *PaperRequest) (*PaperResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPaper not implemented")
 }
-func (UnimplementedPaperServiceServer) CreatePaper(context.Context, *Empty) (*PaperResponse, error) {
+func (UnimplementedPaperServer) CreatePaper(context.Context, *Empty) (*PaperResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePaper not implemented")
 }
-func (UnimplementedPaperServiceServer) UpdatePaper(context.Context, *UpdatePaperRequest) (*Empty, error) {
+func (UnimplementedPaperServer) UpdatePaper(context.Context, *UpdatePaperRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdatePaper not implemented")
 }
-func (UnimplementedPaperServiceServer) DeletePapers(context.Context, *DeletePapersRequest) (*Empty, error) {
+func (UnimplementedPaperServer) DeletePapers(context.Context, *DeletePapersRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeletePapers not implemented")
 }
-func (UnimplementedPaperServiceServer) GetPaperPermissions(context.Context, *PaperRequest) (*PaperPermissionsResponse, error) {
+func (UnimplementedPaperServer) GetPaperPermissions(context.Context, *PaperRequest) (*PaperPermissionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPaperPermissions not implemented")
 }
-func (UnimplementedPaperServiceServer) GetPaperQuestions(context.Context, *PaperRequest) (*QuestionList, error) {
+func (UnimplementedPaperServer) GetPaperQuestions(context.Context, *PaperRequest) (*QuestionList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPaperQuestions not implemented")
 }
-func (UnimplementedPaperServiceServer) GetPaperQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error) {
+func (UnimplementedPaperServer) GetPaperQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPaperQuestion not implemented")
 }
-func (UnimplementedPaperServiceServer) CreateQuestion(context.Context, *CreateQuestionRequest) (*CreateQuestionResponse, error) {
+func (UnimplementedPaperServer) CreateQuestion(context.Context, *CreateQuestionRequest) (*CreateQuestionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateQuestion not implemented")
 }
-func (UnimplementedPaperServiceServer) UpdateQuestion(context.Context, *UpdateQuestionRequest) (*UpdateQuestionResponse, error) {
+func (UnimplementedPaperServer) UpdateQuestion(context.Context, *UpdateQuestionRequest) (*UpdateQuestionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateQuestion not implemented")
 }
-func (UnimplementedPaperServiceServer) DeleteQuestion(context.Context, *QuestionRequest) (*Empty, error) {
+func (UnimplementedPaperServer) DeleteQuestion(context.Context, *QuestionRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteQuestion not implemented")
 }
-func (UnimplementedPaperServiceServer) ReorderQuestions(context.Context, *ReorderQuestionsRequest) (*Empty, error) {
+func (UnimplementedPaperServer) ReorderQuestions(context.Context, *ReorderQuestionsRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReorderQuestions not implemented")
 }
-func (UnimplementedPaperServiceServer) GetPaperCategories(context.Context, *PaperRequest) (*CategoryList, error) {
+func (UnimplementedPaperServer) GetPaperCategories(context.Context, *PaperRequest) (*CategoryList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPaperCategories not implemented")
 }
-func (UnimplementedPaperServiceServer) CreateCategory(context.Context, *CreateCategoryRequest) (*CategoryResponse, error) {
+func (UnimplementedPaperServer) CreateCategory(context.Context, *CreateCategoryRequest) (*CategoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateCategory not implemented")
 }
-func (UnimplementedPaperServiceServer) UpdateCategory(context.Context, *UpdateCategoryRequest) (*Empty, error) {
+func (UnimplementedPaperServer) UpdateCategory(context.Context, *UpdateCategoryRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateCategory not implemented")
 }
-func (UnimplementedPaperServiceServer) DeleteCategory(context.Context, *CategoryRequest) (*Empty, error) {
+func (UnimplementedPaperServer) DeleteCategory(context.Context, *CategoryRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteCategory not implemented")
 }
-func (UnimplementedPaperServiceServer) ReorderCategories(context.Context, *ReorderCategoriesRequest) (*Empty, error) {
+func (UnimplementedPaperServer) ReorderCategories(context.Context, *ReorderCategoriesRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReorderCategories not implemented")
 }
-func (UnimplementedPaperServiceServer) GetQuestionsByIds(context.Context, *GetQuestionsByIdsRequest) (*QuestionBatchResponse, error) {
+func (UnimplementedPaperServer) GetQuestionsByIds(context.Context, *GetQuestionsByIdsRequest) (*QuestionBatchResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetQuestionsByIds not implemented")
 }
-func (UnimplementedPaperServiceServer) GetCategoriesByIds(context.Context, *GetCategoriesByIdsRequest) (*CategoryBatchResponse, error) {
+func (UnimplementedPaperServer) GetCategoriesByIds(context.Context, *GetCategoriesByIdsRequest) (*CategoryBatchResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCategoriesByIds not implemented")
 }
-func (UnimplementedPaperServiceServer) GetExamQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error) {
+func (UnimplementedPaperServer) GetExamQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamQuestion not implemented")
 }
-func (UnimplementedPaperServiceServer) mustEmbedUnimplementedPaperServiceServer() {}
-func (UnimplementedPaperServiceServer) testEmbeddedByValue()                      {}
+func (UnimplementedPaperServer) mustEmbedUnimplementedPaperServer() {}
+func (UnimplementedPaperServer) testEmbeddedByValue()               {}
 
-// UnsafePaperServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to PaperServiceServer will
+// UnsafePaperServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to PaperServer will
 // result in compilation errors.
-type UnsafePaperServiceServer interface {
-	mustEmbedUnimplementedPaperServiceServer()
+type UnsafePaperServer interface {
+	mustEmbedUnimplementedPaperServer()
 }
 
-func RegisterPaperServiceServer(s grpc.ServiceRegistrar, srv PaperServiceServer) {
-	// If the following call pancis, it indicates UnimplementedPaperServiceServer was
+func RegisterPaperServer(s grpc.ServiceRegistrar, srv PaperServer) {
+	// If the following call pancis, it indicates UnimplementedPaperServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&PaperService_ServiceDesc, srv)
+	s.RegisterService(&Paper_ServiceDesc, srv)
 }
 
-func _PaperService_GetUserPapers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_GetUserPapers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).GetUserPapers(ctx, in)
+		return srv.(PaperServer).GetUserPapers(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_GetUserPapers_FullMethodName,
+		FullMethod: Paper_GetUserPapers_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).GetUserPapers(ctx, req.(*Empty))
+		return srv.(PaperServer).GetUserPapers(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_GetPaper_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_GetPaper_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PaperRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).GetPaper(ctx, in)
+		return srv.(PaperServer).GetPaper(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_GetPaper_FullMethodName,
+		FullMethod: Paper_GetPaper_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).GetPaper(ctx, req.(*PaperRequest))
+		return srv.(PaperServer).GetPaper(ctx, req.(*PaperRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_CreatePaper_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_CreatePaper_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).CreatePaper(ctx, in)
+		return srv.(PaperServer).CreatePaper(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_CreatePaper_FullMethodName,
+		FullMethod: Paper_CreatePaper_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).CreatePaper(ctx, req.(*Empty))
+		return srv.(PaperServer).CreatePaper(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_UpdatePaper_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_UpdatePaper_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdatePaperRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).UpdatePaper(ctx, in)
+		return srv.(PaperServer).UpdatePaper(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_UpdatePaper_FullMethodName,
+		FullMethod: Paper_UpdatePaper_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).UpdatePaper(ctx, req.(*UpdatePaperRequest))
+		return srv.(PaperServer).UpdatePaper(ctx, req.(*UpdatePaperRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_DeletePapers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_DeletePapers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeletePapersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).DeletePapers(ctx, in)
+		return srv.(PaperServer).DeletePapers(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_DeletePapers_FullMethodName,
+		FullMethod: Paper_DeletePapers_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).DeletePapers(ctx, req.(*DeletePapersRequest))
+		return srv.(PaperServer).DeletePapers(ctx, req.(*DeletePapersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_GetPaperPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_GetPaperPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PaperRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).GetPaperPermissions(ctx, in)
+		return srv.(PaperServer).GetPaperPermissions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_GetPaperPermissions_FullMethodName,
+		FullMethod: Paper_GetPaperPermissions_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).GetPaperPermissions(ctx, req.(*PaperRequest))
+		return srv.(PaperServer).GetPaperPermissions(ctx, req.(*PaperRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_GetPaperQuestions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_GetPaperQuestions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PaperRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).GetPaperQuestions(ctx, in)
+		return srv.(PaperServer).GetPaperQuestions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_GetPaperQuestions_FullMethodName,
+		FullMethod: Paper_GetPaperQuestions_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).GetPaperQuestions(ctx, req.(*PaperRequest))
+		return srv.(PaperServer).GetPaperQuestions(ctx, req.(*PaperRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_GetPaperQuestion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_GetPaperQuestion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QuestionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).GetPaperQuestion(ctx, in)
+		return srv.(PaperServer).GetPaperQuestion(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_GetPaperQuestion_FullMethodName,
+		FullMethod: Paper_GetPaperQuestion_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).GetPaperQuestion(ctx, req.(*QuestionRequest))
+		return srv.(PaperServer).GetPaperQuestion(ctx, req.(*QuestionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_CreateQuestion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_CreateQuestion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateQuestionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).CreateQuestion(ctx, in)
+		return srv.(PaperServer).CreateQuestion(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_CreateQuestion_FullMethodName,
+		FullMethod: Paper_CreateQuestion_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).CreateQuestion(ctx, req.(*CreateQuestionRequest))
+		return srv.(PaperServer).CreateQuestion(ctx, req.(*CreateQuestionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_UpdateQuestion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_UpdateQuestion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateQuestionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).UpdateQuestion(ctx, in)
+		return srv.(PaperServer).UpdateQuestion(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_UpdateQuestion_FullMethodName,
+		FullMethod: Paper_UpdateQuestion_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).UpdateQuestion(ctx, req.(*UpdateQuestionRequest))
+		return srv.(PaperServer).UpdateQuestion(ctx, req.(*UpdateQuestionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_DeleteQuestion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_DeleteQuestion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QuestionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).DeleteQuestion(ctx, in)
+		return srv.(PaperServer).DeleteQuestion(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_DeleteQuestion_FullMethodName,
+		FullMethod: Paper_DeleteQuestion_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).DeleteQuestion(ctx, req.(*QuestionRequest))
+		return srv.(PaperServer).DeleteQuestion(ctx, req.(*QuestionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_ReorderQuestions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_ReorderQuestions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReorderQuestionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).ReorderQuestions(ctx, in)
+		return srv.(PaperServer).ReorderQuestions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_ReorderQuestions_FullMethodName,
+		FullMethod: Paper_ReorderQuestions_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).ReorderQuestions(ctx, req.(*ReorderQuestionsRequest))
+		return srv.(PaperServer).ReorderQuestions(ctx, req.(*ReorderQuestionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_GetPaperCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_GetPaperCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PaperRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).GetPaperCategories(ctx, in)
+		return srv.(PaperServer).GetPaperCategories(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_GetPaperCategories_FullMethodName,
+		FullMethod: Paper_GetPaperCategories_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).GetPaperCategories(ctx, req.(*PaperRequest))
+		return srv.(PaperServer).GetPaperCategories(ctx, req.(*PaperRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_CreateCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_CreateCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateCategoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).CreateCategory(ctx, in)
+		return srv.(PaperServer).CreateCategory(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_CreateCategory_FullMethodName,
+		FullMethod: Paper_CreateCategory_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).CreateCategory(ctx, req.(*CreateCategoryRequest))
+		return srv.(PaperServer).CreateCategory(ctx, req.(*CreateCategoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_UpdateCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_UpdateCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateCategoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).UpdateCategory(ctx, in)
+		return srv.(PaperServer).UpdateCategory(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_UpdateCategory_FullMethodName,
+		FullMethod: Paper_UpdateCategory_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).UpdateCategory(ctx, req.(*UpdateCategoryRequest))
+		return srv.(PaperServer).UpdateCategory(ctx, req.(*UpdateCategoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_DeleteCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_DeleteCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CategoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).DeleteCategory(ctx, in)
+		return srv.(PaperServer).DeleteCategory(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_DeleteCategory_FullMethodName,
+		FullMethod: Paper_DeleteCategory_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).DeleteCategory(ctx, req.(*CategoryRequest))
+		return srv.(PaperServer).DeleteCategory(ctx, req.(*CategoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_ReorderCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_ReorderCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReorderCategoriesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).ReorderCategories(ctx, in)
+		return srv.(PaperServer).ReorderCategories(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_ReorderCategories_FullMethodName,
+		FullMethod: Paper_ReorderCategories_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).ReorderCategories(ctx, req.(*ReorderCategoriesRequest))
+		return srv.(PaperServer).ReorderCategories(ctx, req.(*ReorderCategoriesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_GetQuestionsByIds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_GetQuestionsByIds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetQuestionsByIdsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).GetQuestionsByIds(ctx, in)
+		return srv.(PaperServer).GetQuestionsByIds(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_GetQuestionsByIds_FullMethodName,
+		FullMethod: Paper_GetQuestionsByIds_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).GetQuestionsByIds(ctx, req.(*GetQuestionsByIdsRequest))
+		return srv.(PaperServer).GetQuestionsByIds(ctx, req.(*GetQuestionsByIdsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_GetCategoriesByIds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_GetCategoriesByIds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetCategoriesByIdsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).GetCategoriesByIds(ctx, in)
+		return srv.(PaperServer).GetCategoriesByIds(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_GetCategoriesByIds_FullMethodName,
+		FullMethod: Paper_GetCategoriesByIds_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).GetCategoriesByIds(ctx, req.(*GetCategoriesByIdsRequest))
+		return srv.(PaperServer).GetCategoriesByIds(ctx, req.(*GetCategoriesByIdsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaperService_GetExamQuestion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Paper_GetExamQuestion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QuestionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaperServiceServer).GetExamQuestion(ctx, in)
+		return srv.(PaperServer).GetExamQuestion(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaperService_GetExamQuestion_FullMethodName,
+		FullMethod: Paper_GetExamQuestion_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServiceServer).GetExamQuestion(ctx, req.(*QuestionRequest))
+		return srv.(PaperServer).GetExamQuestion(ctx, req.(*QuestionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// PaperService_ServiceDesc is the grpc.ServiceDesc for PaperService service.
+// Paper_ServiceDesc is the grpc.ServiceDesc for Paper service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var PaperService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.PaperService",
-	HandlerType: (*PaperServiceServer)(nil),
+var Paper_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.Paper",
+	HandlerType: (*PaperServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetUserPapers",
-			Handler:    _PaperService_GetUserPapers_Handler,
+			Handler:    _Paper_GetUserPapers_Handler,
 		},
 		{
 			MethodName: "GetPaper",
-			Handler:    _PaperService_GetPaper_Handler,
+			Handler:    _Paper_GetPaper_Handler,
 		},
 		{
 			MethodName: "CreatePaper",
-			Handler:    _PaperService_CreatePaper_Handler,
+			Handler:    _Paper_CreatePaper_Handler,
 		},
 		{
 			MethodName: "UpdatePaper",
-			Handler:    _PaperService_UpdatePaper_Handler,
+			Handler:    _Paper_UpdatePaper_Handler,
 		},
 		{
 			MethodName: "DeletePapers",
-			Handler:    _PaperService_DeletePapers_Handler,
+			Handler:    _Paper_DeletePapers_Handler,
 		},
 		{
 			MethodName: "GetPaperPermissions",
-			Handler:    _PaperService_GetPaperPermissions_Handler,
+			Handler:    _Paper_GetPaperPermissions_Handler,
 		},
 		{
 			MethodName: "GetPaperQuestions",
-			Handler:    _PaperService_GetPaperQuestions_Handler,
+			Handler:    _Paper_GetPaperQuestions_Handler,
 		},
 		{
 			MethodName: "GetPaperQuestion",
-			Handler:    _PaperService_GetPaperQuestion_Handler,
+			Handler:    _Paper_GetPaperQuestion_Handler,
 		},
 		{
 			MethodName: "CreateQuestion",
-			Handler:    _PaperService_CreateQuestion_Handler,
+			Handler:    _Paper_CreateQuestion_Handler,
 		},
 		{
 			MethodName: "UpdateQuestion",
-			Handler:    _PaperService_UpdateQuestion_Handler,
+			Handler:    _Paper_UpdateQuestion_Handler,
 		},
 		{
 			MethodName: "DeleteQuestion",
-			Handler:    _PaperService_DeleteQuestion_Handler,
+			Handler:    _Paper_DeleteQuestion_Handler,
 		},
 		{
 			MethodName: "ReorderQuestions",
-			Handler:    _PaperService_ReorderQuestions_Handler,
+			Handler:    _Paper_ReorderQuestions_Handler,
 		},
 		{
 			MethodName: "GetPaperCategories",
-			Handler:    _PaperService_GetPaperCategories_Handler,
+			Handler:    _Paper_GetPaperCategories_Handler,
 		},
 		{
 			MethodName: "CreateCategory",
-			Handler:    _PaperService_CreateCategory_Handler,
+			Handler:    _Paper_CreateCategory_Handler,
 		},
 		{
 			MethodName: "UpdateCategory",
-			Handler:    _PaperService_UpdateCategory_Handler,
+			Handler:    _Paper_UpdateCategory_Handler,
 		},
 		{
 			MethodName: "DeleteCategory",
-			Handler:    _PaperService_DeleteCategory_Handler,
+			Handler:    _Paper_DeleteCategory_Handler,
 		},
 		{
 			MethodName: "ReorderCategories",
-			Handler:    _PaperService_ReorderCategories_Handler,
+			Handler:    _Paper_ReorderCategories_Handler,
 		},
 		{
 			MethodName: "GetQuestionsByIds",
-			Handler:    _PaperService_GetQuestionsByIds_Handler,
+			Handler:    _Paper_GetQuestionsByIds_Handler,
 		},
 		{
 			MethodName: "GetCategoriesByIds",
-			Handler:    _PaperService_GetCategoriesByIds_Handler,
+			Handler:    _Paper_GetCategoriesByIds_Handler,
 		},
 		{
 			MethodName: "GetExamQuestion",
-			Handler:    _PaperService_GetExamQuestion_Handler,
+			Handler:    _Paper_GetExamQuestion_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

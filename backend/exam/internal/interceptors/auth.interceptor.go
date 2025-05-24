@@ -28,48 +28,48 @@ const (
 
 var (
 	requiresRead = map[string]bool{
-		"/proto.ExamService/GetExam":           true,
-		"/proto.ExamService/GetExamPermission": true,
+		"/proto.Exam/GetExam":           true,
+		"/proto.Exam/GetExamPermission": true,
 	}
 
 	// In case of LINK exam, allow access to these handlers even without a permission entry in db
 	allowInLinkExam = map[string]bool{
-		"/proto.ExamService/GetExam":           true,
-		"/proto.ExamService/StartExam":         true,
-		"/proto.ExamService/GetExamPermission": true,
+		"/proto.Exam/GetExam":           true,
+		"/proto.Exam/StartExam":         true,
+		"/proto.Exam/GetExamPermission": true,
 	}
 
 	requiresWrite = map[string]bool{
-		"/proto.ExamService/UpdateExam":            true,
-		"/proto.ExamService/GetExamParticipants":   true,
-		"/proto.ExamService/AddExamParticipant":    true,
-		"/proto.ExamService/RemoveExamParticipant": true,
+		"/proto.Exam/UpdateExam":            true,
+		"/proto.Exam/GetExamParticipants":   true,
+		"/proto.Exam/AddExamParticipant":    true,
+		"/proto.Exam/RemoveExamParticipant": true,
 	}
 
 	requiresParticipate = map[string]bool{
-		"/proto.ExamService/EndExam":            true,
-		"/proto.ExamService/UpsertAnswer":       true,
-		"/proto.ExamService/GetExamParticipant": true,
-		"/proto.ExamService/GetAnswerForExam":   true,
-		"/proto.ExamService/GetExamResults":     true,
+		"/proto.Exam/EndExam":            true,
+		"/proto.Exam/UpsertAnswer":       true,
+		"/proto.Exam/GetExamParticipant": true,
+		"/proto.Exam/GetAnswerForExam":   true,
+		"/proto.Exam/GetExamResults":     true,
 	}
 
 	requiresEvaluate = map[string]bool{
-		"/proto.ExamService/GetAnswerEvaluationData":    true,
-		"/proto.ExamService/UpdateAnswerForEvaluation":  true,
-		"/proto.ExamService/MarkParticipantAsEvaluated": true,
-		"/proto.ExamService/GetAnswerForEvaluation":     true,
-		"/proto.ExamService/GetParticipantById":         true,
+		"/proto.Exam/GetAnswerEvaluationData":    true,
+		"/proto.Exam/UpdateAnswerForEvaluation":  true,
+		"/proto.Exam/MarkParticipantAsEvaluated": true,
+		"/proto.Exam/GetAnswerForEvaluation":     true,
+		"/proto.Exam/GetParticipantById":         true,
 	}
 
 	handlerSpecificPermissionChecks = map[string]func(*models.ExamPermissions) bool{
-		"/proto.ExamService/GetExamQuestions": func(p *models.ExamPermissions) bool {
+		"/proto.Exam/GetExamQuestions": func(p *models.ExamPermissions) bool {
 			return p.CanParticipate() || p.CanEvaluate()
 		},
-		"/proto.ExamService/GetExamCategories": func(p *models.ExamPermissions) bool {
+		"/proto.Exam/GetExamCategories": func(p *models.ExamPermissions) bool {
 			return p.CanParticipate() || p.CanEvaluate()
 		},
-		"/proto.ExamService/GetParticipantAnswers": func(p *models.ExamPermissions) bool {
+		"/proto.Exam/GetParticipantAnswers": func(p *models.ExamPermissions) bool {
 			return p.CanParticipate() || p.CanEvaluate()
 		},
 	}

@@ -30,7 +30,7 @@ const (
 var (
 	lis    *bufconn.Listener
 	ctx    context.Context
-	client proto.ExamServiceClient
+	client proto.ExamClient
 )
 
 func setupContainer() func() {
@@ -133,7 +133,7 @@ func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 			interceptors.EndExamInterceptor(),
 		),
 	)
-	proto.RegisterExamServiceServer(srv, &handlers.ExamServer{})
+	proto.RegisterExamServer(srv, &handlers.ExamServer{})
 
 	go func() {
 		if err := srv.Serve(lis); err != nil {
@@ -162,7 +162,7 @@ func TestMain(m *testing.M) {
 		srv.Stop()
 	}()
 
-	client = proto.NewExamServiceClient(conn)
+	client = proto.NewExamClient(conn)
 
 	code := m.Run()
 

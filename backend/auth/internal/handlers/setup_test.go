@@ -40,7 +40,7 @@ const (
 var (
 	lis    *bufconn.Listener
 	ctx    context.Context
-	client proto.AuthServiceClient
+	client proto.AuthClient
 )
 
 func setupContainers() func() {
@@ -130,7 +130,7 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 	lis = bufconn.Listen(bufSize)
 	srv := grpc.NewServer()
-	proto.RegisterAuthServiceServer(srv, &AuthServer{})
+	proto.RegisterAuthServer(srv, &AuthServer{})
 
 	go func() {
 		if err := srv.Serve(lis); err != nil {
@@ -162,7 +162,7 @@ func TestMain(m *testing.M) {
 	}()
 
 	// Setup gRPC client
-	client = proto.NewAuthServiceClient(conn)
+	client = proto.NewAuthClient(conn)
 
 	// Run tests
 	code := m.Run()

@@ -27,7 +27,7 @@ func main() {
 			interceptors.DeletePaperAuthInterceptor(),
 		),
 	)
-	proto.RegisterPaperServiceServer(grpcServer, &handlers.PaperServer{})
+	proto.RegisterPaperServer(grpcServer, &handlers.PaperServer{})
 
 	log.Printf("Paper gRPC server is running on port %s\n", port)
 	if err := grpcServer.Serve(lis); err != nil {

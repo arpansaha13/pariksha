@@ -2344,8 +2344,8 @@ const file_exam_proto_rawDesc = "" +
 	"\aresults\x18\x01 \x03(\v2\x15.proto.ExamResultItemR\aresults*,\n" +
 	"\x0eExamAccessType\x12\t\n" +
 	"\x05OWNER\x10\x00\x12\x0f\n" +
-	"\vPARTICIPANT\x10\x012\xa8\r\n" +
-	"\vExamService\x12/\n" +
+	"\vPARTICIPANT\x10\x012\xa1\r\n" +
+	"\x04Exam\x12/\n" +
 	"\fGetUserExams\x12\f.proto.Empty\x1a\x0f.proto.ExamList\"\x00\x12=\n" +
 	"\n" +
 	"CreateExam\x12\x18.proto.CreateExamRequest\x1a\x13.proto.ExamResponse\"\x00\x12=\n" +
@@ -2447,52 +2447,52 @@ var file_exam_proto_depIdxs = []int32{
 	26, // 17: proto.ExamQuestionsResponse.questions:type_name -> proto.ExamQuestion
 	28, // 18: proto.ExamCategoriesResponse.categories:type_name -> proto.ExamCategory
 	34, // 19: proto.ExamResultsResponse.results:type_name -> proto.ExamResultItem
-	37, // 20: proto.ExamService.GetUserExams:input_type -> proto.Empty
-	2,  // 21: proto.ExamService.CreateExam:input_type -> proto.CreateExamRequest
-	3,  // 22: proto.ExamService.UpdateExam:input_type -> proto.UpdateExamRequest
-	1,  // 23: proto.ExamService.GetExam:input_type -> proto.ExamRequest
-	1,  // 24: proto.ExamService.GetExamQuestions:input_type -> proto.ExamRequest
-	1,  // 25: proto.ExamService.GetExamCategories:input_type -> proto.ExamRequest
-	1,  // 26: proto.ExamService.GetExamPermission:input_type -> proto.ExamRequest
-	33, // 27: proto.ExamService.DeleteExams:input_type -> proto.DeleteExamsRequest
-	1,  // 28: proto.ExamService.GetExamResults:input_type -> proto.ExamRequest
-	1,  // 29: proto.ExamService.GetExamParticipants:input_type -> proto.ExamRequest
-	10, // 30: proto.ExamService.AddExamParticipant:input_type -> proto.AddParticipantRequest
-	11, // 31: proto.ExamService.RemoveExamParticipant:input_type -> proto.RemoveParticipantRequest
-	12, // 32: proto.ExamService.StartExam:input_type -> proto.StartExamRequest
-	13, // 33: proto.ExamService.EndExam:input_type -> proto.EndExamRequest
-	24, // 34: proto.ExamService.GetExamParticipant:input_type -> proto.GetExamParticipantRequest
-	7,  // 35: proto.ExamService.GetParticipantById:input_type -> proto.ParticipantRequest
-	7,  // 36: proto.ExamService.GetParticipantAnswers:input_type -> proto.ParticipantRequest
-	21, // 37: proto.ExamService.GetAnswerForExam:input_type -> proto.GetAnswerRequest
-	16, // 38: proto.ExamService.UpsertAnswer:input_type -> proto.UpsertAnswersRequest
-	31, // 39: proto.ExamService.GetAnswerEvaluationData:input_type -> proto.ParticipantQuestionRequest
-	20, // 40: proto.ExamService.UpdateAnswerForEvaluation:input_type -> proto.UpdateAnswerRequest
-	7,  // 41: proto.ExamService.MarkParticipantAsEvaluated:input_type -> proto.ParticipantRequest
-	31, // 42: proto.ExamService.GetAnswerForEvaluation:input_type -> proto.ParticipantQuestionRequest
-	5,  // 43: proto.ExamService.GetUserExams:output_type -> proto.ExamList
-	4,  // 44: proto.ExamService.CreateExam:output_type -> proto.ExamResponse
-	4,  // 45: proto.ExamService.UpdateExam:output_type -> proto.ExamResponse
-	4,  // 46: proto.ExamService.GetExam:output_type -> proto.ExamResponse
-	27, // 47: proto.ExamService.GetExamQuestions:output_type -> proto.ExamQuestionsResponse
-	29, // 48: proto.ExamService.GetExamCategories:output_type -> proto.ExamCategoriesResponse
-	30, // 49: proto.ExamService.GetExamPermission:output_type -> proto.ExamPermissionResponse
-	37, // 50: proto.ExamService.DeleteExams:output_type -> proto.Empty
-	35, // 51: proto.ExamService.GetExamResults:output_type -> proto.ExamResultsResponse
-	9,  // 52: proto.ExamService.GetExamParticipants:output_type -> proto.ParticipantList
-	8,  // 53: proto.ExamService.AddExamParticipant:output_type -> proto.ParticipantResponse
-	37, // 54: proto.ExamService.RemoveExamParticipant:output_type -> proto.Empty
-	37, // 55: proto.ExamService.StartExam:output_type -> proto.Empty
-	37, // 56: proto.ExamService.EndExam:output_type -> proto.Empty
-	25, // 57: proto.ExamService.GetExamParticipant:output_type -> proto.GetExamParticipantResponse
-	8,  // 58: proto.ExamService.GetParticipantById:output_type -> proto.ParticipantResponse
-	19, // 59: proto.ExamService.GetParticipantAnswers:output_type -> proto.AnswerList
-	22, // 60: proto.ExamService.GetAnswerForExam:output_type -> proto.AnswerMinimalResponse
-	17, // 61: proto.ExamService.UpsertAnswer:output_type -> proto.UpsertAnswersResponse
-	32, // 62: proto.ExamService.GetAnswerEvaluationData:output_type -> proto.GetAnswerEvaluationDataResponse
-	32, // 63: proto.ExamService.UpdateAnswerForEvaluation:output_type -> proto.GetAnswerEvaluationDataResponse
-	14, // 64: proto.ExamService.MarkParticipantAsEvaluated:output_type -> proto.EvaluationStatusResponse
-	22, // 65: proto.ExamService.GetAnswerForEvaluation:output_type -> proto.AnswerMinimalResponse
+	37, // 20: proto.Exam.GetUserExams:input_type -> proto.Empty
+	2,  // 21: proto.Exam.CreateExam:input_type -> proto.CreateExamRequest
+	3,  // 22: proto.Exam.UpdateExam:input_type -> proto.UpdateExamRequest
+	1,  // 23: proto.Exam.GetExam:input_type -> proto.ExamRequest
+	1,  // 24: proto.Exam.GetExamQuestions:input_type -> proto.ExamRequest
+	1,  // 25: proto.Exam.GetExamCategories:input_type -> proto.ExamRequest
+	1,  // 26: proto.Exam.GetExamPermission:input_type -> proto.ExamRequest
+	33, // 27: proto.Exam.DeleteExams:input_type -> proto.DeleteExamsRequest
+	1,  // 28: proto.Exam.GetExamResults:input_type -> proto.ExamRequest
+	1,  // 29: proto.Exam.GetExamParticipants:input_type -> proto.ExamRequest
+	10, // 30: proto.Exam.AddExamParticipant:input_type -> proto.AddParticipantRequest
+	11, // 31: proto.Exam.RemoveExamParticipant:input_type -> proto.RemoveParticipantRequest
+	12, // 32: proto.Exam.StartExam:input_type -> proto.StartExamRequest
+	13, // 33: proto.Exam.EndExam:input_type -> proto.EndExamRequest
+	24, // 34: proto.Exam.GetExamParticipant:input_type -> proto.GetExamParticipantRequest
+	7,  // 35: proto.Exam.GetParticipantById:input_type -> proto.ParticipantRequest
+	7,  // 36: proto.Exam.GetParticipantAnswers:input_type -> proto.ParticipantRequest
+	21, // 37: proto.Exam.GetAnswerForExam:input_type -> proto.GetAnswerRequest
+	16, // 38: proto.Exam.UpsertAnswer:input_type -> proto.UpsertAnswersRequest
+	31, // 39: proto.Exam.GetAnswerEvaluationData:input_type -> proto.ParticipantQuestionRequest
+	20, // 40: proto.Exam.UpdateAnswerForEvaluation:input_type -> proto.UpdateAnswerRequest
+	7,  // 41: proto.Exam.MarkParticipantAsEvaluated:input_type -> proto.ParticipantRequest
+	31, // 42: proto.Exam.GetAnswerForEvaluation:input_type -> proto.ParticipantQuestionRequest
+	5,  // 43: proto.Exam.GetUserExams:output_type -> proto.ExamList
+	4,  // 44: proto.Exam.CreateExam:output_type -> proto.ExamResponse
+	4,  // 45: proto.Exam.UpdateExam:output_type -> proto.ExamResponse
+	4,  // 46: proto.Exam.GetExam:output_type -> proto.ExamResponse
+	27, // 47: proto.Exam.GetExamQuestions:output_type -> proto.ExamQuestionsResponse
+	29, // 48: proto.Exam.GetExamCategories:output_type -> proto.ExamCategoriesResponse
+	30, // 49: proto.Exam.GetExamPermission:output_type -> proto.ExamPermissionResponse
+	37, // 50: proto.Exam.DeleteExams:output_type -> proto.Empty
+	35, // 51: proto.Exam.GetExamResults:output_type -> proto.ExamResultsResponse
+	9,  // 52: proto.Exam.GetExamParticipants:output_type -> proto.ParticipantList
+	8,  // 53: proto.Exam.AddExamParticipant:output_type -> proto.ParticipantResponse
+	37, // 54: proto.Exam.RemoveExamParticipant:output_type -> proto.Empty
+	37, // 55: proto.Exam.StartExam:output_type -> proto.Empty
+	37, // 56: proto.Exam.EndExam:output_type -> proto.Empty
+	25, // 57: proto.Exam.GetExamParticipant:output_type -> proto.GetExamParticipantResponse
+	8,  // 58: proto.Exam.GetParticipantById:output_type -> proto.ParticipantResponse
+	19, // 59: proto.Exam.GetParticipantAnswers:output_type -> proto.AnswerList
+	22, // 60: proto.Exam.GetAnswerForExam:output_type -> proto.AnswerMinimalResponse
+	17, // 61: proto.Exam.UpsertAnswer:output_type -> proto.UpsertAnswersResponse
+	32, // 62: proto.Exam.GetAnswerEvaluationData:output_type -> proto.GetAnswerEvaluationDataResponse
+	32, // 63: proto.Exam.UpdateAnswerForEvaluation:output_type -> proto.GetAnswerEvaluationDataResponse
+	14, // 64: proto.Exam.MarkParticipantAsEvaluated:output_type -> proto.EvaluationStatusResponse
+	22, // 65: proto.Exam.GetAnswerForEvaluation:output_type -> proto.AnswerMinimalResponse
 	43, // [43:66] is the sub-list for method output_type
 	20, // [20:43] is the sub-list for method input_type
 	20, // [20:20] is the sub-list for extension type_name

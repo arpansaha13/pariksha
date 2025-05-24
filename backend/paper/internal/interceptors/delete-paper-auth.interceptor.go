@@ -13,7 +13,7 @@ import (
 	"pariksha/paper/internal/config/db"
 )
 
-const deletePaperPath = "/proto.PaperService/DeletePapers"
+const deletePaperPath = "/proto.Paper/DeletePapers"
 
 // DeletePaperAuthInterceptor returns a new unary server interceptor that handles
 // permission checks for the DeletePapers endpoint.

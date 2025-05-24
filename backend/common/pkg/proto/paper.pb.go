@@ -1951,9 +1951,9 @@ const file_paper_proto_rawDesc = "" +
 	"\fcategory_ids\x18\x02 \x03(\x03R\vcategoryIds\"R\n" +
 	"\x18PaperPermissionsResponse\x12\x19\n" +
 	"\bcan_read\x18\x01 \x01(\bR\acanRead\x12\x1b\n" +
-	"\tcan_write\x18\x02 \x01(\bR\bcanWrite2\xdd\n" +
+	"\tcan_write\x18\x02 \x01(\bR\bcanWrite2\xd6\n" +
 	"\n" +
-	"\fPaperService\x121\n" +
+	"\x05Paper\x121\n" +
 	"\rGetUserPapers\x12\f.proto.Empty\x1a\x10.proto.PaperList\"\x00\x127\n" +
 	"\bGetPaper\x12\x13.proto.PaperRequest\x1a\x14.proto.PaperResponse\"\x00\x123\n" +
 	"\vCreatePaper\x12\f.proto.Empty\x1a\x14.proto.PaperResponse\"\x00\x128\n" +
@@ -2031,46 +2031,46 @@ var file_paper_proto_depIdxs = []int32{
 	21, // 4: proto.QuestionBatchResponse.questions:type_name -> proto.QuestionBatchItem
 	24, // 5: proto.CategoryBatchResponse.categories:type_name -> proto.CategoryBatchItem
 	26, // 6: proto.CategoryList.categories:type_name -> proto.CategoryResponse
-	32, // 7: proto.PaperService.GetUserPapers:input_type -> proto.Empty
-	0,  // 8: proto.PaperService.GetPaper:input_type -> proto.PaperRequest
-	32, // 9: proto.PaperService.CreatePaper:input_type -> proto.Empty
-	3,  // 10: proto.PaperService.UpdatePaper:input_type -> proto.UpdatePaperRequest
-	5,  // 11: proto.PaperService.DeletePapers:input_type -> proto.DeletePapersRequest
-	0,  // 12: proto.PaperService.GetPaperPermissions:input_type -> proto.PaperRequest
-	0,  // 13: proto.PaperService.GetPaperQuestions:input_type -> proto.PaperRequest
-	6,  // 14: proto.PaperService.GetPaperQuestion:input_type -> proto.QuestionRequest
-	14, // 15: proto.PaperService.CreateQuestion:input_type -> proto.CreateQuestionRequest
-	16, // 16: proto.PaperService.UpdateQuestion:input_type -> proto.UpdateQuestionRequest
-	6,  // 17: proto.PaperService.DeleteQuestion:input_type -> proto.QuestionRequest
-	18, // 18: proto.PaperService.ReorderQuestions:input_type -> proto.ReorderQuestionsRequest
-	0,  // 19: proto.PaperService.GetPaperCategories:input_type -> proto.PaperRequest
-	28, // 20: proto.PaperService.CreateCategory:input_type -> proto.CreateCategoryRequest
-	29, // 21: proto.PaperService.UpdateCategory:input_type -> proto.UpdateCategoryRequest
-	25, // 22: proto.PaperService.DeleteCategory:input_type -> proto.CategoryRequest
-	30, // 23: proto.PaperService.ReorderCategories:input_type -> proto.ReorderCategoriesRequest
-	19, // 24: proto.PaperService.GetQuestionsByIds:input_type -> proto.GetQuestionsByIdsRequest
-	22, // 25: proto.PaperService.GetCategoriesByIds:input_type -> proto.GetCategoriesByIdsRequest
-	6,  // 26: proto.PaperService.GetExamQuestion:input_type -> proto.QuestionRequest
-	2,  // 27: proto.PaperService.GetUserPapers:output_type -> proto.PaperList
-	1,  // 28: proto.PaperService.GetPaper:output_type -> proto.PaperResponse
-	1,  // 29: proto.PaperService.CreatePaper:output_type -> proto.PaperResponse
-	32, // 30: proto.PaperService.UpdatePaper:output_type -> proto.Empty
-	32, // 31: proto.PaperService.DeletePapers:output_type -> proto.Empty
-	31, // 32: proto.PaperService.GetPaperPermissions:output_type -> proto.PaperPermissionsResponse
-	8,  // 33: proto.PaperService.GetPaperQuestions:output_type -> proto.QuestionList
-	7,  // 34: proto.PaperService.GetPaperQuestion:output_type -> proto.QuestionResponse
-	15, // 35: proto.PaperService.CreateQuestion:output_type -> proto.CreateQuestionResponse
-	17, // 36: proto.PaperService.UpdateQuestion:output_type -> proto.UpdateQuestionResponse
-	32, // 37: proto.PaperService.DeleteQuestion:output_type -> proto.Empty
-	32, // 38: proto.PaperService.ReorderQuestions:output_type -> proto.Empty
-	27, // 39: proto.PaperService.GetPaperCategories:output_type -> proto.CategoryList
-	26, // 40: proto.PaperService.CreateCategory:output_type -> proto.CategoryResponse
-	32, // 41: proto.PaperService.UpdateCategory:output_type -> proto.Empty
-	32, // 42: proto.PaperService.DeleteCategory:output_type -> proto.Empty
-	32, // 43: proto.PaperService.ReorderCategories:output_type -> proto.Empty
-	20, // 44: proto.PaperService.GetQuestionsByIds:output_type -> proto.QuestionBatchResponse
-	23, // 45: proto.PaperService.GetCategoriesByIds:output_type -> proto.CategoryBatchResponse
-	7,  // 46: proto.PaperService.GetExamQuestion:output_type -> proto.QuestionResponse
+	32, // 7: proto.Paper.GetUserPapers:input_type -> proto.Empty
+	0,  // 8: proto.Paper.GetPaper:input_type -> proto.PaperRequest
+	32, // 9: proto.Paper.CreatePaper:input_type -> proto.Empty
+	3,  // 10: proto.Paper.UpdatePaper:input_type -> proto.UpdatePaperRequest
+	5,  // 11: proto.Paper.DeletePapers:input_type -> proto.DeletePapersRequest
+	0,  // 12: proto.Paper.GetPaperPermissions:input_type -> proto.PaperRequest
+	0,  // 13: proto.Paper.GetPaperQuestions:input_type -> proto.PaperRequest
+	6,  // 14: proto.Paper.GetPaperQuestion:input_type -> proto.QuestionRequest
+	14, // 15: proto.Paper.CreateQuestion:input_type -> proto.CreateQuestionRequest
+	16, // 16: proto.Paper.UpdateQuestion:input_type -> proto.UpdateQuestionRequest
+	6,  // 17: proto.Paper.DeleteQuestion:input_type -> proto.QuestionRequest
+	18, // 18: proto.Paper.ReorderQuestions:input_type -> proto.ReorderQuestionsRequest
+	0,  // 19: proto.Paper.GetPaperCategories:input_type -> proto.PaperRequest
+	28, // 20: proto.Paper.CreateCategory:input_type -> proto.CreateCategoryRequest
+	29, // 21: proto.Paper.UpdateCategory:input_type -> proto.UpdateCategoryRequest
+	25, // 22: proto.Paper.DeleteCategory:input_type -> proto.CategoryRequest
+	30, // 23: proto.Paper.ReorderCategories:input_type -> proto.ReorderCategoriesRequest
+	19, // 24: proto.Paper.GetQuestionsByIds:input_type -> proto.GetQuestionsByIdsRequest
+	22, // 25: proto.Paper.GetCategoriesByIds:input_type -> proto.GetCategoriesByIdsRequest
+	6,  // 26: proto.Paper.GetExamQuestion:input_type -> proto.QuestionRequest
+	2,  // 27: proto.Paper.GetUserPapers:output_type -> proto.PaperList
+	1,  // 28: proto.Paper.GetPaper:output_type -> proto.PaperResponse
+	1,  // 29: proto.Paper.CreatePaper:output_type -> proto.PaperResponse
+	32, // 30: proto.Paper.UpdatePaper:output_type -> proto.Empty
+	32, // 31: proto.Paper.DeletePapers:output_type -> proto.Empty
+	31, // 32: proto.Paper.GetPaperPermissions:output_type -> proto.PaperPermissionsResponse
+	8,  // 33: proto.Paper.GetPaperQuestions:output_type -> proto.QuestionList
+	7,  // 34: proto.Paper.GetPaperQuestion:output_type -> proto.QuestionResponse
+	15, // 35: proto.Paper.CreateQuestion:output_type -> proto.CreateQuestionResponse
+	17, // 36: proto.Paper.UpdateQuestion:output_type -> proto.UpdateQuestionResponse
+	32, // 37: proto.Paper.DeleteQuestion:output_type -> proto.Empty
+	32, // 38: proto.Paper.ReorderQuestions:output_type -> proto.Empty
+	27, // 39: proto.Paper.GetPaperCategories:output_type -> proto.CategoryList
+	26, // 40: proto.Paper.CreateCategory:output_type -> proto.CategoryResponse
+	32, // 41: proto.Paper.UpdateCategory:output_type -> proto.Empty
+	32, // 42: proto.Paper.DeleteCategory:output_type -> proto.Empty
+	32, // 43: proto.Paper.ReorderCategories:output_type -> proto.Empty
+	20, // 44: proto.Paper.GetQuestionsByIds:output_type -> proto.QuestionBatchResponse
+	23, // 45: proto.Paper.GetCategoriesByIds:output_type -> proto.CategoryBatchResponse
+	7,  // 46: proto.Paper.GetExamQuestion:output_type -> proto.QuestionResponse
 	27, // [27:47] is the sub-list for method output_type
 	7,  // [7:27] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name

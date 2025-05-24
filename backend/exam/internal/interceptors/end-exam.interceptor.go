@@ -18,8 +18,8 @@ import (
 const participantContextKey contextKey = "participant"
 
 var endExamShouldIntercept = map[string]bool{
-	"/proto.ExamService/EndExam":      true,
-	"/proto.ExamService/UpsertAnswer": true,
+	"/proto.Exam/EndExam":      true,
+	"/proto.Exam/UpsertAnswer": true,
 }
 
 // updateParticipantCounts updates the participant counts JSON in exam

@@ -21,7 +21,7 @@ var (
 )
 
 type PaperService struct {
-	client proto.PaperServiceClient
+	client proto.PaperClient
 	conn   *grpc.ClientConn
 }
 
@@ -41,7 +41,7 @@ func (s *PaperService) connect() {
 	}
 
 	s.conn = conn
-	s.client = proto.NewPaperServiceClient(conn)
+	s.client = proto.NewPaperClient(conn)
 }
 
 func (s *PaperService) Close() error {
@@ -55,7 +55,7 @@ func init() {
 	GetPaperService()
 }
 
-func (s *PaperService) Client() proto.PaperServiceClient {
+func (s *PaperService) Client() proto.PaperClient {
 	return s.client
 }
 

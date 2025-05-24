@@ -18,7 +18,7 @@ var (
 )
 
 type AuthService struct {
-	client proto.AuthServiceClient
+	client proto.AuthClient
 	conn   *grpc.ClientConn
 }
 
@@ -39,7 +39,7 @@ func (s *AuthService) connect() {
 	}
 
 	s.conn = conn
-	s.client = proto.NewAuthServiceClient(conn)
+	s.client = proto.NewAuthClient(conn)
 }
 
 // Close closes the gRPC connection
@@ -55,6 +55,6 @@ func init() {
 }
 
 // Client returns the gRPC client for direct access if needed
-func (s *AuthService) Client() proto.AuthServiceClient {
+func (s *AuthService) Client() proto.AuthClient {
 	return s.client
 }

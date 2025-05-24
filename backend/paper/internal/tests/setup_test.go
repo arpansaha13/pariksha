@@ -30,7 +30,7 @@ const (
 var (
 	lis    *bufconn.Listener
 	ctx    context.Context
-	client proto.PaperServiceClient
+	client proto.PaperClient
 )
 
 func setupContainer() func() {
@@ -106,7 +106,7 @@ func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 			interceptors.DeletePaperAuthInterceptor(),
 		),
 	)
-	proto.RegisterPaperServiceServer(srv, &handlers.PaperServer{})
+	proto.RegisterPaperServer(srv, &handlers.PaperServer{})
 
 	go func() {
 		if err := srv.Serve(lis); err != nil {
@@ -135,7 +135,7 @@ func TestMain(m *testing.M) {
 		srv.Stop()
 	}()
 
-	client = proto.NewPaperServiceClient(conn)
+	client = proto.NewPaperClient(conn)
 
 	code := m.Run()
 
