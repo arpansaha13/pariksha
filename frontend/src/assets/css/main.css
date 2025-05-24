@@ -23,3 +23,7 @@ h1.heading {
 h2.heading {
   @apply text-xl font-bold;
 }
+
+h3.heading {
+  @apply text-lg font-bold;
+}

@@ -96,9 +96,13 @@
         v-if="question.type === QuestionType.MCQ"
         :question="question.question"
       />
-      <PaperQuestionSubjective
-        v-else-if="question.type === QuestionType.SUBJECTIVE"
-        :question="question.question"
+      <div v-else-if="question.type === QuestionType.SUBJECTIVE">
+        <p>{{ question.question.statement }}</p>
+      </div>
+      <DisplayCodingQuestion
+        v-else-if="question.type === QuestionType.CODING"
+        :content="question.question"
+        :editor-link="`/editor/questions/${question.id}`"
       />
     </template>
   </UCard>
@@ -379,7 +383,7 @@ usePaperAutoCancelQuestionEdit({
 </script>
 
 <style scoped>
-@reference "../../../assets/css/main.css";
+@reference "~/assets/css/main.css";
 
 .draggable-ghost {
   @apply bg-gray-200;

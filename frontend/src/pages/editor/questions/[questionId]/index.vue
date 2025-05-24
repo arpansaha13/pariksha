@@ -17,46 +17,22 @@
               body: 'overflow-y-auto h-full',
             }"
           >
-            <article class="prose">
-              <h1>Lorem Ipsum</h1>
-              <p>
-                Lorem ipsum dolor sit amet,
-                <span>consectetur adipiscing</span> elit. Nullam venenatis justo
-                id ante convallis, eget scelerisque tortor ultrices.
-              </p>
-              <h2>Features</h2>
-              <ul>
-                <li>Curabitur aliquet quam id dui posuere blandit.</li>
-                <li>Pellentesque in ipsum id orci porta dapibus.</li>
-                <li>Donec sollicitudin molestie malesuada.</li>
-              </ul>
-              <h3>Code Example</h3>
-              <pre>
-  <code>
-      function loremIpsum() {
-          return "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
-      }
-      console.log(loremIpsum());
-  </code>
-</pre>
-              <h2>Conclusion</h2>
-              <p>
-                Nam ultricies tristique lacus, in vehicula ligula sodales vel.
-                <i>
-                  Donec sodales leo et arcu interdum, vel vehicula libero
-                  volutpat.
-                </i>
-              </p>
-            </article>
+            <DisplayCodingQuestion
+              v-if="
+                !isNullOrUndefined(questionData) &&
+                questionData.type === QuestionType.CODING
+              "
+              :content="questionData.question"
+            />
           </UCard>
         </SplitterPanel>
 
         <SplitterResizeHandle
           id="splitter-group-1-resize-handle-1"
-          class="group w-2"
+          class="group w-2 outline-none"
         >
           <div
-            class="group-hover:bg-primary-500 mx-auto h-full w-0.5 transition-colors delay-150"
+            class="group-hover:bg-primary-500 group-focus:bg-primary-500 mx-auto h-full w-0.5 transition-colors delay-150"
           />
         </SplitterResizeHandle>
 
@@ -80,11 +56,42 @@
 </template>
 
 <script lang="ts" setup>
+import { isNullOrUndefined } from '@arpansaha13/utils'
+
 definePageMeta({
   layout: 'blank',
 })
 
+const route = useRoute()
+const questionId = parseInt(route.params.questionId as string) as QuestionId
+
 const editorStore = useEditorStore()
+const {
+  data: questionData,
+  error: questionError,
+  status: questionStatus,
+} = await usePaperQuestion(questionId)
+
+await callOnce(
+  () => {
+    if (questionStatus.value === 'error' && questionError.value) {
+      throw createError({
+        statusCode: questionError.value.statusCode,
+        message: 'You do not have access to this paper.',
+      })
+    }
+    if (
+      isNullOrUndefined(questionData.value) ||
+      questionData.value.type !== QuestionType.CODING
+    ) {
+      throw createError({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: 'We could not find the question you are looking for.',
+      })
+    }
+  },
+  { mode: 'navigation' }
+)
 
 onMounted(async () => {
   await editorStore.prepareEditor()
@@ -97,7 +104,7 @@ const value = ref(`function getColor() {
 </script>
 
 <style scoped>
-@reference "../../assets/css/main.css";
+@reference "~/assets/css/main.css";
 
 .splitter-panel {
   @apply rounded-md border border-neutral-400;
