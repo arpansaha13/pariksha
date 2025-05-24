@@ -17,6 +17,8 @@
           icon="heroicons:play"
           color="neutral"
           variant="soft"
+          loading-auto
+          @click="runCode"
         />
 
         <UButton label="Save" icon="heroicons:cloud-arrow-up" variant="soft" />
@@ -67,7 +69,7 @@
           <UCard :ui="{ root: 'h-full', body: 'h-full p-0!' }">
             <MonacoEditor
               v-if="editorStore.isEditorPrepared"
-              v-model="value"
+              v-model="editorCode"
               :lang="editorLang"
               :options="editorStore.getEditorOptions"
               class="h-full"
@@ -132,9 +134,19 @@ onMounted(async () => {
 })
 
 const editorLang = ref(EditorLang.JAVASCRIPT)
-const value = ref(`function getColor() {
-  const a = ""
-}`)
+const editorCode = ref(`function helloDocker() {
+  const message = "hello docker!!"
+  console.log(message)
+}
+helloDocker()
+`)
+
+async function runCode() {
+  await engineRun({
+    code: editorCode.value,
+    environment: EngineEnv.NODE,
+  })
+}
 </script>
 
 <style scoped>

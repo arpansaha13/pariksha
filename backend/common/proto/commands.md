@@ -20,3 +20,6 @@ Run these commands from `pariksha/backend` directory
 
 <!-- Exam -->
 > protoc --proto_path=common/proto --go_out="./common/pkg" --go-grpc_out="./common/pkg" "common/proto/exam.proto"
+
+<!-- Engine -->
+> protoc --proto_path=common/proto --go_out="./common/pkg" --go-grpc_out="./common/pkg" "common/proto/engine.proto"

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "/proto";
+
+service Engine {
+  rpc RunCode(RunCodeRequest) returns (RunCodeResponse) {}
+}
+
+message RunCodeRequest {
+  string code = 1;
+  string environment = 2;
+}
+
+message RunCodeResponse {
+  string stdout = 1;
+  string stderr = 2;
+  string error = 3;
+  int32 exitCode = 4;
+  int64 executionTime = 5;
+}

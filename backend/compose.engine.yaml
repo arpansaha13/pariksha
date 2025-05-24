@@ -1,0 +1,21 @@
+services:
+  engine:
+    build:
+      context: .
+      dockerfile: ./engine/Dockerfile
+    image: pariksha_engine_service
+    container_name: engine_service
+    env_file:
+      - ./engine/env/.env
+    develop:
+      watch:
+        - action: rebuild
+          path: ./engine/internal
+        - action: rebuild
+          path: ./engine/cmd
+        - action: rebuild
+          path: ./common/pkg
+        - action: rebuild
+          path: ./engine/go.mod
+        - action: rebuild
+          path: ./engine/go.sum

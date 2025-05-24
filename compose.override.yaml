@@ -12,10 +12,20 @@ services:
     restart: unless-stopped
     networks:
       - frontend-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
 
   frontend:
     networks:
       - frontend-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
 
   backend:
     depends_on:
@@ -24,6 +34,8 @@ services:
       paper:
         condition: service_started
       exam:
+        condition: service_started
+      engine:
         condition: service_started
     networks:
       - frontend-network
@@ -57,6 +69,12 @@ services:
       - backend-network
       - exams-network
 
+  engine:
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - backend-network
+
   mailWorker:
     depends_on:
       mailQueue:
@@ -86,6 +104,11 @@ services:
     networks:
       - auth-network
       - mail-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
 
   examQueue:
     volumes:
@@ -94,6 +117,11 @@ services:
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     networks:
       - exams-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
 
   usersDb:
     environment:
@@ -103,6 +131,11 @@ services:
       - ./docker/data/usersDb:/var/lib/postgresql/data
     networks:
       - auth-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
 
   papersDb:
     environment:
@@ -112,6 +145,11 @@ services:
       - ./docker/data/papersDb:/var/lib/postgresql/data
     networks:
       - papers-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
 
   examsDb:
     environment:
@@ -121,6 +159,11 @@ services:
       - ./docker/data/examsDb:/var/lib/postgresql/data
     networks:
       - exams-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
 
   examWorker:
     depends_on:

@@ -31,6 +31,11 @@ var (
 )
 
 var (
+	ENGINE_SERVER_HOST string
+	ENGINE_SERVER_PORT string
+)
+
+var (
 	CLIENT_URL string
 )
 
@@ -45,6 +50,8 @@ func init() {
 		"PAPER_SERVER_PORT",
 		"EXAM_SERVER_HOST",
 		"EXAM_SERVER_PORT",
+		"ENGINE_SERVER_HOST",
+		"ENGINE_SERVER_PORT",
 	}
 
 	for _, envVar := range requiredEnvVars {
@@ -68,6 +75,9 @@ func init() {
 
 	EXAM_SERVER_HOST = os.Getenv("EXAM_SERVER_HOST")
 	EXAM_SERVER_PORT = os.Getenv("EXAM_SERVER_PORT")
+
+	ENGINE_SERVER_HOST = os.Getenv("ENGINE_SERVER_HOST")
+	ENGINE_SERVER_PORT = os.Getenv("ENGINE_SERVER_PORT")
 
 	CLIENT_URL = os.Getenv("CLIENT_URL")
 }

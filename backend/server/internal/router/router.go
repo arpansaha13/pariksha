@@ -93,5 +93,8 @@ func SetupRouter() *mux.Router {
 	protectedRouter.HandleFunc("/users/me", handlers.UpdateAuthUser).Methods("PATCH", "OPTIONS")
 	protectedRouter.HandleFunc("/users/{userId}", handlers.GetUser).Methods("GET", "OPTIONS")
 
+	// Engine Routes
+	protectedRouter.HandleFunc("/engine/run", handlers.RunCode).Methods("POST", "OPTIONS")
+
 	return r
 }

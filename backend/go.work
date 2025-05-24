@@ -1,10 +1,19 @@
 go 1.23.4
 
 use ./common
-use ./auth
-use ./paper
-use ./exam
+
 use ./server
+
+use ./auth
+
+use ./paper
+
+use ./exam
+
+use ./engine
+
 use ./cron/sessions
+
 use ./workers/mail
+
 use ./workers/exam
