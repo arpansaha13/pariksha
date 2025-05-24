@@ -22,7 +22,6 @@ export interface Exam {
   type: ExamAccessType
   max_candidates_count: number
   max_score: number
-  paper_id: PaperId
   duration_minutes: number
 }
 

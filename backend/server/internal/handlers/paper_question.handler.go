@@ -11,6 +11,7 @@ import (
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
 	"pariksha/server/internal/services"
+	"pariksha/server/internal/utils"
 )
 
 func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
@@ -32,10 +33,11 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 	// Convert proto response to HTTP response
 	httpResponse := make([]dtos.QuestionMinimalResponseDto, len(response.Questions))
 	for i, q := range response.Questions {
+		encryptedPaperId, _ := utils.EncryptID(q.PaperId)
 		httpResponse[i] = dtos.QuestionMinimalResponseDto{
 			ID:         q.Id,
 			CategoryID: q.CategoryId,
-			PaperID:    q.PaperId,
+			PaperID:    encryptedPaperId,
 			Order:      q.Order,
 			Question:   q.RawQuestion,
 		}
@@ -67,13 +69,14 @@ func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 
 	tags, _ := json.Marshal(response.Tags)
 
+	encryptedPaperId, _ := utils.EncryptID(response.PaperId)
 	httpResponse := dtos.QuestionResponseDto{
 		ID:            response.Id,
 		Question:      response.RawQuestion,
 		CategoryID:    response.CategoryId,
 		Type:          response.Type,
 		Tags:          tags,
-		PaperID:       response.PaperId,
+		PaperID:       encryptedPaperId,
 		MaxScore:      response.MaxScore,
 		CorrectAnswer: response.GetCorrectAnswer(),
 	}

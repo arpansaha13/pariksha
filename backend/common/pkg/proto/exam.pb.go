@@ -298,7 +298,6 @@ type ExamResponse struct {
 	CreatedBy          int64                  `protobuf:"varint,5,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
 	Type               string                 `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
 	MaxCandidatesCount int32                  `protobuf:"varint,7,opt,name=max_candidates_count,json=maxCandidatesCount,proto3" json:"max_candidates_count,omitempty"`
-	PaperId            int64                  `protobuf:"varint,8,opt,name=paper_id,json=paperId,proto3" json:"paper_id,omitempty"`
 	ParticipantCounts  *ParticipantCount      `protobuf:"bytes,9,opt,name=participant_counts,json=participantCounts,proto3" json:"participant_counts,omitempty"`
 	DurationMinutes    int32                  `protobuf:"varint,10,opt,name=duration_minutes,json=durationMinutes,proto3" json:"duration_minutes,omitempty"`
 	MaxScore           int32                  `protobuf:"varint,11,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
@@ -381,13 +380,6 @@ func (x *ExamResponse) GetType() string {
 func (x *ExamResponse) GetMaxCandidatesCount() int32 {
 	if x != nil {
 		return x.MaxCandidatesCount
-	}
-	return 0
-}
-
-func (x *ExamResponse) GetPaperId() int64 {
-	if x != nil {
-		return x.PaperId
 	}
 	return 0
 }
@@ -2195,7 +2187,7 @@ const file_exam_proto_rawDesc = "" +
 	"\n" +
 	"\b_ends_atB\a\n" +
 	"\x05_typeB\x13\n" +
-	"\x11_duration_minutes\"\xb2\x03\n" +
+	"\x11_duration_minutes\"\x97\x03\n" +
 	"\fExamResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x127\n" +
@@ -2204,8 +2196,7 @@ const file_exam_proto_rawDesc = "" +
 	"\n" +
 	"created_by\x18\x05 \x01(\x03R\tcreatedBy\x12\x12\n" +
 	"\x04type\x18\x06 \x01(\tR\x04type\x120\n" +
-	"\x14max_candidates_count\x18\a \x01(\x05R\x12maxCandidatesCount\x12\x19\n" +
-	"\bpaper_id\x18\b \x01(\x03R\apaperId\x12F\n" +
+	"\x14max_candidates_count\x18\a \x01(\x05R\x12maxCandidatesCount\x12F\n" +
 	"\x12participant_counts\x18\t \x01(\v2\x17.proto.ParticipantCountR\x11participantCounts\x12)\n" +
 	"\x10duration_minutes\x18\n" +
 	" \x01(\x05R\x0fdurationMinutes\x12\x1b\n" +

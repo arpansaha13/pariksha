@@ -30,7 +30,6 @@ type ExamResponseDto struct {
 	CreatedBy          int64     `json:"created_by"`
 	Type               string    `json:"type"`
 	MaxCandidatesCount int32     `json:"max_candidates_count"`
-	PaperID            int64     `json:"paper_id"`
 	DurationMinutes    int32     `json:"duration_minutes"`
 	MaxScore           int32     `json:"max_score"`
 }

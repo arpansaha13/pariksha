@@ -8,7 +8,7 @@ type QuestionResponseDto struct {
 	CategoryID    int64           `json:"category_id"`
 	Type          string          `json:"type"`
 	Tags          json.RawMessage `json:"tags"`
-	PaperID       int64           `json:"paper_id"`
+	PaperID       string          `json:"paper_id"`
 	MaxScore      int32           `json:"max_score"`
 	CorrectAnswer string          `json:"correct_answer"`
 }
@@ -16,7 +16,7 @@ type QuestionResponseDto struct {
 type QuestionMinimalResponseDto struct {
 	ID         int64           `json:"id"`
 	CategoryID int64           `json:"category_id"`
-	PaperID    int64           `json:"paper_id"`
+	PaperID    string          `json:"paper_id"`
 	Order      int32           `json:"order"`
 	Question   json.RawMessage `json:"question"`
 }
