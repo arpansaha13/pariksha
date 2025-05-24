@@ -1,0 +1,11 @@
+export const NUXT_ENV_DEVELOPMENT = 'development'
+
+export const MAX_SCORE_PER_QUESTION = 1000
+export const MAX_EXAM_DURATION_MINUTES = 1440 // 24 hours
+
+export const MIN_MCQ_OPTIONS_COUNT = 2
+export const MAX_MCQ_OPTIONS_COUNT = 5
+export const MAX_CODING_EXAMPLES_COUNT = 4
+
+export const AUTO_SAVE_EXAM_ANSWER_INTERVAL_SECONDS = 15
+export const AUTO_SAVE_EVALUATION_INTERVAL_SECONDS = 10

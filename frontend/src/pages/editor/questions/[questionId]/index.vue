@@ -131,7 +131,7 @@ onMounted(async () => {
   await editorStore.prepareEditor()
 })
 
-const editorLang = ref<EditorLanguage>('javascript')
+const editorLang = ref(EditorLang.JAVASCRIPT)
 const value = ref(`function getColor() {
   const a = ""
 }`)

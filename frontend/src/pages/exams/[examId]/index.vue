@@ -8,8 +8,6 @@
 </template>
 
 <script setup lang="ts">
-import type { ExamPermission } from '~/utils/types/exam'
-
 definePageMeta({
   middleware: ['check-exam-permission'],
 })

@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import type { CalendarDateTime } from '@internationalized/date'
-import type { ExamAccessType } from '~/utils/types/exam'
 
 export const useNewExamStore = defineStore('new-exam', {
   state: () => ({

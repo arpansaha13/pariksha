@@ -1,3 +1,8 @@
+interface ExamParticipantById {
+  readonly id: ExamParticipantId
+  readonly status: ExamParticipantStatus
+}
+
 export function useExamParticipantById(participantId: ExamParticipantId) {
   const { $api } = useNuxtApp()
 
