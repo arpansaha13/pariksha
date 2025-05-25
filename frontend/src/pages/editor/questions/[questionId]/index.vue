@@ -61,20 +61,62 @@
           />
         </SplitterResizeHandle>
 
-        <SplitterPanel
-          id="splitter-group-1-panel-2"
-          :min-size="20"
-          class="splitter-panel"
-        >
-          <UCard :ui="{ root: 'h-full', body: 'h-full p-0!' }">
-            <MonacoEditor
-              v-if="editorStore.isEditorPrepared"
-              v-model="editorCode"
-              :lang="editorLang"
-              :options="editorStore.getEditorOptions"
-              class="h-full"
-            />
-          </UCard>
+        <SplitterPanel id="splitter-group-1-panel-2" :min-size="20">
+          <SplitterGroup id="splitter-group-2" direction="vertical">
+            <SplitterPanel
+              id="splitter-group-2-panel-1"
+              :min-size="20"
+              class="splitter-panel"
+            >
+              <UCard :ui="{ root: 'h-full', body: 'h-full p-0!' }">
+                <MonacoEditor
+                  v-if="editorStore.isEditorPrepared"
+                  v-model="editorCode"
+                  :lang="editorLang"
+                  :options="editorStore.getEditorOptions"
+                  class="h-full"
+                  @load="isEditorLoaded = true"
+                />
+              </UCard>
+            </SplitterPanel>
+
+            <SplitterResizeHandle
+              id="splitter-group-2-resize-handle-1"
+              class="group flex h-2 flex-col outline-none"
+            >
+              <div
+                class="group-hover:bg-primary-500 group-focus:bg-primary-500 my-auto h-0.5 w-full transition-colors delay-150"
+              />
+            </SplitterResizeHandle>
+
+            <SplitterPanel id="splitter-group-2-panel-2" class="splitter-panel">
+              <UCard
+                :ui="{
+                  root: 'h-full overflow-auto',
+                  body: 'h-full overflow-auto',
+                }"
+              >
+                <DisplayCodeBlock
+                  v-if="engineRunResult?.stdout"
+                  preserve-white-space
+                >
+                  <template #header> Stdout </template>
+                  <p>{{ engineRunResult.stdout }}</p>
+                </DisplayCodeBlock>
+
+                <DisplayCodeBlock
+                  v-if="engineRunResult?.stderr"
+                  color="error"
+                  preserve-white-space
+                >
+                  <template #header> Stderr </template>
+                  <p class="text-error-400">
+                    {{ engineRunResult.stderr }}
+                  </p>
+                </DisplayCodeBlock>
+              </UCard>
+            </SplitterPanel>
+          </SplitterGroup>
         </SplitterPanel>
       </SplitterGroup>
     </ClientOnly>
@@ -133,6 +175,7 @@ onMounted(async () => {
   await editorStore.prepareEditor()
 })
 
+const isEditorLoaded = ref(false)
 const editorLang = ref(EditorLang.JAVASCRIPT)
 const editorCode = ref(`function helloDocker() {
   const message = "hello docker!!"
@@ -141,8 +184,10 @@ const editorCode = ref(`function helloDocker() {
 helloDocker()
 `)
 
+const engineRunResult = ref<EngineRunResult | null>(null)
 async function runCode() {
-  await engineRun({
+  if (!isEditorLoaded.value) return
+  engineRunResult.value = await engineRun({
     code: editorCode.value,
     environment: EngineEnv.NODE,
   })

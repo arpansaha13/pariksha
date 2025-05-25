@@ -3,10 +3,17 @@ interface EngineRunBody {
   environment: EngineEnv
 }
 
+export interface EngineRunResult {
+  execution_time: number
+  exit_code: number
+  stderr: string
+  stdout: string
+}
+
 export async function engineRun(body: EngineRunBody) {
   const { $api } = useNuxtApp()
 
-  return $api('/api/engine/run', {
+  return $api<EngineRunResult>('/api/engine/run', {
     method: 'POST',
     body,
   })

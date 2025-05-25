@@ -28,13 +28,13 @@
         :key="exampleIdx"
       >
         <h3 class="heading mt-4 mb-3">Example {{ exampleIdx + 1 }}</h3>
-        <div class="rounded-md bg-neutral-100 p-4 font-mono shadow-sm">
+        <DisplayCodeBlock>
           <p>Input: {{ example.input }}</p>
           <p>Output: {{ example.output }}</p>
           <p v-if="example.explanation">
             Explanation: {{ example.explanation }}
           </p>
-        </div>
+        </DisplayCodeBlock>
       </template>
     </template>
   </article>

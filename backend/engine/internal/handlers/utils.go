@@ -1,18 +1,21 @@
 package handlers
 
 import (
+	"bufio"
 	"fmt"
 	"io"
+	"strings"
 )
 
-// splitLogs separates the combined Docker logs into stdout and stderr
+// splitLogs separates combined Docker logs into stdout and stderr.
 func splitLogs(logs io.Reader) (string, string) {
-	stdout := new(string)
-	stderr := new(string)
-	buf := make([]byte, 8192)
+	var stdout, stderr strings.Builder
+	reader := bufio.NewReader(logs) // Use bufio.Reader to handler partial reads and incomplete headers
+	headerBuf := make([]byte, 8)    // Temporary buffer for header storage
 
 	for {
-		n, err := logs.Read(buf)
+		// Read the 8-byte header
+		_, err := io.ReadFull(reader, headerBuf)
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -20,18 +23,21 @@ func splitLogs(logs io.Reader) (string, string) {
 			return "", fmt.Sprintf("error reading logs: %v", err)
 		}
 
-		// Docker log format: first 8 bytes are header, then content
-		if n > 8 {
-			header := buf[0]
-			content := string(buf[8:n])
+		// Extract header info
+		header := headerBuf[0] // First byte determines stdout/stderr
 
-			if header == 1 { // stdout
-				*stdout += content
-			} else if header == 2 { // stderr
-				*stderr += content
-			}
+		// Read the actual log message
+		content, err := reader.ReadBytes('\n') // Read until newline
+		if err != nil && err != io.EOF {
+			return "", fmt.Sprintf("error reading log content: %v", err)
+		}
+
+		if header == 1 {
+			stdout.Write(content)
+		} else if header == 2 {
+			stderr.Write(content)
 		}
 	}
 
-	return *stdout, *stderr
+	return stdout.String(), stderr.String()
 }
