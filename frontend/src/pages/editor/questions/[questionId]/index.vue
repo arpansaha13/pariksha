@@ -26,12 +26,12 @@
     </div>
 
     <SplitterGroup
-      id="splitter-group-1"
+      :id="Splitter.GROUP_1_ID"
       direction="horizontal"
       @layout="splitterGroup1Layout = $event"
     >
       <SplitterPanel
-        id="splitter-group-1-panel-1"
+        :id="Splitter.GROUP_1_PANEL_1_ID"
         :default-size="splitterGroup1Layout?.[0]"
         :min-size="20"
         class="splitter-panel"
@@ -53,7 +53,7 @@
       </SplitterPanel>
 
       <SplitterResizeHandle
-        id="splitter-group-1-resize-handle-1"
+        :id="Splitter.GROUP_1_RESIZE_HANDLE_1_ID"
         class="group w-2 outline-none"
       >
         <div
@@ -62,18 +62,18 @@
       </SplitterResizeHandle>
 
       <SplitterPanel
-        id="splitter-group-1-panel-2"
+        :id="Splitter.GROUP_1_PANEL_2_ID"
         :default-size="splitterGroup1Layout?.[1]"
         :min-size="20"
       >
         <SplitterGroup
-          id="splitter-group-2"
+          :id="Splitter.GROUP_2_ID"
           ref="splitterGroup2Ref"
           direction="vertical"
           @layout="splitterGroup2Layout = $event"
         >
           <SplitterPanel
-            id="splitter-group-2-panel-1"
+            :id="Splitter.GROUP_2_PANEL_1_ID"
             :default-size="splitterGroup2Layout?.[0]"
             :min-size="20"
             class="splitter-panel"
@@ -93,7 +93,7 @@
           </SplitterPanel>
 
           <SplitterResizeHandle
-            id="splitter-group-2-resize-handle-1"
+            :id="Splitter.GROUP_2_RESIZE_HANDLE_1_ID"
             class="group flex h-2 flex-col outline-none"
           >
             <div
@@ -102,7 +102,7 @@
           </SplitterResizeHandle>
 
           <SplitterPanel
-            id="splitter-group-2-panel-2"
+            :id="Splitter.GROUP_2_PANEL_2_ID"
             ref="splitterGroup2Panel2Ref"
             collapsible
             :default-size="splitterGroup2Layout?.[1]"
@@ -132,11 +132,7 @@
                         ? 'heroicons:chevron-up'
                         : 'heroicons:chevron-down'
                     "
-                    @click="
-                      splitterGroup2Panel2Ref?.isCollapsed
-                        ? splitterGroup2Panel2Ref?.expand()
-                        : splitterGroup2Panel2Ref?.collapse()
-                    "
+                    @click="toggleSplitterPanel(splitterGroup2Panel2Ref)"
                   />
                 </div>
               </template>
@@ -217,9 +213,25 @@ await callOnce(
   { mode: 'navigation' }
 )
 
-const previousPath = useState(UseStateKeys.PreviousPath)
 const editorStore = useEditorStore()
 
+onMounted(async () => {
+  await editorStore.prepareEditor()
+})
+
+enum Splitter {
+  GROUP_1_ID = 'splitter-group-1',
+  GROUP_1_PANEL_1_ID = 'splitter-group-1-panel-1',
+  GROUP_1_PANEL_2_ID = 'splitter-group-1-panel-2',
+  GROUP_1_RESIZE_HANDLE_1_ID = 'splitter-group-1-resize-handle-1',
+
+  GROUP_2_ID = 'splitter-group-2',
+  GROUP_2_PANEL_1_ID = 'splitter-group-2-panel-1',
+  GROUP_2_PANEL_2_ID = 'splitter-group-2-panel-2',
+  GROUP_2_RESIZE_HANDLE_1_ID = 'splitter-group-2-resize-handle-1',
+}
+
+// ______________________SPLITTER LAYOUT SSR______________________
 const splitterGroup1Layout = useCookie<number[]>(
   'editor:splitter-group-1-layout'
 )
@@ -227,6 +239,7 @@ const splitterGroup2Layout = useCookie<number[]>(
   'editor:splitter-group-2-layout'
 )
 
+// ____________CALCULATE GROUP-2 PANEL-2 COLLAPSED SIZE___________
 const splitterGroup2Ref = ref<InstanceType<typeof SplitterGroup>>()
 const splitterGroup2Panel2Ref = ref<InstanceType<typeof SplitterPanel>>()
 
@@ -245,16 +258,47 @@ const splitterGroup2Panel2CollapsedSize = computed(() => {
   return Math.floor(collapsedSizePercent * 100) / 100 // 2 decimal places
 })
 
+// ________________SPLITTER PANEL EXPAND/COLLAPSE_________________
+function useSplitterToggleCollapse() {
+  const isPanelInitiallyCollapsed = ref({} as Record<Splitter, boolean>)
+
+  const { stop } = watchEffect(async () => {
+    if (splitterGroup2Panel2Ref.value?.isCollapsed) {
+      isPanelInitiallyCollapsed.value[Splitter.GROUP_2_PANEL_2_ID] = true
+      stop()
+    }
+  })
+
+  function toggleSplitterPanel(
+    panelInstance: InstanceType<typeof SplitterPanel> | undefined
+  ) {
+    if (isNullOrUndefined(panelInstance)) return
+
+    if (panelInstance.isExpanded) {
+      panelInstance.collapse()
+      return
+    }
+
+    if (isPanelInitiallyCollapsed.value[Splitter.GROUP_2_PANEL_2_ID]) {
+      panelInstance.resize(40)
+      isPanelInitiallyCollapsed.value[Splitter.GROUP_2_PANEL_2_ID] = false
+    } else {
+      panelInstance.expand()
+    }
+  }
+  return toggleSplitterPanel
+}
+
+const toggleSplitterPanel = useSplitterToggleCollapse()
+// _________________________BACK BUTTON___________________________
+const previousPath = useState(UseStateKeys.PreviousPath)
 const backButtonPath = computed(() => {
   if (previousPath.value) return previousPath.value
   if (isNullOrUndefined(questionData.value)) return undefined
   return `/papers/${questionData.value.paper_id}`
 })
 
-onMounted(async () => {
-  await editorStore.prepareEditor()
-})
-
+// _________________________EDITOR STATE__________________________
 const isEditorLoaded = ref(false)
 const editorLang = ref(EditorLang.JAVASCRIPT)
 const editorCode = ref(`function helloDocker() {
