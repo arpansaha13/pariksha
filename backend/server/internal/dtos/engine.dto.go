@@ -1,8 +1,13 @@
 package dtos
 
+type TestCaseDto struct {
+	Inputs []string `json:"inputs" validate:"required,min=1"`
+}
+
 type RunCodeRequestDto struct {
-	Code        string `json:"code" validate:"required"`
-	Environment string `json:"environment" validate:"required"`
+	Code        string        `json:"code" validate:"required"`
+	Environment string        `json:"environment" validate:"required"`
+	TestCases   []TestCaseDto `json:"testCases" validate:"required,min=1"`
 }
 
 type RunCodeResponseDto struct {

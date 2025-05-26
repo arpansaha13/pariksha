@@ -301,12 +301,9 @@ const backButtonPath = computed(() => {
 // _________________________EDITOR STATE__________________________
 const isEditorLoaded = ref(false)
 const editorLang = ref(EditorLang.JAVASCRIPT)
-const editorCode = ref(`function helloDocker() {
-  const message = "hello docker!!"
-  console.log(message)
-}
-helloDocker()
-`)
+const editorCode = ref(`function solve(a, b) {
+  return parseInt(a) + parseInt(b)
+}`)
 
 const engineRunResult = ref<EngineRunResult | null>(null)
 async function runCode() {
@@ -314,10 +311,15 @@ async function runCode() {
   engineRunResult.value = await engineRun({
     code: editorCode.value,
     environment: EngineEnv.NODE,
+    testCases: [
+      { inputs: ['1', '2'] },
+      { inputs: ['5', '3'] },
+      { inputs: ['10', '20'] },
+    ],
   })
 
   if (splitterGroup2Panel2Ref.value?.isCollapsed) {
-    splitterGroup2Panel2Ref.value.expand()
+    toggleSplitterPanel(splitterGroup2Panel2Ref.value)
   }
 }
 </script>

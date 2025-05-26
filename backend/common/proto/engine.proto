@@ -11,6 +11,11 @@ service Engine {
 message RunCodeRequest {
   string code = 1;
   string environment = 2;
+  repeated TestCase testCases = 3;
+}
+
+message TestCase {
+  repeated string inputs = 1;
 }
 
 message RunCodeResponse {

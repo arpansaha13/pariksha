@@ -1,6 +1,11 @@
+interface TestCase {
+  inputs: string[]
+}
+
 interface EngineRunBody {
   code: string
   environment: EngineEnv
+  testCases: TestCase[]
 }
 
 export interface EngineRunResult {

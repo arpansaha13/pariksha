@@ -23,10 +23,19 @@ func RunCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Convert DTO test cases to proto test cases
+	testCases := make([]*proto.TestCase, len(requestDto.TestCases))
+	for i, tc := range requestDto.TestCases {
+		testCases[i] = &proto.TestCase{
+			Inputs: tc.Inputs,
+		}
+	}
+
 	engineService := services.GetEngineService()
 	response, err := engineService.Client().RunCode(context.Background(), &proto.RunCodeRequest{
 		Code:        requestDto.Code,
 		Environment: requestDto.Environment,
+		TestCases:   testCases,
 	})
 
 	if err != nil {
