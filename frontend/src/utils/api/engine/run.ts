@@ -1,5 +1,6 @@
-interface TestCase {
+export interface TestCase {
   inputs: string[]
+  expectedOutput: string
 }
 
 interface EngineRunBody {

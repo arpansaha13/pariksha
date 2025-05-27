@@ -31,7 +31,7 @@
       @layout="splitterGroup1Layout = $event"
     >
       <SplitterPanel
-        :id="Splitter.GROUP_1_PANEL_1_ID"
+        :id="Splitter.PRIMARY_SIDE_BAR"
         :default-size="splitterGroup1Layout?.[0]"
         :min-size="20"
         class="splitter-panel"
@@ -103,7 +103,7 @@
 
           <SplitterPanel
             :id="Splitter.GROUP_2_PANEL_2_ID"
-            ref="splitterGroup2Panel2Ref"
+            ref="panelRef"
             collapsible
             :default-size="splitterGroup2Layout?.[1]"
             :min-size="splitterGroup2Panel2CollapsedSize"
@@ -113,59 +113,66 @@
             <UCard
               :ui="{
                 root: 'h-full flex flex-col',
-                body: 'grow overflow-auto',
-                header: 'p-1! flex items-center justify-between',
+                body: 'h-full p-0!',
               }"
             >
-              <template #header>
-                <div class="px-1.5">
-                  <p class="text-sm">Run Results</p>
-                </div>
-
-                <div>
-                  <UButton
-                    size="sm"
-                    color="neutral"
-                    variant="ghost"
-                    :icon="
-                      splitterGroup2Panel2Ref?.isCollapsed
-                        ? 'heroicons:chevron-up'
-                        : 'heroicons:chevron-down'
-                    "
-                    @click="toggleSplitterPanel(splitterGroup2Panel2Ref)"
-                  />
-                </div>
-              </template>
-
-              <div
-                v-if="isNullOrUndefined(engineRunResult)"
-                class="grid h-full place-items-center"
+              <UTabs
+                v-model="panelTabActive"
+                :items="panelTabItems"
+                size="sm"
+                variant="link"
+                class="w-full"
+                :ui="{
+                  root: 'h-full',
+                  content: 'grow px-4 pb-4 overflow-auto',
+                }"
               >
-                <EmptyState
-                  icon="heroicons:code-bracket-16-solid"
-                  title="No execution results available"
-                  description="Run your code to see the output here"
-                />
-              </div>
+                <template #list-trailing>
+                  <div class="ml-auto">
+                    <UButton
+                      size="sm"
+                      color="neutral"
+                      variant="ghost"
+                      :icon="
+                        panelRef?.isCollapsed
+                          ? 'heroicons:chevron-up'
+                          : 'heroicons:chevron-down'
+                      "
+                      @click="toggleSplitterPanel(panelRef)"
+                    />
+                  </div>
+                </template>
 
-              <DisplayCodeBlock
-                v-else-if="engineRunResult.stdout"
-                preserve-white-space
-              >
-                <template #header> Stdout </template>
-                <p>{{ engineRunResult.stdout }}</p>
-              </DisplayCodeBlock>
+                <template #test-cases>
+                  <UTabs :items="testCaseTabItems" size="sm" variant="link">
+                    <template #default="{ index: testCaseIdx }">
+                      Test case {{ testCaseIdx + 1 }}
+                    </template>
 
-              <DisplayCodeBlock
-                v-else-if="engineRunResult.stderr"
-                color="error"
-                preserve-white-space
-              >
-                <template #header> Stderr </template>
-                <p class="text-error-500">
-                  {{ engineRunResult.stderr }}
-                </p>
-              </DisplayCodeBlock>
+                    <template #content="{ index: testCaseIdx }">
+                      <EditorTestCaseForm
+                        v-model:test-case="testCaseTabItems[testCaseIdx]"
+                        :test-case-idx="testCaseIdx"
+                      />
+                    </template>
+                  </UTabs>
+                </template>
+
+                <template #run-results>
+                  <div
+                    v-if="isNullOrUndefined(engineRunResult)"
+                    class="grid size-full place-items-center"
+                  >
+                    <EmptyState
+                      icon="heroicons:code-bracket-16-solid"
+                      title="No execution results available"
+                      description="Run your code to see the output here"
+                    />
+                  </div>
+
+                  <EditorRunResult v-else :run-result="engineRunResult" />
+                </template>
+              </UTabs>
             </UCard>
           </SplitterPanel>
         </SplitterGroup>
@@ -177,6 +184,7 @@
 <script lang="ts" setup>
 import type { SplitterGroup, SplitterPanel } from '#components'
 import { isNullOrUndefined } from '@arpansaha13/utils'
+import type { TabsItem } from '@nuxt/ui'
 
 definePageMeta({
   layout: 'blank',
@@ -221,7 +229,7 @@ onMounted(async () => {
 
 enum Splitter {
   GROUP_1_ID = 'splitter-group-1',
-  GROUP_1_PANEL_1_ID = 'splitter-group-1-panel-1',
+  PRIMARY_SIDE_BAR = 'primary-side-bar', // splitter-group-1-panel-1
   GROUP_1_PANEL_2_ID = 'splitter-group-1-panel-2',
   GROUP_1_RESIZE_HANDLE_1_ID = 'splitter-group-1-resize-handle-1',
 
@@ -241,7 +249,7 @@ const splitterGroup2Layout = useCookie<number[]>(
 
 // ____________CALCULATE GROUP-2 PANEL-2 COLLAPSED SIZE___________
 const splitterGroup2Ref = ref<InstanceType<typeof SplitterGroup>>()
-const splitterGroup2Panel2Ref = ref<InstanceType<typeof SplitterPanel>>()
+const panelRef = ref<InstanceType<typeof SplitterPanel>>()
 
 const splitterGroup2Panel2CollapsedSize = computed(() => {
   if (!splitterGroup2Ref.value) return 0
@@ -263,7 +271,7 @@ function useSplitterToggleCollapse() {
   const isPanelInitiallyCollapsed = ref({} as Record<Splitter, boolean>)
 
   const { stop } = watchEffect(async () => {
-    if (splitterGroup2Panel2Ref.value?.isCollapsed) {
+    if (panelRef.value?.isCollapsed) {
       isPanelInitiallyCollapsed.value[Splitter.GROUP_2_PANEL_2_ID] = true
       stop()
     }
@@ -280,7 +288,7 @@ function useSplitterToggleCollapse() {
     }
 
     if (isPanelInitiallyCollapsed.value[Splitter.GROUP_2_PANEL_2_ID]) {
-      panelInstance.resize(40)
+      panelInstance.resize(45)
       isPanelInitiallyCollapsed.value[Splitter.GROUP_2_PANEL_2_ID] = false
     } else {
       panelInstance.expand()
@@ -290,6 +298,7 @@ function useSplitterToggleCollapse() {
 }
 
 const toggleSplitterPanel = useSplitterToggleCollapse()
+
 // _________________________BACK BUTTON___________________________
 const previousPath = useState(UseStateKeys.PreviousPath)
 const backButtonPath = computed(() => {
@@ -297,6 +306,43 @@ const backButtonPath = computed(() => {
   if (isNullOrUndefined(questionData.value)) return undefined
   return `/papers/${questionData.value.paper_id}`
 })
+
+// ______________________PANEL TABS_____________________
+enum PanelTabItemValue {
+  TEST_CASES = 1,
+  RUN_RESULTS = 2,
+}
+
+const panelTabActive = ref(PanelTabItemValue.TEST_CASES)
+
+const panelTabItems: TabsItem[] = [
+  {
+    value: PanelTabItemValue.TEST_CASES,
+    label: 'Test cases',
+    slot: 'test-cases',
+  },
+  {
+    value: PanelTabItemValue.RUN_RESULTS,
+    label: 'Run results',
+    slot: 'run-results',
+  },
+]
+
+// __________________________TEST CASES___________________________
+const testCaseTabItems = reactive<TestCase[]>([
+  {
+    inputs: ['1', '2'],
+    expectedOutput: '3',
+  },
+  {
+    inputs: ['5', '3'],
+    expectedOutput: '8',
+  },
+  {
+    inputs: ['10', '20'],
+    expectedOutput: '30',
+  },
+])
 
 // _________________________EDITOR STATE__________________________
 const isEditorLoaded = ref(false)
@@ -311,16 +357,14 @@ async function runCode() {
   engineRunResult.value = await engineRun({
     code: editorCode.value,
     environment: EngineEnv.NODE,
-    testCases: [
-      { inputs: ['1', '2'] },
-      { inputs: ['5', '3'] },
-      { inputs: ['10', '20'] },
-    ],
+    testCases: testCaseTabItems,
   })
 
-  if (splitterGroup2Panel2Ref.value?.isCollapsed) {
-    toggleSplitterPanel(splitterGroup2Panel2Ref.value)
+  if (panelRef.value?.isCollapsed) {
+    toggleSplitterPanel(panelRef.value)
   }
+
+  panelTabActive.value = PanelTabItemValue.RUN_RESULTS
 }
 </script>
 
