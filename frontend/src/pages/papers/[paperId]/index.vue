@@ -237,7 +237,12 @@ const defaultCreateQuestionFormState: MergedQuestion = {
     statement: '',
     options: ['', ''],
     examples: [],
-    input_definitions: [{ type: 0 as QuestionCodingContentInputTypes }],
+    input_definitions: [
+      {
+        variableName: getDefaultCodingQuestionInputVariableName(1),
+        type: 0 as QuestionCodingContentInputTypes,
+      },
+    ],
   },
   max_score: 0,
   tags: [],

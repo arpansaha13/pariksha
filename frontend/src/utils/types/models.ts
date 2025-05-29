@@ -148,7 +148,7 @@ type QuestionCodingContentInputDefinitionItem = {
 }
 
 export type QuestionCodingContentInputDefinition = {
-  variableName?: string
+  variableName: string
   type: QuestionCodingContentInputTypes
   items?: QuestionCodingContentInputDefinitionItem[]
 }

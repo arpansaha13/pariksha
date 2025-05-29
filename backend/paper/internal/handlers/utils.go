@@ -187,6 +187,10 @@ func validateCodingQuestionData(coding *structs.CodingQuestion) error {
 
 	// Validate input definitions
 	for _, def := range coding.InputDefinitions {
+		if strings.TrimSpace(def.VariableName) == "" {
+			return status.Error(codes.InvalidArgument, "variable name is required for input definition")
+		}
+
 		switch def.Type {
 		case constants.INPUT_TYPE_ARRAY:
 			if def.Items == nil || len(*def.Items) != 1 {

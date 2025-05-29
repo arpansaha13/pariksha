@@ -17,7 +17,7 @@ type InputDefinitionItem struct {
 }
 
 type InputDefinition struct {
-	VariableName *string                `json:"variable_name,omitempty"`
+	VariableName string                 `json:"variable_name"`
 	Type         constants.InputType    `json:"type"`
 	Items        *[]InputDefinitionItem `json:"items,omitempty"`
 }

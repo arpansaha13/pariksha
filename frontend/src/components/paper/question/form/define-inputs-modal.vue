@@ -50,7 +50,7 @@
               color="neutral"
               variant="subtle"
               size="lg"
-              :label="getDefaultCodingQuestionInputVariableName(inputIdx + 1)"
+              :label="inputDefinition.variableName"
             />
 
             <USelect
@@ -77,21 +77,12 @@
             :name="`input-definition-${inputIdx + 1}-sub-type`"
             required
           >
-            <UButtonGroup>
-              <UBadge
-                color="neutral"
-                variant="subtle"
-                size="lg"
-                :label="getDefaultCodingQuestionInputVariableName(inputIdx + 1)"
-              />
-
-              <USelect
-                v-model="subInputItem.type"
-                :items="inputSubTypeSelectItems"
-                required
-                class="w-48"
-              />
-            </UButtonGroup>
+            <USelect
+              v-model="subInputItem.type"
+              :items="inputSubTypeSelectItems"
+              required
+              class="w-48"
+            />
           </UFormField>
         </template>
       </UForm>
@@ -114,7 +105,6 @@
 
 <script lang="ts" setup>
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import { getDefaultCodingQuestionInputVariableName } from '~/utils/general'
 
 const codingQuestionContent = defineModel<
   Pick<QuestionCodingContent, 'input_definitions'>
@@ -130,7 +120,12 @@ function addInputDefinition() {
 
   // Prevent adding more than 5 inputs
   if (inputDefinitions.length < MAX_CODING_INPUTS_COUNT) {
-    inputDefinitions.push({ type: 0 as QuestionCodingContentInputTypes })
+    inputDefinitions.push({
+      variableName: getDefaultCodingQuestionInputVariableName(
+        inputDefinitions.length + 1
+      ),
+      type: 0 as QuestionCodingContentInputTypes,
+    })
   }
 }
 

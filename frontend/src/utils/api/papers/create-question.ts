@@ -30,7 +30,7 @@ export async function createQuestion(
     question: extractQuestionContent(mergedQuestion)!,
   }
 
-  const res = await $api<CreateQuestionReturn>(
+  const res = await $api<string | CreateQuestionReturn>(
     `/api/papers/${paperId}/questions`,
     {
       method: 'POST',
@@ -38,11 +38,13 @@ export async function createQuestion(
     }
   )
 
+  const parsedRes = typeof res === 'string' ? JSON.parse(res) : res
+
   // Refresh both questions and paper data since max_score and question_counts change
   await Promise.all([
     refreshNuxtData(AsyncDataKeys.PAPERS_PAPER_QUESTIONS(paperId)),
     refreshNuxtData(AsyncDataKeys.PAPERS_PAPER(paperId)),
   ])
 
-  return res.id
+  return parsedRes.id
 }

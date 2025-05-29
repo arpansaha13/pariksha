@@ -149,11 +149,8 @@ func TestUpdateCodingQuestion(t *testing.T) {
 							"title": "Old Title",
 							"statement": "Old statement",
 							"input_definitions": [
-								{
-									"variable_name": "a",
-									"type": 1
-								},
-								{ "type": 1 }
+								{ "variable_name": "a", "type": 1 },
+								{ "variable_name": "b", "type": 1 }
 							],
 							"examples": [
 								{
@@ -175,6 +172,7 @@ func TestUpdateCodingQuestion(t *testing.T) {
 					"statement": "Write an optimized solution",
 					"input_definitions": [
 						{
+							"variable_name": "arr",
 							"type": 4,
 							"items": [{ "type": 1 }]
 						}

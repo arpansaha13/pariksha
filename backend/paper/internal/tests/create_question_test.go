@@ -157,11 +157,8 @@ func TestCreateCodingQuestion(t *testing.T) {
 					"title": "Sum of Numbers",
 					"statement": "Write a program to add two numbers",
 					"input_definitions": [
-						{
-							"variable_name": "a",
-							"type": 1
-						},
-						{ "type": 1 }
+						{ "variable_name": "a", "type": 1 },
+						{ "variable_name": "b",  "type": 1 }
 					],
 					"examples": [
 						{
@@ -232,7 +229,32 @@ func TestCreateCodingQuestion(t *testing.T) {
 		},
 		{
 			BaseTestCase: BaseTestCase{
-				name:         "Error - Array input with name",
+				name:         "Error - Missing variable name",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper, category := setupTestCategory(t, userID, false)
+				return paper, category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{
+					"title": "Array Sum",
+					"statement": "Write a program to sum an array",
+					"input_definitions": [
+						{
+							"type": 4,
+							"items": [{ "type": 1 }]
+						}
+					]
+				}`),
+				Type:     constants.QUESTION_TYPE_CODING,
+				MaxScore: 15,
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Error - Array input with property_name",
 				userID:       userID,
 				expectedCode: codes.InvalidArgument,
 			},
@@ -246,6 +268,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 					"statement": "Test",
 					"input_definitions": [
 						{
+							"variable_name": "arr",
 							"type": 4,
 							"items": [{ "property_name": "invalid", "type": 1 }]
 						}
@@ -269,7 +292,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 				RawQuestion: []byte(`{
 					"title": "Invalid Array",
 					"statement": "Test",
-					"input_definitions": [{ "type": 4 }]
+					"input_definitions": [{ "variable_name": "arr", "type": 4 }]
 				}`),
 				Type:     constants.QUESTION_TYPE_CODING,
 				MaxScore: 15,
@@ -291,6 +314,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 					"statement": "Test",
 					"input_definitions": [
 						{
+							"variable_name": "arr",
 							"type": 4,
 							"items": [{ "type": 4 }]
 						}
@@ -316,7 +340,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 				RawQuestion: []byte(`{
 					"title": "",
 					"statement": "Write a program",
-					"input_definitions": [{ "type": 2 }]
+					"input_definitions": [{ "variable_name": "str", "type": 2 }]
 					"examples": []
 				}`),
 				Type: constants.QUESTION_TYPE_CODING,

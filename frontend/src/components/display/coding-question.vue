@@ -1,6 +1,6 @@
 <template>
   <article>
-    <div class="mb-4 flex items-center justify-between gap-x-4">
+    <div class="mb-4 flex items-start justify-between gap-x-4">
       <h2 class="heading">
         {{ content.title }}
       </h2>

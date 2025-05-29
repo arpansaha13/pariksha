@@ -62,10 +62,7 @@
         >
           <span class="inline-block">{{ inputIdx + 1 }}.</span>
           <span class="inline-block font-semibold">
-            {{
-              inputDefinition.variableName ??
-              getDefaultCodingQuestionInputVariableName(inputIdx + 1)
-            }}:
+            {{ inputDefinition.variableName }}:
           </span>
           <span :class="['inline-block', !inputDefinition.type && 'italic']">
             {{
