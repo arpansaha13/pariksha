@@ -125,9 +125,38 @@ export interface QuestionCodingContentExample {
   explanation?: string
 }
 
+export enum QuestionCodingContentPrimitiveInputTypes {
+  NUMBER = 1,
+  STRING = 2,
+  BOOLEAN = 3,
+}
+
+export enum QuestionCodingContentCompositeInputTypes {
+  ARRAY = 4,
+}
+
+export type QuestionCodingContentInputTypes =
+  | QuestionCodingContentPrimitiveInputTypes
+  | QuestionCodingContentCompositeInputTypes
+
+type QuestionCodingContentInputDefinitionItem = {
+  /** only for input_type = object */
+  propertyName?: string
+
+  /** Only primitive types can be used inside composite types */
+  type: QuestionCodingContentPrimitiveInputTypes
+}
+
+export type QuestionCodingContentInputDefinition = {
+  variableName?: string
+  type: QuestionCodingContentInputTypes
+  items?: QuestionCodingContentInputDefinitionItem[]
+}
+
 export interface QuestionCodingContent {
   title: string
   statement: string
+  input_definitions: QuestionCodingContentInputDefinition[]
   examples?: QuestionCodingContentExample[]
 }
 

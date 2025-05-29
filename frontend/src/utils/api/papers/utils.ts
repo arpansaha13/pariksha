@@ -1,7 +1,6 @@
-export type MergedQuestionOmit = 'id' | 'paper_id' | 'order'
+export type MergedQuestionOmit = 'id' | 'paper_id' | 'order' | 'category_id'
 
-export interface MergedQuestion
-  extends Omit<BaseQuestion, MergedQuestionOmit | 'category_id'> {
+export interface MergedQuestion extends Omit<BaseQuestion, MergedQuestionOmit> {
   type: QuestionType
   question: QuestionMcqContent &
     QuestionSubjectiveContent &
@@ -71,5 +70,6 @@ const extractCodingQuestionContent = (
     title: mergedQuestion.question.title,
     statement: mergedQuestion.question.statement,
     examples: examples?.length ? examples : undefined,
+    input_definitions: mergedQuestion.question.input_definitions,
   }
 }

@@ -24,15 +24,15 @@
       v-if="!isNullOrUndefined(content.examples) && content.examples.length > 0"
     >
       <template
-        v-for="(example, exampleIdx) in content.examples"
-        :key="exampleIdx"
+        v-for="(testCase, testCaseIdx) in content.examples"
+        :key="testCaseIdx"
       >
-        <h3 class="heading mt-4 mb-3">Example {{ exampleIdx + 1 }}</h3>
+        <h3 class="heading mt-4 mb-3">Example {{ testCaseIdx + 1 }}</h3>
         <DisplayCodeBlock>
-          <p>Input: {{ example.input }}</p>
-          <p>Output: {{ example.output }}</p>
-          <p v-if="example.explanation">
-            Explanation: {{ example.explanation }}
+          <p>Input: {{ testCase.input }}</p>
+          <p>Output: {{ testCase.output }}</p>
+          <p v-if="testCase.explanation">
+            Explanation: {{ testCase.explanation }}
           </p>
         </DisplayCodeBlock>
       </template>

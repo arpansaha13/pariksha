@@ -35,7 +35,7 @@ export * from './api/papers/create-question'
 export * from './api/papers/update-question'
 export * from './api/papers/delete-question'
 export * from './api/papers/reorder-questions'
-export type { MergedQuestion } from './api/papers/utils'
+export type { MergedQuestion, MergedQuestionOmit } from './api/papers/utils'
 
 // Exam
 export * from './api/exams/createExam'

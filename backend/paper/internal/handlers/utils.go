@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"strings"
 
@@ -14,7 +13,6 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
-	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/interceptors"
 )
 
@@ -183,6 +181,37 @@ func validateCodingQuestionData(coding *structs.CodingQuestion) error {
 	if strings.TrimSpace(coding.Statement) == "" {
 		return status.Error(codes.InvalidArgument, "question statement cannot be empty")
 	}
+	if len(coding.InputDefinitions) == 0 {
+		return status.Error(codes.InvalidArgument, "coding question must have input definitions")
+	}
+
+	// Validate input definitions
+	for _, def := range coding.InputDefinitions {
+		switch def.Type {
+		case constants.INPUT_TYPE_ARRAY:
+			if def.Items == nil || len(*def.Items) != 1 {
+				return status.Error(codes.InvalidArgument, "array input definition must have exactly one item")
+			}
+			if (*def.Items)[0].PropertyName != nil {
+				return status.Error(codes.InvalidArgument, "array input definition cannot have a property name")
+			}
+			// Validate item type is primitive
+			switch (*def.Items)[0].Type {
+			case constants.INPUT_TYPE_NUMBER, constants.INPUT_TYPE_STRING, constants.INPUT_TYPE_BOOLEAN:
+				// Valid primitive type
+			default:
+				return status.Error(codes.InvalidArgument, "array items must have primitive types")
+			}
+		case constants.INPUT_TYPE_NUMBER, constants.INPUT_TYPE_STRING, constants.INPUT_TYPE_BOOLEAN:
+			if def.Items != nil {
+				return status.Error(codes.InvalidArgument, "primitive input definition cannot have items")
+			}
+		default:
+			return status.Error(codes.InvalidArgument, "invalid input definition type")
+		}
+	}
+
+	// Validate examples
 	for _, example := range coding.Examples {
 		if strings.TrimSpace(example.Input) == "" {
 			return status.Error(codes.InvalidArgument, "example input cannot be empty")
@@ -194,72 +223,8 @@ func validateCodingQuestionData(coding *structs.CodingQuestion) error {
 			return status.Error(codes.InvalidArgument, "example explanation cannot be empty if provided")
 		}
 	}
+
 	return nil
-}
-
-// Helper function to apply updates to a question
-func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionRequest) (models.Question, error) {
-	if req.Type != nil {
-		if req.RawQuestion == nil {
-			return question, status.Error(codes.InvalidArgument, "question content must be provided when changing question type")
-		}
-		question.Type = req.GetType()
-	}
-
-	if req.RawQuestion != nil {
-		switch question.Type {
-		case constants.QUESTION_TYPE_MCQ:
-			var mcq structs.MCQQuestion
-			if err := utils.StrictUnmarshal(req.RawQuestion, &mcq); err != nil {
-				return question, status.Error(codes.InvalidArgument, "invalid MCQ question format")
-			}
-			if err := validateMcqQuestionData(&mcq); err != nil {
-				return question, err
-			}
-		case constants.QUESTION_TYPE_SUBJECTIVE:
-			var subjective structs.SubjectiveQuestion
-			if err := utils.StrictUnmarshal(req.RawQuestion, &subjective); err != nil {
-				return question, status.Error(codes.InvalidArgument, "invalid subjective question format")
-			}
-			if err := validateSubjectiveQuestionData(&subjective); err != nil {
-				return question, err
-			}
-		case constants.QUESTION_TYPE_CODING:
-			var coding structs.CodingQuestion
-			if err := utils.StrictUnmarshal(req.RawQuestion, &coding); err != nil {
-				return question, status.Error(codes.InvalidArgument, "invalid coding question format")
-			}
-			if err := validateCodingQuestionData(&coding); err != nil {
-				return question, err
-			}
-		default:
-			return question, status.Error(codes.InvalidArgument, "invalid question type")
-		}
-		question.Question = json.RawMessage(req.RawQuestion)
-	}
-
-	// TODO: Disable category updating for now
-	// if req.CategoryId != nil {
-	// 	question.CategoryID = req.GetCategoryId()
-	// }
-
-	if req.MaxScore != nil {
-		question.MaxScore = int16(req.GetMaxScore())
-	}
-
-	if len(req.Tags) > 0 {
-		tags, _ := json.Marshal(req.Tags)
-		question.Tags = tags
-	}
-
-	if req.CorrectAnswer != nil {
-		question.CorrectAnswer = sql.NullString{
-			String: req.GetCorrectAnswer(),
-			Valid:  true,
-		}
-	}
-
-	return question, nil
 }
 
 // Helper function to update paper stats (max score and question counts)

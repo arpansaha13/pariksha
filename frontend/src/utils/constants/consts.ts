@@ -5,6 +5,10 @@ export const MAX_EXAM_DURATION_MINUTES = 1440 // 24 hours
 
 export const MIN_MCQ_OPTIONS_COUNT = 2
 export const MAX_MCQ_OPTIONS_COUNT = 5
+
+export const MIN_CODING_INPUTS_COUNT = 1
+export const MAX_CODING_INPUTS_COUNT = 5
+
 export const MAX_CODING_EXAMPLES_COUNT = 4
 
 export const AUTO_SAVE_EXAM_ANSWER_INTERVAL_SECONDS = 15

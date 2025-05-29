@@ -1,0 +1,407 @@
+package tests
+
+import (
+	"encoding/json"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+
+	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/models"
+	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/utils/testrunner"
+	"pariksha/paper/internal/config/db"
+)
+
+func TestCreateMcqQuestion(t *testing.T) {
+	tests := []CreateQuestionCase{
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Create MCQ question",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				return &paper, &category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{"statement":"Test MCQ","options":["A","B","C"]}`),
+				Type:        constants.QUESTION_TYPE_MCQ,
+				MaxScore:    5,
+				CategoryId:  1,
+			},
+			validate: func(t *testing.T, paper *models.Paper, resp *proto.CreateQuestionResponse) {
+				// Fetch the created question from database
+				var question models.Question
+				require.NoError(t, db.DB.First(&question, resp.Id).Error)
+
+				// Validate question data
+				assert.Equal(t, json.RawMessage(`{"statement":"Test MCQ","options":["A","B","C"]}`), question.Question)
+				assert.Equal(t, constants.QUESTION_TYPE_MCQ, question.Type)
+				assert.EqualValues(t, 5, question.MaxScore)
+
+				// Validate paper's question counts
+				var updatedPaper models.Paper
+				require.NoError(t, db.DB.First(&updatedPaper, paper.ID).Error)
+				counts, err := updatedPaper.GetQuestionCounts()
+				require.NoError(t, err)
+				assert.EqualValues(t, 1, counts.MCQ)
+				assert.EqualValues(t, 0, counts.Subjective)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+			paper, category := tt.setup(t)
+			tt.request.PaperId = paper.ID
+			tt.request.CategoryId = category.ID
+
+			ctx := createContextWithUserID(tt.userID)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				tt.request,
+				client.CreateQuestion,
+				func(t *testing.T, resp *proto.CreateQuestionResponse) {
+					if tt.validate != nil {
+						tt.validate(t, paper, resp)
+					}
+				})
+		})
+	}
+}
+
+func TestCreateSubjectiveQuestion(t *testing.T) {
+	tests := []CreateQuestionCase{
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Create SUBJECTIVE question",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				return &paper, &category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{"statement":"Test Subjective Answer"}`),
+				Type:        constants.QUESTION_TYPE_SUBJECTIVE,
+				MaxScore:    10,
+				CategoryId:  1,
+			},
+			validate: func(t *testing.T, paper *models.Paper, resp *proto.CreateQuestionResponse) {
+				// Fetch the created question from database
+				var question models.Question
+				require.NoError(t, db.DB.First(&question, resp.Id).Error)
+
+				// Validate question data
+				assert.Equal(t, json.RawMessage(`{"statement":"Test Subjective Answer"}`), question.Question)
+				assert.Equal(t, constants.QUESTION_TYPE_SUBJECTIVE, question.Type)
+				assert.EqualValues(t, 10, question.MaxScore)
+
+				// Validate paper's question counts
+				var updatedPaper models.Paper
+				require.NoError(t, db.DB.First(&updatedPaper, paper.ID).Error)
+				counts, err := updatedPaper.GetQuestionCounts()
+				require.NoError(t, err)
+				assert.EqualValues(t, 0, counts.MCQ)
+				assert.EqualValues(t, 1, counts.Subjective)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+			paper, category := tt.setup(t)
+			tt.request.PaperId = paper.ID
+			tt.request.CategoryId = category.ID
+
+			ctx := createContextWithUserID(tt.userID)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				tt.request,
+				client.CreateQuestion,
+				func(t *testing.T, resp *proto.CreateQuestionResponse) {
+					if tt.validate != nil {
+						tt.validate(t, paper, resp)
+					}
+				})
+		})
+	}
+}
+
+func TestCreateCodingQuestion(t *testing.T) {
+	tests := []CreateQuestionCase{
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Create coding question with primitive input",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				return &paper, &category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{
+					"title": "Sum of Numbers",
+					"statement": "Write a program to add two numbers",
+					"input_definitions": [
+						{
+							"variable_name": "a",
+							"type": 1
+						},
+						{ "type": 1 }
+					],
+					"examples": [
+						{
+							"input": "2 3",
+							"output": "5",
+							"explanation": "2 + 3 = 5"
+						},
+						{
+							"input": "0 0",
+							"output": "0"
+						}
+					]
+				}`),
+				Type:     constants.QUESTION_TYPE_CODING,
+				MaxScore: 15,
+			},
+			validate: func(t *testing.T, paper *models.Paper, resp *proto.CreateQuestionResponse) {
+				// Fetch the created question from database
+				var question models.Question
+				require.NoError(t, db.DB.First(&question, resp.Id).Error)
+
+				// Validate question data
+				assert.Equal(t, constants.QUESTION_TYPE_CODING, question.Type)
+				assert.EqualValues(t, 15, question.MaxScore)
+
+				var codingQ structs.CodingQuestion
+				err := json.Unmarshal(question.Question, &codingQ)
+				require.NoError(t, err)
+				assert.Equal(t, "Sum of Numbers", codingQ.Title)
+				assert.Equal(t, "Write a program to add two numbers", codingQ.Statement)
+				assert.Len(t, codingQ.Examples, 2)
+
+				// Validate paper's question counts were updated
+				verifyQuestionCounts(t, paper.ID, &models.QuestionCount{Coding: 1})
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Create coding question with array input",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper, category := setupTestCategory(t, userID, false)
+				return paper, category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{
+					"title": "Array Sum",
+					"statement": "Write a program to sum an array",
+					"input_definitions": [
+						{
+							"variable_name": "arr",
+							"type": 4,
+							"items": [{ "type": 1 }]
+						}
+					],
+					"examples": [
+						{
+							"input": "[1, 2, 3]",
+							"output": "6"
+						}
+					]
+				}`),
+				Type:     constants.QUESTION_TYPE_CODING,
+				MaxScore: 15,
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Error - Array input with name",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper, category := setupTestCategory(t, userID, false)
+				return paper, category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{
+					"title": "Invalid Array",
+					"statement": "Test",
+					"input_definitions": [
+						{
+							"type": 4,
+							"items": [{ "property_name": "invalid", "type": 1 }]
+						}
+					]
+				}`),
+				Type:     constants.QUESTION_TYPE_CODING,
+				MaxScore: 15,
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Error - Array without items",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper, category := setupTestCategory(t, userID, false)
+				return paper, category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{
+					"title": "Invalid Array",
+					"statement": "Test",
+					"input_definitions": [{ "type": 4 }]
+				}`),
+				Type:     constants.QUESTION_TYPE_CODING,
+				MaxScore: 15,
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Error - Array with non-primitive item type",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper, category := setupTestCategory(t, userID, false)
+				return paper, category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{
+					"title": "Invalid Array",
+					"statement": "Test",
+					"input_definitions": [
+						{
+							"type": 4,
+							"items": [{ "type": 4 }]
+						}
+					]
+				}`),
+				Type:     constants.QUESTION_TYPE_CODING,
+				MaxScore: 15,
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Error - Missing title",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				return &paper, &category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{
+					"title": "",
+					"statement": "Write a program",
+					"input_definitions": [{ "type": 2 }]
+					"examples": []
+				}`),
+				Type: constants.QUESTION_TYPE_CODING,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+			paper, category := tt.setup(t)
+			tt.request.PaperId = paper.ID
+			tt.request.CategoryId = category.ID
+
+			ctx := createContextWithUserID(tt.userID)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				tt.request,
+				client.CreateQuestion,
+				func(t *testing.T, resp *proto.CreateQuestionResponse) {
+					if tt.validate != nil {
+						tt.validate(t, paper, resp)
+					}
+				})
+		})
+	}
+}
+
+func TestGeneralCreateQuestion(t *testing.T) {
+	tests := []CreateQuestionCase{
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Error - Max score too high",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				return &paper, &category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{"statement":"Test MCQ","options":["A","B","C"]}`),
+				Type:        constants.QUESTION_TYPE_MCQ,
+				MaxScore:    1001, // Exceeds maximum
+				CategoryId:  1,
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Error - Negative max score",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				return &paper, &category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{"statement":"Test MCQ","options":["A","B","C"]}`),
+				Type:        constants.QUESTION_TYPE_MCQ,
+				MaxScore:    -1, // Negative score
+				CategoryId:  1,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+			paper, category := tt.setup(t)
+			tt.request.PaperId = paper.ID
+			tt.request.CategoryId = category.ID
+
+			ctx := createContextWithUserID(tt.userID)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				tt.request,
+				client.CreateQuestion,
+				func(t *testing.T, resp *proto.CreateQuestionResponse) {
+					if tt.validate != nil {
+						tt.validate(t, paper, resp)
+					}
+				})
+		})
+	}
+}

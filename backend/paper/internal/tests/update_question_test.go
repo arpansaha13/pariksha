@@ -3,17 +3,18 @@ package tests
 import (
 	"database/sql"
 	"encoding/json"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/paper/internal/config/db"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/codes"
 )
 
 func TestUpdateMcqQuestion(t *testing.T) {
@@ -147,6 +148,13 @@ func TestUpdateCodingQuestion(t *testing.T) {
 						Question: json.RawMessage(`{
 							"title": "Old Title",
 							"statement": "Old statement",
+							"input_definitions": [
+								{
+									"variable_name": "a",
+									"type": 1
+								},
+								{ "type": 1 }
+							],
 							"examples": [
 								{
 									"input": "1 1",
@@ -165,6 +173,12 @@ func TestUpdateCodingQuestion(t *testing.T) {
 				RawQuestion: []byte(`{
 					"title": "Updated Coding Question",
 					"statement": "Write an optimized solution",
+					"input_definitions": [
+						{
+							"type": 4,
+							"items": [{ "type": 1 }]
+						}
+					],
 					"examples": [
 						{
 							"input": "4 5",

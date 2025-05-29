@@ -1,12 +1,18 @@
 <template>
   <UForm
+    ref="form"
     :state="formState"
     :validate="validate"
     :validate-on="['blur']"
     class="flex flex-col gap-y-5"
     @submit.prevent="onSubmit"
   >
-    <UFormField label="Type" description="Choose the type of question" required>
+    <UFormField
+      name="type"
+      label="Type"
+      description="Choose the type of question"
+      required
+    >
       <USelect
         v-model="formState.type"
         :items="questionTypes"
@@ -17,12 +23,12 @@
 
     <UFormField
       v-if="formState.type === QuestionType.CODING"
+      name="title"
       label="Title"
       description="The question title"
-      name="type"
       required
     >
-      <UInput v-model="formState.question.title" required />
+      <UInput v-model="formState.question.title" required class="w-full" />
     </UFormField>
 
     <UFormField
@@ -37,6 +43,46 @@
         autoresize
         placeholder="Write your question here..."
         :ui="{ root: 'flex' }"
+      />
+    </UFormField>
+
+    <UFormField
+      v-if="formState.type === QuestionType.CODING"
+      label="Inputs"
+      description="Inputs given to the program"
+      name="input_definitions"
+      required
+    >
+      <ul class="mb-2 ml-2 space-y-1">
+        <li
+          v-for="(inputDefinition, inputIdx) in formState.question
+            .input_definitions"
+          :key="inputIdx"
+          class="space-x-1"
+        >
+          <span class="inline-block">{{ inputIdx + 1 }}.</span>
+          <span class="inline-block font-semibold">
+            {{
+              inputDefinition.variableName ??
+              getDefaultCodingQuestionInputVariableName(inputIdx + 1)
+            }}:
+          </span>
+          <span :class="['inline-block', !inputDefinition.type && 'italic']">
+            {{
+              inputDefinition.type
+                ? getInputDefinitionLabel(
+                    inputDefinition.type,
+                    inputDefinition.items
+                  )
+                : '(empty)'
+            }}
+          </span>
+        </li>
+      </ul>
+
+      <PaperQuestionFormDefineInputsModal
+        v-model:coding-question-content="formState.question"
+        @after:leave="triggerValidate"
       />
     </UFormField>
 
@@ -85,27 +131,27 @@
 
     <UFormField
       v-else-if="formState.type === QuestionType.CODING"
-      label="Examples"
-      description="Examples that illustrate the expected output for a given input"
+      label="Test cases"
+      description="Predefined sets of inputs and expected outputs"
       hint="Optional"
       :ui="{ container: 'flex flex-col gap-y-2' }"
     >
       <UForm
-        v-for="(example, exampleIdx) in formState.question.examples"
-        :key="exampleIdx"
-        :state="example"
+        v-for="(testCase, testCaseIdx) in formState.question.examples"
+        :key="testCaseIdx"
+        :state="testCase"
         attach
         class="space-y-1"
       >
         <UFormField
           label="Input"
-          :name="`example-${exampleIdx + 1}-input`"
+          :name="`test-case-${testCaseIdx + 1}-input`"
           :ui="{ labelWrapper: 'ml-5' }"
           required
         >
           <div class="flex items-center gap-2">
-            <div>{{ exampleIdx + 1 }}.</div>
-            <UInput v-model="example.input" required class="w-64" />
+            <div>{{ testCaseIdx + 1 }}.</div>
+            <UInput v-model="testCase.input" required class="w-64" />
             <UButton
               icon="i-heroicons-trash"
               size="sm"
@@ -113,17 +159,17 @@
               variant="subtle"
               aria-label="Remove example"
               class="ml-auto"
-              @click="removeExample(exampleIdx)"
+              @click="removeExample(testCaseIdx)"
             />
           </div>
         </UFormField>
         <UFormField
           label="Output"
-          :name="`example-${exampleIdx + 1}-output`"
+          :name="`test-case-${testCaseIdx + 1}-output`"
           :ui="{ root: 'ml-5' }"
           required
         >
-          <UInput v-model="example.output" required class="w-64" />
+          <UInput v-model="testCase.output" required class="w-64" />
         </UFormField>
         <UFormField
           label="Explanation"
@@ -132,9 +178,9 @@
           :ui="{ root: 'ml-5' }"
         >
           <UTextarea
-            v-model="example.explanation"
+            v-model="testCase.explanation"
             :rows="2"
-            :name="`example-${exampleIdx + 1}-explanation`"
+            :name="`test-case-${testCaseIdx + 1}-explanation`"
             placeholder="Write the explanation here..."
             autoresize
             :ui="{ root: 'flex' }"
@@ -157,7 +203,7 @@
 
     <UFormField
       label="Max score"
-      description="Maximum score that can be awared for this question"
+      description="Maximum score that can be awarded for this question"
       name="max_score"
       required
     >
@@ -200,6 +246,8 @@
 <script setup lang="ts">
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { FormError } from '@nuxt/ui'
+import type { ComponentExposed } from 'vue-component-type-helpers'
+import type { UForm } from '#components'
 
 const formState = defineModel<MergedQuestion>('form-data', {
   required: true,
@@ -220,24 +268,6 @@ async function onSubmit() {
   emit('submit', formState.value)
 }
 
-function validate(formState: MergedQuestion): FormError[] {
-  const errors = []
-
-  if (formState.max_score === 0) {
-    errors.push({
-      name: 'max_score',
-      message: 'Please specify the maximum score for this question',
-    })
-  } else if (formState.max_score > MAX_SCORE_PER_QUESTION) {
-    errors.push({
-      name: 'max_score',
-      message: 'Maximum score cannot be greater than 1000',
-    })
-  }
-
-  return errors
-}
-
 const questionTypes = [
   {
     label: 'Multiple choice (MCQ)',
@@ -253,12 +283,79 @@ const questionTypes = [
   },
 ]
 
+// _________________________FORM VALIDATION_________________________
+function usePaperQuestionFormValidate() {
+  function validate(formState: MergedQuestion): FormError[] {
+    const errors: FormError[] = []
+
+    validateCommon(formState, errors)
+
+    if (formState.type === QuestionType.CODING) {
+      validateCodingQuestion(formState.question, errors)
+    }
+
+    return errors
+  }
+
+  /** Common validation for all question types */
+  function validateCommon(
+    formState: Omit<BaseQuestion, MergedQuestionOmit>,
+    errors: FormError[]
+  ) {
+    if (formState.max_score === 0) {
+      errors.push({
+        name: 'max_score',
+        message: 'Please specify the maximum score for this question',
+      })
+    } else if (formState.max_score > MAX_SCORE_PER_QUESTION) {
+      errors.push({
+        name: 'max_score',
+        message: 'Maximum score cannot be greater than 1000',
+      })
+    }
+  }
+
+  function validateCodingQuestion(
+    codingQuestionContent: QuestionCodingContent,
+    errors: FormError[]
+  ) {
+    const inputDefinitions = codingQuestionContent.input_definitions
+
+    if (inputDefinitions.length === 0) {
+      errors.push({
+        name: 'input_definitions',
+        message: 'Please specify the inputs for this question',
+      })
+    } else {
+      const hasNoArrayItemType = (x: QuestionCodingContentInputDefinition) =>
+        x.type === QuestionCodingContentCompositeInputTypes.ARRAY &&
+        !x.items?.[0].type
+
+      if (inputDefinitions.some(x => !x.type || hasNoArrayItemType(x)))
+        errors.push({
+          name: 'input_definitions',
+          message:
+            'Incomplete input definition. Please complete or remove the field.',
+        })
+    }
+  }
+
+  // Trigger validate when PaperQuestionFormDefineInputsModal closes
+  const formRef = useTemplateRef<ComponentExposed<typeof UForm>>('form')
+  const triggerValidate = () =>
+    formRef.value?.validate({ name: 'input_definitions' })
+
+  return { validate, triggerValidate }
+}
+
+const { validate, triggerValidate } = usePaperQuestionFormValidate()
+
+// _________________________MCQ OPTIONS___________________________
 function getOptionLabel(index: number): string {
   const ASCII_CODE_A = 65
   return String.fromCharCode(ASCII_CODE_A + index)
 }
 
-// _________________________MCQ OPTIONS___________________________
 function addOption() {
   if (formState.value.type !== QuestionType.MCQ) {
     logWarning('addOption called without MCQ type question')
