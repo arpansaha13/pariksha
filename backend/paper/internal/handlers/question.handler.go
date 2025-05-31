@@ -16,6 +16,7 @@ import (
 	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/interceptors"
+	"pariksha/paper/internal/utils/validate"
 )
 
 func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperRequest) (*proto.QuestionList, error) {
@@ -48,7 +49,7 @@ func (s *PaperServer) GetPaperQuestion(ctx context.Context, req *proto.QuestionR
 }
 
 func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuestionRequest) (*proto.CreateQuestionResponse, error) {
-	if err := validateMaxScore(req.MaxScore); err != nil {
+	if err := validate.MaxScore(req.MaxScore); err != nil {
 		return nil, err
 	}
 
@@ -59,7 +60,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		if err := utils.StrictUnmarshal(req.RawQuestion, &mcq); err != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid MCQ question format")
 		}
-		if err := validateMcqQuestionData(&mcq); err != nil {
+		if err := validate.McqQuestionData(&mcq); err != nil {
 			return nil, err
 		}
 	case constants.QUESTION_TYPE_SUBJECTIVE:
@@ -67,7 +68,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		if err := utils.StrictUnmarshal(req.RawQuestion, &subjective); err != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid subjective question format")
 		}
-		if err := validateSubjectiveQuestionData(&subjective); err != nil {
+		if err := validate.SubjectiveQuestionData(&subjective); err != nil {
 			return nil, err
 		}
 	case constants.QUESTION_TYPE_CODING:
@@ -75,7 +76,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		if err := utils.StrictUnmarshal(req.RawQuestion, &coding); err != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid coding question format")
 		}
-		if err := validateCodingQuestionData(&coding); err != nil {
+		if err := validate.CodingQuestionData(&coding); err != nil {
 			return nil, err
 		}
 	default:

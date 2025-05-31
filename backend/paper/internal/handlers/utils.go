@@ -3,8 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,12 +11,11 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/structs"
 	"pariksha/paper/internal/interceptors"
 )
 
-// ValidateEntityIDs checks if all provided IDs exist in the given table
-func ValidateEntityIDs(tx *gorm.DB, tableName string, ids []int64) error {
+// validateEntityIDs checks if all provided IDs exist in the given table
+func validateEntityIDs(tx *gorm.DB, tableName string, ids []int64) error {
 	var count int64
 	err := tx.Table(tableName).Where("id IN ?", ids).Count(&count).Error
 	if err != nil {
@@ -152,118 +149,6 @@ func updateQuestionCounts(rawCounts json.RawMessage, questionType string, delta 
 	return newCounts, nil
 }
 
-// validateMcqQuestionData validates MCQ question data
-func validateMcqQuestionData(mcq *structs.MCQQuestion) error {
-	if strings.TrimSpace(mcq.Statement) == "" {
-		return status.Error(codes.InvalidArgument, "question statement cannot be empty")
-	}
-	if len(mcq.Options) < 2 {
-		return status.Error(codes.InvalidArgument, "MCQ questions must have at least 2 options")
-	}
-	if len(mcq.Options) > 5 {
-		return status.Error(codes.InvalidArgument, "MCQ questions cannot have more than 5 options")
-	}
-	return nil
-}
-
-// validateSubjectiveQuestionData validates subjective question data
-func validateSubjectiveQuestionData(subjective *structs.SubjectiveQuestion) error {
-	if strings.TrimSpace(subjective.Statement) == "" {
-		return status.Error(codes.InvalidArgument, "question statement cannot be empty")
-	}
-	return nil
-}
-
-// validateCodingQuestionData validates coding question data
-func validateCodingQuestionData(coding *structs.CodingQuestion) error {
-	if strings.TrimSpace(coding.Title) == "" {
-		return status.Error(codes.InvalidArgument, "question title cannot be empty")
-	}
-	if strings.TrimSpace(coding.Statement) == "" {
-		return status.Error(codes.InvalidArgument, "question statement cannot be empty")
-	}
-	if len(coding.InputDefinitions) == 0 {
-		return status.Error(codes.InvalidArgument, "coding question must have input definitions")
-	}
-	if len(coding.InputDefinitions) > int(constants.MAX_CODING_INPUTS_COUNT) {
-		return status.Error(codes.InvalidArgument, fmt.Sprintf("Number of inputs cannot be more than %d options", constants.MAX_CODING_INPUTS_COUNT))
-	}
-
-	// Validate output definition
-	switch coding.OutputDefinition.Type {
-	case constants.PARAMETER_TYPE_ARRAY:
-		if coding.OutputDefinition.Items == nil || len(*coding.OutputDefinition.Items) != 1 {
-			return status.Error(codes.InvalidArgument, "array output definition must have exactly one item")
-		}
-		// Validate item type is primitive
-		switch (*coding.OutputDefinition.Items)[0].Type {
-		case constants.PARAMETER_TYPE_NUMBER, constants.PARAMETER_TYPE_STRING, constants.PARAMETER_TYPE_BOOLEAN:
-			// Valid primitive type
-		default:
-			return status.Error(codes.InvalidArgument, "array output items must have primitive types")
-		}
-	case constants.PARAMETER_TYPE_NUMBER, constants.PARAMETER_TYPE_STRING, constants.PARAMETER_TYPE_BOOLEAN:
-		if coding.OutputDefinition.Items != nil {
-			return status.Error(codes.InvalidArgument, "primitive output definition cannot have items")
-		}
-	default:
-		return status.Error(codes.InvalidArgument, "invalid output definition type")
-	}
-
-	// Validate input definitions
-	for _, def := range coding.InputDefinitions {
-		if strings.TrimSpace(def.VariableName) == "" {
-			return status.Error(codes.InvalidArgument, "variable name is required for input definition")
-		}
-
-		switch def.Type {
-		case constants.PARAMETER_TYPE_ARRAY:
-			if def.Items == nil || len(*def.Items) != 1 {
-				return status.Error(codes.InvalidArgument, "array input definition must have exactly one item")
-			}
-			if (*def.Items)[0].PropertyName != nil {
-				return status.Error(codes.InvalidArgument, "array input definition cannot have a property name")
-			}
-			// Validate item type is primitive
-			switch (*def.Items)[0].Type {
-			case constants.PARAMETER_TYPE_NUMBER, constants.PARAMETER_TYPE_STRING, constants.PARAMETER_TYPE_BOOLEAN:
-				// Valid primitive type
-			default:
-				return status.Error(codes.InvalidArgument, "array items must have primitive types")
-			}
-		case constants.PARAMETER_TYPE_NUMBER, constants.PARAMETER_TYPE_STRING, constants.PARAMETER_TYPE_BOOLEAN:
-			if def.Items != nil {
-				return status.Error(codes.InvalidArgument, "primitive input definition cannot have items")
-			}
-		default:
-			return status.Error(codes.InvalidArgument, "invalid input definition type")
-		}
-	}
-
-	// Validate test cases
-	for _, testCase := range coding.TestCases {
-		if len(testCase.Inputs) != len(coding.InputDefinitions) {
-			return status.Error(codes.InvalidArgument, "number of inputs in test case must match number of input definitions")
-		}
-
-		// Check that no input is empty
-		for _, input := range testCase.Inputs {
-			if strings.TrimSpace(input) == "" {
-				return status.Error(codes.InvalidArgument, "test case input cannot be empty")
-			}
-		}
-
-		if strings.TrimSpace(testCase.Output) == "" {
-			return status.Error(codes.InvalidArgument, "test case output cannot be empty")
-		}
-		if testCase.Explanation != nil && strings.TrimSpace(*testCase.Explanation) == "" {
-			testCase.Explanation = nil
-		}
-	}
-
-	return nil
-}
-
 // Helper function to update paper stats (max score and question counts)
 func updatePaperStats(tx *gorm.DB, paper models.Paper, scoreDiff int32, newQuestionCounts json.RawMessage) error {
 	return tx.Model(&paper).
@@ -290,25 +175,6 @@ func updateQuestionStats(tx *gorm.DB, paper models.Paper, oldType, newType strin
 
 	if scoreDiff != 0 || oldType != newType {
 		return updatePaperStats(tx, paper, scoreDiff, newCounts)
-	}
-	return nil
-}
-
-// validateMaxScore checks if the given score is within valid range (0 to MAX_SCORE_PER_QUESTION)
-func validateMaxScore(score int32) error {
-	if score < 0 || score > constants.MAX_SCORE_PER_QUESTION {
-		return status.Errorf(codes.InvalidArgument, "max score must be between 0 and %d", constants.MAX_SCORE_PER_QUESTION)
-	}
-	return nil
-}
-
-// validateDuration checks if the given duration in minutes is within valid range
-func validateDuration(durationMinutes int32) error {
-	if durationMinutes < 0 {
-		return status.Error(codes.InvalidArgument, "duration must be positive")
-	}
-	if durationMinutes > int32(constants.MAX_EXAM_DURATION_MINUTES) {
-		return status.Error(codes.InvalidArgument, "duration cannot exceed 24 hours")
 	}
 	return nil
 }

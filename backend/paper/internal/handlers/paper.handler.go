@@ -13,6 +13,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/utils/validate"
 )
 
 type PaperServer struct {
@@ -113,7 +114,7 @@ func (s *PaperServer) UpdatePaper(ctx context.Context, req *proto.UpdatePaperReq
 		}
 
 		if req.DurationMinutes != nil {
-			if err := validateDuration(req.GetDurationMinutes()); err != nil {
+			if err := validate.PaperDuration(req.GetDurationMinutes()); err != nil {
 				return err
 			}
 			if int16(req.GetDurationMinutes()) != paper.DurationMinutes {

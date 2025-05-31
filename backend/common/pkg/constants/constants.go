@@ -22,12 +22,6 @@ const (
 )
 
 const (
-	QUESTION_TYPE_MCQ        string = "MCQ"
-	QUESTION_TYPE_SUBJECTIVE string = "SUBJECTIVE"
-	QUESTION_TYPE_CODING     string = "CODING"
-)
-
-const (
 	EXAM_ACCESS_TYPE_LINK   string = "LINK"
 	EXAM_ACCESS_TYPE_INVITE string = "INVITE"
 )
@@ -54,7 +48,5 @@ const (
 )
 
 const (
-	MAX_SCORE_PER_QUESTION          = 1000
 	MAX_EXAM_DURATION_MINUTES int16 = 1440 // 24 hours
-	MAX_CODING_INPUTS_COUNT   int8  = 5
 )

@@ -15,6 +15,7 @@ import (
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/utils/validate"
 )
 
 // UpdateQuestion handles question updates with proper locking to prevent race conditions
@@ -25,7 +26,7 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 	}
 
 	if req.MaxScore != nil {
-		if err := validateMaxScore(*req.MaxScore); err != nil {
+		if err := validate.MaxScore(*req.MaxScore); err != nil {
 			return nil, err
 		}
 	}
@@ -125,7 +126,7 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 			if err := utils.StrictUnmarshal(req.RawQuestion, &mcq); err != nil {
 				return question, status.Error(codes.InvalidArgument, "invalid MCQ question format")
 			}
-			if err := validateMcqQuestionData(&mcq); err != nil {
+			if err := validate.McqQuestionData(&mcq); err != nil {
 				return question, err
 			}
 		case constants.QUESTION_TYPE_SUBJECTIVE:
@@ -133,7 +134,7 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 			if err := utils.StrictUnmarshal(req.RawQuestion, &subjective); err != nil {
 				return question, status.Error(codes.InvalidArgument, "invalid subjective question format")
 			}
-			if err := validateSubjectiveQuestionData(&subjective); err != nil {
+			if err := validate.SubjectiveQuestionData(&subjective); err != nil {
 				return question, err
 			}
 		case constants.QUESTION_TYPE_CODING:
@@ -141,7 +142,7 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 			if err := utils.StrictUnmarshal(req.RawQuestion, &coding); err != nil {
 				return question, status.Error(codes.InvalidArgument, "invalid coding question format")
 			}
-			if err := validateCodingQuestionData(&coding); err != nil {
+			if err := validate.CodingQuestionData(&coding); err != nil {
 				return question, err
 			}
 		default:
