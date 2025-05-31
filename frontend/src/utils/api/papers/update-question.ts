@@ -140,7 +140,7 @@ function getRequestBody(
 
   // if (
   //   !isNullOrUndefined(mergedQuestion.tags) &&
-  //   !arrayEquals(mergedQuestion.tags, previousQuestion.tags)
+  //   !_isEqual(mergedQuestion.tags, previousQuestion.tags)
   // ) {
   //   requestBody.tags = mergedQuestion.tags
   // }
@@ -196,7 +196,7 @@ const isMcqQuestionContentUpdated = (
   return (
     newQContent.statement.length !== oldQContent.statement.length ||
     newQContent.statement !== oldQContent.statement ||
-    !arrayEquals(newQContent.options ?? [], oldQContent.options ?? [])
+    !_isEqual(newQContent.options ?? [], oldQContent.options ?? [])
   )
 }
 
@@ -219,6 +219,14 @@ const isCodingQuestionContentUpdated = (
     newQContent.title !== oldQContent.title ||
     newQContent.statement.length !== oldQContent.statement.length ||
     newQContent.statement !== oldQContent.statement ||
-    !arrayEquals(newQContent.examples ?? [], oldQContent.examples ?? [])
+    !_isEqual(newQContent.examples ?? [], oldQContent.examples ?? []) ||
+    !_isEqual(
+      newQContent.output_definition ?? [],
+      oldQContent.output_definition ?? []
+    ) ||
+    !_isEqual(
+      newQContent.input_definitions ?? [],
+      oldQContent.input_definitions ?? []
+    )
   )
 }

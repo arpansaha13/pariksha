@@ -10,6 +10,7 @@ export default defineNuxtConfig({
     '@nuxt/test-utils/module',
     'pinia-plugin-persistedstate/nuxt',
     'nuxt-monaco-editor',
+    'nuxt-lodash',
     // '@nuxtjs/html-validator',
   ],
 
@@ -47,6 +48,12 @@ export default defineNuxtConfig({
   image: {
     format: ['webp'],
     densities: [1, 2],
+  },
+
+  lodash: {
+    prefix: '_',
+    prefixSkip: false,
+    upperAfterPrefix: false,
   },
 
   // htmlValidator: {

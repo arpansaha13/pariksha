@@ -19,7 +19,7 @@ export function usePaperAutoCancelQuestionEdit(
       formState.type !== oldQuestion.type ||
       formState.max_score !== oldQuestion.max_score ||
       formState.correct_answer !== (oldQuestion.correct_answer ?? undefined) ||
-      !arrayEquals(formState.tags, oldQuestion.tags ?? [])
+      !_isEqual(formState.tags, oldQuestion.tags ?? [])
     ) {
       return true
     }
@@ -29,7 +29,7 @@ export function usePaperAutoCancelQuestionEdit(
       const mcqQuestion = oldQuestion.question
       return (
         formState.question.statement !== mcqQuestion.statement ||
-        !arrayEquals(formState.question.options, mcqQuestion.options)
+        !_isEqual(formState.question.options, mcqQuestion.options)
       )
     }
 

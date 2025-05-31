@@ -239,10 +239,13 @@ const defaultCreateQuestionFormState: MergedQuestion = {
     examples: [],
     input_definitions: [
       {
-        variableName: getDefaultCodingQuestionInputVariableName(1),
+        variable_name: getDefaultCodingQuestionInputVariableName(1),
         type: 0 as QuestionCodingContentInputTypes,
       },
     ],
+    output_definition: {
+      type: 0 as QuestionCodingContentInputTypes,
+    },
   },
   max_score: 0,
   tags: [],
@@ -351,6 +354,7 @@ function startQuestionEdit() {
       const codingQuestion = question.value.question
       formState.title = codingQuestion.title
       formState.input_definitions = codingQuestion.input_definitions
+      formState.output_definition = codingQuestion.output_definition
       if (codingQuestion.examples) {
         formState.examples = structuredClone(toRaw(codingQuestion.examples))
       }

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -184,6 +185,30 @@ func validateCodingQuestionData(coding *structs.CodingQuestion) error {
 	if len(coding.InputDefinitions) == 0 {
 		return status.Error(codes.InvalidArgument, "coding question must have input definitions")
 	}
+	if len(coding.InputDefinitions) > int(constants.MAX_CODING_INPUTS_COUNT) {
+		return status.Error(codes.InvalidArgument, fmt.Sprintf("Number of inputs cannot be more than %d options", constants.MAX_CODING_INPUTS_COUNT))
+	}
+
+	// Validate output definition
+	switch coding.OutputDefinition.Type {
+	case constants.PARAMETER_TYPE_ARRAY:
+		if coding.OutputDefinition.Items == nil || len(*coding.OutputDefinition.Items) != 1 {
+			return status.Error(codes.InvalidArgument, "array output definition must have exactly one item")
+		}
+		// Validate item type is primitive
+		switch (*coding.OutputDefinition.Items)[0].Type {
+		case constants.PARAMETER_TYPE_NUMBER, constants.PARAMETER_TYPE_STRING, constants.PARAMETER_TYPE_BOOLEAN:
+			// Valid primitive type
+		default:
+			return status.Error(codes.InvalidArgument, "array output items must have primitive types")
+		}
+	case constants.PARAMETER_TYPE_NUMBER, constants.PARAMETER_TYPE_STRING, constants.PARAMETER_TYPE_BOOLEAN:
+		if coding.OutputDefinition.Items != nil {
+			return status.Error(codes.InvalidArgument, "primitive output definition cannot have items")
+		}
+	default:
+		return status.Error(codes.InvalidArgument, "invalid output definition type")
+	}
 
 	// Validate input definitions
 	for _, def := range coding.InputDefinitions {
@@ -192,7 +217,7 @@ func validateCodingQuestionData(coding *structs.CodingQuestion) error {
 		}
 
 		switch def.Type {
-		case constants.INPUT_TYPE_ARRAY:
+		case constants.PARAMETER_TYPE_ARRAY:
 			if def.Items == nil || len(*def.Items) != 1 {
 				return status.Error(codes.InvalidArgument, "array input definition must have exactly one item")
 			}
@@ -201,12 +226,12 @@ func validateCodingQuestionData(coding *structs.CodingQuestion) error {
 			}
 			// Validate item type is primitive
 			switch (*def.Items)[0].Type {
-			case constants.INPUT_TYPE_NUMBER, constants.INPUT_TYPE_STRING, constants.INPUT_TYPE_BOOLEAN:
+			case constants.PARAMETER_TYPE_NUMBER, constants.PARAMETER_TYPE_STRING, constants.PARAMETER_TYPE_BOOLEAN:
 				// Valid primitive type
 			default:
 				return status.Error(codes.InvalidArgument, "array items must have primitive types")
 			}
-		case constants.INPUT_TYPE_NUMBER, constants.INPUT_TYPE_STRING, constants.INPUT_TYPE_BOOLEAN:
+		case constants.PARAMETER_TYPE_NUMBER, constants.PARAMETER_TYPE_STRING, constants.PARAMETER_TYPE_BOOLEAN:
 			if def.Items != nil {
 				return status.Error(codes.InvalidArgument, "primitive input definition cannot have items")
 			}

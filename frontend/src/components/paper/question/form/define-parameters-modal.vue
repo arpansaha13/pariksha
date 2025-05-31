@@ -1,7 +1,7 @@
 <template>
   <UModal
-    title="Define inputs"
-    description="Define the number and type of inputs given to the program"
+    title="Define parameters"
+    description="Define the number and type of inputs and output for the program"
     :ui="{ body: 'divide-y divide-default' }"
     @after:leave="emit('after:leave')"
   >
@@ -10,7 +10,7 @@
       size="sm"
       color="neutral"
       variant="subtle"
-      label="Define inputs"
+      label="Define parameters"
     />
 
     <template #body>
@@ -50,7 +50,7 @@
               color="neutral"
               variant="subtle"
               size="lg"
-              :label="inputDefinition.variableName"
+              :label="inputDefinition.variable_name"
             />
 
             <USelect
@@ -58,7 +58,11 @@
               :items="inputTypeSelectItems"
               required
               class="w-48"
-              @change="onInputTypeChange(inputIdx)"
+              @change="
+                onParameterTypeChange(
+                  codingQuestionContent.input_definitions[inputIdx]
+                )
+              "
             />
           </UButtonGroup>
         </UFormField>
@@ -75,6 +79,54 @@
             label="Array item type"
             description="Data type of each array item"
             :name="`input-definition-${inputIdx + 1}-sub-type`"
+            required
+          >
+            <USelect
+              v-model="subInputItem.type"
+              :items="inputSubTypeSelectItems"
+              required
+              class="w-48"
+            />
+          </UFormField>
+        </template>
+      </UForm>
+
+      <UForm
+        :state="codingQuestionContent.output_definition"
+        class="space-y-1.5 py-2 first:pt-0 last:pb-0"
+      >
+        <h3 class="text-sm font-bold">Output</h3>
+
+        <UFormField
+          label="Type"
+          description="Data type of the output. This will be used as the return type."
+          name="output-definition-type"
+          required
+        >
+          <USelect
+            v-model="codingQuestionContent.output_definition.type"
+            :items="inputTypeSelectItems"
+            required
+            class="w-48"
+            @change="
+              onParameterTypeChange(codingQuestionContent.output_definition)
+            "
+          />
+        </UFormField>
+
+        <template
+          v-if="
+            codingQuestionContent.output_definition.type ===
+            QuestionCodingContentCompositeInputTypes.ARRAY
+          "
+        >
+          <UFormField
+            v-for="(subInputItem, subInputItemIdx) in codingQuestionContent
+              .output_definition.items"
+            :key="subInputItemIdx"
+            label="Array item type"
+            description="Data type of each array item"
+            :name="`output-definition-sub-type`"
             required
           >
             <USelect
@@ -107,7 +159,7 @@
 import { isNullOrUndefined } from '@arpansaha13/utils'
 
 const codingQuestionContent = defineModel<
-  Pick<QuestionCodingContent, 'input_definitions'>
+  Pick<QuestionCodingContent, 'input_definitions' | 'output_definition'>
 >('coding-question-content', {
   required: true,
 })
@@ -121,7 +173,7 @@ function addInputDefinition() {
   // Prevent adding more than 5 inputs
   if (inputDefinitions.length < MAX_CODING_INPUTS_COUNT) {
     inputDefinitions.push({
-      variableName: getDefaultCodingQuestionInputVariableName(
+      variable_name: getDefaultCodingQuestionInputVariableName(
         inputDefinitions.length + 1
       ),
       type: 0 as QuestionCodingContentInputTypes,
@@ -175,15 +227,14 @@ const inputTypeSelectItems = ref([primitiveInputTypes, compositeInputTypes])
 const inputSubTypeSelectItems = ref([primitiveInputTypes])
 
 // ________________EXTRA FIELDS FOR COMPOSITED TYPES________________
-function onInputTypeChange(idx: number) {
-  const inputDefinition = codingQuestionContent.value.input_definitions[idx]
-
-  if (inputDefinition.type === QuestionCodingContentCompositeInputTypes.ARRAY) {
-    if (
-      isNullOrUndefined(inputDefinition.items) ||
-      inputDefinition.items.length === 0
-    ) {
-      inputDefinition.items = [
+function onParameterTypeChange(
+  parameter:
+    | QuestionCodingContentInputDefinition
+    | QuestionCodingContentParameter
+) {
+  if (parameter.type === QuestionCodingContentCompositeInputTypes.ARRAY) {
+    if (isNullOrUndefined(parameter.items) || parameter.items.length === 0) {
+      parameter.items = [
         { type: 0 as QuestionCodingContentPrimitiveInputTypes },
       ]
     }

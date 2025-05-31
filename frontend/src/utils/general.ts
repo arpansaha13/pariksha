@@ -1,18 +1,6 @@
 import { isNullOrUndefined } from '@arpansaha13/utils'
 
 /**
- * Helper function for array comparison
- */
-export function arrayEquals<T>(a: T[], b: T[]): boolean {
-  return (
-    Array.isArray(a) &&
-    Array.isArray(b) &&
-    a.length === b.length &&
-    a.every((val, index) => val === b[index])
-  )
-}
-
-/**
  * Checks if a string contains only alphabetic characters (A-Z, a-z)
  * @param str - The string to check
  * @returns boolean - True if string contains only alphabets, false otherwise
@@ -70,7 +58,7 @@ export function formatDurationMinutes(durationMinutes: number) {
  * @param {Array<{ type: QuestionCodingContentInputTypes }>} [items] - Optional array of objects containing type information.
  * @returns {string} The formatted string representation of the enum value.
  */
-export function getInputDefinitionLabel(
+export function getCodingQuestionParameterLabel(
   value: QuestionCodingContentInputTypes,
   items?: { type: QuestionCodingContentPrimitiveInputTypes }[]
 ): string {

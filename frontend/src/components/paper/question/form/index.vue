@@ -48,11 +48,12 @@
 
     <UFormField
       v-if="formState.type === QuestionType.CODING"
-      label="Inputs"
-      description="Inputs given to the program"
-      name="input_definitions"
+      label="Parameters"
+      description="Inputs and output of the program"
+      :name="FieldLabels.PARAMETERS"
       required
     >
+      <p class="mb-1 font-semibold">Inputs</p>
       <ul class="mb-2 ml-2 space-y-1">
         <li
           v-for="(inputDefinition, inputIdx) in formState.question
@@ -62,12 +63,12 @@
         >
           <span class="inline-block">{{ inputIdx + 1 }}.</span>
           <span class="inline-block font-semibold">
-            {{ inputDefinition.variableName }}:
+            {{ inputDefinition.variable_name }}:
           </span>
           <span :class="['inline-block', !inputDefinition.type && 'italic']">
             {{
               inputDefinition.type
-                ? getInputDefinitionLabel(
+                ? getCodingQuestionParameterLabel(
                     inputDefinition.type,
                     inputDefinition.items
                   )
@@ -77,7 +78,28 @@
         </li>
       </ul>
 
-      <PaperQuestionFormDefineInputsModal
+      <div class="mb-2">
+        <p class="mb-1 font-semibold">Output</p>
+        <p class="ml-2 space-x-1">
+          <span
+            :class="[
+              'inline-block',
+              !formState.question.output_definition.type && 'italic',
+            ]"
+          >
+            {{
+              formState.question.output_definition.type
+                ? getCodingQuestionParameterLabel(
+                    formState.question.output_definition.type,
+                    formState.question.output_definition.items
+                  )
+                : '(empty)'
+            }}
+          </span>
+        </p>
+      </div>
+
+      <PaperQuestionFormDefineParametersModal
         v-model:coding-question-content="formState.question"
         @after:leave="triggerValidate"
       />
@@ -261,6 +283,10 @@ const emit = defineEmits<{
   submit: [form: MergedQuestion]
 }>()
 
+enum FieldLabels {
+  PARAMETERS = 'parameters',
+}
+
 async function onSubmit() {
   emit('submit', formState.value)
 }
@@ -317,30 +343,43 @@ function usePaperQuestionFormValidate() {
     errors: FormError[]
   ) {
     const inputDefinitions = codingQuestionContent.input_definitions
+    const outputDefinition = codingQuestionContent.output_definition
 
     if (inputDefinitions.length === 0) {
       errors.push({
-        name: 'input_definitions',
+        name: FieldLabels.PARAMETERS,
         message: 'Please specify the inputs for this question',
       })
-    } else {
-      const hasNoArrayItemType = (x: QuestionCodingContentInputDefinition) =>
-        x.type === QuestionCodingContentCompositeInputTypes.ARRAY &&
-        !x.items?.[0].type
-
-      if (inputDefinitions.some(x => !x.type || hasNoArrayItemType(x)))
-        errors.push({
-          name: 'input_definitions',
-          message:
-            'Incomplete input definition. Please complete or remove the field.',
-        })
+    } else if (!isParameterValid(outputDefinition)) {
+      errors.push({
+        name: FieldLabels.PARAMETERS,
+        message: 'Incomplete output definition',
+      })
+    } else if (inputDefinitions.some(x => !isParameterValid(x))) {
+      errors.push({
+        name: FieldLabels.PARAMETERS,
+        message:
+          'Incomplete input definition. Please complete or remove the field.',
+      })
     }
+  }
+
+  function isParameterValid(parameter: QuestionCodingContentParameter) {
+    const hasNoArrayItemType = (x: QuestionCodingContentParameter) =>
+      x.type === QuestionCodingContentCompositeInputTypes.ARRAY &&
+      !x.items?.[0].type
+
+    if (!parameter.type || hasNoArrayItemType(parameter)) {
+      return false
+    }
+
+    return true
   }
 
   // Trigger validate when PaperQuestionFormDefineInputsModal closes
   const formRef = useTemplateRef<ComponentExposed<typeof UForm>>('form')
   const triggerValidate = () =>
-    formRef.value?.validate({ name: 'input_definitions' })
+    formRef.value?.validate({ name: FieldLabels.PARAMETERS })
 
   return { validate, triggerValidate }
 }

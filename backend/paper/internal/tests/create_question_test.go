@@ -160,6 +160,10 @@ func TestCreateCodingQuestion(t *testing.T) {
 						{ "variable_name": "a", "type": 1 },
 						{ "variable_name": "b",  "type": 1 }
 					],
+					"output_definition": {
+						"variable_name": "sum",
+						"type": 1
+					},
 					"examples": [
 						{
 							"input": "2 3",
@@ -197,30 +201,57 @@ func TestCreateCodingQuestion(t *testing.T) {
 		},
 		{
 			BaseTestCase: BaseTestCase{
-				name:         "Success - Create coding question with array input",
+				name:         "Success - Create coding question with array output",
 				userID:       userID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
-				paper, category := setupTestCategory(t, userID, false)
-				return paper, category
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				return &paper, &category
 			},
 			request: &proto.CreateQuestionRequest{
 				RawQuestion: []byte(`{
-					"title": "Array Sum",
-					"statement": "Write a program to sum an array",
+					"title": "Generate Sequence",
+					"statement": "Generate a sequence of numbers",
 					"input_definitions": [
-						{
-							"variable_name": "arr",
-							"type": 4,
-							"items": [{ "type": 1 }]
-						}
+						{ "variable_name": "n", "type": 1 }
 					],
+					"output_definition": {
+						"variable_name": "sequence",
+						"type": 4,
+						"items": [{ "type": 1 }]
+					},
 					"examples": [
 						{
-							"input": "[1, 2, 3]",
-							"output": "6"
+							"input": "3",
+							"output": "[1, 2, 3]"
 						}
+					]
+				}`),
+				Type:     constants.QUESTION_TYPE_CODING,
+				MaxScore: 15,
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Error - Missing output definition",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				return &paper, &category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{
+					"title": "Sum Numbers",
+					"statement": "Add numbers",
+					"input_definitions": [
+						{ "variable_name": "arr", "type": 4, "items": [{ "type": 1 }] }
 					]
 				}`),
 				Type:     constants.QUESTION_TYPE_CODING,

@@ -53,5 +53,8 @@ const (
 	MAIL_TYPE_RESET_PASSWORD  = "reset_password"
 )
 
-const MAX_SCORE_PER_QUESTION = 1000
-const MAX_EXAM_DURATION_MINUTES int16 = 1440 // 24 hours
+const (
+	MAX_SCORE_PER_QUESTION          = 1000
+	MAX_EXAM_DURATION_MINUTES int16 = 1440 // 24 hours
+	MAX_CODING_INPUTS_COUNT   int8  = 5
+)

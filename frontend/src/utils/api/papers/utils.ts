@@ -71,5 +71,6 @@ const extractCodingQuestionContent = (
     statement: mergedQuestion.question.statement,
     examples: examples?.length ? examples : undefined,
     input_definitions: mergedQuestion.question.input_definitions,
+    output_definition: mergedQuestion.question.output_definition,
   }
 }

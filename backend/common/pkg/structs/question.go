@@ -11,15 +11,20 @@ type SubjectiveQuestion struct {
 	Statement string `json:"statement"`
 }
 
-type InputDefinitionItem struct {
-	PropertyName *string             `json:"property_name,omitempty"`
-	Type         constants.InputType `json:"type"`
+type ParameterItem struct {
+	PropertyName *string                 `json:"property_name,omitempty"`
+	Type         constants.ParameterType `json:"type"`
 }
 
 type InputDefinition struct {
-	VariableName string                 `json:"variable_name"`
-	Type         constants.InputType    `json:"type"`
-	Items        *[]InputDefinitionItem `json:"items,omitempty"`
+	VariableName string                  `json:"variable_name"`
+	Type         constants.ParameterType `json:"type"`
+	Items        *[]ParameterItem        `json:"items,omitempty"`
+}
+
+type OutputDefinition struct {
+	Type  constants.ParameterType `json:"type"`
+	Items *[]ParameterItem        `json:"items,omitempty"`
 }
 
 type CodingQuestionExample struct {
@@ -32,5 +37,6 @@ type CodingQuestion struct {
 	Title            string                  `json:"title"`
 	Statement        string                  `json:"statement"`
 	InputDefinitions []InputDefinition       `json:"input_definitions"`
+	OutputDefinition OutputDefinition        `json:"output_definition"`
 	Examples         []CodingQuestionExample `json:"examples,omitempty"`
 }

@@ -139,24 +139,29 @@ export type QuestionCodingContentInputTypes =
   | QuestionCodingContentPrimitiveInputTypes
   | QuestionCodingContentCompositeInputTypes
 
-type QuestionCodingContentInputDefinitionItem = {
+type QuestionCodingContentParameterItem = {
   /** only for input_type = object */
-  propertyName?: string
+  property_name?: string
 
   /** Only primitive types can be used inside composite types */
   type: QuestionCodingContentPrimitiveInputTypes
 }
 
-export type QuestionCodingContentInputDefinition = {
-  variableName: string
+export interface QuestionCodingContentParameter {
   type: QuestionCodingContentInputTypes
-  items?: QuestionCodingContentInputDefinitionItem[]
+  items?: QuestionCodingContentParameterItem[]
+}
+
+export interface QuestionCodingContentInputDefinition
+  extends QuestionCodingContentParameter {
+  variable_name: string
 }
 
 export interface QuestionCodingContent {
   title: string
   statement: string
   input_definitions: QuestionCodingContentInputDefinition[]
+  output_definition: QuestionCodingContentParameter
   examples?: QuestionCodingContentExample[]
 }
 

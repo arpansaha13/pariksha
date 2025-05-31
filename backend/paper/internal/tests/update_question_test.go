@@ -152,6 +152,10 @@ func TestUpdateCodingQuestion(t *testing.T) {
 								{ "variable_name": "a", "type": 1 },
 								{ "variable_name": "b", "type": 1 }
 							],
+							"output_definition": {
+								"variable_name": "sum",
+								"type": 1
+							},
 							"examples": [
 								{
 									"input": "1 1",
@@ -177,11 +181,15 @@ func TestUpdateCodingQuestion(t *testing.T) {
 							"items": [{ "type": 1 }]
 						}
 					],
+					"output_definition": {
+						"variable_name": "sum",
+						"type": 1
+					},
 					"examples": [
 						{
-							"input": "4 5",
-							"output": "9",
-							"explanation": "4 + 5 = 9"
+							"input": "[1, 2, 3]",
+							"output": "6",
+							"explanation": "1 + 2 + 3 = 6"
 						}
 					]
 				}`),
@@ -196,8 +204,8 @@ func TestUpdateCodingQuestion(t *testing.T) {
 				assert.Equal(t, "Updated Coding Question", coding.Title)
 				assert.Equal(t, "Write an optimized solution", coding.Statement)
 				assert.Len(t, coding.Examples, 1)
-				assert.Equal(t, "4 5", coding.Examples[0].Input)
-				assert.Equal(t, "9", coding.Examples[0].Output)
+				assert.Equal(t, "[1, 2, 3]", coding.Examples[0].Input)
+				assert.Equal(t, "6", coding.Examples[0].Output)
 
 				// Verify other fields
 				assert.EqualValues(t, 10, updated.MaxScore)

@@ -19,11 +19,11 @@ export function logWarning(message: string): void {
  * This function checks if `import.meta.dev` is `true` and emits a stack trace
  * with the provided variable name. It is useful for debugging purposes.
  *
- * @param {string} variableName - The name of the variable being checked.
+ * @param {string} variable_name - The name of the variable being checked.
  * @returns {void}
  */
-export function logNullOrUndefinedWarning(variableName: string): void {
+export function logNullOrUndefinedWarning(variable_name: string): void {
   if (import.meta.dev) {
-    console.trace(`${variableName} is null or undefined`)
+    console.trace(`${variable_name} is null or undefined`)
   }
 }
