@@ -119,8 +119,8 @@ export interface QuestionSubjectiveContent {
   statement: string
 }
 
-export interface QuestionCodingContentExample {
-  input: string
+export interface QuestionCodingContentTestCase {
+  inputs: string[]
   output: string
   explanation?: string
 }
@@ -162,7 +162,7 @@ export interface QuestionCodingContent {
   statement: string
   input_definitions: QuestionCodingContentInputDefinition[]
   output_definition: QuestionCodingContentParameter
-  examples?: QuestionCodingContentExample[]
+  test_cases?: QuestionCodingContentTestCase[]
 }
 
 export interface BaseQuestion {

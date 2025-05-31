@@ -21,18 +21,36 @@
     </p>
 
     <template
-      v-if="!isNullOrUndefined(content.examples) && content.examples.length > 0"
+      v-if="
+        !isNullOrUndefined(content.test_cases) && content.test_cases.length > 0
+      "
     >
       <template
-        v-for="(testCase, testCaseIdx) in content.examples"
+        v-for="(testCase, testCaseIdx) in content.test_cases"
         :key="testCaseIdx"
       >
         <h3 class="heading mt-4 mb-3">Example {{ testCaseIdx + 1 }}</h3>
         <DisplayCodeBlock>
-          <p>Input: {{ testCase.input }}</p>
-          <p>Output: {{ testCase.output }}</p>
+          <p>
+            <span class="font-semibold">Input:</span>
+            {{
+              testCase.inputs
+                .map(
+                  (val, i) =>
+                    `${content.input_definitions[i].variable_name} = ${val}`
+                )
+                .join(', ')
+            }}
+          </p>
+
+          <p>
+            <span class="font-semibold">Output:</span>
+            {{ testCase.output }}
+          </p>
+
           <p v-if="testCase.explanation">
-            Explanation: {{ testCase.explanation }}
+            <span class="font-semibold">Explanation:</span>
+            {{ testCase.explanation }}
           </p>
         </DisplayCodeBlock>
       </template>

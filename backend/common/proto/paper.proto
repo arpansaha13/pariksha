@@ -98,27 +98,6 @@ message QuestionMinimal {
   bytes raw_question = 5;
 }
 
-message McqQuestion {
-  string statement = 1;
-  repeated string options = 2;
-}
-
-message SubjectiveQuestion {
-  string statement = 1;
-}
-
-message CodingQuestion {
-  string title = 1;
-  string statement = 2;
-  repeated CodingQuestionExample examples = 3;
-}
-
-message CodingQuestionExample {
-  string input = 1;
-  string output = 2;
-  optional string explanation = 3;
-}
-
 message CreateQuestionRequest {
   int64 paper_id = 1;
   bytes raw_question = 2;

@@ -53,15 +53,15 @@
       :name="FieldLabels.PARAMETERS"
       required
     >
-      <p class="mb-1 font-semibold">Inputs</p>
-      <ul class="mb-2 ml-2 space-y-1">
+      <p class="mb-1 font-semibold">Inputs:</p>
+      <ul class="mb-1 ml-2 space-y-1">
         <li
           v-for="(inputDefinition, inputIdx) in formState.question
             .input_definitions"
           :key="inputIdx"
           class="space-x-1"
         >
-          <span class="inline-block">{{ inputIdx + 1 }}.</span>
+          <Dot />
           <span class="inline-block font-semibold">
             {{ inputDefinition.variable_name }}:
           </span>
@@ -78,30 +78,29 @@
         </li>
       </ul>
 
-      <div class="mb-2">
-        <p class="mb-1 font-semibold">Output</p>
-        <p class="ml-2 space-x-1">
-          <span
-            :class="[
-              'inline-block',
-              !formState.question.output_definition.type && 'italic',
-            ]"
-          >
-            {{
-              formState.question.output_definition.type
-                ? getCodingQuestionParameterLabel(
-                    formState.question.output_definition.type,
-                    formState.question.output_definition.items
-                  )
-                : '(empty)'
-            }}
-          </span>
-        </p>
-      </div>
+      <p class="mb-2">
+        <span class="font-semibold">Output: </span>
+
+        <span
+          :class="[
+            'inline-block',
+            !formState.question.output_definition.type && 'italic',
+          ]"
+        >
+          {{
+            formState.question.output_definition.type
+              ? getCodingQuestionParameterLabel(
+                  formState.question.output_definition.type,
+                  formState.question.output_definition.items
+                )
+              : '(empty)'
+          }}
+        </span>
+      </p>
 
       <PaperQuestionFormDefineParametersModal
         v-model:coding-question-content="formState.question"
-        @after:leave="triggerValidate"
+        @after:leave="triggerValidate(FieldLabels.PARAMETERS)"
       />
     </UFormField>
 
@@ -150,73 +149,66 @@
 
     <UFormField
       v-else-if="formState.type === QuestionType.CODING"
-      label="Test cases"
-      description="Predefined sets of inputs and expected outputs"
       hint="Optional"
-      :ui="{ container: 'flex flex-col gap-y-2' }"
+      label="Test cases"
+      :name="FieldLabels.TEST_CASES"
+      description="Predefined sets of inputs and expected outputs"
     >
-      <UForm
-        v-for="(testCase, testCaseIdx) in formState.question.examples"
-        :key="testCaseIdx"
-        :state="testCase"
-        attach
-        class="space-y-1"
-      >
-        <UFormField
-          label="Input"
-          :name="`test-case-${testCaseIdx + 1}-input`"
-          :ui="{ labelWrapper: 'ml-5' }"
-          required
+      <ol v-if="formState.question.test_cases" class="mb-2 space-y-1">
+        <li
+          v-for="(testCase, testCaseIdx) in formState.question.test_cases"
+          :key="testCaseIdx"
+          class="flex gap-2"
         >
-          <div class="flex items-center gap-2">
-            <div>{{ testCaseIdx + 1 }}.</div>
-            <UInput v-model="testCase.input" required class="w-64" />
-            <UButton
-              icon="i-heroicons-trash"
-              size="sm"
-              color="error"
-              variant="subtle"
-              aria-label="Remove example"
-              class="ml-auto"
-              @click="removeExample(testCaseIdx)"
-            />
-          </div>
-        </UFormField>
-        <UFormField
-          label="Output"
-          :name="`test-case-${testCaseIdx + 1}-output`"
-          :ui="{ root: 'ml-5' }"
-          required
-        >
-          <UInput v-model="testCase.output" required class="w-64" />
-        </UFormField>
-        <UFormField
-          label="Explanation"
-          name="correct_answer"
-          hint="Optional"
-          :ui="{ root: 'ml-5' }"
-        >
-          <UTextarea
-            v-model="testCase.explanation"
-            :rows="2"
-            :name="`test-case-${testCaseIdx + 1}-explanation`"
-            placeholder="Write the explanation here..."
-            autoresize
-            :ui="{ root: 'flex' }"
-          />
-        </UFormField>
-      </UForm>
+          <p class="inline-block">{{ testCaseIdx + 1 }}.</p>
+          <div>
+            <div>
+              <p class="mb-1 font-semibold">Inputs:</p>
 
-      <UButton
-        color="neutral"
-        variant="subtle"
-        size="sm"
-        label="Add example"
-        class="w-max"
-        :disabled="
-          formState.question.examples!.length >= MAX_CODING_EXAMPLES_COUNT
-        "
-        @click="addExample"
+              <ul class="mb-1 ml-2 space-y-1">
+                <li
+                  v-for="(testCaseInput, testCaseInputIdx) in testCase.inputs"
+                  :key="testCaseInputIdx"
+                  class="space-x-1"
+                >
+                  <Dot />
+                  <span class="inline-block font-semibold">
+                    {{
+                      formState.question.input_definitions[testCaseInputIdx]
+                        .variable_name
+                    }}
+                    =
+                  </span>
+                  <span
+                    :class="[
+                      'inline-block',
+                      !testCaseInput ? 'italic' : 'font-mono',
+                    ]"
+                  >
+                    {{ testCaseInput ? testCaseInput : '(empty)' }}
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            <p>
+              <span class="font-semibold">Output: </span>
+              <span :class="[!testCase.output ? 'italic' : 'font-mono']">
+                {{ testCase.output ? testCase.output : '(empty)' }}
+              </span>
+            </p>
+
+            <p v-if="testCase.explanation" class="font-mono">
+              <span class="font-semibold">Explanation: </span>
+              {{ testCase.explanation }}
+            </p>
+          </div>
+        </li>
+      </ol>
+
+      <PaperQuestionFormDefineTestCasesModal
+        v-model:coding-question-content="formState.question"
+        @after:leave="triggerValidate(FieldLabels.TEST_CASES)"
       />
     </UFormField>
 
@@ -285,6 +277,7 @@ const emit = defineEmits<{
 
 enum FieldLabels {
   PARAMETERS = 'parameters',
+  TEST_CASES = 'test_cases',
 }
 
 async function onSubmit() {
@@ -378,8 +371,8 @@ function usePaperQuestionFormValidate() {
 
   // Trigger validate when PaperQuestionFormDefineInputsModal closes
   const formRef = useTemplateRef<ComponentExposed<typeof UForm>>('form')
-  const triggerValidate = () =>
-    formRef.value?.validate({ name: FieldLabels.PARAMETERS })
+  const triggerValidate = (fieldName: FieldLabels) =>
+    formRef.value?.validate({ name: fieldName })
 
   return { validate, triggerValidate }
 }
@@ -432,35 +425,4 @@ const mcqAnswerOptions = computed(() => {
       value: option,
     }))
 })
-
-// ___________________CODING QUESTION EXAMPLES____________________
-function addExample() {
-  if (formState.value.type !== QuestionType.CODING) {
-    logWarning('addExample called without CODING type question')
-    return
-  }
-
-  if (isNullOrUndefined(formState.value.question.examples)) {
-    formState.value.question.examples = []
-  }
-  // Prevent adding more than 4 examples
-  if (formState.value.question.examples.length < MAX_CODING_EXAMPLES_COUNT) {
-    formState.value.question.examples.push({
-      input: '',
-      output: '',
-      explanation: '',
-    })
-  }
-}
-
-function removeExample(idx: number) {
-  if (formState.value.type !== QuestionType.CODING) {
-    logWarning('removeExample called without CODING type question')
-    return
-  }
-
-  if (!isNullOrUndefined(formState.value.question.examples)) {
-    formState.value.question.examples.splice(idx, 1)
-  }
-}
 </script>

@@ -48,16 +48,16 @@ const extractSubjectiveQuestionContent = (
 const extractCodingQuestionContent = (
   mergedQuestion: MergedQuestion
 ): QuestionCodingContent => {
-  const examples = mergedQuestion.question.examples?.filter(example => {
+  const testCases = mergedQuestion.question.test_cases?.filter(testCase => {
     // Skip if all fields are empty
-    if (!example.input && !example.output && !example.explanation) {
+    if (!testCase.inputs && !testCase.output && !testCase.explanation) {
       return false
     }
 
     // Validate input/output pair
     if (
-      (example.input && !example.output) ||
-      (!example.input && example.output)
+      (testCase.inputs && !testCase.output) ||
+      (!testCase.inputs && testCase.output)
     ) {
       logWarning('Example must have both input and output or neither')
       return false
@@ -69,7 +69,7 @@ const extractCodingQuestionContent = (
   return {
     title: mergedQuestion.question.title,
     statement: mergedQuestion.question.statement,
-    examples: examples?.length ? examples : undefined,
+    test_cases: testCases?.length ? testCases : undefined,
     input_definitions: mergedQuestion.question.input_definitions,
     output_definition: mergedQuestion.question.output_definition,
   }

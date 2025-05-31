@@ -3,7 +3,7 @@
     <UFormField
       v-for="(_, inputIdx) in testCase.inputs"
       :key="inputIdx"
-      :label="`Input ${inputIdx + 1}`"
+      :label="`${inputDefinitions[testCaseIdx].variable_name} =`"
       :name="`test-case-${testCaseIdx + 1}-input-${inputIdx + 1}`"
     >
       <UInput
@@ -30,6 +30,7 @@
 <script lang="ts" setup>
 defineProps<{
   testCaseIdx: number
+  inputDefinitions: QuestionCodingContentInputDefinition[]
 }>()
 
 const testCase = defineModel<TestCase>('test-case', { required: true })

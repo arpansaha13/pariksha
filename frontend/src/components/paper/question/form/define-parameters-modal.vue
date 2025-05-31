@@ -238,6 +238,8 @@ function onParameterTypeChange(
         { type: 0 as QuestionCodingContentPrimitiveInputTypes },
       ]
     }
+  } else {
+    parameter.items = undefined
   }
 }
 </script>

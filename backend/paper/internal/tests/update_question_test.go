@@ -156,9 +156,9 @@ func TestUpdateCodingQuestion(t *testing.T) {
 								"variable_name": "sum",
 								"type": 1
 							},
-							"examples": [
+							"test_cases": [
 								{
-									"input": "1 1",
+									"inputs": ["1", "1"],
 									"output": "2"
 								}
 							]
@@ -185,9 +185,9 @@ func TestUpdateCodingQuestion(t *testing.T) {
 						"variable_name": "sum",
 						"type": 1
 					},
-					"examples": [
+					"test_cases": [
 						{
-							"input": "[1, 2, 3]",
+							"inputs": ["[1, 2, 3]"],
 							"output": "6",
 							"explanation": "1 + 2 + 3 = 6"
 						}
@@ -203,9 +203,9 @@ func TestUpdateCodingQuestion(t *testing.T) {
 				require.NoError(t, json.Unmarshal(updated.Question, &coding))
 				assert.Equal(t, "Updated Coding Question", coding.Title)
 				assert.Equal(t, "Write an optimized solution", coding.Statement)
-				assert.Len(t, coding.Examples, 1)
-				assert.Equal(t, "[1, 2, 3]", coding.Examples[0].Input)
-				assert.Equal(t, "6", coding.Examples[0].Output)
+				assert.Len(t, coding.TestCases, 1)
+				assert.Equal(t, "[1, 2, 3]", coding.TestCases[0].Inputs[0])
+				assert.Equal(t, "6", coding.TestCases[0].Output)
 
 				// Verify other fields
 				assert.EqualValues(t, 10, updated.MaxScore)

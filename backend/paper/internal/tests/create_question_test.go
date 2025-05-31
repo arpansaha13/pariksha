@@ -142,7 +142,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 	tests := []CreateQuestionCase{
 		{
 			BaseTestCase: BaseTestCase{
-				name:         "Success - Create coding question with primitive input",
+				name:         "Success - Create coding question with primitive inputs",
 				userID:       userID,
 				expectedCode: codes.OK,
 			},
@@ -164,14 +164,14 @@ func TestCreateCodingQuestion(t *testing.T) {
 						"variable_name": "sum",
 						"type": 1
 					},
-					"examples": [
+					"test_cases": [
 						{
-							"input": "2 3",
+							"inputs": ["2", "3"],
 							"output": "5",
 							"explanation": "2 + 3 = 5"
 						},
 						{
-							"input": "0 0",
+							"inputs": ["0", "0"],
 							"output": "0"
 						}
 					]
@@ -193,7 +193,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 				require.NoError(t, err)
 				assert.Equal(t, "Sum of Numbers", codingQ.Title)
 				assert.Equal(t, "Write a program to add two numbers", codingQ.Statement)
-				assert.Len(t, codingQ.Examples, 2)
+				assert.Len(t, codingQ.TestCases, 2)
 
 				// Validate paper's question counts were updated
 				verifyQuestionCounts(t, paper.ID, &models.QuestionCount{Coding: 1})
@@ -223,9 +223,9 @@ func TestCreateCodingQuestion(t *testing.T) {
 						"type": 4,
 						"items": [{ "type": 1 }]
 					},
-					"examples": [
+					"test_cases": [
 						{
-							"input": "3",
+							"inputs": ["3"],
 							"output": "[1, 2, 3]"
 						}
 					]
@@ -372,9 +372,79 @@ func TestCreateCodingQuestion(t *testing.T) {
 					"title": "",
 					"statement": "Write a program",
 					"input_definitions": [{ "variable_name": "str", "type": 2 }]
-					"examples": []
+					"test_cases": []
 				}`),
 				Type: constants.QUESTION_TYPE_CODING,
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Error - Mismatched number of inputs",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				return &paper, &category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{
+					"title": "Invalid Example",
+					"statement": "Test",
+					"input_definitions": [
+						{ "variable_name": "a", "type": 1 },
+						{ "variable_name": "b", "type": 1 }
+					],
+					"output_definition": {
+						"variable_name": "sum",
+						"type": 1
+					},
+					"test_cases": [
+						{
+							"inputs": ["1"],
+							"output": "1"
+						}
+					]
+				}`),
+				Type:     constants.QUESTION_TYPE_CODING,
+				MaxScore: 15,
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Error - Empty input in test case",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				return &paper, &category
+			},
+			request: &proto.CreateQuestionRequest{
+				RawQuestion: []byte(`{
+					"title": "Invalid Example",
+					"statement": "Test",
+					"input_definitions": [
+						{ "variable_name": "a", "type": 1 },
+						{ "variable_name": "b", "type": 1 }
+					],
+					"output_definition": {
+						"variable_name": "sum",
+						"type": 1
+					},
+					"test_cases": [
+						{
+							"inputs": ["1", ""],
+							"output": "1"
+						}
+					]
+				}`),
+				Type:     constants.QUESTION_TYPE_CODING,
+				MaxScore: 15,
 			},
 		},
 	}

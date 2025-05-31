@@ -153,6 +153,10 @@
                       <EditorTestCaseForm
                         v-model:test-case="testCaseTabItems[testCaseIdx]"
                         :test-case-idx="testCaseIdx"
+                        :input-definitions="
+                          (questionData as QuestionCoding).question
+                            .input_definitions
+                        "
                       />
                     </template>
                   </UTabs>
@@ -329,20 +333,14 @@ const panelTabItems: TabsItem[] = [
 ]
 
 // __________________________TEST CASES___________________________
-const testCaseTabItems = reactive<TestCase[]>([
-  {
-    inputs: ['1', '2'],
-    expectedOutput: '3',
-  },
-  {
-    inputs: ['5', '3'],
-    expectedOutput: '8',
-  },
-  {
-    inputs: ['10', '20'],
-    expectedOutput: '30',
-  },
-])
+const testCaseTabItems = reactive<TestCase[]>(
+  (questionData.value!.question as QuestionCodingContent).test_cases!.map(
+    testCase => ({
+      inputs: testCase.inputs,
+      expectedOutput: testCase.output,
+    })
+  )
+)
 
 // _________________________EDITOR STATE__________________________
 const isEditorLoaded = ref(false)

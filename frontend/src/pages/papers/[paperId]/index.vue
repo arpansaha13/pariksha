@@ -236,7 +236,7 @@ const defaultCreateQuestionFormState: MergedQuestion = {
     title: '',
     statement: '',
     options: ['', ''],
-    examples: [],
+    test_cases: [],
     input_definitions: [
       {
         variable_name: getDefaultCodingQuestionInputVariableName(1),
@@ -355,8 +355,8 @@ function startQuestionEdit() {
       formState.title = codingQuestion.title
       formState.input_definitions = codingQuestion.input_definitions
       formState.output_definition = codingQuestion.output_definition
-      if (codingQuestion.examples) {
-        formState.examples = structuredClone(toRaw(codingQuestion.examples))
+      if (codingQuestion.test_cases) {
+        formState.test_cases = structuredClone(toRaw(codingQuestion.test_cases))
       }
     }
 

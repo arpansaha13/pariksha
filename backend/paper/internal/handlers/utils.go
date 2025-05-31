@@ -240,16 +240,24 @@ func validateCodingQuestionData(coding *structs.CodingQuestion) error {
 		}
 	}
 
-	// Validate examples
-	for _, example := range coding.Examples {
-		if strings.TrimSpace(example.Input) == "" {
-			return status.Error(codes.InvalidArgument, "example input cannot be empty")
+	// Validate test cases
+	for _, testCase := range coding.TestCases {
+		if len(testCase.Inputs) != len(coding.InputDefinitions) {
+			return status.Error(codes.InvalidArgument, "number of inputs in test case must match number of input definitions")
 		}
-		if strings.TrimSpace(example.Output) == "" {
-			return status.Error(codes.InvalidArgument, "example output cannot be empty")
+
+		// Check that no input is empty
+		for _, input := range testCase.Inputs {
+			if strings.TrimSpace(input) == "" {
+				return status.Error(codes.InvalidArgument, "test case input cannot be empty")
+			}
 		}
-		if example.Explanation != nil && strings.TrimSpace(*example.Explanation) == "" {
-			return status.Error(codes.InvalidArgument, "example explanation cannot be empty if provided")
+
+		if strings.TrimSpace(testCase.Output) == "" {
+			return status.Error(codes.InvalidArgument, "test case output cannot be empty")
+		}
+		if testCase.Explanation != nil && strings.TrimSpace(*testCase.Explanation) == "" {
+			testCase.Explanation = nil
 		}
 	}
 
