@@ -162,7 +162,6 @@ function handleAutoAddTestCase(open: boolean) {
       !testCases[0].explanation &&
       Object.values(testCases[0].inputs).every(val => !val) // if all inputs are empty
     ) {
-      console.log(testCases[0])
       testCases.length = 0
     }
     autoAddedOnOpen.value = false
