@@ -28,7 +28,7 @@ type Exam struct {
 	MaxScore           int32           `gorm:"type:integer;default:0"`
 	DurationMinutes    int16           `gorm:"type:smallint;not null;check:duration_minutes >= 0 AND duration_minutes <= 1440"`
 	PaperID            int64           `gorm:"type:bigint"`
-	ParticipantCounts  json.RawMessage `gorm:"type:json;default:'{\"unattended\":0,\"invited\":0,\"started\":0,\"ended\":0}'"`
+	ParticipantCounts  json.RawMessage `gorm:"type:jsonb;default:'{\"unattended\":0,\"invited\":0,\"started\":0,\"ended\":0}'"`
 	DeletedAt          gorm.DeletedAt  `gorm:"index"`
 
 	Participants []ExamParticipant `gorm:"foreignKey:ExamID"`

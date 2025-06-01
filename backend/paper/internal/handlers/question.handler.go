@@ -14,6 +14,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/utils"
+	"pariksha/common/pkg/utils/ptr"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/interceptors"
 	"pariksha/paper/internal/utils/validate"
@@ -107,7 +108,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 			Order:      maxOrder.MaxOrder + 1,
 			Question:   json.RawMessage(req.RawQuestion),
 			Type:       req.Type,
-			Tags:       tags,
+			Tags:       ptr.JsonRawMessage(tags),
 			MaxScore:   int16(req.MaxScore),
 			CorrectAnswer: sql.NullString{
 				String: req.GetCorrectAnswer(),

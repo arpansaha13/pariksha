@@ -14,6 +14,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/utils"
+	"pariksha/common/pkg/utils/ptr"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/utils/validate"
 )
@@ -174,7 +175,7 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 
 	if len(req.Tags) > 0 {
 		tags, _ := json.Marshal(req.Tags)
-		question.Tags = tags
+		question.Tags = ptr.JsonRawMessage(tags)
 	}
 
 	if req.CorrectAnswer != nil {

@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -16,6 +18,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
 	engineConstants "pariksha/engine/internal/constants"
 	"pariksha/engine/internal/templates"
@@ -23,6 +26,7 @@ import (
 
 type EngineServer struct {
 	proto.UnimplementedEngineServer
+
 	dockerClient *client.Client
 }
 
@@ -38,7 +42,7 @@ type EnvironmentConfig struct {
 
 // Environment configurations
 var envConfigs = map[string]EnvironmentConfig{
-	engineConstants.EnvNode: {
+	constants.LangNode: {
 		Image:        engineConstants.NodeImage,
 		FileExt:      ".js",
 		CommandName:  "node",
@@ -129,7 +133,8 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 		NetworkMode: "none",
 		Mounts: []mount.Mount{
 			{
-				Type:     mount.TypeBind,
+				Type: mount.TypeBind,
+				// Mount source has to be a host path, not a path inside engineService container
 				Source:   filepath.Join(engineConstants.HOST_TMP_MOUNT_PATH, scriptPath),
 				Target:   envConfig.MountTarget,
 				ReadOnly: true,
@@ -150,22 +155,10 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 		}
 	}()
 
-	// Start container
 	startTime := time.Now()
-	if err := s.dockerClient.ContainerStart(execCtx, resp.ID, container.StartOptions{}); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to start container: %v", err)
-	}
-
-	// Wait for container to finish
-	statusCh, errCh := s.dockerClient.ContainerWait(execCtx, resp.ID, container.WaitConditionNotRunning)
-	var statusCode int64
-	select {
-	case err := <-errCh:
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "error waiting for container: %v", err)
-		}
-	case status := <-statusCh:
-		statusCode = status.StatusCode
+	statusCode, err := s.startContainerAndWait(&execCtx, resp.ID)
+	if err != nil {
+		return nil, err
 	}
 
 	// Get container logs
@@ -183,8 +176,64 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 
 	return &proto.RunCodeResponse{
 		Stdout:        stdout,
-		Stderr:        stderr,
-		ExitCode:      int32(statusCode),
+		Stderr:        strings.TrimSpace(stderr),
+		ExitCode:      int32(*statusCode),
 		ExecutionTime: executionTime,
 	}, nil
+}
+
+func (s *EngineServer) startContainerAndWait(execCtx *context.Context, containerID string) (*int64, error) {
+	// Start container
+	if err := s.dockerClient.ContainerStart(*execCtx, containerID, container.StartOptions{}); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to start container: %v", err)
+	}
+
+	// Wait for container to finish
+	statusCh, errCh := s.dockerClient.ContainerWait(*execCtx, containerID, container.WaitConditionNotRunning)
+	var statusCode int64
+	select {
+	case err := <-errCh:
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error waiting for container: %v", err)
+		}
+	case status := <-statusCh:
+		statusCode = status.StatusCode
+	}
+
+	return &statusCode, nil
+}
+
+// splitLogs separates combined Docker logs into stdout and stderr.
+func splitLogs(logs io.Reader) (string, string) {
+	var stdout, stderr strings.Builder
+	reader := bufio.NewReader(logs) // Use bufio.Reader to handler partial reads and incomplete headers
+	headerBuf := make([]byte, 8)    // Temporary buffer for header storage
+
+	for {
+		// Read the 8-byte header
+		_, err := io.ReadFull(reader, headerBuf)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return "", fmt.Sprintf("error reading logs: %v", err)
+		}
+
+		// Extract header info
+		header := headerBuf[0] // First byte determines stdout/stderr
+
+		// Read the actual log message
+		content, err := reader.ReadBytes('\n') // Read until newline
+		if err != nil && err != io.EOF {
+			return "", fmt.Sprintf("error reading log content: %v", err)
+		}
+
+		if header == 1 {
+			stdout.Write(content)
+		} else if header == 2 {
+			stderr.Write(content)
+		}
+	}
+
+	return stdout.String(), stderr.String()
 }

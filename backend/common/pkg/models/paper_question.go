@@ -14,10 +14,10 @@ import (
 type Question struct {
 	ID            int64            `gorm:"primaryKey;type:bigint"`
 	CategoryID    int64            `gorm:"type:bigint;not null"`
-	Question      json.RawMessage  `gorm:"type:json;not null"`
+	Question      json.RawMessage  `gorm:"type:jsonb;not null"`
 	Order         int16            `gorm:"type:smallint;not null"`
 	Type          string           `gorm:"type:varchar(20);not null;check:type IN ('MCQ', 'SUBJECTIVE', 'CODING')"`
-	Tags          json.RawMessage  `gorm:"type:json;default:'{}'::json"`
+	Tags          *json.RawMessage `gorm:"type:jsonb;default:null"`
 	PaperID       sql.NullInt64    `gorm:"type:bigint"`
 	MaxScore      int16            `gorm:"type:smallint;not null;check:max_score >= 0 AND max_score <= 1000"`
 	CorrectAnswer sql.NullString   `gorm:"type:text"`

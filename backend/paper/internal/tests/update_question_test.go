@@ -13,6 +13,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/utils/ptr"
 	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/paper/internal/config/db"
 )
@@ -41,7 +42,7 @@ func TestUpdateMcqQuestion(t *testing.T) {
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
-						Tags:       json.RawMessage(`["old"]`),
+						Tags:       ptr.JsonRawMessage([]byte("[\"old\"]")),
 					},
 				})
 				return &paper, &questions[0]
@@ -66,7 +67,7 @@ func TestUpdateMcqQuestion(t *testing.T) {
 				// Verify other fields
 				assert.EqualValues(t, 10, updated.MaxScore)
 				var tags []string
-				require.NoError(t, json.Unmarshal(updated.Tags, &tags))
+				require.NoError(t, json.Unmarshal(*updated.Tags, &tags))
 				assert.ElementsMatch(t, []string{"updated", "mcq"}, tags)
 			},
 		},
@@ -163,7 +164,7 @@ func TestUpdateCodingQuestion(t *testing.T) {
 								}
 							]
 						}`),
-						Tags: json.RawMessage(`["old"]`),
+						Tags: ptr.JsonRawMessage([]byte("[\"old\"]")),
 					},
 				})
 				return &paper, &questions[0]
@@ -210,7 +211,7 @@ func TestUpdateCodingQuestion(t *testing.T) {
 				// Verify other fields
 				assert.EqualValues(t, 10, updated.MaxScore)
 				var tags []string
-				require.NoError(t, json.Unmarshal(updated.Tags, &tags))
+				require.NoError(t, json.Unmarshal(*updated.Tags, &tags))
 				assert.ElementsMatch(t, []string{"updated", "coding"}, tags)
 			},
 		},

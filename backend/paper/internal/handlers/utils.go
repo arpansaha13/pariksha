@@ -73,8 +73,10 @@ func paperToProto(paper models.Paper) *proto.PaperResponse {
 
 func questionToProto(question models.Question) (*proto.QuestionResponse, error) {
 	var tags []string
-	if err := json.Unmarshal(question.Tags, &tags); err != nil {
-		return nil, status.Error(codes.Internal, "invalid tags data")
+	if question.Tags != nil {
+		if err := json.Unmarshal(*question.Tags, &tags); err != nil {
+			return nil, status.Error(codes.Internal, "invalid tags data")
+		}
 	}
 
 	response := &proto.QuestionResponse{

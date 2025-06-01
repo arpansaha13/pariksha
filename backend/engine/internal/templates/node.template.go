@@ -2,8 +2,9 @@ package templates
 
 import (
 	"bytes"
-	"pariksha/engine/internal/constants"
 	"text/template"
+
+	"pariksha/common/pkg/constants"
 )
 
 const nodeTemplate = `
@@ -40,7 +41,7 @@ type NodeTemplateData struct {
 
 // GenerateNodeScript creates a Node.js script with the user's code and test cases
 var GenerateNodeScript TemplateFunc = func(code string, testCases string) (string, error) {
-	tmpl, err := template.New(constants.EnvNode).Parse(nodeTemplate)
+	tmpl, err := template.New(constants.LangNode).Parse(nodeTemplate)
 	if err != nil {
 		return "", err
 	}

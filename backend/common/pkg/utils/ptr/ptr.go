@@ -1,5 +1,7 @@
 package ptr
 
+import "encoding/json"
+
 // Int32 returns a pointer to the given int32 value
 func Int32(v int32) *int32 {
 	return &v
@@ -8,4 +10,10 @@ func Int32(v int32) *int32 {
 // String returns a pointer to the given string value
 func String(s string) *string {
 	return &s
+}
+
+// JsonRawMessage returns a pointer to the given byte array
+func JsonRawMessage(b []byte) *json.RawMessage {
+	r := json.RawMessage(b)
+	return &r
 }
