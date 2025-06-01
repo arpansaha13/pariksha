@@ -10,7 +10,7 @@ export async function updateCategory(
   const { $api } = useNuxtApp()
 
   const { data: categories } = useNuxtData<QuestionCategory[]>(
-    AsyncDataKeys.PAPERS_PAPER_CATEGORIES(paperId)
+    UseAsyncDataKeys.paper_categories(paperId)
   )
 
   const previousCategories = categories.value!
@@ -25,7 +25,7 @@ export async function updateCategory(
       body,
     })
 
-    await refreshNuxtData(AsyncDataKeys.PAPERS_PAPER_CATEGORIES(paperId))
+    await refreshNuxtData(UseAsyncDataKeys.paper_categories(paperId))
   } catch {
     categories.value = previousCategories
   }

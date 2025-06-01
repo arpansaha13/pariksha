@@ -2,7 +2,7 @@ export function useAuthUser() {
   const { $api } = useNuxtApp()
 
   return useAsyncData<User>(
-    AsyncDataKeys.AUTH_USER,
+    UseAsyncDataKeys.auth_user,
     () => $api(`/api/users/me`),
     {
       transform: (res: string | User) =>

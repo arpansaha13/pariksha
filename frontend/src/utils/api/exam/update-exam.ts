@@ -14,6 +14,6 @@ export async function updateExam(examId: ExamId, body: UpdateExamBody) {
     body,
   })
 
-  refreshNuxtData(AsyncDataKeys.EXAM(examId))
+  refreshNuxtData(UseAsyncDataKeys.exam(examId))
   return JSON.parse(res) as Exam
 }

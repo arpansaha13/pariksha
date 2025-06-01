@@ -5,7 +5,7 @@ export async function reorderCategories(
   const { $api } = useNuxtApp()
 
   const { data: storedCategories } = useNuxtData<QuestionCategory[]>(
-    AsyncDataKeys.PAPERS_PAPER_CATEGORIES(paperId)
+    UseAsyncDataKeys.paper_categories(paperId)
   )
 
   const previousCategories = storedCategories.value!
@@ -20,7 +20,7 @@ export async function reorderCategories(
       method: 'PATCH',
       body: { categories: categoryIds },
     })
-    await refreshNuxtData(AsyncDataKeys.PAPERS_PAPER_CATEGORIES(paperId))
+    await refreshNuxtData(UseAsyncDataKeys.paper_categories(paperId))
   } catch {
     storedCategories.value = previousCategories
   }

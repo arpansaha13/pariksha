@@ -6,7 +6,7 @@ export function usePaperQuestion(
   const { $api } = useNuxtApp()
 
   return useAsyncData(
-    () => AsyncDataKeys.QUESTION(unref(questionId)),
+    () => UseAsyncDataKeys.paper_question(unref(questionId)),
     async () => {
       if (unref(questionId) === QUESTION_ID_ADD) return Promise.resolve(null)
 

@@ -12,5 +12,5 @@ export async function updateAuthUser(body: UpdateUserPayload) {
     body,
   })
 
-  return refreshNuxtData(AsyncDataKeys.AUTH_USER)
+  return refreshNuxtData(UseAsyncDataKeys.auth_user)
 }

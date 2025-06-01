@@ -9,9 +9,7 @@ export async function updatePaper(
 ) {
   const { $api } = useNuxtApp()
 
-  const { data: paper } = useNuxtData<Paper>(
-    AsyncDataKeys.PAPERS_PAPER(paperId)
-  )
+  const { data: paper } = useNuxtData<Paper>(UseAsyncDataKeys.paper(paperId))
 
   const previousPaper = paper.value!
   paper.value = { ...paper.value!, ...body }
@@ -22,7 +20,7 @@ export async function updatePaper(
       body,
     })
 
-    await refreshNuxtData(AsyncDataKeys.PAPERS_PAPER(paperId))
+    await refreshNuxtData(UseAsyncDataKeys.paper(paperId))
   } catch {
     paper.value = previousPaper
   }

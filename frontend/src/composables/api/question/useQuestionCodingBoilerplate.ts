@@ -5,7 +5,7 @@ export function useQuestionCodingBoilerplate(
   const { $api } = useNuxtApp()
 
   return useAsyncData<Boilerplate>(
-    () => AsyncDataKeys.BOILERPLATE(unref(questionId), unref(languageId)),
+    () => UseAsyncDataKeys.boilerplate(unref(questionId), unref(languageId)),
     async () => {
       if (unref(questionId) === QUESTION_ID_ADD) return Promise.resolve(null)
 

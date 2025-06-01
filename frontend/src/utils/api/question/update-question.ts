@@ -15,11 +15,11 @@ export async function updateQuestion(
   const { $api } = useNuxtApp()
 
   const { data: question } = useNuxtData<Question>(
-    AsyncDataKeys.QUESTION(questionId)
+    UseAsyncDataKeys.paper_question(questionId)
   )
   const { data: groupedQuestions } = useNuxtData<
     Record<number, QuestionMinimal[]>
-  >(AsyncDataKeys.PAPERS_PAPER_QUESTIONS(paperId))
+  >(UseAsyncDataKeys.paper_questions(paperId))
 
   const previousQuestion = question.value!
   const requestBody = getRequestBody(previousQuestion, mergedQuestion)
@@ -60,7 +60,7 @@ export async function updateQuestion(
 
     if (res.id === questionId) {
       refreshPromises.push([
-        refreshNuxtData(AsyncDataKeys.QUESTION(questionId)),
+        refreshNuxtData(UseAsyncDataKeys.paper_question(questionId)),
       ])
     } else {
       // If a locked question is updated, a new questionId will be returned
@@ -71,7 +71,7 @@ export async function updateQuestion(
           { replace: true }
         )
         if (minimalQuestion) minimalQuestion.id = res.id // update questionId in groupedQuestions list
-        clearNuxtData(AsyncDataKeys.QUESTION(questionId)) // clear old question data
+        clearNuxtData(UseAsyncDataKeys.paper_question(questionId)) // clear old question data
       }
       refreshPromises.push(replaceOldQuestionIdWithNew())
     }
@@ -82,7 +82,7 @@ export async function updateQuestion(
 
     // Refresh paper data if max_score or type changed
     if (isMaxScoreUpdated || isTypeUpdated) {
-      refreshPromises.push(refreshNuxtData(AsyncDataKeys.PAPERS_PAPER(paperId)))
+      refreshPromises.push(refreshNuxtData(UseAsyncDataKeys.paper(paperId)))
     }
 
     await Promise.all(refreshPromises)

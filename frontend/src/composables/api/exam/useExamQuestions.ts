@@ -2,7 +2,7 @@ export function useExamQuestions(examId: ExamId) {
   const { $api } = useNuxtApp()
 
   return useAsyncData(
-    AsyncDataKeys.EXAM_QUESTIONS(examId),
+    UseAsyncDataKeys.exam_questions(examId),
     () => $api<ExamQuestionMinimal[]>(`/api/exams/${examId}/questions`),
     {
       transform: questions => {

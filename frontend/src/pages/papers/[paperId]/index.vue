@@ -353,8 +353,12 @@ function startQuestionEdit() {
     } else if (qType === QuestionType.CODING) {
       const codingQuestion = question.value.question
       formState.title = codingQuestion.title
-      formState.input_definitions = codingQuestion.input_definitions
-      formState.output_definition = codingQuestion.output_definition
+      formState.input_definitions = structuredClone(
+        toRaw(codingQuestion.input_definitions)
+      )
+      formState.output_definition = structuredClone(
+        toRaw(codingQuestion.output_definition)
+      )
       if (codingQuestion.test_cases) {
         formState.test_cases = structuredClone(toRaw(codingQuestion.test_cases))
       }

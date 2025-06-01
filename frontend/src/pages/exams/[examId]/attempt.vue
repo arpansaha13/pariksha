@@ -142,7 +142,7 @@ definePageMeta({
     to => {
       const examId = to.params.examId as ExamId
       const { data: examPermission } = useNuxtData<ExamPermission>(
-        AsyncDataKeys.EXAM_PERMISSION(examId)
+        UseAsyncDataKeys.exam_permission(examId)
       )
       if (!examPermission.value!.can_participate) {
         return abortNavigation({

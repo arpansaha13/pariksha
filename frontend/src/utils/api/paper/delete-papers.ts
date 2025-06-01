@@ -6,7 +6,7 @@ export async function deletePapers(paperIds: PaperId[]): Promise<void> {
 
   const { $api } = useNuxtApp()
   const toast = useToast()
-  const { data: papers } = useNuxtData<Paper[]>(AsyncDataKeys.PAPERS)
+  const { data: papers } = useNuxtData<Paper[]>(UseAsyncDataKeys.papers)
 
   if (!papers.value) return
 
@@ -25,7 +25,7 @@ export async function deletePapers(paperIds: PaperId[]): Promise<void> {
     })
 
     // Refresh papers data to ensure consistency
-    await refreshNuxtData(AsyncDataKeys.PAPERS)
+    await refreshNuxtData(UseAsyncDataKeys.papers)
   } catch {
     // Rollback on error
     papers.value = previousPapers

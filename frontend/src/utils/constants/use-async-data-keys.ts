@@ -1,44 +1,35 @@
-export const AsyncDataKeys = {
-  PAPERS: 'PAPERS',
-  PAPERS_PAPER: (paperId: PaperId) => `PAPERS_PAPER_${paperId}`,
-  PAPERS_PAPER_QUESTIONS: (paperId: PaperId) =>
-    `PAPERS_PAPER_${paperId}_QUESTIONS`,
-  PAPERS_PAPER_CATEGORIES: (paperId: PaperId) =>
-    `PAPERS_PAPER_${paperId}_CATEGORIES`,
-  PAPER_PERMISSION: (paperId: PaperId) => `PAPER_${paperId}_PERMISSION`,
+export const UseAsyncDataKeys = {
+  auth_user: 'auth_user',
 
-  QUESTION: (questionId: number | null) =>
-    questionId ? `QUESTION_${questionId}` : 'QUESTION',
+  papers: 'papers',
+  paper: (paperId: PaperId) => `paper_${paperId}`,
+  paper_questions: (paperId: PaperId) => `paper_${paperId}_questions`,
+  paper_categories: (paperId: PaperId) => `paper_${paperId}_categories`,
+  paper_permission: (paperId: PaperId) => `paper_${paperId}_permission`,
 
-  EXAMS: 'EXAMS',
-  EXAM: (examId: ExamId) => `EXAM_${examId}`,
-  EXAM_PERMISSION: (examId: ExamId) => `EXAM_${examId}_PERMISSION`,
-  EXAM_PARTICIPANT: (examId: ExamId) => `EXAM_${examId}_PARTICIPANT`,
-  EXAM_PARTICIPANTS: (examId: ExamId) => `EXAM_${examId}_PARTICIPANTS`,
-  EXAM_QUESTIONS: (examId: ExamId) => `EXAM_${examId}_QUESTIONS`,
-  EXAM_CATEGORIES: (examId: ExamId) => `EXAM_${examId}_CATEGORIES`,
-  EXAM_RESULTS: (examId: ExamId) => `EXAM_${examId}_RESULTS`,
+  exams: 'exams',
+  exam: (examId: ExamId) => `exam_${examId}`,
+  exam_permission: (examId: ExamId) => `exam_${examId}_permission`,
+  exam_participant: (examId: ExamId) => `exam_${examId}_participant`,
+  exam_participants: (examId: ExamId) => `exam_${examId}_participants`,
+  exam_questions: (examId: ExamId) => `exam_${examId}_questions`,
+  exam_categories: (examId: ExamId) => `exam_${examId}_categories`,
+  exam_results: (examId: ExamId) => `exam_${examId}_results`,
 
-  EXAM_QUESTION: (questionId: number | null) =>
-    questionId ? `EXAM_QUESTION_${questionId}` : 'EXAM_QUESTION',
+  paper_question: (questionId: number | null) => `paper_question_${questionId}`,
+  exam_question: (questionId: number | null) => `exam_question_${questionId}`,
 
-  EXAM_PARTICIPANT_BY_ID: (participantId: ExamParticipantId) =>
-    `PARTICIPANT_${participantId}`,
+  participant_by_id: (participantId: ExamParticipantId) =>
+    `participant_${participantId}`,
 
-  EVALUATION_ANSWER: (participantId: number, questionId: number | null) =>
-    participantId && questionId
-      ? `PARTICIPANT_${participantId}_QUESTION_${questionId}_EVALUATION_ANSWER`
-      : 'EVALUATION_ANSWER',
-  ANSWER_EVALUATION_DATA: (participantId: number, questionId: number | null) =>
-    participantId && questionId
-      ? `PARTICIPANT_${participantId}_QUESTION_${questionId}_ANSWER_EVALUATION_DATA`
-      : 'ANSWER_EVALUATION_DATA',
+  evaluation_answer: (participantId: number, questionId: number | null) =>
+    `participant_${participantId}_question_${questionId}_evaluation_answer`,
+  answer_evaluation_data: (participantId: number, questionId: number | null) =>
+    `participant_${participantId}_question_${questionId}_answer_evaluation_data`,
 
-  AUTH_USER: 'AUTH_USER',
+  boilerplate: (questionId: QuestionId | null, languageId: LanguageId | null) =>
+    `boilerplate_${questionId}_${languageId}`,
 
-  BOILERPLATE: (questionId: QuestionId | null, languageId: LanguageId | null) =>
-    `BOILERPLATE_${questionId}_${languageId}`,
-
-  EXAM_PARTICIPANT_ANSWERS: (participantId: number) =>
-    `PARTICIPANT_${participantId}_ANSWERS`,
-} as const
+  exam_participant_answers: (participantId: number) =>
+    `participant_${participantId}_answers`,
+}

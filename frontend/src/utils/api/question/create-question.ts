@@ -42,8 +42,8 @@ export async function createQuestion(
 
   // Refresh both questions and paper data since max_score and question_counts change
   await Promise.all([
-    refreshNuxtData(AsyncDataKeys.PAPERS_PAPER_QUESTIONS(paperId)),
-    refreshNuxtData(AsyncDataKeys.PAPERS_PAPER(paperId)),
+    refreshNuxtData(UseAsyncDataKeys.paper_questions(paperId)),
+    refreshNuxtData(UseAsyncDataKeys.paper(paperId)),
   ])
 
   return parsedRes.id

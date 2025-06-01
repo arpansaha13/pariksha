@@ -2,7 +2,7 @@ export function useExamParticipantAnswers(participantId: number) {
   const { $api } = useNuxtApp()
 
   return useAsyncData(
-    AsyncDataKeys.EXAM_PARTICIPANT_ANSWERS(participantId),
+    UseAsyncDataKeys.exam_participant_answers(participantId),
     () => $api<QuestionAnswer[]>(`/api/participants/${participantId}/answers`),
     {
       transform: questionAnswers => {

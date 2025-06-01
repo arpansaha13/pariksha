@@ -2,7 +2,7 @@ export function useExamPermission(examId: ExamId) {
   const { $api } = useNuxtApp()
 
   return useAsyncData<ExamPermission>(
-    AsyncDataKeys.EXAM_PERMISSION(examId),
+    UseAsyncDataKeys.exam_permission(examId),
     () => $api(`/api/exams/${examId}/permission`)
   )
 }

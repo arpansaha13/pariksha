@@ -160,7 +160,7 @@ const route = useRoute()
 const examId = route.params.examId as ExamId
 
 const { data: examPermission } = useNuxtData<ExamPermission>(
-  AsyncDataKeys.EXAM_PERMISSION(examId)
+  UseAsyncDataKeys.exam_permission(examId)
 )
 
 const [

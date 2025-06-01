@@ -7,7 +7,7 @@ export function useAnswerForEvaluation(
   const { $api } = useNuxtApp()
 
   const useAnswerForEvaluationKey = computed(() =>
-    AsyncDataKeys.EVALUATION_ANSWER(participantId, questionId.value)
+    UseAsyncDataKeys.evaluation_answer(participantId, questionId.value)
   )
 
   return useAsyncData(

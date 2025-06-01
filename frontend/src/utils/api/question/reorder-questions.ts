@@ -10,5 +10,5 @@ export async function reorderQuestions(
     body: { questions: questionIds },
   })
 
-  await refreshNuxtData(AsyncDataKeys.PAPERS_PAPER_QUESTIONS(paperId))
+  await refreshNuxtData(UseAsyncDataKeys.paper_questions(paperId))
 }

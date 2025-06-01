@@ -8,7 +8,7 @@ export async function deleteCategory(
     method: 'DELETE',
   })
   await Promise.all([
-    refreshNuxtData(AsyncDataKeys.PAPERS_PAPER_CATEGORIES(paperId)),
-    refreshNuxtData(AsyncDataKeys.PAPERS_PAPER_QUESTIONS(paperId)),
+    refreshNuxtData(UseAsyncDataKeys.paper_categories(paperId)),
+    refreshNuxtData(UseAsyncDataKeys.paper_questions(paperId)),
   ])
 }

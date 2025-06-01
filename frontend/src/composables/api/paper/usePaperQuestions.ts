@@ -2,7 +2,7 @@ export function usePaperQuestions(paperId: PaperId) {
   const { $api } = useNuxtApp()
 
   return useAsyncData(
-    AsyncDataKeys.PAPERS_PAPER_QUESTIONS(paperId),
+    UseAsyncDataKeys.paper_questions(paperId),
     () => $api<QuestionMinimal[]>(`/api/papers/${paperId}/questions`),
     {
       transform: questions => {

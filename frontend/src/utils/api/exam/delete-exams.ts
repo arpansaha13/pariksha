@@ -9,7 +9,7 @@ export async function deleteExams(examIds: ExamId[]): Promise<void> {
 
   const { $api } = useNuxtApp()
   const toast = useToast()
-  const { data: exams } = useNuxtData<Exam[]>(AsyncDataKeys.EXAMS)
+  const { data: exams } = useNuxtData<Exam[]>(UseAsyncDataKeys.exams)
 
   if (!exams.value) return
 
@@ -28,7 +28,7 @@ export async function deleteExams(examIds: ExamId[]): Promise<void> {
     })
 
     // Refresh exams data to ensure consistency
-    await refreshNuxtData(AsyncDataKeys.EXAMS)
+    await refreshNuxtData(UseAsyncDataKeys.exams)
   } catch {
     // Rollback on error
     exams.value = previousExams
