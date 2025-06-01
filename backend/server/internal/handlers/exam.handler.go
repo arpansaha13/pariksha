@@ -65,8 +65,14 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	paperCtx := paperService.CreateMetadata(userID)
 
-	_, err := paperService.Client().GetPaper(paperCtx, &proto.PaperRequest{
-		PaperId: examDto.PaperID,
+	decryptedPaperId, err := utils.DecryptID(examDto.PaperID)
+	if err != nil {
+		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		return
+	}
+
+	_, err = paperService.Client().GetPaper(paperCtx, &proto.PaperRequest{
+		PaperId: decryptedPaperId,
 	})
 	if err != nil {
 		http.Error(w, "Paper not found", http.StatusNotFound)
@@ -82,7 +88,7 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 		EndsAt:             timestamppb.New(examDto.EndsAt),
 		MaxCandidatesCount: 10,
 		Type:               nil,
-		PaperId:            examDto.PaperID,
+		PaperId:            decryptedPaperId,
 		DurationMinutes:    examDto.DurationMinutes,
 	}
 

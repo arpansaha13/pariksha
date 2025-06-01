@@ -12,7 +12,5 @@ func generateNodeBoilerplate(inputs []structs.InputDefinition) string {
 	for i, input := range inputs {
 		params[i] = input.VariableName
 	}
-	return `function solve(` + strings.Join(params, ", ") + `) {
-	
-	}`
+	return "function solve(" + strings.Join(params, ", ") + ") {\n\n}"
 }

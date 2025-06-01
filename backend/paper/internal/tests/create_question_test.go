@@ -498,7 +498,7 @@ func TestCreateCodingQuestionBoilerplates(t *testing.T) {
 				],
 				"output_definition": {"type": 1}
 			}`,
-			want: "function solve(arr) {}",
+			want: "function solve(arr) {\n\n}",
 		},
 	}
 

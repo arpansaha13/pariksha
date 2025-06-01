@@ -23,7 +23,10 @@ func CodingQuestionData(coding *structs.CodingQuestion) error {
 		return status.Error(codes.InvalidArgument, "coding question must have input definitions")
 	}
 	if len(coding.InputDefinitions) > int(constants.MAX_CODING_INPUTS_COUNT) {
-		return status.Error(codes.InvalidArgument, fmt.Sprintf("Number of inputs cannot be more than %d options", constants.MAX_CODING_INPUTS_COUNT))
+		return status.Error(codes.InvalidArgument, fmt.Sprintf("Number of inputs cannot be more than %d", constants.MAX_CODING_INPUTS_COUNT))
+	}
+	if len(coding.TestCases) > int(constants.MAX_CODING_TEST_CASES_COUNT) {
+		return status.Error(codes.InvalidArgument, fmt.Sprintf("Number of test cases cannot be more than %d", constants.MAX_CODING_TEST_CASES_COUNT))
 	}
 
 	if err := validateOutputDefinition(coding.OutputDefinition); err != nil {

@@ -86,6 +86,18 @@
       v-model:form-data="editQuestionFormStates[currentQuestionId]!"
       @submit="onEditQuestionSubmit"
     />
+    <PaperQuestionDefineTestCasesForm
+      v-else-if="
+        question &&
+        currentQuestionId &&
+        question.type === QuestionType.CODING &&
+        codingQuestionTestCaseFormStates[currentQuestionId]
+      "
+      ref="codingQuestionTestCaseForm"
+      v-model:test-cases="codingQuestionTestCaseFormStates[currentQuestionId]!"
+      :coding-question-content="question.question"
+      @submit="onDefineTestCasesSubmit"
+    />
     <template v-else-if="question">
       <PaperQuestionMcq
         v-if="question.type === QuestionType.MCQ"
@@ -121,28 +133,41 @@
         variant="solid"
         @click="createQuestionFormRef?.submit()"
       />
-      <UButton
+      <template
         v-else-if="
           currentQuestionId &&
+          isNullOrUndefined(
+            codingQuestionTestCaseFormStates[currentQuestionId]
+          ) &&
           isNullOrUndefined(editQuestionFormStates[currentQuestionId])
         "
-        label="Edit question"
-        color="primary"
-        variant="subtle"
-        @click="startQuestionEdit"
-      />
-      <template v-else-if="currentQuestionId">
+      >
+        <UButton
+          v-if="question?.type === QuestionType.CODING"
+          label="Define test cases"
+          color="primary"
+          variant="subtle"
+          @click="startDefineTestCases"
+        />
+        <UButton
+          label="Edit question"
+          color="primary"
+          variant="subtle"
+          @click="startQuestionEdit"
+        />
+      </template>
+      <template v-else>
         <UButton
           label="Save"
           color="primary"
           variant="solid"
-          @click="editQuestionFormRef?.submit()"
+          @click="saveQuestionEditMode"
         />
         <UButton
           label="Cancel"
           color="neutral"
           variant="outline"
-          @click="cancelQuestionEdit"
+          @click="cancelQuestionEditMode"
         />
       </template>
       <UButton
@@ -161,7 +186,11 @@
 import { defu } from 'defu'
 import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { ComponentExposed } from 'vue-component-type-helpers'
-import { ConfirmModal, PaperQuestionForm } from '#components'
+import {
+  ConfirmModal,
+  PaperQuestionDefineTestCasesForm,
+  PaperQuestionForm,
+} from '#components'
 
 definePageMeta({
   layout: 'paper',
@@ -351,12 +380,6 @@ function startQuestionEdit() {
   }
 }
 
-function cancelQuestionEdit() {
-  if (!currentQuestionId.value) return
-  editQuestionFormStates[currentQuestionId.value] = null
-  paperStore.decUnsavedCount(currentCategoryId.value!)
-}
-
 async function onEditQuestionSubmit() {
   const qid = currentQuestionId.value
   if (!qid || qid === QUESTION_ID_ADD) return
@@ -373,11 +396,95 @@ async function onEditQuestionSubmit() {
   }
 }
 
-// usePaperAutoCancelQuestionEdit({
-//   question,
-//   editQuestionFormStates,
-//   decUnsavedCount,
-// })
+// __________________CODING QUESTION TEST CASES___________________
+const codingQuestionTestCaseFormRef = useTemplateRef<
+  ComponentExposed<typeof PaperQuestionDefineTestCasesForm>
+>('codingQuestionTestCaseForm')
+const codingQuestionTestCaseFormStates = reactive<
+  Record<QuestionId, QuestionCodingContentTestCase[] | null>
+>({})
+
+function startDefineTestCases() {
+  const qid = currentQuestionId.value
+  if (!question.value || !qid) return
+  if (qid === QUESTION_ID_ADD) return
+
+  // Create form state for test-cases if it doesn't exist
+  if (isNullOrUndefined(codingQuestionTestCaseFormStates[qid])) {
+    // Parse and populate question data based on type
+    const qType = question.value.type
+
+    if (qType !== QuestionType.CODING) {
+      logWarning('startDefineTestCases called without QuestionType.CODING')
+      return
+    }
+
+    const testCases = question.value.question.test_cases
+    if (testCases) {
+      codingQuestionTestCaseFormStates[qid] = structuredClone(toRaw(testCases))
+    } else {
+      codingQuestionTestCaseFormStates[qid] = [
+        {
+          inputs: Array.from({
+            length: question.value.question.input_definitions.length,
+          }),
+          output: '',
+          explanation: '',
+        },
+      ]
+    }
+
+    paperStore.incUnsavedCount(question.value.category_id)
+  }
+}
+
+async function onDefineTestCasesSubmit() {
+  const qid = currentQuestionId.value
+  if (
+    !qid ||
+    qid === QUESTION_ID_ADD ||
+    !question.value ||
+    question.value.type !== QuestionType.CODING
+  )
+    return
+
+  const testCases = codingQuestionTestCaseFormStates[qid]!
+  const updateQuestionBody = structuredClone(toRaw(question.value))
+  updateQuestionBody.question.test_cases = testCases
+
+  try {
+    await updateQuestion(
+      qid,
+      paperId,
+      updateQuestionBody as unknown as MergedQuestion
+    )
+    // Clear form state after successful update
+    codingQuestionTestCaseFormStates[qid] = null
+    paperStore.decUnsavedCount(currentCategoryId.value!)
+  } catch (error) {
+    console.error('Failed to update question:', error)
+  }
+}
+
+// ___________________COMBINED SAVE AND CANCEL____________________
+/** Combined "Save" for question-edit and define-test-cases */
+function saveQuestionEditMode() {
+  if (!currentQuestionId.value) return
+
+  if (!isNullOrUndefined(editQuestionFormStates[currentQuestionId.value])) {
+    editQuestionFormRef.value?.submit()
+  } else {
+    codingQuestionTestCaseFormRef.value?.submit()
+  }
+}
+
+/** Combined "Cancel" for question-edit and define-test-cases */
+function cancelQuestionEditMode() {
+  if (!currentQuestionId.value) return
+  editQuestionFormStates[currentQuestionId.value] = null
+  codingQuestionTestCaseFormStates[currentQuestionId.value] = null
+  paperStore.decUnsavedCount(currentCategoryId.value!)
+}
 </script>
 
 <style scoped>

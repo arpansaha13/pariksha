@@ -431,7 +431,7 @@ func TestUpdateCodingQuestionBoilerplates(t *testing.T) {
 				"output_definition": {"type": 1}
 			}`,
 			wantOldCode: "function solve(a, b) {}",
-			wantNewCode: "function solve(arr) {}",
+			wantNewCode: "function solve(arr) {\n\n}",
 		},
 	}
 
