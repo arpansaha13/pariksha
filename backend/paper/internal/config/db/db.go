@@ -39,7 +39,7 @@ func InitDB(host, port, user, password, dbname, sslmode string) error {
 func autoMigrateDB() error {
 	err := DB.AutoMigrate(
 		&models.Paper{},
-		&models.PaperPermissions{},
+		&models.PaperPermission{},
 		&models.Question{},
 		&models.QuestionCategory{},
 	)

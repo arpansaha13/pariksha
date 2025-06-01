@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+
+	"github.com/gorilla/mux"
+
 	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
 	"pariksha/server/internal/services"
-
-	"github.com/gorilla/mux"
 )
 
 func GetExamQuestions(w http.ResponseWriter, r *http.Request) {

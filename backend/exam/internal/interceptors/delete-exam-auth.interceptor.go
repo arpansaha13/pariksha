@@ -40,7 +40,7 @@ func DeleteExamsAuthInterceptor() grpc.UnaryServerInterceptor {
 		}
 
 		// Get all permissions for these exams for this user
-		var permissions []models.ExamPermissions
+		var permissions []models.ExamPermission
 		if err := db.DB.Where("exam_id IN ? AND user_id = ?", deleteReq.ExamIds, userID).Find(&permissions).Error; err != nil {
 			return nil, status.Error(codes.Internal, "failed to fetch permissions")
 		}

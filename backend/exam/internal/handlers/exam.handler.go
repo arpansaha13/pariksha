@@ -103,7 +103,7 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 			return status.Error(codes.Internal, "failed to create exam")
 		}
 
-		permission := models.ExamPermissions{
+		permission := models.ExamPermission{
 			ExamID: exam.ID,
 			UserID: userID,
 		}
@@ -203,7 +203,7 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 			}
 
 			// Create permissions for the new participant
-			permission := models.ExamPermissions{
+			permission := models.ExamPermission{
 				ExamID: req.ExamId,
 				UserID: userID,
 			}
@@ -406,7 +406,7 @@ func (s *ExamServer) DeleteExams(ctx context.Context, req *proto.DeleteExamsRequ
 			return status.Error(codes.Internal, "failed to delete exams")
 		}
 
-		if err := tx.Where("exam_id IN ?", req.ExamIds).Delete(&models.ExamPermissions{}).Error; err != nil {
+		if err := tx.Where("exam_id IN ?", req.ExamIds).Delete(&models.ExamPermission{}).Error; err != nil {
 			return status.Error(codes.Internal, "failed to delete exam permissions")
 		}
 

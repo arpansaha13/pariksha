@@ -99,7 +99,7 @@ func TestCreatePaper(t *testing.T) {
 				assert.Equal(t, "Category 1", categories[0].Name)
 
 				// Verify paper permissions
-				var permissions models.PaperPermissions
+				var permissions models.PaperPermission
 				err = db.DB.Where("paper_id = ? AND user_id = ?", resp.Id, userID).Take(&permissions).Error
 				require.NoError(t, err)
 				assert.True(t, permissions.CanWrite(), "User should have write access to the paper")
@@ -334,7 +334,7 @@ func TestGetPaper(t *testing.T) {
 				assert.EqualValues(t, 1, resp.QuestionCounts.Subjective)
 
 				// Verify paper permissions
-				var permissions models.PaperPermissions
+				var permissions models.PaperPermission
 				err := db.DB.Where("paper_id = ? AND user_id = ?", resp.Id, userID).Take(&permissions).Error
 				require.NoError(t, err)
 				assert.True(t, permissions.CanWrite(), "User should have write access to the paper")
@@ -349,7 +349,7 @@ func TestGetPaper(t *testing.T) {
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, 2)
 
-				permissions := models.PaperPermissions{
+				permissions := models.PaperPermission{
 					UserID:  userID,
 					PaperID: paper.ID,
 				}
@@ -441,7 +441,7 @@ func TestGetPaperPermissions(t *testing.T) {
 				paper := createTestPaper(t, userID+1)
 
 				// Create read-only permissions for test user
-				permissions := models.PaperPermissions{
+				permissions := models.PaperPermission{
 					PaperID: paper.ID,
 					UserID:  userID,
 				}
@@ -542,7 +542,7 @@ func TestDeletePapers(t *testing.T) {
 
 				// Create paper with another user and grant read-only access to test-user
 				paper2 := createTestPaper(t, 2)
-				permissions := models.PaperPermissions{
+				permissions := models.PaperPermission{
 					PaperID: paper2.ID,
 					UserID:  userID,
 				}

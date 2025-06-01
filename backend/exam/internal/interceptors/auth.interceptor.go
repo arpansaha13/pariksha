@@ -62,14 +62,14 @@ var (
 		"/proto.Exam/GetParticipantById":         true,
 	}
 
-	handlerSpecificPermissionChecks = map[string]func(*models.ExamPermissions) bool{
-		"/proto.Exam/GetExamQuestions": func(p *models.ExamPermissions) bool {
+	handlerSpecificPermissionChecks = map[string]func(*models.ExamPermission) bool{
+		"/proto.Exam/GetExamQuestions": func(p *models.ExamPermission) bool {
 			return p.CanParticipate() || p.CanEvaluate()
 		},
-		"/proto.Exam/GetExamCategories": func(p *models.ExamPermissions) bool {
+		"/proto.Exam/GetExamCategories": func(p *models.ExamPermission) bool {
 			return p.CanParticipate() || p.CanEvaluate()
 		},
-		"/proto.Exam/GetParticipantAnswers": func(p *models.ExamPermissions) bool {
+		"/proto.Exam/GetParticipantAnswers": func(p *models.ExamPermission) bool {
 			return p.CanParticipate() || p.CanEvaluate()
 		},
 	}
@@ -84,7 +84,7 @@ func shouldIntercept(methodName string) bool {
 		handlerSpecificPermissionChecks[methodName] != nil
 }
 
-func checkPermissions(permission *models.ExamPermissions, methodName string) error {
+func checkPermissions(permission *models.ExamPermission, methodName string) error {
 	if requiresRead[methodName] && !permission.CanRead() {
 		return status.Error(codes.PermissionDenied, PERMISSION_DENIED_MESSAGE)
 	}
@@ -160,8 +160,8 @@ func fetchExam(examID int64) (*models.Exam, error) {
 	return &exam, nil
 }
 
-func fetchExamPermission(examID int64, userID int64) (*models.ExamPermissions, error) {
-	var permission models.ExamPermissions
+func fetchExamPermission(examID int64, userID int64) (*models.ExamPermission, error) {
+	var permission models.ExamPermission
 	err := db.DB.Where("exam_id = ? AND user_id = ?", examID, userID).Take(&permission).Error
 	if err != nil {
 		return nil, err
@@ -234,7 +234,7 @@ func GetExamFromContext(ctx context.Context) (*models.Exam, bool) {
 }
 
 // Getter function to safely access permission from context
-func GetPermissionFromContext(ctx context.Context) (*models.ExamPermissions, bool) {
-	permission, ok := ctx.Value(permissionContextKey).(*models.ExamPermissions)
+func GetPermissionFromContext(ctx context.Context) (*models.ExamPermission, bool) {
+	permission, ok := ctx.Value(permissionContextKey).(*models.ExamPermission)
 	return permission, ok
 }

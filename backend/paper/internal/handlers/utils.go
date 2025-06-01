@@ -32,14 +32,14 @@ type PaperContext struct {
 	Paper       models.Paper
 	Question    *models.Question
 	Category    *models.QuestionCategory
-	Permissions *models.PaperPermissions
+	Permissions *models.PaperPermission
 }
 
 // NewPaperContext creates a new paper context from the given gRPC context
 func NewPaperContext(ctx context.Context) (*PaperContext, error) {
 	pc := &PaperContext{}
 
-	if perm, ok := ctx.Value(interceptors.PermissionsCtxKey{}).(models.PaperPermissions); ok {
+	if perm, ok := ctx.Value(interceptors.PermissionsCtxKey{}).(models.PaperPermission); ok {
 		pc.Permissions = &perm
 	}
 

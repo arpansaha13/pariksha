@@ -41,7 +41,7 @@ func DeletePaperAuthInterceptor() grpc.UnaryServerInterceptor {
 		}
 
 		// Get permissions for all papers
-		var permissions []models.PaperPermissions
+		var permissions []models.PaperPermission
 		if err := db.DB.Where("paper_id IN ? AND user_id = ?", deleteReq.PaperIds, userID).Find(&permissions).Error; err != nil {
 			return nil, status.Error(codes.Internal, "failed to fetch permissions")
 		}

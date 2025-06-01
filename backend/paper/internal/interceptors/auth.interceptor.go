@@ -154,9 +154,9 @@ func fetchQuestionData(questionID int64) (models.Question, error) {
 	return question, nil
 }
 
-// fetchPaperPermissions fetches the PaperPermissions entry for the given paperId and userId.
-func fetchPaperPermissions(paperId int64, userId int64) (models.PaperPermissions, error) {
-	var permissions models.PaperPermissions
+// fetchPaperPermissions fetches the PaperPermission entry for the given paperId and userId.
+func fetchPaperPermissions(paperId int64, userId int64) (models.PaperPermission, error) {
+	var permissions models.PaperPermission
 	if err := db.DB.Where("paper_id = ? AND user_id = ?", paperId, userId).Take(&permissions).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return permissions, status.Error(codes.PermissionDenied, "No permission to access this paper")

@@ -38,7 +38,7 @@ func createTestExam(t *testing.T, createdBy int64) models.Exam {
 	}
 	require.NoError(t, db.DB.Create(&exam).Error)
 
-	permission := models.ExamPermissions{
+	permission := models.ExamPermission{
 		ExamID: exam.ID,
 		UserID: createdBy,
 	}
@@ -83,9 +83,9 @@ func createTestExamParticipants(t *testing.T, exam *models.Exam, participants []
 	}
 
 	// Create permissions for all participants
-	permissions := make([]models.ExamPermissions, len(participants))
+	permissions := make([]models.ExamPermission, len(participants))
 	for i, p := range participants {
-		permissions[i] = models.ExamPermissions{
+		permissions[i] = models.ExamPermission{
 			ExamID: exam.ID,
 			UserID: p.UserID,
 		}

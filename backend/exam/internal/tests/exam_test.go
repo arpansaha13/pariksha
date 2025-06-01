@@ -968,7 +968,7 @@ func TestGetExamQuestions(t *testing.T) {
 				})
 
 				// Create evaluator permission
-				permission := models.ExamPermissions{
+				permission := models.ExamPermission{
 					ExamID: exam.ID,
 					UserID: userID,
 				}
@@ -1086,7 +1086,7 @@ func TestGetExamCategories(t *testing.T) {
 				require.NoError(t, db.DB.Create(&categories).Error)
 
 				// Create evaluator permission
-				permission := models.ExamPermissions{
+				permission := models.ExamPermission{
 					ExamID: exam.ID,
 					UserID: userID,
 				}
@@ -1398,7 +1398,7 @@ func TestDeleteExams(t *testing.T) {
 				exam := createTestExam(t, 2) // Created by a different user
 
 				// Create read-only permission for the test user
-				permission := models.ExamPermissions{
+				permission := models.ExamPermission{
 					ExamID: exam.ID,
 					UserID: userID,
 				}

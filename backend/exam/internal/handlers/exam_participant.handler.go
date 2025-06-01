@@ -78,7 +78,7 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 			return status.Error(codes.Internal, "failed to add participant")
 		}
 
-		permission := models.ExamPermissions{
+		permission := models.ExamPermission{
 			ExamID: req.ExamId,
 			UserID: req.UserId,
 		}
@@ -142,7 +142,7 @@ func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.Remov
 		}
 
 		// Delete the participant's permissions
-		if err := tx.Where("exam_id = ? AND user_id = ?", exam.ID, participant.UserID).Delete(&models.ExamPermissions{}).Error; err != nil {
+		if err := tx.Where("exam_id = ? AND user_id = ?", exam.ID, participant.UserID).Delete(&models.ExamPermission{}).Error; err != nil {
 			return err
 		}
 

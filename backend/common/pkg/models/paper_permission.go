@@ -6,14 +6,14 @@ import (
 	"pariksha/common/pkg/constants"
 )
 
-type PaperPermissions struct {
+type PaperPermission struct {
 	PaperID     int64          `gorm:"primaryKey;type:bigint;not null"`
 	UserID      int64          `gorm:"primaryKey;type:bigint;not null"`
 	Permissions int16          `gorm:"type:smallint;not null"`
 	DeletedAt   gorm.DeletedAt `gorm:"index"`
 }
 
-func (PaperPermissions) TableName() string {
+func (PaperPermission) TableName() string {
 	return constants.TABLE_PAPER_PERMISSIONS
 }
 
@@ -23,34 +23,34 @@ const (
 )
 
 // CanRead checks if the first bit of the `permissions` is set to 1.
-func (p *PaperPermissions) CanRead() bool {
+func (p *PaperPermission) CanRead() bool {
 	return (p.Permissions & (1 << readBitShift)) != 0
 }
 
 // CanWrite checks if the second bit of the `permissions` is set to 1.
-func (p *PaperPermissions) CanWrite() bool {
+func (p *PaperPermission) CanWrite() bool {
 	return (p.Permissions & (1 << writeBitShift)) != 0
 }
 
 // SetRead sets the READ bit in the `permissions`.
-func (p *PaperPermissions) SetRead() {
+func (p *PaperPermission) SetRead() {
 	p.Permissions |= (1 << readBitShift)
 }
 
 // SetWrite sets the READ and WRITE bits in the `permissions`.
-func (p *PaperPermissions) SetWrite() {
+func (p *PaperPermission) SetWrite() {
 	p.Permissions |= (1 << writeBitShift)
 	p.Permissions |= (1 << readBitShift)
 }
 
 // UnsetRead unsets the READ and WRITE bits in the `permissions`.
-func (p *PaperPermissions) UnsetRead() {
+func (p *PaperPermission) UnsetRead() {
 	p.Permissions &^= (1 << readBitShift)
 	p.Permissions &^= (1 << writeBitShift)
 }
 
 // UnsetWrite unsets the WRITE bit in the `permissions`.
-func (p *PaperPermissions) UnsetWrite() {
+func (p *PaperPermission) UnsetWrite() {
 	p.Permissions &^= (1 << writeBitShift)
 }
 

@@ -37,7 +37,7 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 				})
 
 				// Create evaluator permission for test user
-				permission := models.ExamPermissions{
+				permission := models.ExamPermission{
 					ExamID: exam.ID,
 					UserID: userID,
 				}
@@ -157,7 +157,7 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 				})
 
 				// Create evaluator permission for test user
-				permission := models.ExamPermissions{
+				permission := models.ExamPermission{
 					ExamID: exam.ID,
 					UserID: userID,
 				}

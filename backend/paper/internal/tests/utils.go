@@ -35,7 +35,7 @@ func createTestPaper(t *testing.T, userID int64) models.Paper {
 	require.NoError(t, err)
 
 	// Create permissions entry with write access
-	permissions := models.PaperPermissions{
+	permissions := models.PaperPermission{
 		UserID:  userID,
 		PaperID: paper.ID,
 	}
@@ -75,7 +75,7 @@ func verifyMCQContent(t *testing.T, question models.Question, expectedStatement 
 
 // verifyPaperPermissions validates the permissions of a user for a paper
 func verifyPaperPermissions(t *testing.T, paperID, userID int64, expectedRead, expectedWrite bool) {
-	var permissions models.PaperPermissions
+	var permissions models.PaperPermission
 	err := db.DB.Where("paper_id = ? AND user_id = ?", paperID, userID).Take(&permissions).Error
 	require.NoError(t, err)
 	assert.Equal(t, expectedRead, permissions.CanRead(), "Read permission mismatch")

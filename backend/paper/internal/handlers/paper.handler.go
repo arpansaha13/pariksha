@@ -71,7 +71,7 @@ func (s *PaperServer) CreatePaper(ctx context.Context, _ *proto.Empty) (*proto.P
 		}
 
 		// Create permissions entry with write access
-		permissions := models.PaperPermissions{
+		permissions := models.PaperPermission{
 			PaperID: paper.ID,
 			UserID:  userID,
 		}
@@ -176,7 +176,7 @@ func (s *PaperServer) DeletePapers(ctx context.Context, req *proto.DeletePapersR
 
 		// Delete all permissions for these papers
 		if err := tx.Where("paper_id IN ?", req.PaperIds).
-			Delete(&models.PaperPermissions{}).Error; err != nil {
+			Delete(&models.PaperPermission{}).Error; err != nil {
 			return status.Error(codes.Internal, constants.ErrInternalServer)
 		}
 
