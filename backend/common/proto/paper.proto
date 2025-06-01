@@ -34,6 +34,9 @@ service Paper {
   rpc GetQuestionsByIds(GetQuestionsByIdsRequest) returns (QuestionBatchResponse) {}
   rpc GetCategoriesByIds(GetCategoriesByIdsRequest) returns (CategoryBatchResponse) {}
   rpc GetExamQuestion(QuestionRequest) returns (QuestionResponse) {}
+
+  // Boilerplate operations
+  rpc GetBoilerplate(GetBoilerplateRequest) returns (GetBoilerplateResponse) {}
 }
 
 // Paper messages
@@ -191,4 +194,14 @@ message ReorderCategoriesRequest {
 message PaperPermissionsResponse {
   bool can_read = 1;
   bool can_write = 2;
+}
+
+// Boilerplate messages
+message GetBoilerplateRequest {
+  int64 question_id = 1;
+  int32 language_id = 2;
+}
+
+message GetBoilerplateResponse {
+  string code = 1;
 }

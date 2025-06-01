@@ -39,6 +39,7 @@ const (
 	Paper_GetQuestionsByIds_FullMethodName   = "/proto.Paper/GetQuestionsByIds"
 	Paper_GetCategoriesByIds_FullMethodName  = "/proto.Paper/GetCategoriesByIds"
 	Paper_GetExamQuestion_FullMethodName     = "/proto.Paper/GetExamQuestion"
+	Paper_GetBoilerplate_FullMethodName      = "/proto.Paper/GetBoilerplate"
 )
 
 // PaperClient is the client API for Paper service.
@@ -69,6 +70,8 @@ type PaperClient interface {
 	GetQuestionsByIds(ctx context.Context, in *GetQuestionsByIdsRequest, opts ...grpc.CallOption) (*QuestionBatchResponse, error)
 	GetCategoriesByIds(ctx context.Context, in *GetCategoriesByIdsRequest, opts ...grpc.CallOption) (*CategoryBatchResponse, error)
 	GetExamQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error)
+	// Boilerplate operations
+	GetBoilerplate(ctx context.Context, in *GetBoilerplateRequest, opts ...grpc.CallOption) (*GetBoilerplateResponse, error)
 }
 
 type paperClient struct {
@@ -279,6 +282,16 @@ func (c *paperClient) GetExamQuestion(ctx context.Context, in *QuestionRequest, 
 	return out, nil
 }
 
+func (c *paperClient) GetBoilerplate(ctx context.Context, in *GetBoilerplateRequest, opts ...grpc.CallOption) (*GetBoilerplateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetBoilerplateResponse)
+	err := c.cc.Invoke(ctx, Paper_GetBoilerplate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PaperServer is the server API for Paper service.
 // All implementations must embed UnimplementedPaperServer
 // for forward compatibility.
@@ -307,6 +320,8 @@ type PaperServer interface {
 	GetQuestionsByIds(context.Context, *GetQuestionsByIdsRequest) (*QuestionBatchResponse, error)
 	GetCategoriesByIds(context.Context, *GetCategoriesByIdsRequest) (*CategoryBatchResponse, error)
 	GetExamQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error)
+	// Boilerplate operations
+	GetBoilerplate(context.Context, *GetBoilerplateRequest) (*GetBoilerplateResponse, error)
 	mustEmbedUnimplementedPaperServer()
 }
 
@@ -376,6 +391,9 @@ func (UnimplementedPaperServer) GetCategoriesByIds(context.Context, *GetCategori
 }
 func (UnimplementedPaperServer) GetExamQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamQuestion not implemented")
+}
+func (UnimplementedPaperServer) GetBoilerplate(context.Context, *GetBoilerplateRequest) (*GetBoilerplateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBoilerplate not implemented")
 }
 func (UnimplementedPaperServer) mustEmbedUnimplementedPaperServer() {}
 func (UnimplementedPaperServer) testEmbeddedByValue()               {}
@@ -758,6 +776,24 @@ func _Paper_GetExamQuestion_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Paper_GetBoilerplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBoilerplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaperServer).GetBoilerplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Paper_GetBoilerplate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaperServer).GetBoilerplate(ctx, req.(*GetBoilerplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Paper_ServiceDesc is the grpc.ServiceDesc for Paper service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -844,6 +880,10 @@ var Paper_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetExamQuestion",
 			Handler:    _Paper_GetExamQuestion_Handler,
+		},
+		{
+			MethodName: "GetBoilerplate",
+			Handler:    _Paper_GetBoilerplate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

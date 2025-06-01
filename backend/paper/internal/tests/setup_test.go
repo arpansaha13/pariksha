@@ -81,6 +81,8 @@ func setupContainer() func() {
 
 func clearTables(t *testing.T) {
 	tables := []string{
+		constants.TABLE_BOILERPLATES,
+		constants.TABLE_LANGUAGES,
 		constants.TABLE_QUESTIONS,
 		constants.TABLE_QUESTION_CATEGORIES,
 		constants.TABLE_PAPER_PERMISSIONS,

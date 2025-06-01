@@ -11,6 +11,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/paper/internal/config/env"
+	"pariksha/paper/internal/seed"
 )
 
 var DB *gorm.DB
@@ -33,6 +34,10 @@ func InitDB(host, port, user, password, dbname, sslmode string) error {
 		}
 	}
 
+	if err := seed.Languages(DB); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -42,6 +47,8 @@ func autoMigrateDB() error {
 		&models.PaperPermission{},
 		&models.Question{},
 		&models.QuestionCategory{},
+		&models.Boilerplate{},
+		&models.Language{},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to auto-migrate database: %v", err)

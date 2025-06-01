@@ -96,5 +96,8 @@ func SetupRouter() *mux.Router {
 	// Engine Routes
 	protectedRouter.HandleFunc("/engine/run", handlers.RunCode).Methods("POST", "OPTIONS")
 
+	// Boilerplate Routes
+	protectedRouter.HandleFunc("/questions/{questionId}/languages/{languageId}/boilerplate", handlers.GetBoilerplate).Methods("GET", "OPTIONS")
+
 	return r
 }

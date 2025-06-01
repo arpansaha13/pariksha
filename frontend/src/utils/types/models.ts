@@ -259,3 +259,8 @@ type QuestionAnswerSubjective = {
 }
 
 export type QuestionAnswer = QuestionAnswerMCQ | QuestionAnswerSubjective
+
+// __________________________BOILERPLATE__________________________
+export interface Boilerplate {
+  code: string
+}

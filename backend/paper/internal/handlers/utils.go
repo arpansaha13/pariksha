@@ -11,7 +11,9 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/structs"
 	"pariksha/paper/internal/interceptors"
+	"pariksha/paper/internal/utils/boilerplate"
 )
 
 // validateEntityIDs checks if all provided IDs exist in the given table
@@ -175,6 +177,32 @@ func updateQuestionStats(tx *gorm.DB, paper models.Paper, oldType, newType strin
 
 	if scoreDiff != 0 || oldType != newType {
 		return updatePaperStats(tx, paper, scoreDiff, newCounts)
+	}
+	return nil
+}
+
+// upsertBoilerplates creates or updates boilerplate code for all languages
+func upsertBoilerplates(tx *gorm.DB, questionID int64, inputs []structs.InputDefinition, output structs.OutputDefinition) error {
+	var languages []models.Language
+	if err := tx.Where("is_enabled = ?", true).Find(&languages).Error; err != nil {
+		return err
+	}
+
+	for _, lang := range languages {
+		code := boilerplate.Generate(&lang, inputs, output)
+		if code == "" {
+			continue // Skip if language is not supported
+		}
+
+		// Upsert using ON CONFLICT
+		if err := tx.Exec(`
+					INSERT INTO boilerplates (question_id, language_id, code)
+					VALUES (?, ?, ?)
+					ON CONFLICT (question_id, language_id) DO UPDATE
+					SET code = EXCLUDED.code
+			`, questionID, lang.ID, code).Error; err != nil {
+			return err
+		}
 	}
 	return nil
 }

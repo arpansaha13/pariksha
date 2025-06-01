@@ -103,6 +103,18 @@ func handleUnlockedQuestionUpdate(tx *gorm.DB, question models.Question, paper m
 		return err
 	}
 
+	// Check if this is a coding question and input/output definitions have changed
+	if updatedQuestion.Type == constants.QUESTION_TYPE_CODING && req.RawQuestion != nil {
+		var coding structs.CodingQuestion
+		if err := json.Unmarshal(req.RawQuestion, &coding); err != nil {
+			return status.Error(codes.Internal, "invalid coding question format")
+		}
+
+		if err := upsertBoilerplates(tx, updatedQuestion.ID, coding.InputDefinitions, coding.OutputDefinition); err != nil {
+			return status.Error(codes.Internal, "failed to update boilerplates")
+		}
+	}
+
 	if err := tx.Save(&updatedQuestion).Error; err != nil {
 		return status.Error(codes.Internal, constants.ErrInternalServer)
 	}

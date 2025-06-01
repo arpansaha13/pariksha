@@ -15,6 +15,8 @@ const (
 	TABLE_PAPERS              = "papers"
 	TABLE_PAPER_PERMISSIONS   = "permissions"
 	TABLE_QUESTIONS           = "questions"
+	TABLE_BOILERPLATES        = "boilerplates"
+	TABLE_LANGUAGES           = "languages"
 	TABLE_QUESTION_CATEGORIES = "question_categories"
 )
 

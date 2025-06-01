@@ -36,6 +36,9 @@ export const AsyncDataKeys = {
 
   AUTH_USER: 'AUTH_USER',
 
+  BOILERPLATE: (questionId: QuestionId | null, languageId: LanguageId | null) =>
+    `BOILERPLATE_${questionId}_${languageId}`,
+
   EXAM_PARTICIPANT_ANSWERS: (participantId: number) =>
     `PARTICIPANT_${participantId}_ANSWERS`,
 } as const

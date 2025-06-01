@@ -225,6 +225,11 @@ await callOnce(
   { mode: 'navigation' }
 )
 
+const { data: boilerplateData } = await useQuestionCodingBoilerplate(
+  questionId,
+  1 as LanguageId
+)
+
 const editorStore = useEditorStore()
 
 onMounted(async () => {
@@ -345,9 +350,7 @@ const testCaseTabItems = reactive<TestCase[]>(
 // _________________________EDITOR STATE__________________________
 const isEditorLoaded = ref(false)
 const editorLang = ref(EditorLang.JAVASCRIPT)
-const editorCode = ref(`function solve(a, b) {
-  return parseInt(a) + parseInt(b)
-}`)
+const editorCode = ref(boilerplateData.value?.code ?? '')
 
 const engineRunResult = ref<EngineRunResult | null>(null)
 async function runCode() {

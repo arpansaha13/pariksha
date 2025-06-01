@@ -469,6 +469,80 @@ func TestCreateCodingQuestion(t *testing.T) {
 	}
 }
 
+func TestCreateCodingQuestionBoilerplates(t *testing.T) {
+	tests := []struct {
+		name     string
+		question string
+		want     string
+	}{
+		{
+			name: "Two number inputs",
+			question: `{
+				"title": "Add Numbers",
+				"statement": "Add two numbers",
+				"input_definitions": [
+					{"variable_name": "a", "type": 1},
+					{"variable_name": "b", "type": 1}
+				],
+				"output_definition": {"type": 1}
+			}`,
+			want: "function solve(a, b) {}",
+		},
+		{
+			name: "Single array input",
+			question: `{
+				"title": "Sum Array",
+				"statement": "Sum array elements",
+				"input_definitions": [
+					{"variable_name": "arr", "type": 4, "items": [{"type": 1}]}
+				],
+				"output_definition": {"type": 1}
+			}`,
+			want: "function solve(arr) {}",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+
+			// Create test language
+			lang := models.Language{
+				ID:        1,
+				Slug:      constants.LangNode,
+				Name:      "Node.js",
+				Extension: "js",
+				Version:   "16.x",
+				IsEnabled: "true",
+			}
+			require.NoError(t, db.DB.Create(&lang).Error)
+
+			// Create test paper and category
+			paper, category := setupTestCategory(t, userID, false)
+
+			// Create coding question
+			ctx := createContextWithUserID(userID)
+			req := &proto.CreateQuestionRequest{
+				PaperId:     paper.ID,
+				CategoryId:  category.ID,
+				Type:        constants.QUESTION_TYPE_CODING,
+				RawQuestion: []byte(tt.question),
+				MaxScore:    10,
+			}
+
+			var resp *proto.CreateQuestionResponse
+			testrunner.Runner(t, ctx, codes.OK, req, client.CreateQuestion, func(t *testing.T, r *proto.CreateQuestionResponse) {
+				resp = r
+			})
+
+			// Verify boilerplate was created
+			var boilerplate models.Boilerplate
+			require.NoError(t, db.DB.First(&boilerplate, "question_id = ?", resp.Id).Error)
+			assert.Equal(t, tt.want, boilerplate.Code)
+		})
+	}
+}
+
 func TestGeneralCreateQuestion(t *testing.T) {
 	tests := []CreateQuestionCase{
 		{

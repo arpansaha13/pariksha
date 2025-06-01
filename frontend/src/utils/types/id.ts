@@ -7,3 +7,4 @@ export type AnswerId = Brand<number, 'answer'>
 export type PaperId = Brand<string, 'paper'>
 export type CategoryId = Brand<number, 'category'>
 export type ExamParticipantId = Brand<number, 'examParticipant'>
+export type LanguageId = Brand<number, 'language'>

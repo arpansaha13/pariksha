@@ -398,6 +398,96 @@ func TestUpdateQuestionTypeChange(t *testing.T) {
 	runUpdateQuestionTests(t, tests)
 }
 
+func TestUpdateCodingQuestionBoilerplates(t *testing.T) {
+	tests := []struct {
+		name            string
+		initialQuestion string
+		updatedQuestion string
+		wantOldCode     string
+		wantNewCode     string
+	}{
+		{
+			name: "Update from two params to one array param",
+			initialQuestion: `{
+				"title": "Add Numbers",
+				"statement": "Add two numbers",
+				"input_definitions": [
+					{"variable_name": "a", "type": 1},
+					{"variable_name": "b", "type": 1}
+				],
+				"output_definition": {"type": 1}
+			}`,
+			updatedQuestion: `{
+				"title": "Sum Array",
+				"statement": "Sum array elements",
+				"input_definitions": [
+					{
+						"variable_name": "arr",
+						"type": 4,
+						"items": [{"type": 1}]
+					}
+				],
+				"output_definition": {"type": 1}
+			}`,
+			wantOldCode: "function solve(a, b) {}",
+			wantNewCode: "function solve(arr) {}",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+
+			// Create test language
+			lang := models.Language{
+				ID:        1,
+				Slug:      constants.LangNode,
+				Name:      "Node.js",
+				Extension: "js",
+				Version:   "16.x",
+				IsEnabled: "true",
+			}
+			require.NoError(t, db.DB.Create(&lang).Error)
+
+			// Create test paper and category
+			paper, category := setupTestCategory(t, userID, false)
+
+			// Create initial coding question
+			ctx := createContextWithUserID(userID)
+			createReq := &proto.CreateQuestionRequest{
+				PaperId:     paper.ID,
+				CategoryId:  category.ID,
+				Type:        constants.QUESTION_TYPE_CODING,
+				RawQuestion: []byte(tt.initialQuestion),
+				MaxScore:    10,
+			}
+
+			var createResp *proto.CreateQuestionResponse
+			testrunner.Runner(t, ctx, codes.OK, createReq, client.CreateQuestion, func(t *testing.T, r *proto.CreateQuestionResponse) {
+				createResp = r
+			})
+
+			// Verify initial boilerplate
+			var initialBoilerplate models.Boilerplate
+			require.NoError(t, db.DB.First(&initialBoilerplate, "question_id = ?", createResp.Id).Error)
+			assert.Equal(t, tt.wantOldCode, initialBoilerplate.Code)
+
+			// Update question
+			updateReq := &proto.UpdateQuestionRequest{
+				QuestionId:  createResp.Id,
+				RawQuestion: []byte(tt.updatedQuestion),
+			}
+
+			testrunner.Runner(t, ctx, codes.OK, updateReq, client.UpdateQuestion, nil)
+
+			// Verify updated boilerplate
+			var updatedBoilerplate models.Boilerplate
+			require.NoError(t, db.DB.First(&updatedBoilerplate, "question_id = ?", createResp.Id).Error)
+			assert.Equal(t, tt.wantNewCode, updatedBoilerplate.Code)
+		})
+	}
+}
+
 // Helper function to run update question tests
 func runUpdateQuestionTests(t *testing.T, tests []UpdateQuestionCase) {
 	for _, tt := range tests {

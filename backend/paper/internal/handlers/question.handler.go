@@ -54,6 +54,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 	}
 
 	// Validate question data based on type
+	var coding structs.CodingQuestion
 	switch req.Type {
 	case constants.QUESTION_TYPE_MCQ:
 		var mcq structs.MCQQuestion
@@ -72,7 +73,6 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 			return nil, err
 		}
 	case constants.QUESTION_TYPE_CODING:
-		var coding structs.CodingQuestion
 		if err := utils.StrictUnmarshal(req.RawQuestion, &coding); err != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid coding question format")
 		}
@@ -117,6 +117,13 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 
 		if err := tx.Create(&question).Error; err != nil {
 			return err
+		}
+
+		// Create boilerplates for coding questions
+		if req.Type == constants.QUESTION_TYPE_CODING {
+			if err := upsertBoilerplates(tx, question.ID, coding.InputDefinitions, coding.OutputDefinition); err != nil {
+				return status.Error(codes.Internal, "failed to create boilerplates")
+			}
 		}
 
 		newCounts, err := updateQuestionCounts(paper.QuestionCounts, req.Type, 1)
