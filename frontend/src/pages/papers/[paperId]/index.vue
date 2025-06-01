@@ -390,11 +390,11 @@ async function onEditQuestionSubmit() {
   }
 }
 
-usePaperAutoCancelQuestionEdit({
-  question,
-  editQuestionFormStates,
-  decUnsavedCount,
-})
+// usePaperAutoCancelQuestionEdit({
+//   question,
+//   editQuestionFormStates,
+//   decUnsavedCount,
+// })
 </script>
 
 <style scoped>
