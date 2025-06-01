@@ -11,7 +11,7 @@
       >
         <template #item="{ item }">
           <UChip
-            :show="!!unsavedCount[item.to.query.category]"
+            :show="!!paperStore.unsavedCount[item.to.query.category]"
             :ui="{
               base: '-top-1 -right-1.5',
             }"
@@ -35,9 +35,9 @@
 <script setup lang="ts">
 const props = defineProps<{
   sortedCategories: QuestionCategory[]
-  unsavedCount: Record<CategoryId, number>
-  getQuestionIdForCategoryId: (categoryId: CategoryId) => string | QuestionId
 }>()
+
+const paperStore = usePaperStore()
 
 const categoryLinks = computed(() => {
   return props.sortedCategories.map(category => ({
@@ -45,7 +45,7 @@ const categoryLinks = computed(() => {
     to: {
       query: {
         category: category.id,
-        question: props.getQuestionIdForCategoryId(category.id),
+        question: paperStore.getQuestionIdForCategoryId(category.id),
       },
     },
     exactQuery: true,

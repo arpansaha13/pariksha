@@ -32,7 +32,7 @@ const overlay = useOverlay()
 const confirmModal = overlay.create(ConfirmModal)
 
 function createExamWithPaper(paper: Paper) {
-  newExamStore.clear()
+  newExamStore.$reset()
   newExamStore.paper_id = paper.id
   newExamStore.duration_hours = calcHours(paper.duration_minutes ?? 0)
   newExamStore.duration_minutes = calcRemainderMinutes(

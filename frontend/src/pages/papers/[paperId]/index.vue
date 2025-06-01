@@ -24,18 +24,13 @@
     v-if="!isNullOrUndefined(sortedCategories)"
     class="col-span-2 flex items-center justify-between gap-x-2 border-b border-gray-200 dark:border-gray-800"
   >
-    <PaperCategoryNavigation
-      :sorted-categories="sortedCategories"
-      :unsaved-count="unsavedCount"
-      :get-question-id-for-category-id="getQuestionIdForCategoryId"
-    />
+    <PaperCategoryNavigation :sorted-categories="sortedCategories" />
 
     <PaperCategoryManageModal
       v-if="!isNullOrUndefined(groupedQuestions) && currentCategoryId"
       :sorted-categories="sortedCategories"
       :grouped-questions="groupedQuestions"
       :current-category-id="currentCategoryId"
-      :get-question-id-for-category-id="getQuestionIdForCategoryId"
     />
   </div>
 
@@ -176,6 +171,8 @@ definePageMeta({
 const route = useRoute()
 const paperId = route.params.paperId as PaperId
 
+const paperStore = usePaperStore()
+
 const overlay = useOverlay()
 const confirmModal = overlay.create(ConfirmModal as Component)
 provide(InjectionKeys.ConfirmModal, confirmModal)
@@ -190,17 +187,13 @@ const [
   usePaperCategories(paperId),
 ])
 
-const getQuestionIdForCategoryId = usePaperQuestionIdForCategoryId({
-  groupedQuestions,
-})
-
 // Add initial `category` and `question` queries, if missing
 if (
   (!route.query.category || !route.query.question) &&
   sortedCategories.value?.length
 ) {
   const categoryId = sortedCategories.value[0].id
-  const questionId = getQuestionIdForCategoryId(categoryId)
+  const questionId = paperStore.getQuestionIdForCategoryId(categoryId)
   const query = { category: categoryId, question: questionId }
   await navigateTo({ query }, { replace: true })
 }
@@ -229,6 +222,15 @@ const { questionNavigation } = usePaperQuestionNavigation({
 
 const { data: question } = await usePaperQuestion(currentQuestionId)
 
+// ________________PAPER QUESTION-ID FOR CATEGORY-ID________________
+watchImmediate(route, newRoute => {
+  const query = newRoute.query
+  if (isNullOrUndefined(query) || isNullOrUndefined(query.category)) return
+  const categoryId = parseInt(query.category as string) as CategoryId
+  paperStore.lastVisitedQuestionForCategory[categoryId] =
+    query.question as string
+})
+
 // ________________CREATE/EDIT QUESTION PREREQUISITES_______________
 const defaultCreateQuestionFormState: MergedQuestion = {
   type: '' as QuestionType,
@@ -250,25 +252,6 @@ const defaultCreateQuestionFormState: MergedQuestion = {
   max_score: 0,
   tags: [],
   correct_answer: undefined,
-}
-
-// ___________UNSAVED COUNT FOR CHIPS ON CATEGORY LINKS___________
-const unsavedCount = ref<Record<number, number>>({})
-
-function incUnsavedCount(categoryId: number) {
-  if (!unsavedCount.value[categoryId]) {
-    unsavedCount.value[categoryId] = 1
-  } else {
-    unsavedCount.value[categoryId]++
-  }
-}
-
-function decUnsavedCount(categoryId: number) {
-  if (!unsavedCount.value[categoryId]) {
-    unsavedCount.value[categoryId] = 0
-  } else {
-    unsavedCount.value[categoryId]--
-  }
 }
 
 // ________________________CREATE QUESTION________________________
@@ -364,14 +347,14 @@ function startQuestionEdit() {
       }
     }
 
-    incUnsavedCount(question.value.category_id)
+    paperStore.incUnsavedCount(question.value.category_id)
   }
 }
 
 function cancelQuestionEdit() {
   if (!currentQuestionId.value) return
   editQuestionFormStates[currentQuestionId.value] = null
-  decUnsavedCount(currentCategoryId.value!)
+  paperStore.decUnsavedCount(currentCategoryId.value!)
 }
 
 async function onEditQuestionSubmit() {
@@ -384,7 +367,7 @@ async function onEditQuestionSubmit() {
     await updateQuestion(qid, paperId, formState)
     // Clear edit form state after successful update
     editQuestionFormStates[qid] = null
-    decUnsavedCount(currentCategoryId.value!)
+    paperStore.decUnsavedCount(currentCategoryId.value!)
   } catch (error) {
     console.error('Failed to update question:', error)
   }

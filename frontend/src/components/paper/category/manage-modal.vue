@@ -102,11 +102,12 @@ const props = defineProps<{
   sortedCategories: QuestionCategory[]
   groupedQuestions: Record<number, QuestionMinimal[]>
   currentCategoryId: CategoryId
-  getQuestionIdForCategoryId: (categoryId: CategoryId) => string | QuestionId
 }>()
 
 const route = useRoute()
 const paperId = route.params.paperId as PaperId
+
+const paperStore = usePaperStore()
 
 const isDragging = ref(false)
 const sortedCategories = toRef(props, 'sortedCategories')
@@ -158,7 +159,7 @@ async function handleDeleteCategory(category: QuestionCategory) {
         await navigateTo({
           query: {
             category: nextCategory.id,
-            question: props.getQuestionIdForCategoryId(nextCategory.id),
+            question: paperStore.getQuestionIdForCategoryId(nextCategory.id),
           },
         })
       }

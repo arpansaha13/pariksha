@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-export const useAuthStore = defineStore('auth', {
+export const useAuthStore = defineStore(authStoreId, {
   state: () => ({
     signUpEmail: null as string | null,
     forgotPassEmail: null as string | null,

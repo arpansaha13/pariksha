@@ -3,7 +3,7 @@ import { defineStore, skipHydrate } from 'pinia'
 import { createHighlighter } from 'shiki'
 import type { editor } from 'monaco-editor'
 
-export const useEditorStore = defineStore('editor', {
+export const useEditorStore = defineStore(editorStoreId, {
   // Create the highlighter, it can be reused
   state: () => ({
     ...skipHydrate({

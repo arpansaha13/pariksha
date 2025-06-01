@@ -255,7 +255,7 @@ async function onSubmit() {
     ),
   })
 
-  newExamStore.clear()
+  newExamStore.$reset()
   await navigateTo(`/exams/${createdExam.id}`)
 }
 

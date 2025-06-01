@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import type { CalendarDateTime } from '@internationalized/date'
 
-export const useNewExamStore = defineStore('new-exam', {
+export const useNewExamStore = defineStore(newExamStoreId, {
   state: () => ({
     title: null as string | null,
     type: null as ExamAccessType | null,
@@ -11,15 +11,4 @@ export const useNewExamStore = defineStore('new-exam', {
     duration_hours: null as number | null,
     duration_minutes: null as number | null,
   }),
-  actions: {
-    clear() {
-      this.title = null
-      this.type = null
-      this.paper_id = null
-      this.startDate = null
-      this.endDate = null
-      this.duration_hours = null
-      this.duration_minutes = null
-    },
-  },
 })
