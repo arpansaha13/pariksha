@@ -11,15 +11,12 @@ export async function updateQuestion(
   questionId: QuestionId,
   paperId: PaperId,
   mergedQuestion: MergedQuestion
-): Promise<void> {
+) {
   const { $api } = useNuxtApp()
 
   const { data: question } = useNuxtData<Question>(
     UseAsyncDataKeys.paper_question(questionId)
   )
-  const { data: groupedQuestions } = useNuxtData<
-    Record<number, QuestionMinimal[]>
-  >(UseAsyncDataKeys.paper_questions(paperId))
 
   const previousQuestion = question.value!
   const requestBody = getRequestBody(previousQuestion, mergedQuestion)
@@ -27,80 +24,53 @@ export async function updateQuestion(
   // If no changes, return early
   if (Object.keys(requestBody).length === 0) return
 
-  // Store minimal data for rollback
-  const rollbackData = {
-    id: questionId,
-    categoryId: previousQuestion.category_id,
-    question: previousQuestion.question,
-  }
-
-  // Optimistically update the full question
-  question.value = {
-    ...question.value!,
-    ...(requestBody as (typeof question)['value']),
-  }
+  const res = await $api<UpdateQuestionReturn>(`/api/questions/${questionId}`, {
+    method: 'PATCH',
+    body: requestBody,
+  })
 
   // Update the particular question in paperQuestions
-  const categoryQuestions = groupedQuestions.value![rollbackData.categoryId]
+  const { data: groupedQuestions } = useNuxtData<
+    Record<number, QuestionMinimal[]>
+  >(UseAsyncDataKeys.paper_questions(paperId))
+
+  const categoryQuestions =
+    groupedQuestions.value![previousQuestion.category_id]
   const minimalQuestion = categoryQuestions?.find(q => q.id === questionId)
   if (minimalQuestion && requestBody.question) {
     minimalQuestion.question = requestBody.question
   }
 
-  try {
-    const res = await $api<UpdateQuestionReturn>(
-      `/api/questions/${questionId}`,
-      {
-        method: 'PATCH',
-        body: requestBody,
-      }
+  const refreshPromises = []
+
+  if (res.id === questionId) {
+    refreshPromises.push(
+      refreshNuxtData(UseAsyncDataKeys.paper_question(questionId))
     )
-
-    const refreshPromises = []
-
-    if (res.id === questionId) {
-      refreshPromises.push([
-        refreshNuxtData(UseAsyncDataKeys.paper_question(questionId)),
-      ])
-    } else {
-      // If a locked question is updated, a new questionId will be returned
-      const route = useRoute()
-      const replaceOldQuestionIdWithNew = async () => {
-        await navigateTo(
-          { query: { ...route.query, question: res.id } }, // update the route query
-          { replace: true }
-        )
-        if (minimalQuestion) minimalQuestion.id = res.id // update questionId in groupedQuestions list
-        clearNuxtData(UseAsyncDataKeys.paper_question(questionId)) // clear old question data
-      }
-      refreshPromises.push(replaceOldQuestionIdWithNew())
+  } else {
+    // If a locked question is updated, a new questionId will be returned
+    const route = useRoute()
+    const replaceOldQuestionIdWithNew = async () => {
+      await navigateTo(
+        { query: { ...route.query, question: res.id } }, // update the route query
+        { replace: true }
+      )
+      if (minimalQuestion) minimalQuestion.id = res.id // update questionId in groupedQuestions list
+      clearNuxtData(UseAsyncDataKeys.paper_question(questionId)) // clear old question data
     }
-
-    // requestBody will only have the updated fields
-    const isMaxScoreUpdated = !isNullOrUndefined(requestBody.max_score)
-    const isTypeUpdated = !isNullOrUndefined(requestBody.type)
-
-    // Refresh paper data if max_score or type changed
-    if (isMaxScoreUpdated || isTypeUpdated) {
-      refreshPromises.push(refreshNuxtData(UseAsyncDataKeys.paper(paperId)))
-    }
-
-    await Promise.all(refreshPromises)
-  } catch {
-    // The active question may change during the fetch
-    // Rollback question only if IDs match
-    if (question.value?.id === previousQuestion.id) {
-      question.value = previousQuestion
-    }
-
-    // Rollback the question in paperQuestions
-    const minimalQuestion = groupedQuestions.value![
-      rollbackData.categoryId
-    ]?.find(q => q.id === rollbackData.id)
-    if (minimalQuestion) {
-      minimalQuestion.question = rollbackData.question
-    }
+    refreshPromises.push(replaceOldQuestionIdWithNew())
   }
+
+  // requestBody will only have the updated fields
+  const isMaxScoreUpdated = !isNullOrUndefined(requestBody.max_score)
+  const isTypeUpdated = !isNullOrUndefined(requestBody.type)
+
+  // Refresh paper data if max_score or type changed
+  if (isMaxScoreUpdated || isTypeUpdated) {
+    refreshPromises.push(refreshNuxtData(UseAsyncDataKeys.paper(paperId)))
+  }
+
+  return Promise.all(refreshPromises)
 }
 
 /** Only include fields that are updated */
