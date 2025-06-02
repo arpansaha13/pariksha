@@ -16,8 +16,10 @@ export const UseAsyncDataKeys = {
   exam_categories: (examId: ExamId) => `exam_${examId}_categories`,
   exam_results: (examId: ExamId) => `exam_${examId}_results`,
 
-  paper_question: (questionId: number | null) => `paper_question_${questionId}`,
-  exam_question: (questionId: number | null) => `exam_question_${questionId}`,
+  paper_question: (questionId: QuestionId | null) =>
+    `paper_question_${questionId}`,
+  exam_question: (questionId: QuestionId | null) =>
+    `exam_question_${questionId}`,
 
   participant_by_id: (participantId: ExamParticipantId) =>
     `participant_${participantId}`,

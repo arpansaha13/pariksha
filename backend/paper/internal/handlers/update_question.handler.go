@@ -116,7 +116,7 @@ func handleUnlockedQuestionUpdate(tx *gorm.DB, question models.Question, paper m
 		return err
 	}
 
-	// Check if this is a coding question and input/output definitions have changed
+	// Check if this is a coding question and content has changed
 	if updatedQuestion.Type == constants.QUESTION_TYPE_CODING && req.RawQuestion != nil {
 		var newCoding, oldCoding structs.CodingQuestion
 		if err := json.Unmarshal(req.RawQuestion, &newCoding); err != nil {
@@ -128,6 +128,15 @@ func handleUnlockedQuestionUpdate(tx *gorm.DB, question models.Question, paper m
 
 		// Check if input/output definitions have changed
 		if shouldUpdateBoilerplates(oldCoding, newCoding) {
+			// Clear test cases as they may no longer be valid
+			newCoding.TestCases = nil
+			updatedContent, err := json.Marshal(newCoding)
+			if err != nil {
+				return status.Error(codes.Internal, "failed to marshal updated question")
+			}
+			updatedQuestion.Question = json.RawMessage(updatedContent)
+
+			// Update boilerplates
 			if err := upsertBoilerplates(tx, updatedQuestion.ID, newCoding.InputDefinitions, newCoding.OutputDefinition); err != nil {
 				return status.Error(codes.Internal, "failed to update boilerplates")
 			}

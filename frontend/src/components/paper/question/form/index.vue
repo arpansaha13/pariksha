@@ -100,6 +100,11 @@
 
       <PaperQuestionFormDefineParametersModal
         v-model:coding-question-content="formState.question"
+        :has-test-cases="
+          formState.question.test_cases
+            ? formState.question.test_cases.length > 0
+            : false
+        "
         @after:leave="triggerValidate(FieldLabels.PARAMETERS)"
       />
     </UFormField>

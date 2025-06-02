@@ -8,7 +8,7 @@ type UpdateQuestionBody = Partial<
 type UpdateQuestionReturn = Pick<Question, 'id'>
 
 export async function updateQuestion(
-  questionId: number,
+  questionId: QuestionId,
   paperId: PaperId,
   mergedQuestion: MergedQuestion
 ): Promise<void> {

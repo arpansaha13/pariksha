@@ -185,14 +185,7 @@ func TestUpdateCodingQuestion(t *testing.T) {
 					"output_definition": {
 						"variable_name": "sum",
 						"type": 1
-					},
-					"test_cases": [
-						{
-							"inputs": ["[1, 2, 3]"],
-							"output": "6",
-							"explanation": "1 + 2 + 3 = 6"
-						}
-					]
+					}
 				}`),
 			},
 			validate: func(t *testing.T, paper *models.Paper, question *models.Question) {
@@ -204,9 +197,9 @@ func TestUpdateCodingQuestion(t *testing.T) {
 				require.NoError(t, json.Unmarshal(updated.Question, &coding))
 				assert.Equal(t, "Updated Coding Question", coding.Title)
 				assert.Equal(t, "Write an optimized solution", coding.Statement)
-				assert.Len(t, coding.TestCases, 1)
-				assert.Equal(t, "[1, 2, 3]", coding.TestCases[0].Inputs[0])
-				assert.Equal(t, "6", coding.TestCases[0].Output)
+
+				// Test cases should be cleared because input definitions changed
+				assert.Nil(t, coding.TestCases, "Test cases should be cleared when input definitions change")
 
 				// Verify other fields
 				assert.EqualValues(t, 10, updated.MaxScore)

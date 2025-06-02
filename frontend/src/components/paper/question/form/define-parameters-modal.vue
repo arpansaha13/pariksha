@@ -14,6 +14,14 @@
     />
 
     <template #body>
+      <UAlert
+        v-if="hasTestCases"
+        color="warning"
+        variant="subtle"
+        description="Updating input/output definitions will clear existing test cases."
+        icon="heroicons:exclamation-circle"
+      />
+
       <UForm
         v-for="(
           inputDefinition, inputIdx
@@ -157,6 +165,10 @@
 
 <script lang="ts" setup>
 import { isNullOrUndefined } from '@arpansaha13/utils'
+
+defineProps<{
+  hasTestCases: boolean
+}>()
 
 const codingQuestionContent = defineModel<
   Pick<QuestionCodingContent, 'input_definitions' | 'output_definition'>
