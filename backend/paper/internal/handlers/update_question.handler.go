@@ -16,6 +16,7 @@ import (
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/paper/internal/config/db"
+	paperStructs "pariksha/paper/internal/structs"
 	"pariksha/paper/internal/utils/validate"
 )
 
@@ -271,9 +272,21 @@ func applyCodingQuestionUpdates(question models.Question, rawQuestion []byte) (m
 	if err := utils.StrictUnmarshal(rawQuestion, &coding); err != nil {
 		return question, status.Error(codes.InvalidArgument, "invalid coding question format")
 	}
-	if err := validate.CodingQuestionData(&coding); err != nil {
+
+	codingOmitTestCases := paperStructs.CodingQuestionOmitTestCases{
+		Title:            coding.Title,
+		Statement:        coding.Statement,
+		InputDefinitions: coding.InputDefinitions,
+		OutputDefinition: coding.OutputDefinition,
+	}
+	if err := validate.CodingQuestionData(&codingOmitTestCases); err != nil {
 		return question, err
 	}
+
+	if err := validate.CodingQuestionTestCases(coding.TestCases, len(coding.InputDefinitions)); err != nil {
+		return question, err
+	}
+
 	question.Question = json.RawMessage(rawQuestion)
 	return question, nil
 }

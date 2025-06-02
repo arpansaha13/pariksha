@@ -17,6 +17,7 @@ import (
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/interceptors"
+	paperStructs "pariksha/paper/internal/structs"
 	"pariksha/paper/internal/utils/validate"
 )
 
@@ -55,7 +56,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 	}
 
 	// Validate question data based on type
-	var coding structs.CodingQuestion
+	var coding paperStructs.CodingQuestionOmitTestCases
 	switch req.Type {
 	case constants.QUESTION_TYPE_MCQ:
 		var mcq structs.MCQQuestion

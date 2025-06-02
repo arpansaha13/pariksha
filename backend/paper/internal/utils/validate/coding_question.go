@@ -9,10 +9,11 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/structs"
+	paperStructs "pariksha/paper/internal/structs"
 )
 
 // CodingQuestionData validates coding question data
-func CodingQuestionData(coding *structs.CodingQuestion) error {
+func CodingQuestionData(coding *paperStructs.CodingQuestionOmitTestCases) error {
 	if strings.TrimSpace(coding.Title) == "" {
 		return status.Error(codes.InvalidArgument, "question title cannot be empty")
 	}
@@ -25,9 +26,6 @@ func CodingQuestionData(coding *structs.CodingQuestion) error {
 	if len(coding.InputDefinitions) > int(constants.MAX_CODING_INPUTS_COUNT) {
 		return status.Error(codes.InvalidArgument, fmt.Sprintf("Number of inputs cannot be more than %d", constants.MAX_CODING_INPUTS_COUNT))
 	}
-	if len(coding.TestCases) > int(constants.MAX_CODING_TEST_CASES_COUNT) {
-		return status.Error(codes.InvalidArgument, fmt.Sprintf("Number of test cases cannot be more than %d", constants.MAX_CODING_TEST_CASES_COUNT))
-	}
 
 	if err := validateOutputDefinition(coding.OutputDefinition); err != nil {
 		return err
@@ -35,12 +33,6 @@ func CodingQuestionData(coding *structs.CodingQuestion) error {
 
 	for _, def := range coding.InputDefinitions {
 		if err := validateInputDefinition(def); err != nil {
-			return err
-		}
-	}
-
-	for _, testCase := range coding.TestCases {
-		if err := validateTestCase(testCase, len(coding.InputDefinitions)); err != nil {
 			return err
 		}
 	}
@@ -98,28 +90,6 @@ func validateOutputDefinition(def structs.OutputDefinition) error {
 		}
 	default:
 		return status.Error(codes.InvalidArgument, "invalid output definition type")
-	}
-
-	return nil
-}
-
-func validateTestCase(testCase structs.CodingQuestionTestCase, inputDefinitionsLength int) error {
-	if len(testCase.Inputs) != inputDefinitionsLength {
-		return status.Error(codes.InvalidArgument, "number of inputs in test case must match number of input definitions")
-	}
-
-	// Check that no input is empty
-	for _, input := range testCase.Inputs {
-		if strings.TrimSpace(input) == "" {
-			return status.Error(codes.InvalidArgument, "test case input cannot be empty")
-		}
-	}
-
-	if strings.TrimSpace(testCase.Output) == "" {
-		return status.Error(codes.InvalidArgument, "test case output cannot be empty")
-	}
-	if testCase.Explanation != nil && strings.TrimSpace(*testCase.Explanation) == "" {
-		testCase.Explanation = nil
 	}
 
 	return nil
