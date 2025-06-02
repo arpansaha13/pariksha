@@ -161,7 +161,7 @@
       />
     </UFormField>
 
-    <UFormField
+    <!-- <UFormField
       label="Correct answer"
       description="You can optionally write the correct answer to this question. This will only be for your reference, and will not be shown during the exam."
       name="correct_answer"
@@ -183,7 +183,7 @@
         placeholder="Write the answer here..."
         :ui="{ root: 'flex' }"
       />
-    </UFormField>
+    </UFormField> -->
 
     <button ref="submitButton" type="submit" class="hidden" />
   </UForm>
@@ -347,17 +347,17 @@ function removeOption(idx: number) {
   }
 }
 
-const mcqAnswerOptions = computed(() => {
-  if (formState.value.type !== QuestionType.MCQ) {
-    logWarning('mcqAnswerOptions accessed without MCQ type question')
-    return []
-  }
+// const mcqAnswerOptions = computed(() => {
+//   if (formState.value.type !== QuestionType.MCQ) {
+//     logWarning('mcqAnswerOptions accessed without MCQ type question')
+//     return []
+//   }
 
-  return formState.value.question.options
-    .filter(Boolean)
-    .map((option, idx) => ({
-      label: `${getOptionLabel(idx)}. ${option}`,
-      value: option,
-    }))
-})
+//   return formState.value.question.options
+//     .filter(Boolean)
+//     .map((option, idx) => ({
+//       label: `${getOptionLabel(idx)}. ${option}`,
+//       value: option,
+//     }))
+// })
 </script>

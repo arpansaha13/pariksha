@@ -25,7 +25,7 @@ export async function createQuestion(
     type: mergedQuestion.type as any,
     max_score: mergedQuestion.max_score,
     tags: mergedQuestion.tags,
-    correct_answer: mergedQuestion.correct_answer,
+    // correct_answer: mergedQuestion.correct_answer,
     category_id: categoryId,
     question: extractQuestionContent(mergedQuestion)!,
   }

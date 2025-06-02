@@ -149,12 +149,12 @@ function getRequestBody(
   //   requestBody.category_id = mergedQuestion.category_id
   // }
 
-  if (
-    !isNullOrUndefined(mergedQuestion.correct_answer) &&
-    mergedQuestion.correct_answer !== previousQuestion.correct_answer
-  ) {
-    requestBody.correct_answer = mergedQuestion.correct_answer
-  }
+  // if (
+  //   !isNullOrUndefined(mergedQuestion.correct_answer) &&
+  //   mergedQuestion.correct_answer !== previousQuestion.correct_answer
+  // ) {
+  //   requestBody.correct_answer = mergedQuestion.correct_answer
+  // }
 
   return requestBody
 }
