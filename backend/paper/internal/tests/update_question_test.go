@@ -406,9 +406,10 @@ func TestUpdateCodingQuestionBoilerplates(t *testing.T) {
 		updatedQuestion string
 		wantOldCode     string
 		wantNewCode     string
+		isLocked        bool
 	}{
 		{
-			name: "Update from two params to one array param",
+			name: "Update unlocked question - two params to one array param",
 			initialQuestion: `{
 				"title": "Add Numbers",
 				"statement": "Add two numbers",
@@ -432,6 +433,34 @@ func TestUpdateCodingQuestionBoilerplates(t *testing.T) {
 			}`,
 			wantOldCode: "function solve(a, b) {\n\n}",
 			wantNewCode: "function solve(arr) {\n\n}",
+			isLocked:    false,
+		},
+		{
+			name: "Update locked question - should create new question and boilerplate",
+			initialQuestion: `{
+				"title": "Add Numbers",
+				"statement": "Add two numbers",
+				"input_definitions": [
+					{"variable_name": "a", "type": 1},
+					{"variable_name": "b", "type": 1}
+				],
+				"output_definition": {"type": 1}
+			}`,
+			updatedQuestion: `{
+				"title": "Sum Array",
+				"statement": "Sum array elements",
+				"input_definitions": [
+					{
+						"variable_name": "arr",
+						"type": 4,
+						"items": [{"type": 1}]
+					}
+				],
+				"output_definition": {"type": 1}
+			}`,
+			wantOldCode: "function solve(a, b) {\n\n}",
+			wantNewCode: "function solve(arr) {\n\n}",
+			isLocked:    true,
 		},
 	}
 
@@ -468,6 +497,11 @@ func TestUpdateCodingQuestionBoilerplates(t *testing.T) {
 				createResp = r
 			})
 
+			// Set question as locked if test requires
+			if tt.isLocked {
+				require.NoError(t, db.DB.Model(&models.Question{}).Where("id = ?", createResp.Id).Update("locked", true).Error)
+			}
+
 			// Verify initial boilerplate
 			var initialBoilerplate models.Boilerplate
 			require.NoError(t, db.DB.First(&initialBoilerplate, "question_id = ?", createResp.Id).Error)
@@ -479,12 +513,31 @@ func TestUpdateCodingQuestionBoilerplates(t *testing.T) {
 				RawQuestion: []byte(tt.updatedQuestion),
 			}
 
-			testrunner.Runner(t, ctx, codes.OK, updateReq, client.UpdateQuestion, nil)
+			var updateResp *proto.UpdateQuestionResponse
+			testrunner.Runner(t, ctx, codes.OK, updateReq, client.UpdateQuestion, func(t *testing.T, r *proto.UpdateQuestionResponse) {
+				updateResp = r
+			})
 
-			// Verify updated boilerplate
-			var updatedBoilerplate models.Boilerplate
-			require.NoError(t, db.DB.First(&updatedBoilerplate, "question_id = ?", createResp.Id).Error)
-			assert.Equal(t, tt.wantNewCode, updatedBoilerplate.Code)
+			if tt.isLocked {
+				// For locked questions:
+				// 1. Original question should be unlinked but boilerplate should remain
+				require.NoError(t, db.DB.First(&initialBoilerplate, "question_id = ?", createResp.Id).Error)
+				assert.Equal(t, tt.wantOldCode, initialBoilerplate.Code, "Original boilerplate should remain unchanged")
+
+				// 2. New question should have new boilerplate
+				var newBoilerplate models.Boilerplate
+				require.NoError(t, db.DB.First(&newBoilerplate, "question_id = ?", updateResp.QuestionId).Error)
+				assert.Equal(t, tt.wantNewCode, newBoilerplate.Code, "New question should have updated boilerplate")
+
+				// 3. Question IDs should be different
+				assert.NotEqual(t, createResp.Id, updateResp.QuestionId, "Locked question update should create new question")
+			} else {
+				// For unlocked questions - same boilerplate should be updated
+				var updatedBoilerplate models.Boilerplate
+				require.NoError(t, db.DB.First(&updatedBoilerplate, "question_id = ?", createResp.Id).Error)
+				assert.Equal(t, tt.wantNewCode, updatedBoilerplate.Code)
+				assert.Equal(t, createResp.Id, updateResp.QuestionId, "Unlocked question should keep same ID")
+			}
 		})
 	}
 }

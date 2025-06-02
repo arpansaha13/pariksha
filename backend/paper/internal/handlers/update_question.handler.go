@@ -82,6 +82,18 @@ func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper mod
 		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
 	}
 
+	// Create new boilerplate entry if it's a coding question
+	if updatedQuestion.Type == constants.QUESTION_TYPE_CODING && req.RawQuestion != nil {
+		var coding structs.CodingQuestion
+		if err := json.Unmarshal(req.RawQuestion, &coding); err != nil {
+			return nil, status.Error(codes.Internal, "invalid coding question format")
+		}
+
+		if err := upsertBoilerplates(tx, updatedQuestion.ID, coding.InputDefinitions, coding.OutputDefinition); err != nil {
+			return nil, status.Error(codes.Internal, "failed to create boilerplates")
+		}
+	}
+
 	// Atomic update to unlink old question
 	if err := tx.Model(&models.Question{}).
 		Where("id = ?", question.ID).
@@ -106,13 +118,19 @@ func handleUnlockedQuestionUpdate(tx *gorm.DB, question models.Question, paper m
 
 	// Check if this is a coding question and input/output definitions have changed
 	if updatedQuestion.Type == constants.QUESTION_TYPE_CODING && req.RawQuestion != nil {
-		var coding structs.CodingQuestion
-		if err := json.Unmarshal(req.RawQuestion, &coding); err != nil {
+		var newCoding, oldCoding structs.CodingQuestion
+		if err := json.Unmarshal(req.RawQuestion, &newCoding); err != nil {
 			return status.Error(codes.Internal, "invalid coding question format")
 		}
+		if err := json.Unmarshal(question.Question, &oldCoding); err != nil {
+			return status.Error(codes.Internal, "invalid existing question format")
+		}
 
-		if err := upsertBoilerplates(tx, updatedQuestion.ID, coding.InputDefinitions, coding.OutputDefinition); err != nil {
-			return status.Error(codes.Internal, "failed to update boilerplates")
+		// Check if input/output definitions have changed
+		if shouldUpdateBoilerplates(oldCoding, newCoding) {
+			if err := upsertBoilerplates(tx, updatedQuestion.ID, newCoding.InputDefinitions, newCoding.OutputDefinition); err != nil {
+				return status.Error(codes.Internal, "failed to update boilerplates")
+			}
 		}
 	}
 
@@ -123,7 +141,51 @@ func handleUnlockedQuestionUpdate(tx *gorm.DB, question models.Question, paper m
 	return updateQuestionStats(tx, paper, oldType, updatedQuestion.Type, oldMaxScore, updatedQuestion.MaxScore)
 }
 
-// Helper function to apply updates to a question
+// shouldUpdateBoilerplates checks if input/output definitions have changed
+func shouldUpdateBoilerplates(old, new structs.CodingQuestion) bool {
+	if len(old.InputDefinitions) != len(new.InputDefinitions) {
+		return true
+	}
+
+	// Compare input definitions
+	for i := range old.InputDefinitions {
+		if old.InputDefinitions[i].Type != new.InputDefinitions[i].Type ||
+			old.InputDefinitions[i].VariableName != new.InputDefinitions[i].VariableName ||
+			!itemsEqual(old.InputDefinitions[i].Items, new.InputDefinitions[i].Items) {
+			return true
+		}
+	}
+
+	// Compare output definition
+	return old.OutputDefinition.Type != new.OutputDefinition.Type ||
+		!itemsEqual(old.OutputDefinition.Items, new.OutputDefinition.Items)
+}
+
+// itemsEqual safely compares two optional item slices
+func itemsEqual(a, b *[]structs.ParameterItem) bool {
+	if a == nil || b == nil {
+		return a == b // true if both nil
+	}
+	if len(*a) != len(*b) {
+		return false
+	}
+	for i := range *a {
+		if (*a)[i].Type != (*b)[i].Type {
+			return false
+		}
+		// Compare PropertyName pointers safely
+		if ((*a)[i].PropertyName == nil) != ((*b)[i].PropertyName == nil) {
+			return false
+		}
+		if (*a)[i].PropertyName != nil && (*b)[i].PropertyName != nil &&
+			*(*a)[i].PropertyName != *(*b)[i].PropertyName {
+			return false
+		}
+	}
+	return true
+}
+
+// applyQuestionUpdates handles common question updates and delegates type-specific updates
 func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionRequest) (models.Question, error) {
 	if req.Type != nil {
 		if req.RawQuestion == nil {
@@ -133,35 +195,20 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 	}
 
 	if req.RawQuestion != nil {
+		var err error
 		switch question.Type {
 		case constants.QUESTION_TYPE_MCQ:
-			var mcq structs.MCQQuestion
-			if err := utils.StrictUnmarshal(req.RawQuestion, &mcq); err != nil {
-				return question, status.Error(codes.InvalidArgument, "invalid MCQ question format")
-			}
-			if err := validate.McqQuestionData(&mcq); err != nil {
-				return question, err
-			}
+			question, err = applyMcqQuestionUpdates(question, req.RawQuestion)
 		case constants.QUESTION_TYPE_SUBJECTIVE:
-			var subjective structs.SubjectiveQuestion
-			if err := utils.StrictUnmarshal(req.RawQuestion, &subjective); err != nil {
-				return question, status.Error(codes.InvalidArgument, "invalid subjective question format")
-			}
-			if err := validate.SubjectiveQuestionData(&subjective); err != nil {
-				return question, err
-			}
+			question, err = applySubjectiveQuestionUpdates(question, req.RawQuestion)
 		case constants.QUESTION_TYPE_CODING:
-			var coding structs.CodingQuestion
-			if err := utils.StrictUnmarshal(req.RawQuestion, &coding); err != nil {
-				return question, status.Error(codes.InvalidArgument, "invalid coding question format")
-			}
-			if err := validate.CodingQuestionData(&coding); err != nil {
-				return question, err
-			}
+			question, err = applyCodingQuestionUpdates(question, req.RawQuestion)
 		default:
 			return question, status.Error(codes.InvalidArgument, "invalid question type")
 		}
-		question.Question = json.RawMessage(req.RawQuestion)
+		if err != nil {
+			return question, err
+		}
 	}
 
 	// TODO: Disable category updating for now
@@ -185,5 +232,44 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 		}
 	}
 
+	return question, nil
+}
+
+// applyMcqQuestionUpdates handles MCQ-specific question updates
+func applyMcqQuestionUpdates(question models.Question, rawQuestion []byte) (models.Question, error) {
+	var mcq structs.MCQQuestion
+	if err := utils.StrictUnmarshal(rawQuestion, &mcq); err != nil {
+		return question, status.Error(codes.InvalidArgument, "invalid MCQ question format")
+	}
+	if err := validate.McqQuestionData(&mcq); err != nil {
+		return question, err
+	}
+	question.Question = json.RawMessage(rawQuestion)
+	return question, nil
+}
+
+// applySubjectiveQuestionUpdates handles Subjective-specific question updates
+func applySubjectiveQuestionUpdates(question models.Question, rawQuestion []byte) (models.Question, error) {
+	var subjective structs.SubjectiveQuestion
+	if err := utils.StrictUnmarshal(rawQuestion, &subjective); err != nil {
+		return question, status.Error(codes.InvalidArgument, "invalid subjective question format")
+	}
+	if err := validate.SubjectiveQuestionData(&subjective); err != nil {
+		return question, err
+	}
+	question.Question = json.RawMessage(rawQuestion)
+	return question, nil
+}
+
+// applyCodingQuestionUpdates handles Coding-specific question updates
+func applyCodingQuestionUpdates(question models.Question, rawQuestion []byte) (models.Question, error) {
+	var coding structs.CodingQuestion
+	if err := utils.StrictUnmarshal(rawQuestion, &coding); err != nil {
+		return question, status.Error(codes.InvalidArgument, "invalid coding question format")
+	}
+	if err := validate.CodingQuestionData(&coding); err != nil {
+		return question, err
+	}
+	question.Question = json.RawMessage(rawQuestion)
 	return question, nil
 }
