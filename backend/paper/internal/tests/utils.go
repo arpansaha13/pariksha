@@ -4,15 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"pariksha/common/pkg/models"
-	"pariksha/common/pkg/structs"
-	"pariksha/paper/internal/config/db"
+	"fmt"
+	"reflect"
 	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
+
+	"pariksha/common/pkg/models"
+	"pariksha/common/pkg/structs"
+	"pariksha/paper/internal/config/db"
 )
 
 const defaultPaperCategoryName string = "Category 1"
@@ -121,4 +124,22 @@ func createTestQuestions(t *testing.T, questions []models.Question) []models.Que
 	err := db.DB.Create(&questions).Error
 	require.NoError(t, err)
 	return questions
+}
+
+// compareJSONByteArrays checks if two JSON byte arrays contain equivalent data, ignoring key order
+func compareJSONByteArrays(a, b []byte) bool {
+	var obj1, obj2 map[string]interface{}
+
+	// Unmarshal JSON into maps
+	if err := json.Unmarshal(a, &obj1); err != nil {
+		fmt.Println("Error unmarshalling first JSON:", err)
+		return false
+	}
+	if err := json.Unmarshal(b, &obj2); err != nil {
+		fmt.Println("Error unmarshalling second JSON:", err)
+		return false
+	}
+
+	// Compare the two maps
+	return reflect.DeepEqual(obj1, obj2)
 }

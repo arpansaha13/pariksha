@@ -51,13 +51,13 @@ func TestGetPaperQuestions(t *testing.T) {
 					Statement: "MCQ Question",
 					Options:   []string{"A", "B", "C"},
 				})
-				assert.Equal(t, mcqJson, resp.Questions[0].RawQuestion)
+				assert.True(t, compareJSONByteArrays(mcqJson, resp.Questions[0].RawQuestion))
 
 				// Validate second question (Subjective)
 				subjJson, _ := json.Marshal(structs.SubjectiveQuestion{
 					Statement: "Subjective Question",
 				})
-				assert.Equal(t, subjJson, resp.Questions[1].RawQuestion)
+				assert.True(t, compareJSONByteArrays(subjJson, resp.Questions[1].RawQuestion))
 			},
 		},
 		{

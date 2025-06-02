@@ -75,14 +75,14 @@ func TestGetQuestionsByIds(t *testing.T) {
 				assert.Equal(t, questions[0].ID, mcqResp.Id)
 				assert.Equal(t, questions[0].Type, mcqResp.Type)
 				assert.EqualValues(t, questions[0].MaxScore, mcqResp.MaxScore)
-				assert.Equal(t, questions[0].Question, json.RawMessage(mcqResp.RawQuestion))
+				assert.True(t, compareJSONByteArrays(questions[0].Question, mcqResp.RawQuestion))
 
 				// Validate Subjective question
 				subjectiveResp := resp.Questions[1]
 				assert.Equal(t, questions[1].ID, subjectiveResp.Id)
 				assert.Equal(t, questions[1].Type, subjectiveResp.Type)
 				assert.EqualValues(t, questions[1].MaxScore, subjectiveResp.MaxScore)
-				assert.Equal(t, questions[1].Question, json.RawMessage(subjectiveResp.RawQuestion))
+				assert.True(t, compareJSONByteArrays(questions[1].Question, subjectiveResp.RawQuestion))
 			},
 		},
 		{

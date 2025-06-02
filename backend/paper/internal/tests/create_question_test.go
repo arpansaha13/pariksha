@@ -42,7 +42,7 @@ func TestCreateMcqQuestion(t *testing.T) {
 				require.NoError(t, db.DB.First(&question, resp.Id).Error)
 
 				// Validate question data
-				assert.Equal(t, json.RawMessage(`{"statement":"Test MCQ","options":["A","B","C"]}`), question.Question)
+				assert.True(t, compareJSONByteArrays([]byte(`{"statement":"Test MCQ","options":["A","B","C"]}`), question.Question))
 				assert.Equal(t, constants.QUESTION_TYPE_MCQ, question.Type)
 				assert.EqualValues(t, 5, question.MaxScore)
 
@@ -103,7 +103,7 @@ func TestCreateSubjectiveQuestion(t *testing.T) {
 				require.NoError(t, db.DB.First(&question, resp.Id).Error)
 
 				// Validate question data
-				assert.Equal(t, json.RawMessage(`{"statement":"Test Subjective Answer"}`), question.Question)
+				assert.True(t, compareJSONByteArrays([]byte(`{"statement":"Test Subjective Answer"}`), question.Question))
 				assert.Equal(t, constants.QUESTION_TYPE_SUBJECTIVE, question.Type)
 				assert.EqualValues(t, 10, question.MaxScore)
 
@@ -486,7 +486,7 @@ func TestCreateCodingQuestionBoilerplates(t *testing.T) {
 				],
 				"output_definition": {"type": 1}
 			}`,
-			want: "function solve(a, b) {}",
+			want: "function solve(a, b) {\n\n}",
 		},
 		{
 			name: "Single array input",
