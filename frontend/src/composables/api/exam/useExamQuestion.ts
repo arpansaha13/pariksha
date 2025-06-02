@@ -1,6 +1,6 @@
 import { isNullOrUndefined } from '@arpansaha13/utils'
 
-export function useExamQuestion(questionId: ComputedRef<number | null>) {
+export function useExamQuestion(questionId: ComputedRef<QuestionId | null>) {
   const { $api } = useNuxtApp()
 
   return useAsyncData(

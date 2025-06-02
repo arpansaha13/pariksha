@@ -175,10 +175,6 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 		request.RawQuestion = questionBytes
 	}
 
-	if updateDto.CategoryID != 0 {
-		request.CategoryId = &updateDto.CategoryID
-	}
-
 	if updateDto.MaxScore != 0 {
 		maxScore := int32(updateDto.MaxScore)
 		request.MaxScore = &maxScore

@@ -220,11 +220,6 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 		}
 	}
 
-	// TODO: Disable category updating for now
-	// if req.CategoryId != nil {
-	// 	question.CategoryID = req.GetCategoryId()
-	// }
-
 	if req.MaxScore != nil {
 		question.MaxScore = int16(req.GetMaxScore())
 	}

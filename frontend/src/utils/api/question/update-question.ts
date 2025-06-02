@@ -2,15 +2,14 @@ import { isNullOrUndefined } from '@arpansaha13/utils'
 
 import { extractQuestionContent, type MergedQuestion } from './utils'
 
-type UpdateQuestionBody = Partial<
-  QuestionMcq | QuestionSubjective | QuestionCoding
->
+type UpdateQuestionBody = Partial<Omit<Question, 'category_id'>>
 type UpdateQuestionReturn = Pick<Question, 'id'>
+type MergedQuestionOmitCategory = Omit<MergedQuestion, 'category_id'>
 
 export async function updateQuestion(
   questionId: QuestionId,
   paperId: PaperId,
-  mergedQuestion: MergedQuestion
+  mergedQuestion: MergedQuestionOmitCategory
 ) {
   const { $api } = useNuxtApp()
 
@@ -76,7 +75,7 @@ export async function updateQuestion(
 /** Only include fields that are updated */
 function getRequestBody(
   previousQuestion: Readonly<Question>,
-  mergedQuestion: MergedQuestion
+  mergedQuestion: MergedQuestionOmitCategory
 ): UpdateQuestionBody {
   const requestBody: UpdateQuestionBody = {}
 
@@ -113,10 +112,6 @@ function getRequestBody(
   //   !_isEqual(mergedQuestion.tags, previousQuestion.tags)
   // ) {
   //   requestBody.tags = mergedQuestion.tags
-  // }
-
-  // if (mergedQuestion.category_id !== previousQuestion.category.id) {
-  //   requestBody.category_id = mergedQuestion.category_id
   // }
 
   // if (

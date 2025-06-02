@@ -764,10 +764,9 @@ type UpdateQuestionRequest struct {
 	QuestionId    int64                  `protobuf:"varint,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
 	Type          *string                `protobuf:"bytes,2,opt,name=type,proto3,oneof" json:"type,omitempty"`
 	RawQuestion   []byte                 `protobuf:"bytes,3,opt,name=raw_question,json=rawQuestion,proto3,oneof" json:"raw_question,omitempty"`
-	CategoryId    *int64                 `protobuf:"varint,4,opt,name=category_id,json=categoryId,proto3,oneof" json:"category_id,omitempty"`
-	MaxScore      *int32                 `protobuf:"varint,5,opt,name=max_score,json=maxScore,proto3,oneof" json:"max_score,omitempty"`
-	Tags          []string               `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty"`
-	CorrectAnswer *string                `protobuf:"bytes,7,opt,name=correct_answer,json=correctAnswer,proto3,oneof" json:"correct_answer,omitempty"`
+	MaxScore      *int32                 `protobuf:"varint,4,opt,name=max_score,json=maxScore,proto3,oneof" json:"max_score,omitempty"`
+	Tags          []string               `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
+	CorrectAnswer *string                `protobuf:"bytes,6,opt,name=correct_answer,json=correctAnswer,proto3,oneof" json:"correct_answer,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -821,13 +820,6 @@ func (x *UpdateQuestionRequest) GetRawQuestion() []byte {
 		return x.RawQuestion
 	}
 	return nil
-}
-
-func (x *UpdateQuestionRequest) GetCategoryId() int64 {
-	if x != nil && x.CategoryId != nil {
-		return *x.CategoryId
-	}
-	return 0
 }
 
 func (x *UpdateQuestionRequest) GetMaxScore() int32 {
@@ -1754,20 +1746,17 @@ const file_paper_proto_rawDesc = "" +
 	"\x0ecorrect_answer\x18\a \x01(\tH\x00R\rcorrectAnswer\x88\x01\x01B\x11\n" +
 	"\x0f_correct_answer\"(\n" +
 	"\x16CreateQuestionResponse\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\"\xcc\x02\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\"\x96\x02\n" +
 	"\x15UpdateQuestionRequest\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\x03R\n" +
 	"questionId\x12\x17\n" +
 	"\x04type\x18\x02 \x01(\tH\x00R\x04type\x88\x01\x01\x12&\n" +
-	"\fraw_question\x18\x03 \x01(\fH\x01R\vrawQuestion\x88\x01\x01\x12$\n" +
-	"\vcategory_id\x18\x04 \x01(\x03H\x02R\n" +
-	"categoryId\x88\x01\x01\x12 \n" +
-	"\tmax_score\x18\x05 \x01(\x05H\x03R\bmaxScore\x88\x01\x01\x12\x12\n" +
-	"\x04tags\x18\x06 \x03(\tR\x04tags\x12*\n" +
-	"\x0ecorrect_answer\x18\a \x01(\tH\x04R\rcorrectAnswer\x88\x01\x01B\a\n" +
+	"\fraw_question\x18\x03 \x01(\fH\x01R\vrawQuestion\x88\x01\x01\x12 \n" +
+	"\tmax_score\x18\x04 \x01(\x05H\x02R\bmaxScore\x88\x01\x01\x12\x12\n" +
+	"\x04tags\x18\x05 \x03(\tR\x04tags\x12*\n" +
+	"\x0ecorrect_answer\x18\x06 \x01(\tH\x03R\rcorrectAnswer\x88\x01\x01B\a\n" +
 	"\x05_typeB\x0f\n" +
-	"\r_raw_questionB\x0e\n" +
-	"\f_category_idB\f\n" +
+	"\r_raw_questionB\f\n" +
 	"\n" +
 	"_max_scoreB\x11\n" +
 	"\x0f_correct_answer\"9\n" +
