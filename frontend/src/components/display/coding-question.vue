@@ -20,15 +20,8 @@
       {{ content.statement }}
     </p>
 
-    <template
-      v-if="
-        !isNullOrUndefined(content.test_cases) && content.test_cases.length > 0
-      "
-    >
-      <template
-        v-for="(testCase, testCaseIdx) in content.test_cases"
-        :key="testCaseIdx"
-      >
+    <template v-if="testCases.length > 0">
+      <template v-for="(testCase, testCaseIdx) in testCases" :key="testCaseIdx">
         <h3 class="heading mt-4 mb-3">Example {{ testCaseIdx + 1 }}</h3>
         <DisplayCodeBlock>
           <p>
@@ -59,10 +52,9 @@
 </template>
 
 <script lang="ts" setup>
-import { isNullOrUndefined } from '@arpansaha13/utils'
-
 defineProps<{
   content: QuestionCodingContent
+  testCases: QuestionCodingTestCase[]
   editorLink?: string
 }>()
 </script>

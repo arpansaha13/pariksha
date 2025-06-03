@@ -21,7 +21,7 @@ func TestGetPaperQuestions(t *testing.T) {
 	tests := []QuestionListCase{
 		{
 			BaseTestCase: BaseTestCase{
-				name:         "Success - Get questions for paper",
+				name:         "Success - Get questions for paper with all test cases",
 				userID:       userID,
 				expectedCode: codes.OK,
 			},
@@ -40,24 +40,61 @@ func TestGetPaperQuestions(t *testing.T) {
 						Type:       constants.QUESTION_TYPE_SUBJECTIVE,
 						Question:   json.RawMessage(`{"statement":"Subjective Question"}`),
 					},
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_CODING,
+						Question: json.RawMessage(`{
+							"title": "Sum Numbers",
+							"statement": "Add two numbers",
+							"input_definitions": [
+								{ "variable_name": "a", "type": 1 },
+								{ "variable_name": "b", "type": 1 }
+							],
+							"output_definition": {"type": 1}
+						}`),
+					},
 				})
+
+				// Create test cases for coding question
+				testCases := []models.TestCase{
+					{
+						QuestionID: questions[2].ID,
+						Content:    json.RawMessage(`{"inputs": ["1", "2"], "output": "3"}`),
+						Hidden:     false,
+					},
+					{
+						QuestionID: questions[2].ID,
+						Content:    json.RawMessage(`{"inputs": ["4", "5"], "output": "9"}`),
+						Hidden:     true,
+					},
+				}
+				createTestCases(t, testCases)
+
 				return paper, questions
 			},
 			validate: func(t *testing.T, resp *proto.QuestionList) {
-				assert.Equal(t, 2, len(resp.Questions))
+				assert.Equal(t, 3, len(resp.Questions))
 
-				// Validate first question (MCQ)
+				// Validate MCQ question
 				mcqJson, _ := json.Marshal(structs.MCQQuestion{
 					Statement: "MCQ Question",
 					Options:   []string{"A", "B", "C"},
 				})
 				assert.True(t, compareJSONByteArrays(mcqJson, resp.Questions[0].RawQuestion))
 
-				// Validate second question (Subjective)
+				// Validate subjective question
 				subjJson, _ := json.Marshal(structs.SubjectiveQuestion{
 					Statement: "Subjective Question",
 				})
 				assert.True(t, compareJSONByteArrays(subjJson, resp.Questions[1].RawQuestion))
+
+				// Validate coding question
+				var coding structs.CodingQuestion
+				require.NoError(t, json.Unmarshal(resp.Questions[2].RawQuestion, &coding))
+				assert.Equal(t, "Sum Numbers", coding.Title)
+				assert.Equal(t, "Add two numbers", coding.Statement)
+				assert.Len(t, coding.InputDefinitions, 2)
 			},
 		},
 		{
@@ -259,6 +296,149 @@ func TestReorderQuestions(t *testing.T) {
 						tt.validate(t, questions)
 					}
 				})
+		})
+	}
+}
+
+func TestGetPaperQuestion(t *testing.T) {
+	tests := []GetPaperQuestionCase{
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Get MCQ question",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.Question) {
+				paper, category := setupTestCategory(t, userID, false)
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"MCQ Question","options":["A","B","C"]}`),
+						MaxScore:   5,
+					},
+				})
+				return paper, &questions[0]
+			},
+			validate: func(t *testing.T, resp *proto.QuestionResponse) {
+				var mcq structs.MCQQuestion
+				require.NoError(t, json.Unmarshal(resp.RawQuestion, &mcq))
+				assert.Equal(t, "MCQ Question", mcq.Statement)
+				assert.Equal(t, []string{"A", "B", "C"}, mcq.Options)
+				assert.Equal(t, int32(5), resp.MaxScore)
+				assert.Empty(t, resp.TestCases)
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Get coding question with test cases",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.Question) {
+				paper, category := setupTestCategory(t, userID, false)
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_CODING,
+						Question: json.RawMessage(`{
+							"title": "Sum Numbers",
+							"statement": "Add two numbers",
+							"input_definitions": [
+								{ "variable_name": "a", "type": 1 },
+								{ "variable_name": "b", "type": 1 }
+							],
+							"output_definition": {"type": 1}
+						}`),
+						MaxScore: 10,
+					},
+				})
+
+				// Create test cases
+				createTestCases(t, []models.TestCase{
+					{
+						QuestionID: questions[0].ID,
+						Content:    json.RawMessage(`{"inputs": ["1", "2"], "output": "3"}`),
+						Hidden:     false,
+					},
+					{
+						QuestionID: questions[0].ID,
+						Content:    json.RawMessage(`{"inputs": ["4", "5"], "output": "9", "explanation": "hidden case"}`),
+						Hidden:     true,
+					},
+				})
+
+				return paper, &questions[0]
+			},
+			validate: func(t *testing.T, resp *proto.QuestionResponse) {
+				// Verify coding question content
+				var coding structs.CodingQuestion
+				require.NoError(t, json.Unmarshal(resp.RawQuestion, &coding))
+				assert.Equal(t, "Sum Numbers", coding.Title)
+				assert.Equal(t, "Add two numbers", coding.Statement)
+				assert.Len(t, coding.InputDefinitions, 2)
+				assert.Equal(t, int32(10), resp.MaxScore)
+
+				// Verify test cases
+				require.Len(t, resp.TestCases, 2)
+				// First test case (non-hidden)
+				assert.Equal(t, []string{"1", "2"}, resp.TestCases[0].Inputs)
+				assert.Equal(t, "3", resp.TestCases[0].Output)
+				assert.False(t, resp.TestCases[0].Hidden)
+				assert.Nil(t, resp.TestCases[0].Explanation)
+
+				// Second test case (hidden)
+				assert.Equal(t, []string{"4", "5"}, resp.TestCases[1].Inputs)
+				assert.Equal(t, "9", resp.TestCases[1].Output)
+				assert.True(t, resp.TestCases[1].Hidden)
+				assert.NotNil(t, resp.TestCases[1].Explanation)
+				assert.Equal(t, "hidden case", *resp.TestCases[1].Explanation)
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Question not found",
+				userID:       userID,
+				expectedCode: codes.NotFound,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.Question) {
+				return nil, &models.Question{ID: 999}
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "No access to paper",
+				userID:       userID,
+				expectedCode: codes.PermissionDenied,
+			},
+			setup: func(t *testing.T) (*models.Paper, *models.Question) {
+				paper, category := setupTestCategory(t, 2, false) // different user
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+						Question:   json.RawMessage(`{"statement":"Q1"}`),
+					},
+				})
+				return paper, &questions[0]
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+			_, question := tt.setup(t)
+
+			ctx := createContextWithUserID(tt.userID)
+			testrunner.Runner(t, ctx, tt.expectedCode,
+				&proto.QuestionRequest{QuestionId: question.ID},
+				client.GetPaperQuestion,
+				tt.validate,
+			)
 		})
 	}
 }

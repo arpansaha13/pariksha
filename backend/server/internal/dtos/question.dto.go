@@ -2,15 +2,24 @@ package dtos
 
 import "encoding/json"
 
+type PaperTestCaseDto struct {
+	ID          int64    `json:"id"`
+	Inputs      []string `json:"inputs"`
+	Output      string   `json:"output"`
+	Explanation *string  `json:"explanation"`
+	Hidden      bool     `json:"hidden"`
+}
+
 type QuestionResponseDto struct {
-	ID            int64           `json:"id"`
-	Question      json.RawMessage `json:"question"`
-	CategoryID    int64           `json:"category_id"`
-	Type          string          `json:"type"`
-	Tags          json.RawMessage `json:"tags"`
-	PaperID       string          `json:"paper_id"`
-	MaxScore      int32           `json:"max_score"`
-	CorrectAnswer string          `json:"correct_answer"`
+	ID            int64               `json:"id"`
+	Question      json.RawMessage     `json:"question"`
+	CategoryID    int64               `json:"category_id"`
+	Type          string              `json:"type"`
+	Tags          json.RawMessage     `json:"tags"`
+	PaperID       string              `json:"paper_id"`
+	MaxScore      int32               `json:"max_score"`
+	TestCases     *[]PaperTestCaseDto `json:"test_cases"`
+	CorrectAnswer string              `json:"correct_answer"`
 }
 
 type QuestionMinimalResponseDto struct {
@@ -54,4 +63,16 @@ type CreateQuestionResponseDto struct {
 
 type UpdateQuestionResponseDto struct {
 	ID int64 `json:"id"`
+}
+
+type UpsertTestCaseDto struct {
+	ID          *int64   `json:"id,omitempty"`
+	Inputs      []string `json:"inputs" validate:"required"`
+	Output      string   `json:"output" validate:"required"`
+	Explanation *string  `json:"explanation,omitempty"`
+	Hidden      bool     `json:"hidden"`
+}
+
+type UpsertTestCasesDto struct {
+	TestCases []UpsertTestCaseDto `json:"test_cases" validate:"required,min=1"`
 }

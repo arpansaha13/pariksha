@@ -16,7 +16,6 @@ import (
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/paper/internal/config/db"
-	paperStructs "pariksha/paper/internal/structs"
 	"pariksha/paper/internal/utils/validate"
 )
 
@@ -129,13 +128,10 @@ func handleUnlockedQuestionUpdate(tx *gorm.DB, question models.Question, paper m
 
 		// Check if input/output definitions have changed
 		if shouldUpdateBoilerplates(oldCoding, newCoding) {
-			// Clear test cases as they may no longer be valid
-			newCoding.TestCases = nil
-			updatedContent, err := json.Marshal(newCoding)
-			if err != nil {
-				return status.Error(codes.Internal, "failed to marshal updated question")
+			// Delete all test cases for this question as they may no longer be valid
+			if err := tx.Delete(&models.TestCase{}, "question_id = ?", question.ID).Error; err != nil {
+				return status.Error(codes.Internal, "failed to delete test cases")
 			}
-			updatedQuestion.Question = json.RawMessage(updatedContent)
 
 			// Update boilerplates
 			if err := upsertBoilerplates(tx, updatedQuestion.ID, newCoding.InputDefinitions, newCoding.OutputDefinition); err != nil {
@@ -273,17 +269,7 @@ func applyCodingQuestionUpdates(question models.Question, rawQuestion []byte) (m
 		return question, status.Error(codes.InvalidArgument, "invalid coding question format")
 	}
 
-	codingOmitTestCases := paperStructs.CodingQuestionOmitTestCases{
-		Title:            coding.Title,
-		Statement:        coding.Statement,
-		InputDefinitions: coding.InputDefinitions,
-		OutputDefinition: coding.OutputDefinition,
-	}
-	if err := validate.CodingQuestionData(&codingOmitTestCases); err != nil {
-		return question, err
-	}
-
-	if err := validate.CodingQuestionTestCases(coding.TestCases, len(coding.InputDefinitions)); err != nil {
+	if err := validate.CodingQuestionData(&coding); err != nil {
 		return question, err
 	}
 

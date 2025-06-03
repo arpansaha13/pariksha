@@ -96,7 +96,13 @@ func CreatePaper(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+
+	encryptedID, err := utils.EncryptID(response.Id)
+	json.NewEncoder(w).Encode(dtos.CreatePaperResponseDto{
+		ID:        encryptedID,
+		Title:     response.Title,
+		CreatedBy: response.CreatedBy,
+	})
 }
 
 func UpdatePaper(w http.ResponseWriter, r *http.Request) {

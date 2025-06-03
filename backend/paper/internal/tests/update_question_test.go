@@ -132,7 +132,7 @@ func TestUpdateCodingQuestion(t *testing.T) {
 	tests := []UpdateQuestionCase{
 		{
 			BaseTestCase: BaseTestCase{
-				name:         "Success - Update coding question",
+				name:         "Success - Update coding question and clear test cases",
 				userID:       userID,
 				expectedCode: codes.OK,
 			},
@@ -154,19 +154,27 @@ func TestUpdateCodingQuestion(t *testing.T) {
 								{ "variable_name": "b", "type": 1 }
 							],
 							"output_definition": {
-								"variable_name": "sum",
 								"type": 1
-							},
-							"test_cases": [
-								{
-									"inputs": ["1", "1"],
-									"output": "2"
-								}
-							]
+							}
 						}`),
 						Tags: ptr.JsonRawMessage([]byte("[\"old\"]")),
 					},
 				})
+
+				// Create test cases in the test_cases table
+				createTestCases(t, []models.TestCase{
+					{
+						QuestionID: questions[0].ID,
+						Content:    json.RawMessage(`{"inputs": ["1", "2"], "output": "3"}`),
+						Hidden:     false,
+					},
+					{
+						QuestionID: questions[0].ID,
+						Content:    json.RawMessage(`{"inputs": ["4", "5"], "output": "9"}`),
+						Hidden:     true,
+					},
+				})
+
 				return &paper, &questions[0]
 			},
 			request: &proto.UpdateQuestionRequest{
@@ -183,7 +191,6 @@ func TestUpdateCodingQuestion(t *testing.T) {
 						}
 					],
 					"output_definition": {
-						"variable_name": "sum",
 						"type": 1
 					}
 				}`),
@@ -198,8 +205,10 @@ func TestUpdateCodingQuestion(t *testing.T) {
 				assert.Equal(t, "Updated Coding Question", coding.Title)
 				assert.Equal(t, "Write an optimized solution", coding.Statement)
 
-				// Test cases should be cleared because input definitions changed
-				assert.Nil(t, coding.TestCases, "Test cases should be cleared when input definitions change")
+				// Verify test cases were deleted
+				var testCaseCount int64
+				require.NoError(t, db.DB.Model(&models.TestCase{}).Where("question_id = ?", question.ID).Count(&testCaseCount).Error)
+				assert.Equal(t, int64(0), testCaseCount, "All test cases should be deleted")
 
 				// Verify other fields
 				assert.EqualValues(t, 10, updated.MaxScore)

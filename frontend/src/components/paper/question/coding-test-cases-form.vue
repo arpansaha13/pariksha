@@ -96,7 +96,7 @@ const props = defineProps<{
   >
 }>()
 
-const testCases = defineModel<QuestionCodingContentTestCase[]>('test-cases', {
+const testCases = defineModel<PartialQuestionCodingTestCase[]>('test-cases', {
   required: true,
 })
 
@@ -106,7 +106,7 @@ defineExpose({
 })
 
 const emit = defineEmits<{
-  submit: [form: QuestionCodingContentTestCase[]]
+  submit: [form: PartialQuestionCodingTestCase[]]
 }>()
 
 async function onSubmit() {
@@ -123,6 +123,7 @@ function addTestCase() {
       }),
       output: '',
       explanation: '',
+      hidden: false,
     })
   }
 }

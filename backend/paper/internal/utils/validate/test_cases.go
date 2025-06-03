@@ -8,10 +8,10 @@ import (
 	"google.golang.org/grpc/status"
 
 	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/models"
 )
 
-func CodingQuestionTestCases(testCases []structs.CodingQuestionTestCase, inputDefinitionsLength int) error {
+func TestCases(testCases []models.TestCaseContent, inputDefinitionsLength int) error {
 	if len(testCases) > int(constants.MAX_CODING_TEST_CASES_COUNT) {
 		return status.Error(codes.InvalidArgument, fmt.Sprintf("Number of test cases cannot be more than %d", constants.MAX_CODING_TEST_CASES_COUNT))
 	}
@@ -25,7 +25,7 @@ func CodingQuestionTestCases(testCases []structs.CodingQuestionTestCase, inputDe
 	return nil
 }
 
-func validateTestCase(testCase structs.CodingQuestionTestCase, inputDefinitionsLength int) error {
+func validateTestCase(testCase models.TestCaseContent, inputDefinitionsLength int) error {
 	if len(testCase.Inputs) != inputDefinitionsLength {
 		return status.Error(codes.InvalidArgument, "number of inputs in test case must match number of input definitions")
 	}

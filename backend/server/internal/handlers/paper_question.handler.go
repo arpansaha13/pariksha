@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
@@ -70,6 +71,7 @@ func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 	tags, _ := json.Marshal(response.Tags)
 
 	encryptedPaperId, _ := utils.EncryptID(response.PaperId)
+
 	httpResponse := dtos.QuestionResponseDto{
 		ID:            response.Id,
 		Question:      response.RawQuestion,
@@ -78,7 +80,23 @@ func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 		Tags:          tags,
 		PaperID:       encryptedPaperId,
 		MaxScore:      response.MaxScore,
+		TestCases:     nil,
 		CorrectAnswer: response.GetCorrectAnswer(),
+	}
+
+	if response.Type == constants.QUESTION_TYPE_CODING {
+		testCases := make([]dtos.PaperTestCaseDto, 0, len(response.TestCases))
+		for _, tc := range response.TestCases {
+			testCases = append(testCases, dtos.PaperTestCaseDto{
+				ID:          tc.Id,
+				Inputs:      tc.Inputs,
+				Output:      tc.Output,
+				Explanation: tc.Explanation,
+				Hidden:      tc.Hidden,
+			})
+		}
+
+		httpResponse.TestCases = &testCases
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -260,6 +278,52 @@ func ReorderQuestions(w http.ResponseWriter, r *http.Request) {
 	_, err = paperService.Client().ReorderQuestions(ctx, &proto.ReorderQuestionsRequest{
 		CategoryId:  categoryID,
 		QuestionIds: questionIDs,
+	})
+
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func UpsertPaperTestCases(w http.ResponseWriter, r *http.Request) {
+	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+
+	var testCasesDto dtos.UpsertTestCasesDto
+	if err := json.NewDecoder(r.Body).Decode(&testCasesDto); err != nil {
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
+		return
+	}
+
+	if err := validate.Do.Struct(testCasesDto); err != nil {
+		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
+		return
+	}
+
+	paperService := services.GetPaperService()
+	ctx := paperService.CreateMetadata(userID)
+
+	testCases := make([]*proto.UpsertTestCase, len(testCasesDto.TestCases))
+	for i, tc := range testCasesDto.TestCases {
+		testCases[i] = &proto.UpsertTestCase{
+			Id:          tc.ID,
+			Inputs:      tc.Inputs,
+			Output:      tc.Output,
+			Explanation: tc.Explanation,
+			Hidden:      tc.Hidden,
+		}
+	}
+
+	_, err = paperService.Client().UpsertPaperTestCases(ctx, &proto.UpsertTestCasesRequest{
+		QuestionId: questionID,
+		TestCases:  testCases,
 	})
 
 	if err != nil {

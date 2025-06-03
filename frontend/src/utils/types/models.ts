@@ -119,10 +119,17 @@ export interface QuestionSubjectiveContent {
   statement: string
 }
 
-export interface QuestionCodingContentTestCase {
+export interface QuestionCodingTestCase {
+  id: TestCaseId
   inputs: string[]
   output: string
   explanation?: string
+  hidden: boolean
+}
+
+export interface PartialQuestionCodingTestCase
+  extends Omit<QuestionCodingTestCase, 'id'> {
+  id?: TestCaseId
 }
 
 export enum QuestionCodingContentPrimitiveInputTypes {
@@ -162,7 +169,6 @@ export interface QuestionCodingContent {
   statement: string
   input_definitions: QuestionCodingContentInputDefinition[]
   output_definition: QuestionCodingContentParameter
-  test_cases?: QuestionCodingContentTestCase[]
 }
 
 export interface BaseQuestion {
@@ -188,6 +194,7 @@ export interface QuestionSubjective extends BaseQuestion {
 export interface QuestionCoding extends BaseQuestion {
   type: QuestionType.CODING
   question: QuestionCodingContent
+  test_cases?: QuestionCodingTestCase[]
 }
 
 export type Question = QuestionMcq | QuestionSubjective | QuestionCoding

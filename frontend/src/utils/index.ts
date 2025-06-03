@@ -35,6 +35,7 @@ export * from './api/question/create-question'
 export * from './api/question/update-question'
 export * from './api/question/delete-question'
 export * from './api/question/reorder-questions'
+export * from './api/question/upsert-test-cases'
 export type { MergedQuestion, MergedQuestionOmit } from './api/question/utils'
 
 // Exam

@@ -37,6 +37,9 @@ service Paper {
 
   // Boilerplate operations
   rpc GetBoilerplate(GetBoilerplateRequest) returns (GetBoilerplateResponse) {}
+
+  // Test Case operations
+  rpc UpsertPaperTestCases(UpsertTestCasesRequest) returns (Empty) {}
 }
 
 // Paper messages
@@ -87,6 +90,7 @@ message QuestionResponse {
   int64 paper_id = 7;
   int32 max_score = 8;
   optional string correct_answer = 9;
+  repeated PaperTestCase test_cases = 10;  // New field for coding question test cases
 }
 
 message QuestionList {
@@ -203,4 +207,25 @@ message GetBoilerplateRequest {
 
 message GetBoilerplateResponse {
   string code = 1;
+}
+
+message PaperTestCase {
+  int64 id = 1;
+  repeated string inputs = 2;
+  string output = 3;
+  optional string explanation = 4;
+  bool hidden = 5;
+}
+
+message UpsertTestCase {
+  optional int64 id = 1;
+  repeated string inputs = 2;
+  string output = 3;
+  optional string explanation = 4;
+  bool hidden = 5;
+}
+
+message UpsertTestCasesRequest {
+  int64 question_id = 1;
+  repeated UpsertTestCase test_cases = 2;
 }

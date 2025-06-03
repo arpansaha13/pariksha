@@ -100,11 +100,7 @@
 
       <PaperQuestionFormDefineParametersModal
         v-model:coding-question-content="formState.question"
-        :has-test-cases="
-          formState.question.test_cases
-            ? formState.question.test_cases.length > 0
-            : false
-        "
+        :has-test-cases="hasTestCases"
         @after:leave="triggerValidate(FieldLabels.PARAMETERS)"
       />
     </UFormField>
@@ -199,6 +195,10 @@ import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { FormError } from '@nuxt/ui'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import type { UForm } from '#components'
+
+defineProps<{
+  hasTestCases: boolean
+}>()
 
 const formState = defineModel<MergedQuestion>('form-data', {
   required: true,

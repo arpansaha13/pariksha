@@ -7,6 +7,11 @@ func Int32(v int32) *int32 {
 	return &v
 }
 
+// Int64 returns a pointer to the given int64 value
+func Int64(v int64) *int64 {
+	return &v
+}
+
 // String returns a pointer to the given string value
 func String(s string) *string {
 	return &s

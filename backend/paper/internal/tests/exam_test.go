@@ -206,3 +206,117 @@ func TestGetCategoriesByIds(t *testing.T) {
 		})
 	}
 }
+
+func TestGetExamQuestion(t *testing.T) {
+	tests := []struct {
+		name         string
+		setup        func(t *testing.T) *models.Question
+		expectedCode codes.Code
+		validate     func(t *testing.T, resp *proto.QuestionResponse)
+	}{
+		{
+			name: "Success - Get MCQ question",
+			setup: func(t *testing.T) *models.Question {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"MCQ Question","options":["A","B","C"]}`),
+					},
+				})
+				return &questions[0]
+			},
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.QuestionResponse) {
+				var mcq structs.MCQQuestion
+				require.NoError(t, json.Unmarshal(resp.RawQuestion, &mcq))
+				assert.Equal(t, "MCQ Question", mcq.Statement)
+				assert.Equal(t, []string{"A", "B", "C"}, mcq.Options)
+				assert.Empty(t, resp.TestCases)
+			},
+		},
+		{
+			name: "Success - Get coding question with only non-hidden test cases",
+			setup: func(t *testing.T) *models.Question {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_CODING,
+						Question: json.RawMessage(`{
+							"title": "Sum Numbers",
+							"statement": "Add two numbers",
+							"input_definitions": [
+								{ "variable_name": "a", "type": 1 },
+								{ "variable_name": "b", "type": 1 }
+							],
+							"output_definition": {"type": 1}
+						}`),
+					},
+				})
+
+				// Create test cases with both hidden and non-hidden
+				createTestCases(t, []models.TestCase{
+					{
+						QuestionID: questions[0].ID,
+						Content:    json.RawMessage(`{"inputs": ["1", "2"], "output": "3"}`),
+						Hidden:     false,
+					},
+					{
+						QuestionID: questions[0].ID,
+						Content:    json.RawMessage(`{"inputs": ["4", "5"], "output": "9", "explanation": "hidden case"}`),
+						Hidden:     true, // This should not appear in response
+					},
+				})
+
+				return &questions[0]
+			},
+			expectedCode: codes.OK,
+			validate: func(t *testing.T, resp *proto.QuestionResponse) {
+				// Verify coding question content
+				var coding structs.CodingQuestion
+				require.NoError(t, json.Unmarshal(resp.RawQuestion, &coding))
+				assert.Equal(t, "Sum Numbers", coding.Title)
+				assert.Equal(t, "Add two numbers", coding.Statement)
+
+				// Verify only non-hidden test cases are included
+				require.Len(t, resp.TestCases, 1, "Should only include non-hidden test cases")
+				assert.Equal(t, []string{"1", "2"}, resp.TestCases[0].Inputs)
+				assert.Equal(t, "3", resp.TestCases[0].Output)
+				assert.False(t, resp.TestCases[0].Hidden)
+			},
+		},
+		{
+			name: "Question not found",
+			setup: func(t *testing.T) *models.Question {
+				return &models.Question{ID: 999}
+			},
+			expectedCode: codes.NotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearTables(t)
+			question := tt.setup(t)
+
+			testrunner.Runner(t, context.Background(), tt.expectedCode,
+				&proto.QuestionRequest{QuestionId: question.ID},
+				client.GetExamQuestion,
+				func(t *testing.T, resp *proto.QuestionResponse) {
+					if tt.validate != nil {
+						tt.validate(t, resp)
+					}
+				})
+		})
+	}
+}

@@ -184,7 +184,6 @@ const isCodingQuestionContentUpdated = (
     newQContent.title !== oldQContent.title ||
     newQContent.statement.length !== oldQContent.statement.length ||
     newQContent.statement !== oldQContent.statement ||
-    !_isEqual(newQContent.test_cases ?? [], oldQContent.test_cases ?? []) ||
     !_isEqual(
       newQContent.output_definition ?? [],
       oldQContent.output_definition ?? []

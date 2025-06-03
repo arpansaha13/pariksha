@@ -9,11 +9,10 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/structs"
-	paperStructs "pariksha/paper/internal/structs"
 )
 
 // CodingQuestionData validates coding question data
-func CodingQuestionData(coding *paperStructs.CodingQuestionOmitTestCases) error {
+func CodingQuestionData(coding *structs.CodingQuestion) error {
 	if strings.TrimSpace(coding.Title) == "" {
 		return status.Error(codes.InvalidArgument, "question title cannot be empty")
 	}

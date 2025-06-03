@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"context"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/db"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func (s *PaperServer) GetQuestionsByIds(ctx context.Context, req *proto.GetQuestionsByIdsRequest) (*proto.QuestionBatchResponse, error) {
@@ -62,9 +63,13 @@ func (s *PaperServer) GetExamQuestion(ctx context.Context, req *proto.QuestionRe
 		return nil, status.Error(codes.NotFound, constants.ErrNotFound)
 	}
 
-	return &proto.QuestionResponse{
-		Id:          question.ID,
-		Type:        question.Type,
-		RawQuestion: question.Question,
-	}, nil
+	var testCases []models.TestCase
+	if question.Type == constants.QUESTION_TYPE_CODING {
+		// Fetch only non-hidden test cases for coding questions
+		if err := db.DB.Where("question_id = ? AND hidden = ?", question.ID, false).Find(&testCases).Error; err != nil {
+			return nil, status.Error(codes.Internal, constants.ErrInternalServer)
+		}
+	}
+
+	return questionToProto(question, testCases)
 }

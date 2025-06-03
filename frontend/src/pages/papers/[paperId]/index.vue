@@ -78,15 +78,22 @@
       "
       ref="createQuestionForm"
       v-model:form-data="createQuestionFormStates[currentCategoryId]"
+      :has-test-cases="false"
       @submit="onCreateQuestionSubmit"
     />
     <PaperQuestionForm
       v-if="currentQuestionId && editQuestionFormStates[currentQuestionId]"
       ref="editQuestionForm"
       v-model:form-data="editQuestionFormStates[currentQuestionId]!"
+      :has-test-cases="
+        !isNullOrUndefined(question) &&
+        question.type === QuestionType.CODING &&
+        !isNullOrUndefined(question.test_cases) &&
+        question.test_cases.length > 0
+      "
       @submit="onEditQuestionSubmit"
     />
-    <PaperQuestionDefineTestCasesForm
+    <PaperQuestionCodingTestCasesForm
       v-else-if="
         question &&
         currentQuestionId &&
@@ -109,6 +116,7 @@
       <DisplayCodingQuestion
         v-else-if="question.type === QuestionType.CODING"
         :content="question.question"
+        :test-cases="question.test_cases ?? []"
         :editor-link="`/editor/questions/${question.id}`"
       />
     </template>
@@ -188,7 +196,7 @@ import { isNullOrUndefined } from '@arpansaha13/utils'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import {
   ConfirmModal,
-  PaperQuestionDefineTestCasesForm,
+  PaperQuestionCodingTestCasesForm,
   PaperQuestionForm,
 } from '#components'
 
@@ -267,7 +275,6 @@ const defaultCreateQuestionFormState: MergedQuestion = {
     title: '',
     statement: '',
     options: ['', ''],
-    test_cases: [],
     input_definitions: [
       {
         variable_name: getDefaultCodingQuestionInputVariableName(1),
@@ -371,9 +378,6 @@ function startQuestionEdit() {
       formState.output_definition = structuredClone(
         toRaw(codingQuestion.output_definition)
       )
-      if (codingQuestion.test_cases) {
-        formState.test_cases = structuredClone(toRaw(codingQuestion.test_cases))
-      }
     }
 
     paperStore.incUnsavedCount(question.value.category_id)
@@ -398,10 +402,10 @@ async function onEditQuestionSubmit() {
 
 // __________________CODING QUESTION TEST CASES___________________
 const codingQuestionTestCaseFormRef = useTemplateRef<
-  ComponentExposed<typeof PaperQuestionDefineTestCasesForm>
+  ComponentExposed<typeof PaperQuestionCodingTestCasesForm>
 >('codingQuestionTestCaseForm')
 const codingQuestionTestCaseFormStates = reactive<
-  Record<QuestionId, QuestionCodingContentTestCase[] | null>
+  Record<QuestionId, PartialQuestionCodingTestCase[] | null>
 >({})
 
 function startDefineTestCases() {
@@ -409,18 +413,19 @@ function startDefineTestCases() {
   if (!question.value || !qid) return
   if (qid === QUESTION_ID_ADD) return
 
+  const qType = question.value.type
+
+  if (qType !== QuestionType.CODING) {
+    logWarning('startDefineTestCases called without QuestionType.CODING')
+    return
+  }
+
   // Create form state for test-cases if it doesn't exist
   if (isNullOrUndefined(codingQuestionTestCaseFormStates[qid])) {
     // Parse and populate question data based on type
-    const qType = question.value.type
 
-    if (qType !== QuestionType.CODING) {
-      logWarning('startDefineTestCases called without QuestionType.CODING')
-      return
-    }
-
-    const testCases = question.value.question.test_cases
-    if (testCases) {
+    const testCases = question.value.test_cases
+    if (testCases && testCases.length > 0) {
       codingQuestionTestCaseFormStates[qid] = structuredClone(toRaw(testCases))
     } else {
       codingQuestionTestCaseFormStates[qid] = [
@@ -430,6 +435,7 @@ function startDefineTestCases() {
           }),
           output: '',
           explanation: '',
+          hidden: false,
         },
       ]
     }
@@ -445,19 +451,14 @@ async function onDefineTestCasesSubmit() {
     qid === QUESTION_ID_ADD ||
     !question.value ||
     question.value.type !== QuestionType.CODING
-  )
+  ) {
     return
+  }
 
   const testCases = codingQuestionTestCaseFormStates[qid]!
-  const updateQuestionBody = structuredClone(toRaw(question.value))
-  updateQuestionBody.question.test_cases = testCases
 
   try {
-    await updateQuestion(
-      qid,
-      paperId,
-      updateQuestionBody as unknown as MergedQuestion
-    )
+    await upsertPaperTestCases(qid, testCases)
     // Clear form state after successful update
     codingQuestionTestCaseFormStates[qid] = null
     paperStore.decUnsavedCount(currentCategoryId.value!)

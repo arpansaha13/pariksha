@@ -47,6 +47,12 @@ type QuestionListCase struct {
 	validate func(t *testing.T, resp *proto.QuestionList)
 }
 
+type GetPaperQuestionCase struct {
+	BaseTestCase
+	setup    func(t *testing.T) (*models.Paper, *models.Question)
+	validate func(t *testing.T, resp *proto.QuestionResponse)
+}
+
 type PaperPermissionsCase struct {
 	BaseTestCase
 	setup    func(t *testing.T) *models.Paper

@@ -17,7 +17,6 @@ import (
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/interceptors"
-	paperStructs "pariksha/paper/internal/structs"
 	"pariksha/paper/internal/utils/validate"
 )
 
@@ -47,7 +46,16 @@ func (s *PaperServer) GetPaperQuestion(ctx context.Context, req *proto.QuestionR
 	if err != nil || pc.Question == nil {
 		return nil, status.Error(codes.Internal, "question data not found in context")
 	}
-	return questionToProto(*pc.Question)
+
+	var testCases []models.TestCase
+	if pc.Question.Type == constants.QUESTION_TYPE_CODING {
+		// Fetch test cases for coding questions
+		if err := db.DB.Where("question_id = ?", pc.Question.ID).Find(&testCases).Error; err != nil {
+			return nil, status.Error(codes.Internal, constants.ErrInternalServer)
+		}
+	}
+
+	return questionToProto(*pc.Question, testCases)
 }
 
 func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuestionRequest) (*proto.CreateQuestionResponse, error) {
@@ -56,7 +64,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 	}
 
 	// Validate question data based on type
-	var coding paperStructs.CodingQuestionOmitTestCases
+	var coding structs.CodingQuestion
 	switch req.Type {
 	case constants.QUESTION_TYPE_MCQ:
 		var mcq structs.MCQQuestion

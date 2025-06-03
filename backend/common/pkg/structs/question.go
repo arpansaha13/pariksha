@@ -27,16 +27,9 @@ type OutputDefinition struct {
 	Items *[]ParameterItem        `json:"items,omitempty"`
 }
 
-type CodingQuestionTestCase struct {
-	Inputs      []string `json:"inputs"`
-	Output      string   `json:"output"`
-	Explanation *string  `json:"explanation,omitempty"`
-}
-
 type CodingQuestion struct {
-	Title            string                   `json:"title"`
-	Statement        string                   `json:"statement"`
-	InputDefinitions []InputDefinition        `json:"input_definitions"`
-	OutputDefinition OutputDefinition         `json:"output_definition"`
-	TestCases        []CodingQuestionTestCase `json:"test_cases,omitempty"`
+	Title            string            `json:"title"`
+	Statement        string            `json:"statement"`
+	InputDefinitions []InputDefinition `json:"input_definitions"`
+	OutputDefinition OutputDefinition  `json:"output_definition"`
 }

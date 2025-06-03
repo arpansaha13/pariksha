@@ -27,14 +27,15 @@ var requiresRead = map[string]bool{
 }
 
 var requiresWrite = map[string]bool{
-	"/proto.Paper/UpdatePaper":       true,
-	"/proto.Paper/CreateCategory":    true,
-	"/proto.Paper/UpdateCategory":    true,
-	"/proto.Paper/DeleteCategory":    true,
-	"/proto.Paper/ReorderCategories": true,
-	"/proto.Paper/UpdateQuestion":    true,
-	"/proto.Paper/DeleteQuestion":    true,
-	"/proto.Paper/CreateQuestion":    true,
+	"/proto.Paper/UpdatePaper":          true,
+	"/proto.Paper/CreateCategory":       true,
+	"/proto.Paper/UpdateCategory":       true,
+	"/proto.Paper/DeleteCategory":       true,
+	"/proto.Paper/ReorderCategories":    true,
+	"/proto.Paper/UpdateQuestion":       true,
+	"/proto.Paper/DeleteQuestion":       true,
+	"/proto.Paper/CreateQuestion":       true,
+	"/proto.Paper/UpsertPaperTestCases": true,
 }
 
 func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
@@ -81,6 +82,13 @@ func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
 			paperID = question.PaperID.Int64
 			ctx = context.WithValue(ctx, QuestionCtxKey{}, question)
 		case *proto.UpdateQuestionRequest:
+			question, err := fetchQuestionData(r.QuestionId)
+			if err != nil {
+				return nil, err
+			}
+			paperID = question.PaperID.Int64
+			ctx = context.WithValue(ctx, QuestionCtxKey{}, question)
+		case *proto.UpsertTestCasesRequest:
 			question, err := fetchQuestionData(r.QuestionId)
 			if err != nil {
 				return nil, err

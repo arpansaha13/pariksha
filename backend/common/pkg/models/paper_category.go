@@ -19,5 +19,5 @@ type QuestionCategory struct {
 }
 
 func (QuestionCategory) TableName() string {
-	return constants.TABLE_QUESTION_CATEGORIES
+	return constants.TABLE_CATEGORIES
 }

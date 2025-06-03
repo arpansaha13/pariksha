@@ -143,3 +143,23 @@ func compareJSONByteArrays(a, b []byte) bool {
 	// Compare the two maps
 	return reflect.DeepEqual(obj1, obj2)
 }
+
+// createTestCases creates test cases in the database for a coding question
+func createTestCases(t *testing.T, testCases []models.TestCase) []models.TestCase {
+	for i := range testCases {
+		if testCases[i].Content == nil {
+			// Set default content if not provided
+			content := models.TestCaseContent{
+				Inputs: []string{"1", "2"},
+				Output: "3",
+			}
+			contentBytes, err := json.Marshal(content)
+			require.NoError(t, err)
+			testCases[i].Content = contentBytes
+		}
+	}
+
+	err := db.DB.Create(&testCases).Error
+	require.NoError(t, err)
+	return testCases
+}

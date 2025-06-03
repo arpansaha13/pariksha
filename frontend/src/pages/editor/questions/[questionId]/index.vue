@@ -48,6 +48,7 @@
               questionData.type === QuestionType.CODING
             "
             :content="questionData.question"
+            :test-cases="questionData.test_cases ?? []"
           />
         </UCard>
       </SplitterPanel>
@@ -339,12 +340,10 @@ const panelTabItems: TabsItem[] = [
 
 // __________________________TEST CASES___________________________
 const testCaseTabItems = reactive<TestCase[]>(
-  (questionData.value!.question as QuestionCodingContent).test_cases!.map(
-    testCase => ({
-      inputs: testCase.inputs,
-      expectedOutput: testCase.output,
-    })
-  )
+  (questionData.value as QuestionCoding).test_cases!.map(testCase => ({
+    inputs: testCase.inputs,
+    expectedOutput: testCase.output,
+  }))
 )
 
 // _________________________EDITOR STATE__________________________

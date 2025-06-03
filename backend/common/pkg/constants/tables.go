@@ -12,12 +12,13 @@ const (
 
 // paperDb
 const (
-	TABLE_PAPERS              = "papers"
-	TABLE_PAPER_PERMISSIONS   = "permissions"
-	TABLE_QUESTIONS           = "questions"
-	TABLE_BOILERPLATES        = "boilerplates"
-	TABLE_LANGUAGES           = "languages"
-	TABLE_QUESTION_CATEGORIES = "question_categories"
+	TABLE_PAPERS            = "papers"
+	TABLE_PAPER_PERMISSIONS = "permissions"
+	TABLE_QUESTIONS         = "questions"
+	TABLE_BOILERPLATES      = "boilerplates"
+	TABLE_LANGUAGES         = "languages"
+	TABLE_CATEGORIES        = "categories"
+	TABLE_TEST_CASES        = "test_cases"
 )
 
 // authDb

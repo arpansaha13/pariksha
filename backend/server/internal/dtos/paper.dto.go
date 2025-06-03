@@ -27,3 +27,9 @@ type PaperPermissionsDto struct {
 type DeletePaperDto struct {
 	PaperIDs []string `json:"paper_ids" validate:"required,min=1"`
 }
+
+type CreatePaperResponseDto struct {
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	CreatedBy int64  `json:"created_by"`
+}

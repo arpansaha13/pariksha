@@ -413,6 +413,7 @@ type QuestionResponse struct {
 	PaperId       int64                  `protobuf:"varint,7,opt,name=paper_id,json=paperId,proto3" json:"paper_id,omitempty"`
 	MaxScore      int32                  `protobuf:"varint,8,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
 	CorrectAnswer *string                `protobuf:"bytes,9,opt,name=correct_answer,json=correctAnswer,proto3,oneof" json:"correct_answer,omitempty"`
+	TestCases     []*PaperTestCase       `protobuf:"bytes,10,rep,name=test_cases,json=testCases,proto3" json:"test_cases,omitempty"` // New field for coding question test cases
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -501,6 +502,13 @@ func (x *QuestionResponse) GetCorrectAnswer() string {
 		return *x.CorrectAnswer
 	}
 	return ""
+}
+
+func (x *QuestionResponse) GetTestCases() []*PaperTestCase {
+	if x != nil {
+		return x.TestCases
+	}
+	return nil
 }
 
 type QuestionList struct {
@@ -1681,6 +1689,210 @@ func (x *GetBoilerplateResponse) GetCode() string {
 	return ""
 }
 
+type PaperTestCase struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Inputs        []string               `protobuf:"bytes,2,rep,name=inputs,proto3" json:"inputs,omitempty"`
+	Output        string                 `protobuf:"bytes,3,opt,name=output,proto3" json:"output,omitempty"`
+	Explanation   *string                `protobuf:"bytes,4,opt,name=explanation,proto3,oneof" json:"explanation,omitempty"`
+	Hidden        bool                   `protobuf:"varint,5,opt,name=hidden,proto3" json:"hidden,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PaperTestCase) Reset() {
+	*x = PaperTestCase{}
+	mi := &file_paper_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PaperTestCase) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PaperTestCase) ProtoMessage() {}
+
+func (x *PaperTestCase) ProtoReflect() protoreflect.Message {
+	mi := &file_paper_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PaperTestCase.ProtoReflect.Descriptor instead.
+func (*PaperTestCase) Descriptor() ([]byte, []int) {
+	return file_paper_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *PaperTestCase) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *PaperTestCase) GetInputs() []string {
+	if x != nil {
+		return x.Inputs
+	}
+	return nil
+}
+
+func (x *PaperTestCase) GetOutput() string {
+	if x != nil {
+		return x.Output
+	}
+	return ""
+}
+
+func (x *PaperTestCase) GetExplanation() string {
+	if x != nil && x.Explanation != nil {
+		return *x.Explanation
+	}
+	return ""
+}
+
+func (x *PaperTestCase) GetHidden() bool {
+	if x != nil {
+		return x.Hidden
+	}
+	return false
+}
+
+type UpsertTestCase struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            *int64                 `protobuf:"varint,1,opt,name=id,proto3,oneof" json:"id,omitempty"`
+	Inputs        []string               `protobuf:"bytes,2,rep,name=inputs,proto3" json:"inputs,omitempty"`
+	Output        string                 `protobuf:"bytes,3,opt,name=output,proto3" json:"output,omitempty"`
+	Explanation   *string                `protobuf:"bytes,4,opt,name=explanation,proto3,oneof" json:"explanation,omitempty"`
+	Hidden        bool                   `protobuf:"varint,5,opt,name=hidden,proto3" json:"hidden,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpsertTestCase) Reset() {
+	*x = UpsertTestCase{}
+	mi := &file_paper_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertTestCase) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertTestCase) ProtoMessage() {}
+
+func (x *UpsertTestCase) ProtoReflect() protoreflect.Message {
+	mi := &file_paper_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertTestCase.ProtoReflect.Descriptor instead.
+func (*UpsertTestCase) Descriptor() ([]byte, []int) {
+	return file_paper_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *UpsertTestCase) GetId() int64 {
+	if x != nil && x.Id != nil {
+		return *x.Id
+	}
+	return 0
+}
+
+func (x *UpsertTestCase) GetInputs() []string {
+	if x != nil {
+		return x.Inputs
+	}
+	return nil
+}
+
+func (x *UpsertTestCase) GetOutput() string {
+	if x != nil {
+		return x.Output
+	}
+	return ""
+}
+
+func (x *UpsertTestCase) GetExplanation() string {
+	if x != nil && x.Explanation != nil {
+		return *x.Explanation
+	}
+	return ""
+}
+
+func (x *UpsertTestCase) GetHidden() bool {
+	if x != nil {
+		return x.Hidden
+	}
+	return false
+}
+
+type UpsertTestCasesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	QuestionId    int64                  `protobuf:"varint,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	TestCases     []*UpsertTestCase      `protobuf:"bytes,2,rep,name=test_cases,json=testCases,proto3" json:"test_cases,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpsertTestCasesRequest) Reset() {
+	*x = UpsertTestCasesRequest{}
+	mi := &file_paper_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertTestCasesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertTestCasesRequest) ProtoMessage() {}
+
+func (x *UpsertTestCasesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_paper_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertTestCasesRequest.ProtoReflect.Descriptor instead.
+func (*UpsertTestCasesRequest) Descriptor() ([]byte, []int) {
+	return file_paper_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *UpsertTestCasesRequest) GetQuestionId() int64 {
+	if x != nil {
+		return x.QuestionId
+	}
+	return 0
+}
+
+func (x *UpsertTestCasesRequest) GetTestCases() []*UpsertTestCase {
+	if x != nil {
+		return x.TestCases
+	}
+	return nil
+}
+
 var File_paper_proto protoreflect.FileDescriptor
 
 const file_paper_proto_rawDesc = "" +
@@ -1714,7 +1926,7 @@ const file_paper_proto_rawDesc = "" +
 	"\tpaper_ids\x18\x01 \x03(\x03R\bpaperIds\"2\n" +
 	"\x0fQuestionRequest\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\x03R\n" +
-	"questionId\"\x85\x02\n" +
+	"questionId\"\xba\x02\n" +
 	"\x10QuestionResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12!\n" +
 	"\fraw_question\x18\x02 \x01(\fR\vrawQuestion\x12\x1f\n" +
@@ -1724,7 +1936,10 @@ const file_paper_proto_rawDesc = "" +
 	"\x04tags\x18\x06 \x03(\tR\x04tags\x12\x19\n" +
 	"\bpaper_id\x18\a \x01(\x03R\apaperId\x12\x1b\n" +
 	"\tmax_score\x18\b \x01(\x05R\bmaxScore\x12*\n" +
-	"\x0ecorrect_answer\x18\t \x01(\tH\x00R\rcorrectAnswer\x88\x01\x01B\x11\n" +
+	"\x0ecorrect_answer\x18\t \x01(\tH\x00R\rcorrectAnswer\x88\x01\x01\x123\n" +
+	"\n" +
+	"test_cases\x18\n" +
+	" \x03(\v2\x14.proto.PaperTestCaseR\ttestCasesB\x11\n" +
 	"\x0f_correct_answer\"D\n" +
 	"\fQuestionList\x124\n" +
 	"\tquestions\x18\x01 \x03(\v2\x16.proto.QuestionMinimalR\tquestions\"\x96\x01\n" +
@@ -1814,7 +2029,27 @@ const file_paper_proto_rawDesc = "" +
 	"\vlanguage_id\x18\x02 \x01(\x05R\n" +
 	"languageId\",\n" +
 	"\x16GetBoilerplateResponse\x12\x12\n" +
-	"\x04code\x18\x01 \x01(\tR\x04code2\xa7\v\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\"\x9e\x01\n" +
+	"\rPaperTestCase\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x16\n" +
+	"\x06inputs\x18\x02 \x03(\tR\x06inputs\x12\x16\n" +
+	"\x06output\x18\x03 \x01(\tR\x06output\x12%\n" +
+	"\vexplanation\x18\x04 \x01(\tH\x00R\vexplanation\x88\x01\x01\x12\x16\n" +
+	"\x06hidden\x18\x05 \x01(\bR\x06hiddenB\x0e\n" +
+	"\f_explanation\"\xab\x01\n" +
+	"\x0eUpsertTestCase\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x03H\x00R\x02id\x88\x01\x01\x12\x16\n" +
+	"\x06inputs\x18\x02 \x03(\tR\x06inputs\x12\x16\n" +
+	"\x06output\x18\x03 \x01(\tR\x06output\x12%\n" +
+	"\vexplanation\x18\x04 \x01(\tH\x01R\vexplanation\x88\x01\x01\x12\x16\n" +
+	"\x06hidden\x18\x05 \x01(\bR\x06hiddenB\x05\n" +
+	"\x03_idB\x0e\n" +
+	"\f_explanation\"o\n" +
+	"\x16UpsertTestCasesRequest\x12\x1f\n" +
+	"\vquestion_id\x18\x01 \x01(\x03R\n" +
+	"questionId\x124\n" +
+	"\n" +
+	"test_cases\x18\x02 \x03(\v2\x15.proto.UpsertTestCaseR\ttestCases2\xee\v\n" +
 	"\x05Paper\x121\n" +
 	"\rGetUserPapers\x12\f.proto.Empty\x1a\x10.proto.PaperList\"\x00\x127\n" +
 	"\bGetPaper\x12\x13.proto.PaperRequest\x1a\x14.proto.PaperResponse\"\x00\x123\n" +
@@ -1836,7 +2071,8 @@ const file_paper_proto_rawDesc = "" +
 	"\x11GetQuestionsByIds\x12\x1f.proto.GetQuestionsByIdsRequest\x1a\x1c.proto.QuestionBatchResponse\"\x00\x12V\n" +
 	"\x12GetCategoriesByIds\x12 .proto.GetCategoriesByIdsRequest\x1a\x1c.proto.CategoryBatchResponse\"\x00\x12D\n" +
 	"\x0fGetExamQuestion\x12\x16.proto.QuestionRequest\x1a\x17.proto.QuestionResponse\"\x00\x12O\n" +
-	"\x0eGetBoilerplate\x12\x1c.proto.GetBoilerplateRequest\x1a\x1d.proto.GetBoilerplateResponse\"\x00B\bZ\x06/protob\x06proto3"
+	"\x0eGetBoilerplate\x12\x1c.proto.GetBoilerplateRequest\x1a\x1d.proto.GetBoilerplateResponse\"\x00\x12E\n" +
+	"\x14UpsertPaperTestCases\x12\x1d.proto.UpsertTestCasesRequest\x1a\f.proto.Empty\"\x00B\bZ\x06/protob\x06proto3"
 
 var (
 	file_paper_proto_rawDescOnce sync.Once
@@ -1850,7 +2086,7 @@ func file_paper_proto_rawDescGZIP() []byte {
 	return file_paper_proto_rawDescData
 }
 
-var file_paper_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
+var file_paper_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
 var file_paper_proto_goTypes = []any{
 	(*PaperRequest)(nil),              // 0: proto.PaperRequest
 	(*PaperResponse)(nil),             // 1: proto.PaperResponse
@@ -1882,62 +2118,69 @@ var file_paper_proto_goTypes = []any{
 	(*PaperPermissionsResponse)(nil),  // 27: proto.PaperPermissionsResponse
 	(*GetBoilerplateRequest)(nil),     // 28: proto.GetBoilerplateRequest
 	(*GetBoilerplateResponse)(nil),    // 29: proto.GetBoilerplateResponse
-	(*Empty)(nil),                     // 30: proto.Empty
+	(*PaperTestCase)(nil),             // 30: proto.PaperTestCase
+	(*UpsertTestCase)(nil),            // 31: proto.UpsertTestCase
+	(*UpsertTestCasesRequest)(nil),    // 32: proto.UpsertTestCasesRequest
+	(*Empty)(nil),                     // 33: proto.Empty
 }
 var file_paper_proto_depIdxs = []int32{
 	4,  // 0: proto.PaperResponse.question_counts:type_name -> proto.QuestionCount
 	1,  // 1: proto.PaperList.papers:type_name -> proto.PaperResponse
-	9,  // 2: proto.QuestionList.questions:type_name -> proto.QuestionMinimal
-	17, // 3: proto.QuestionBatchResponse.questions:type_name -> proto.QuestionBatchItem
-	20, // 4: proto.CategoryBatchResponse.categories:type_name -> proto.CategoryBatchItem
-	22, // 5: proto.CategoryList.categories:type_name -> proto.CategoryResponse
-	30, // 6: proto.Paper.GetUserPapers:input_type -> proto.Empty
-	0,  // 7: proto.Paper.GetPaper:input_type -> proto.PaperRequest
-	30, // 8: proto.Paper.CreatePaper:input_type -> proto.Empty
-	3,  // 9: proto.Paper.UpdatePaper:input_type -> proto.UpdatePaperRequest
-	5,  // 10: proto.Paper.DeletePapers:input_type -> proto.DeletePapersRequest
-	0,  // 11: proto.Paper.GetPaperPermissions:input_type -> proto.PaperRequest
-	0,  // 12: proto.Paper.GetPaperQuestions:input_type -> proto.PaperRequest
-	6,  // 13: proto.Paper.GetPaperQuestion:input_type -> proto.QuestionRequest
-	10, // 14: proto.Paper.CreateQuestion:input_type -> proto.CreateQuestionRequest
-	12, // 15: proto.Paper.UpdateQuestion:input_type -> proto.UpdateQuestionRequest
-	6,  // 16: proto.Paper.DeleteQuestion:input_type -> proto.QuestionRequest
-	14, // 17: proto.Paper.ReorderQuestions:input_type -> proto.ReorderQuestionsRequest
-	0,  // 18: proto.Paper.GetPaperCategories:input_type -> proto.PaperRequest
-	24, // 19: proto.Paper.CreateCategory:input_type -> proto.CreateCategoryRequest
-	25, // 20: proto.Paper.UpdateCategory:input_type -> proto.UpdateCategoryRequest
-	21, // 21: proto.Paper.DeleteCategory:input_type -> proto.CategoryRequest
-	26, // 22: proto.Paper.ReorderCategories:input_type -> proto.ReorderCategoriesRequest
-	15, // 23: proto.Paper.GetQuestionsByIds:input_type -> proto.GetQuestionsByIdsRequest
-	18, // 24: proto.Paper.GetCategoriesByIds:input_type -> proto.GetCategoriesByIdsRequest
-	6,  // 25: proto.Paper.GetExamQuestion:input_type -> proto.QuestionRequest
-	28, // 26: proto.Paper.GetBoilerplate:input_type -> proto.GetBoilerplateRequest
-	2,  // 27: proto.Paper.GetUserPapers:output_type -> proto.PaperList
-	1,  // 28: proto.Paper.GetPaper:output_type -> proto.PaperResponse
-	1,  // 29: proto.Paper.CreatePaper:output_type -> proto.PaperResponse
-	30, // 30: proto.Paper.UpdatePaper:output_type -> proto.Empty
-	30, // 31: proto.Paper.DeletePapers:output_type -> proto.Empty
-	27, // 32: proto.Paper.GetPaperPermissions:output_type -> proto.PaperPermissionsResponse
-	8,  // 33: proto.Paper.GetPaperQuestions:output_type -> proto.QuestionList
-	7,  // 34: proto.Paper.GetPaperQuestion:output_type -> proto.QuestionResponse
-	11, // 35: proto.Paper.CreateQuestion:output_type -> proto.CreateQuestionResponse
-	13, // 36: proto.Paper.UpdateQuestion:output_type -> proto.UpdateQuestionResponse
-	30, // 37: proto.Paper.DeleteQuestion:output_type -> proto.Empty
-	30, // 38: proto.Paper.ReorderQuestions:output_type -> proto.Empty
-	23, // 39: proto.Paper.GetPaperCategories:output_type -> proto.CategoryList
-	22, // 40: proto.Paper.CreateCategory:output_type -> proto.CategoryResponse
-	30, // 41: proto.Paper.UpdateCategory:output_type -> proto.Empty
-	30, // 42: proto.Paper.DeleteCategory:output_type -> proto.Empty
-	30, // 43: proto.Paper.ReorderCategories:output_type -> proto.Empty
-	16, // 44: proto.Paper.GetQuestionsByIds:output_type -> proto.QuestionBatchResponse
-	19, // 45: proto.Paper.GetCategoriesByIds:output_type -> proto.CategoryBatchResponse
-	7,  // 46: proto.Paper.GetExamQuestion:output_type -> proto.QuestionResponse
-	29, // 47: proto.Paper.GetBoilerplate:output_type -> proto.GetBoilerplateResponse
-	27, // [27:48] is the sub-list for method output_type
-	6,  // [6:27] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	30, // 2: proto.QuestionResponse.test_cases:type_name -> proto.PaperTestCase
+	9,  // 3: proto.QuestionList.questions:type_name -> proto.QuestionMinimal
+	17, // 4: proto.QuestionBatchResponse.questions:type_name -> proto.QuestionBatchItem
+	20, // 5: proto.CategoryBatchResponse.categories:type_name -> proto.CategoryBatchItem
+	22, // 6: proto.CategoryList.categories:type_name -> proto.CategoryResponse
+	31, // 7: proto.UpsertTestCasesRequest.test_cases:type_name -> proto.UpsertTestCase
+	33, // 8: proto.Paper.GetUserPapers:input_type -> proto.Empty
+	0,  // 9: proto.Paper.GetPaper:input_type -> proto.PaperRequest
+	33, // 10: proto.Paper.CreatePaper:input_type -> proto.Empty
+	3,  // 11: proto.Paper.UpdatePaper:input_type -> proto.UpdatePaperRequest
+	5,  // 12: proto.Paper.DeletePapers:input_type -> proto.DeletePapersRequest
+	0,  // 13: proto.Paper.GetPaperPermissions:input_type -> proto.PaperRequest
+	0,  // 14: proto.Paper.GetPaperQuestions:input_type -> proto.PaperRequest
+	6,  // 15: proto.Paper.GetPaperQuestion:input_type -> proto.QuestionRequest
+	10, // 16: proto.Paper.CreateQuestion:input_type -> proto.CreateQuestionRequest
+	12, // 17: proto.Paper.UpdateQuestion:input_type -> proto.UpdateQuestionRequest
+	6,  // 18: proto.Paper.DeleteQuestion:input_type -> proto.QuestionRequest
+	14, // 19: proto.Paper.ReorderQuestions:input_type -> proto.ReorderQuestionsRequest
+	0,  // 20: proto.Paper.GetPaperCategories:input_type -> proto.PaperRequest
+	24, // 21: proto.Paper.CreateCategory:input_type -> proto.CreateCategoryRequest
+	25, // 22: proto.Paper.UpdateCategory:input_type -> proto.UpdateCategoryRequest
+	21, // 23: proto.Paper.DeleteCategory:input_type -> proto.CategoryRequest
+	26, // 24: proto.Paper.ReorderCategories:input_type -> proto.ReorderCategoriesRequest
+	15, // 25: proto.Paper.GetQuestionsByIds:input_type -> proto.GetQuestionsByIdsRequest
+	18, // 26: proto.Paper.GetCategoriesByIds:input_type -> proto.GetCategoriesByIdsRequest
+	6,  // 27: proto.Paper.GetExamQuestion:input_type -> proto.QuestionRequest
+	28, // 28: proto.Paper.GetBoilerplate:input_type -> proto.GetBoilerplateRequest
+	32, // 29: proto.Paper.UpsertPaperTestCases:input_type -> proto.UpsertTestCasesRequest
+	2,  // 30: proto.Paper.GetUserPapers:output_type -> proto.PaperList
+	1,  // 31: proto.Paper.GetPaper:output_type -> proto.PaperResponse
+	1,  // 32: proto.Paper.CreatePaper:output_type -> proto.PaperResponse
+	33, // 33: proto.Paper.UpdatePaper:output_type -> proto.Empty
+	33, // 34: proto.Paper.DeletePapers:output_type -> proto.Empty
+	27, // 35: proto.Paper.GetPaperPermissions:output_type -> proto.PaperPermissionsResponse
+	8,  // 36: proto.Paper.GetPaperQuestions:output_type -> proto.QuestionList
+	7,  // 37: proto.Paper.GetPaperQuestion:output_type -> proto.QuestionResponse
+	11, // 38: proto.Paper.CreateQuestion:output_type -> proto.CreateQuestionResponse
+	13, // 39: proto.Paper.UpdateQuestion:output_type -> proto.UpdateQuestionResponse
+	33, // 40: proto.Paper.DeleteQuestion:output_type -> proto.Empty
+	33, // 41: proto.Paper.ReorderQuestions:output_type -> proto.Empty
+	23, // 42: proto.Paper.GetPaperCategories:output_type -> proto.CategoryList
+	22, // 43: proto.Paper.CreateCategory:output_type -> proto.CategoryResponse
+	33, // 44: proto.Paper.UpdateCategory:output_type -> proto.Empty
+	33, // 45: proto.Paper.DeleteCategory:output_type -> proto.Empty
+	33, // 46: proto.Paper.ReorderCategories:output_type -> proto.Empty
+	16, // 47: proto.Paper.GetQuestionsByIds:output_type -> proto.QuestionBatchResponse
+	19, // 48: proto.Paper.GetCategoriesByIds:output_type -> proto.CategoryBatchResponse
+	7,  // 49: proto.Paper.GetExamQuestion:output_type -> proto.QuestionResponse
+	29, // 50: proto.Paper.GetBoilerplate:output_type -> proto.GetBoilerplateResponse
+	33, // 51: proto.Paper.UpsertPaperTestCases:output_type -> proto.Empty
+	30, // [30:52] is the sub-list for method output_type
+	8,  // [8:30] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_paper_proto_init() }
@@ -1950,13 +2193,15 @@ func file_paper_proto_init() {
 	file_paper_proto_msgTypes[7].OneofWrappers = []any{}
 	file_paper_proto_msgTypes[10].OneofWrappers = []any{}
 	file_paper_proto_msgTypes[12].OneofWrappers = []any{}
+	file_paper_proto_msgTypes[30].OneofWrappers = []any{}
+	file_paper_proto_msgTypes[31].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_paper_proto_rawDesc), len(file_paper_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   30,
+			NumMessages:   33,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

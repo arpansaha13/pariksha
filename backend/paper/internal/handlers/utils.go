@@ -71,7 +71,7 @@ func paperToProto(paper models.Paper) *proto.PaperResponse {
 	}
 }
 
-func questionToProto(question models.Question) (*proto.QuestionResponse, error) {
+func questionToProto(question models.Question, testCases []models.TestCase) (*proto.QuestionResponse, error) {
 	var tags []string
 	if question.Tags != nil {
 		if err := json.Unmarshal(*question.Tags, &tags); err != nil {
@@ -88,6 +88,25 @@ func questionToProto(question models.Question) (*proto.QuestionResponse, error) 
 		MaxScore:      int32(question.MaxScore),
 		CorrectAnswer: &question.CorrectAnswer.String,
 		RawQuestion:   question.Question,
+	}
+
+	// Add test cases if this is a coding question
+	if question.Type == constants.QUESTION_TYPE_CODING && len(testCases) > 0 {
+		protoTestCases := make([]*proto.PaperTestCase, 0, len(testCases))
+		for _, tc := range testCases {
+			var content models.TestCaseContent
+			if err := json.Unmarshal(tc.Content, &content); err != nil {
+				return nil, status.Error(codes.Internal, "invalid test case format")
+			}
+			protoTestCases = append(protoTestCases, &proto.PaperTestCase{
+				Id:          tc.ID,
+				Inputs:      content.Inputs,
+				Output:      content.Output,
+				Explanation: content.Explanation,
+				Hidden:      tc.Hidden,
+			})
+		}
+		response.TestCases = protoTestCases
 	}
 
 	return response, nil

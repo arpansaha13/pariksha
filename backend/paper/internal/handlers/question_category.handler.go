@@ -203,7 +203,7 @@ func handleCategoryDeletion(tx *gorm.DB, category models.QuestionCategory, categ
 
 func (s *PaperServer) ReorderCategories(ctx context.Context, req *proto.ReorderCategoriesRequest) (*proto.Empty, error) {
 	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		if err := validateEntityIDs(tx, "question_categories", req.CategoryIds); err != nil {
+		if err := validateEntityIDs(tx, constants.TABLE_CATEGORIES, req.CategoryIds); err != nil {
 			return err
 		}
 

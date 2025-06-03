@@ -83,8 +83,9 @@ func clearTables(t *testing.T) {
 	tables := []string{
 		constants.TABLE_BOILERPLATES,
 		constants.TABLE_LANGUAGES,
+		constants.TABLE_TEST_CASES,
 		constants.TABLE_QUESTIONS,
-		constants.TABLE_QUESTION_CATEGORIES,
+		constants.TABLE_CATEGORIES,
 		constants.TABLE_PAPER_PERMISSIONS,
 		constants.TABLE_PAPERS,
 	}
