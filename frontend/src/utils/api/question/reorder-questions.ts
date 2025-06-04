@@ -1,7 +1,7 @@
 export async function reorderQuestions(
   paperId: PaperId,
-  categoryId: number,
-  questionIds: number[]
+  categoryId: CategoryId,
+  questionIds: QuestionId[]
 ): Promise<void> {
   const { $api } = useNuxtApp()
 

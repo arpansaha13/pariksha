@@ -18,8 +18,9 @@ import (
 
 func (s *PaperServer) GetPaperCategories(ctx context.Context, req *proto.PaperRequest) (*proto.CategoryList, error) {
 	var categories []models.QuestionCategory
-	err := db.DB.Where("paper_id = ?", req.PaperId).
-		Order("\"order\"").
+	err := db.DB.Select("id, name, \"order\"").
+		Where("paper_id = ?", req.PaperId).
+		Order("\"order\" ASC").
 		Find(&categories).Error
 
 	if err != nil {

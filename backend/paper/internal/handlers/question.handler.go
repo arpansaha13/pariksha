@@ -22,7 +22,10 @@ import (
 
 func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperRequest) (*proto.QuestionList, error) {
 	var questions []models.Question
-	if err := db.DB.Where("paper_id = ?", req.PaperId).Find(&questions).Error; err != nil {
+	if err := db.DB.Select("id, question, category_id, paper_id, \"order\"").
+		Where("paper_id = ?", req.PaperId).
+		Order("\"order\" ASC").
+		Find(&questions).Error; err != nil {
 		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
 	}
 
