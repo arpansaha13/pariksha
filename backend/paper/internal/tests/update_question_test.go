@@ -161,7 +161,6 @@ func TestUpdateCodingQuestion(t *testing.T) {
 					},
 				})
 
-				// Create test cases in the test_cases table
 				createTestCases(t, []models.TestCase{
 					{
 						QuestionID: questions[0].ID,

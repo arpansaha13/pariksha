@@ -16,6 +16,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/structs"
 	"pariksha/paper/internal/config/db"
+	paperUtils "pariksha/paper/internal/utils"
 )
 
 const defaultPaperCategoryName string = "Category 1"
@@ -157,6 +158,12 @@ func createTestCases(t *testing.T, testCases []models.TestCase) []models.TestCas
 			require.NoError(t, err)
 			testCases[i].Content = contentBytes
 		}
+
+		var unmarshaled models.TestCaseContent
+		json.Unmarshal(testCases[i].Content, &unmarshaled)
+
+		testCases[i].Order = int16(i + 1)
+		testCases[i].DataHash = paperUtils.GenerateDataHash(unmarshaled, testCases[i].Hidden)
 	}
 
 	err := db.DB.Create(&testCases).Error

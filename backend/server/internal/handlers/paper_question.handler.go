@@ -88,11 +88,11 @@ func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 		testCases := make([]dtos.PaperTestCaseDto, 0, len(response.TestCases))
 		for _, tc := range response.TestCases {
 			testCases = append(testCases, dtos.PaperTestCaseDto{
-				ID:          tc.Id,
 				Inputs:      tc.Inputs,
 				Output:      tc.Output,
 				Explanation: tc.Explanation,
 				Hidden:      tc.Hidden,
+				Order:       tc.Order,
 			})
 		}
 
@@ -313,7 +313,6 @@ func UpsertPaperTestCases(w http.ResponseWriter, r *http.Request) {
 	testCases := make([]*proto.UpsertTestCase, len(testCasesDto.TestCases))
 	for i, tc := range testCasesDto.TestCases {
 		testCases[i] = &proto.UpsertTestCase{
-			Id:          tc.ID,
 			Inputs:      tc.Inputs,
 			Output:      tc.Output,
 			Explanation: tc.Explanation,
@@ -331,5 +330,5 @@ func UpsertPaperTestCases(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 }

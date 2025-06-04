@@ -414,7 +414,7 @@ const codingQuestionTestCaseFormRef = useTemplateRef<
   ComponentExposed<typeof PaperQuestionCodingTestCasesForm>
 >('codingQuestionTestCaseForm')
 const codingQuestionTestCaseFormStates = reactive<
-  Record<QuestionId, PartialQuestionCodingTestCase[] | null>
+  Record<QuestionId, QuestionCodingTestCase[] | null>
 >({})
 
 function startDefineTestCases() {

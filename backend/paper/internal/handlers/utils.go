@@ -99,11 +99,11 @@ func questionToProto(question models.Question, testCases []models.TestCase) (*pr
 				return nil, status.Error(codes.Internal, "invalid test case format")
 			}
 			protoTestCases = append(protoTestCases, &proto.PaperTestCase{
-				Id:          tc.ID,
 				Inputs:      content.Inputs,
 				Output:      content.Output,
 				Explanation: content.Explanation,
 				Hidden:      tc.Hidden,
+				Order:       int32(tc.Order),
 			})
 		}
 		response.TestCases = protoTestCases

@@ -72,24 +72,22 @@ func TestUpsertPaperTestCases(t *testing.T) {
 			},
 			validate: func(t *testing.T, questionID int64) {
 				var testCases []models.TestCase
-				require.NoError(t, db.DB.Where("question_id = ?", questionID).Order("hidden").Find(&testCases).Error)
+				require.NoError(t, db.DB.Where("question_id = ?", questionID).Order("\"order\"").Find(&testCases).Error)
 				require.Len(t, testCases, 2)
 
 				// Verify first test case (non-hidden)
+				assert.EqualValues(t, 1, testCases[0].Order)
 				var content1 models.TestCaseContent
 				require.NoError(t, json.Unmarshal(testCases[0].Content, &content1))
 				assert.Equal(t, []string{"1", "2"}, content1.Inputs)
-				assert.Equal(t, "3", content1.Output)
-				assert.Equal(t, "First test case", *content1.Explanation)
-				assert.False(t, testCases[0].Hidden)
+				assert.NotEmpty(t, testCases[0].DataHash)
 
 				// Verify second test case (hidden)
+				assert.EqualValues(t, 2, testCases[1].Order)
 				var content2 models.TestCaseContent
 				require.NoError(t, json.Unmarshal(testCases[1].Content, &content2))
 				assert.Equal(t, []string{"4", "5"}, content2.Inputs)
-				assert.Equal(t, "9", content2.Output)
-				assert.Nil(t, content2.Explanation)
-				assert.True(t, testCases[1].Hidden)
+				assert.NotEmpty(t, testCases[1].DataHash)
 			},
 		},
 		{
@@ -125,7 +123,6 @@ func TestUpsertPaperTestCases(t *testing.T) {
 			request: &proto.UpsertTestCasesRequest{
 				TestCases: []*proto.UpsertTestCase{
 					{
-						Id:          ptr.Int64(1), // Existing test case
 						Inputs:      []string{"2"},
 						Output:      "4",
 						Explanation: ptr.String("Updated"),
@@ -161,42 +158,6 @@ func TestUpsertPaperTestCases(t *testing.T) {
 		},
 		{
 			BaseTestCase: BaseTestCase{
-				name:         "Error - Duplicate test case IDs",
-				userID:       userID,
-				expectedCode: codes.InvalidArgument,
-			},
-			setup: func(t *testing.T) *models.Question {
-				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
-
-				questions := createTestQuestions(t, []models.Question{
-					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
-						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_CODING,
-						Question:   json.RawMessage(`{"title":"Test","statement":"Test","input_definitions":[{"variable_name":"x","type":1}],"output_definition":{"type":1}}`),
-					},
-				})
-				return &questions[0]
-			},
-			request: &proto.UpsertTestCasesRequest{
-				TestCases: []*proto.UpsertTestCase{
-					{
-						Id:     ptr.Int64(1),
-						Inputs: []string{"1"},
-						Output: "1",
-					},
-					{
-						Id:     ptr.Int64(1), // Duplicate ID
-						Inputs: []string{"2"},
-						Output: "4",
-					},
-				},
-			},
-		},
-		{
-			BaseTestCase: BaseTestCase{
 				name:         "Error - Non-coding question",
 				userID:       userID,
 				expectedCode: codes.InvalidArgument,
@@ -223,6 +184,71 @@ func TestUpsertPaperTestCases(t *testing.T) {
 						Output: "1",
 					},
 				},
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Partial update with unchanged content",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) *models.Question {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_CODING,
+						Question:   json.RawMessage(`{"title":"Test","statement":"Test","input_definitions":[{"variable_name":"x","type":1}],"output_definition":{"type":1}}`),
+					},
+				})
+
+				createTestCases(t, []models.TestCase{
+					{
+						QuestionID: questions[0].ID,
+						Content:    json.RawMessage(`{"inputs": ["1"], "output": "1"}`),
+						Hidden:     false,
+					},
+					{
+						QuestionID: questions[0].ID,
+						Content:    json.RawMessage(`{"inputs": ["2"], "output": "4"}`),
+						Hidden:     true,
+					},
+				})
+
+				return &questions[0]
+			},
+			request: &proto.UpsertTestCasesRequest{
+				TestCases: []*proto.UpsertTestCase{
+					{
+						Inputs: []string{"2"},
+						Output: "4",
+					},
+					{
+						Inputs: []string{"3"},
+						Output: "9",
+					},
+				},
+			},
+			validate: func(t *testing.T, questionID int64) {
+				var testCases []models.TestCase
+				require.NoError(t, db.DB.Where("question_id = ?", questionID).Order("id").Find(&testCases).Error)
+				require.Len(t, testCases, 2)
+
+				// Verify modified test case
+				var content1 models.TestCaseContent
+				require.NoError(t, json.Unmarshal(testCases[0].Content, &content1))
+				assert.Equal(t, []string{"2"}, content1.Inputs)
+				assert.Equal(t, "4", content1.Output)
+
+				// Verify unchanged test case
+				var content2 models.TestCaseContent
+				require.NoError(t, json.Unmarshal(testCases[1].Content, &content2))
+				assert.Equal(t, []string{"3"}, content2.Inputs)
+				assert.Equal(t, "9", content2.Output)
 			},
 		},
 	}

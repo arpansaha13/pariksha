@@ -210,15 +210,14 @@ message GetBoilerplateResponse {
 }
 
 message PaperTestCase {
-  int64 id = 1;
-  repeated string inputs = 2;
-  string output = 3;
-  optional string explanation = 4;
-  bool hidden = 5;
+  repeated string inputs = 1;
+  string output = 2;
+  optional string explanation = 3;
+  bool hidden = 4;
+  int32 order = 5;
 }
 
 message UpsertTestCase {
-  optional int64 id = 1;
   repeated string inputs = 2;
   string output = 3;
   optional string explanation = 4;

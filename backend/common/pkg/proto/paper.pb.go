@@ -1691,11 +1691,11 @@ func (x *GetBoilerplateResponse) GetCode() string {
 
 type PaperTestCase struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Inputs        []string               `protobuf:"bytes,2,rep,name=inputs,proto3" json:"inputs,omitempty"`
-	Output        string                 `protobuf:"bytes,3,opt,name=output,proto3" json:"output,omitempty"`
-	Explanation   *string                `protobuf:"bytes,4,opt,name=explanation,proto3,oneof" json:"explanation,omitempty"`
-	Hidden        bool                   `protobuf:"varint,5,opt,name=hidden,proto3" json:"hidden,omitempty"`
+	Inputs        []string               `protobuf:"bytes,1,rep,name=inputs,proto3" json:"inputs,omitempty"`
+	Output        string                 `protobuf:"bytes,2,opt,name=output,proto3" json:"output,omitempty"`
+	Explanation   *string                `protobuf:"bytes,3,opt,name=explanation,proto3,oneof" json:"explanation,omitempty"`
+	Hidden        bool                   `protobuf:"varint,4,opt,name=hidden,proto3" json:"hidden,omitempty"`
+	Order         int32                  `protobuf:"varint,5,opt,name=order,proto3" json:"order,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1730,13 +1730,6 @@ func (*PaperTestCase) Descriptor() ([]byte, []int) {
 	return file_paper_proto_rawDescGZIP(), []int{30}
 }
 
-func (x *PaperTestCase) GetId() int64 {
-	if x != nil {
-		return x.Id
-	}
-	return 0
-}
-
 func (x *PaperTestCase) GetInputs() []string {
 	if x != nil {
 		return x.Inputs
@@ -1765,9 +1758,15 @@ func (x *PaperTestCase) GetHidden() bool {
 	return false
 }
 
+func (x *PaperTestCase) GetOrder() int32 {
+	if x != nil {
+		return x.Order
+	}
+	return 0
+}
+
 type UpsertTestCase struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            *int64                 `protobuf:"varint,1,opt,name=id,proto3,oneof" json:"id,omitempty"`
 	Inputs        []string               `protobuf:"bytes,2,rep,name=inputs,proto3" json:"inputs,omitempty"`
 	Output        string                 `protobuf:"bytes,3,opt,name=output,proto3" json:"output,omitempty"`
 	Explanation   *string                `protobuf:"bytes,4,opt,name=explanation,proto3,oneof" json:"explanation,omitempty"`
@@ -1804,13 +1803,6 @@ func (x *UpsertTestCase) ProtoReflect() protoreflect.Message {
 // Deprecated: Use UpsertTestCase.ProtoReflect.Descriptor instead.
 func (*UpsertTestCase) Descriptor() ([]byte, []int) {
 	return file_paper_proto_rawDescGZIP(), []int{31}
-}
-
-func (x *UpsertTestCase) GetId() int64 {
-	if x != nil && x.Id != nil {
-		return *x.Id
-	}
-	return 0
 }
 
 func (x *UpsertTestCase) GetInputs() []string {
@@ -2029,21 +2021,19 @@ const file_paper_proto_rawDesc = "" +
 	"\vlanguage_id\x18\x02 \x01(\x05R\n" +
 	"languageId\",\n" +
 	"\x16GetBoilerplateResponse\x12\x12\n" +
-	"\x04code\x18\x01 \x01(\tR\x04code\"\x9e\x01\n" +
-	"\rPaperTestCase\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x16\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\"\xa4\x01\n" +
+	"\rPaperTestCase\x12\x16\n" +
+	"\x06inputs\x18\x01 \x03(\tR\x06inputs\x12\x16\n" +
+	"\x06output\x18\x02 \x01(\tR\x06output\x12%\n" +
+	"\vexplanation\x18\x03 \x01(\tH\x00R\vexplanation\x88\x01\x01\x12\x16\n" +
+	"\x06hidden\x18\x04 \x01(\bR\x06hidden\x12\x14\n" +
+	"\x05order\x18\x05 \x01(\x05R\x05orderB\x0e\n" +
+	"\f_explanation\"\x8f\x01\n" +
+	"\x0eUpsertTestCase\x12\x16\n" +
 	"\x06inputs\x18\x02 \x03(\tR\x06inputs\x12\x16\n" +
 	"\x06output\x18\x03 \x01(\tR\x06output\x12%\n" +
 	"\vexplanation\x18\x04 \x01(\tH\x00R\vexplanation\x88\x01\x01\x12\x16\n" +
 	"\x06hidden\x18\x05 \x01(\bR\x06hiddenB\x0e\n" +
-	"\f_explanation\"\xab\x01\n" +
-	"\x0eUpsertTestCase\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x03H\x00R\x02id\x88\x01\x01\x12\x16\n" +
-	"\x06inputs\x18\x02 \x03(\tR\x06inputs\x12\x16\n" +
-	"\x06output\x18\x03 \x01(\tR\x06output\x12%\n" +
-	"\vexplanation\x18\x04 \x01(\tH\x01R\vexplanation\x88\x01\x01\x12\x16\n" +
-	"\x06hidden\x18\x05 \x01(\bR\x06hiddenB\x05\n" +
-	"\x03_idB\x0e\n" +
 	"\f_explanation\"o\n" +
 	"\x16UpsertTestCasesRequest\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\x03R\n" +

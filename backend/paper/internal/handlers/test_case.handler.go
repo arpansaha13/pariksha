@@ -14,6 +14,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
+	paperUtils "pariksha/paper/internal/utils"
 )
 
 // UpsertPaperTestCases handles bulk creation and updates of test cases
@@ -27,31 +28,20 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 		return nil, status.Error(codes.InvalidArgument, "test cases can only be added to coding questions")
 	}
 
-	// Detect duplicate IDs in testCases
-	seenIds := make(map[int64]bool)
-	for _, tc := range req.TestCases {
-		if tc.Id != nil {
-			if seenIds[*tc.Id] {
-				return nil, status.Error(codes.InvalidArgument, "duplicate test case ID found in request")
-			}
-			seenIds[*tc.Id] = true
-		}
-	}
-
 	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		// Separate test cases into updates and creates
-		var (
-			toUpdate []models.TestCase
-			toCreate []models.TestCase
-		)
+		// Get existing test cases with row-level locking
+		// The clause.Locking{Strength: "UPDATE"} translates to SELECT ... FOR UPDATE in SQL
+		var existingTestCases []models.TestCase
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("question_id = ?", req.QuestionId).
+			Order("\"order\"").
+			Find(&existingTestCases).Error; err != nil {
+			return status.Error(codes.Internal, "failed to fetch existing test cases")
+		}
 
-		for _, tc := range req.TestCases {
-			testCase := models.TestCase{
-				QuestionID: req.QuestionId,
-				Hidden:     tc.Hidden,
-			}
-
-			// Create content JSON
+		// Process each test case from the request
+		var toCreate, toUpdate []models.TestCase
+		for idx, tc := range req.TestCases {
 			content := models.TestCaseContent{
 				Inputs:      tc.Inputs,
 				Output:      tc.Output,
@@ -61,13 +51,44 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 			if err != nil {
 				return status.Error(codes.Internal, "failed to marshal test case content")
 			}
-			testCase.Content = contentBytes
 
-			if tc.Id != nil {
-				testCase.ID = *tc.Id
-				toUpdate = append(toUpdate, testCase)
+			order := int16(idx + 1)
+
+			// Hash the incoming content for comparison
+			dataHash := paperUtils.GenerateDataHash(content, tc.Hidden)
+
+			// Check if there's an existing test case at this order
+			if idx < len(existingTestCases) {
+				existing := existingTestCases[idx]
+				if existing.DataHash != dataHash {
+					toUpdate = append(toUpdate, models.TestCase{
+						ID:         existing.ID,
+						QuestionID: req.QuestionId,
+						Order:      order,
+						Content:    contentBytes,
+						DataHash:   dataHash,
+						Hidden:     tc.Hidden,
+					})
+				}
 			} else {
-				toCreate = append(toCreate, testCase)
+				toCreate = append(toCreate, models.TestCase{
+					QuestionID: req.QuestionId,
+					Order:      order,
+					Content:    contentBytes,
+					DataHash:   dataHash,
+					Hidden:     tc.Hidden,
+				})
+			}
+		}
+
+		// Delete extra test cases if request list is shorter
+		if len(req.TestCases) < len(existingTestCases) {
+			idsToDelete := make([]int64, 0)
+			for _, tc := range existingTestCases[len(req.TestCases):] {
+				idsToDelete = append(idsToDelete, tc.ID)
+			}
+			if err := tx.Delete(&models.TestCase{}, idsToDelete).Error; err != nil {
+				return status.Error(codes.Internal, "failed to delete extra test cases")
 			}
 		}
 
@@ -80,11 +101,10 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 
 		// Bulk update existing test cases
 		if len(toUpdate) > 0 {
-			if err := tx.Clauses(clause.OnConflict{
-				Columns:   []clause.Column{{Name: "id"}},
-				DoUpdates: clause.AssignmentColumns([]string{"content", "hidden"}),
-			}).Create(&toUpdate).Error; err != nil {
-				return status.Error(codes.Internal, "failed to update test cases")
+			for _, tc := range toUpdate {
+				if err := tx.Model(&models.TestCase{}).Where("id = ?", tc.ID).Updates(tc).Error; err != nil {
+					return status.Error(codes.Internal, "failed to update test cases")
+				}
 			}
 		}
 

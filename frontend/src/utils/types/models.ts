@@ -120,16 +120,10 @@ export interface QuestionSubjectiveContent {
 }
 
 export interface QuestionCodingTestCase {
-  id: TestCaseId
   inputs: string[]
   output: string
   explanation?: string
   hidden: boolean
-}
-
-export interface PartialQuestionCodingTestCase
-  extends Omit<QuestionCodingTestCase, 'id'> {
-  id?: TestCaseId
 }
 
 export enum QuestionCodingContentPrimitiveInputTypes {

@@ -57,7 +57,7 @@ func TestGetPaperQuestions(t *testing.T) {
 				})
 
 				// Create test cases for coding question
-				testCases := []models.TestCase{
+				createTestCases(t, []models.TestCase{
 					{
 						QuestionID: questions[2].ID,
 						Content:    json.RawMessage(`{"inputs": ["1", "2"], "output": "3"}`),
@@ -68,8 +68,7 @@ func TestGetPaperQuestions(t *testing.T) {
 						Content:    json.RawMessage(`{"inputs": ["4", "5"], "output": "9"}`),
 						Hidden:     true,
 					},
-				}
-				createTestCases(t, testCases)
+				})
 
 				return paper, questions
 			},
@@ -356,7 +355,6 @@ func TestGetPaperQuestion(t *testing.T) {
 					},
 				})
 
-				// Create test cases
 				createTestCases(t, []models.TestCase{
 					{
 						QuestionID: questions[0].ID,

@@ -3,11 +3,11 @@ package dtos
 import "encoding/json"
 
 type PaperTestCaseDto struct {
-	ID          int64    `json:"id"`
 	Inputs      []string `json:"inputs"`
 	Output      string   `json:"output"`
 	Explanation *string  `json:"explanation"`
 	Hidden      bool     `json:"hidden"`
+	Order       int32    `json:"order"`
 }
 
 type QuestionResponseDto struct {

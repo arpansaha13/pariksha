@@ -8,4 +8,3 @@ export type PaperId = Brand<string, 'paper'>
 export type CategoryId = Brand<number, 'category'>
 export type ExamParticipantId = Brand<number, 'examParticipant'>
 export type LanguageId = Brand<number, 'language'>
-export type TestCaseId = Brand<number, 'test-case'>
