@@ -50,7 +50,7 @@
         :current-category-id="currentCategoryId"
         :current-question-id="currentQuestionId"
         :current-category-questions="currentCategoryQuestions"
-        :edit-question-form-states="editQuestionFormStates"
+        :show-question-edit-chip="showQuestionEditChip"
         :question-navigation="questionNavigation"
       />
     </div>
@@ -82,7 +82,7 @@
       @submit="onCreateQuestionSubmit"
     />
     <PaperQuestionForm
-      v-if="currentQuestionId && editQuestionFormStates[currentQuestionId]"
+      v-else-if="currentQuestionId && editQuestionFormStates[currentQuestionId]"
       ref="editQuestionForm"
       v-model:form-data="editQuestionFormStates[currentQuestionId]!"
       :has-test-cases="
@@ -209,6 +209,9 @@ const route = useRoute()
 const paperId = route.params.paperId as PaperId
 
 const paperStore = usePaperStore()
+onUnmounted(() => {
+  paperStore.$reset()
+})
 
 const overlay = useOverlay()
 const confirmModal = overlay.create(ConfirmModal as Component)
@@ -332,6 +335,9 @@ async function onCreateQuestionSubmit() {
   }
 }
 
+// _________________QUESTION EDIT CHIP-INDICATOR__________________
+const showQuestionEditChip = ref<Record<QuestionId, boolean>>({})
+
 // ________________________EDIT QUESTION__________________________
 const editQuestionFormRef =
   useTemplateRef<ComponentExposed<typeof PaperQuestionForm>>('editQuestionForm')
@@ -382,6 +388,8 @@ function startQuestionEdit() {
 
     paperStore.incUnsavedCount(question.value.category_id)
   }
+
+  showQuestionEditChip.value[qid] = true
 }
 
 async function onEditQuestionSubmit() {
@@ -394,6 +402,7 @@ async function onEditQuestionSubmit() {
     await updateQuestion(qid, paperId, formState)
     // Clear edit form state after successful update
     editQuestionFormStates[qid] = null
+    showQuestionEditChip.value[qid] = false
     paperStore.decUnsavedCount(currentCategoryId.value!)
   } catch (error) {
     console.error('Failed to update question:', error)
@@ -442,6 +451,8 @@ function startDefineTestCases() {
 
     paperStore.incUnsavedCount(question.value.category_id)
   }
+
+  showQuestionEditChip.value[qid] = true
 }
 
 async function onDefineTestCasesSubmit() {
@@ -461,6 +472,7 @@ async function onDefineTestCasesSubmit() {
     await upsertPaperTestCases(qid, testCases)
     // Clear form state after successful update
     codingQuestionTestCaseFormStates[qid] = null
+    showQuestionEditChip.value[qid] = false
     paperStore.decUnsavedCount(currentCategoryId.value!)
   } catch (error) {
     console.error('Failed to update question:', error)
@@ -481,9 +493,11 @@ function saveQuestionEditMode() {
 
 /** Combined "Cancel" for question-edit and define-test-cases */
 function cancelQuestionEditMode() {
-  if (!currentQuestionId.value) return
-  editQuestionFormStates[currentQuestionId.value] = null
-  codingQuestionTestCaseFormStates[currentQuestionId.value] = null
+  const qid = currentQuestionId.value
+  if (!qid) return
+  editQuestionFormStates[qid] = null
+  codingQuestionTestCaseFormStates[qid] = null
+  showQuestionEditChip.value[qid] = false
   paperStore.decUnsavedCount(currentCategoryId.value!)
 }
 </script>

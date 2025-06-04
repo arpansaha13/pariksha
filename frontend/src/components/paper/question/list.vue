@@ -23,7 +23,7 @@
       >
         <!-- //NOSONAR gives error because this is a comment node and counts as multiple nodes inside template -->
         <UChip
-          :show="!isNullOrUndefined(editQuestionFormStates[q.id])"
+          :show="!!showQuestionEditChip[q.id]"
           inset
           position="top-left"
           :ui="{ root: 'flex gap-2 px-2', base: 'top-1 left-1' }"
@@ -67,13 +67,12 @@
 
 <script setup lang="ts">
 import Draggable from 'vuedraggable'
-import { isNullOrUndefined } from '@arpansaha13/utils'
 
 const props = defineProps<{
   currentQuestionId: QuestionId
   currentCategoryId: CategoryId
   currentCategoryQuestions: QuestionMinimal[]
-  editQuestionFormStates: Record<number, MergedQuestion | null>
+  showQuestionEditChip: Record<QuestionId, boolean>
   questionNavigation: Record<'prev' | 'next', number | null | QuestionId>
 }>()
 

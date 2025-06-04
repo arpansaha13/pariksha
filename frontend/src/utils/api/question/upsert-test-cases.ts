@@ -5,14 +5,24 @@ export async function upsertPaperTestCases(
   const { $api } = useNuxtApp()
 
   // Check for duplicate IDs on client side as well
-  const seenIds = new Set<number>()
+  const seenIds = new Set<TestCaseId>()
   for (const tc of testCases) {
     if (tc.id) {
       if (seenIds.has(tc.id)) {
-        throw new Error('Duplicate test case IDs found')
+        logWarning('Duplicate test case IDs found in upsertPaperTestCases')
+        return
       }
       seenIds.add(tc.id)
     }
+  }
+
+  const { data: questionData } = useNuxtData<Question>(
+    UseAsyncDataKeys.paper_question(questionId)
+  )
+
+  if (questionData.value?.type !== QuestionType.CODING) {
+    logWarning('upsertPaperTestCases called without QuestionType.CODING')
+    return
   }
 
   await $api(`/api/questions/${questionId}/test-cases`, {
