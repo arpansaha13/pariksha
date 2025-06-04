@@ -1602,7 +1602,7 @@ type ExamQuestion struct {
 	QuestionId    int64                  `protobuf:"varint,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
 	CategoryId    int64                  `protobuf:"varint,2,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	Order         int32                  `protobuf:"varint,3,opt,name=order,proto3" json:"order,omitempty"`
-	Type          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	Type          int32                  `protobuf:"varint,4,opt,name=type,proto3" json:"type,omitempty"`
 	MaxScore      int32                  `protobuf:"varint,5,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1659,11 +1659,11 @@ func (x *ExamQuestion) GetOrder() int32 {
 	return 0
 }
 
-func (x *ExamQuestion) GetType() string {
+func (x *ExamQuestion) GetType() int32 {
 	if x != nil {
 		return x.Type
 	}
-	return ""
+	return 0
 }
 
 func (x *ExamQuestion) GetMaxScore() int32 {
@@ -2305,7 +2305,7 @@ const file_exam_proto_rawDesc = "" +
 	"\vcategory_id\x18\x02 \x01(\x03R\n" +
 	"categoryId\x12\x14\n" +
 	"\x05order\x18\x03 \x01(\x05R\x05order\x12\x12\n" +
-	"\x04type\x18\x04 \x01(\tR\x04type\x12\x1b\n" +
+	"\x04type\x18\x04 \x01(\x05R\x04type\x12\x1b\n" +
 	"\tmax_score\x18\x05 \x01(\x05R\bmaxScore\"J\n" +
 	"\x15ExamQuestionsResponse\x121\n" +
 	"\tquestions\x18\x01 \x03(\v2\x13.proto.ExamQuestionR\tquestions\"E\n" +

@@ -322,7 +322,7 @@ func (s *ExamServer) GetExamQuestions(ctx context.Context, req *proto.ExamReques
 			CategoryId: eq.CategoryID,
 			Order:      int32(eq.Order),
 			MaxScore:   int32(eq.MaxScore),
-			Type:       eq.Type,
+			Type:       int32(eq.Type),
 		}
 	}
 

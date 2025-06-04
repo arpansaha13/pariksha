@@ -16,7 +16,7 @@ type Question struct {
 	CategoryID    int64            `gorm:"type:bigint;not null"`
 	Question      json.RawMessage  `gorm:"type:jsonb;not null"`
 	Order         int16            `gorm:"type:smallint;not null"`
-	Type          string           `gorm:"type:varchar(20);not null;check:type IN ('MCQ', 'SUBJECTIVE', 'CODING')"`
+	Type          int16            `gorm:"type:smallint;not null;check:type > 0 AND type <= 3"`
 	Tags          *json.RawMessage `gorm:"type:jsonb;default:null"`
 	PaperID       sql.NullInt64    `gorm:"type:bigint"`
 	MaxScore      int16            `gorm:"type:smallint;not null;check:max_score >= 0 AND max_score <= 1000"`

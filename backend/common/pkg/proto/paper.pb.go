@@ -408,7 +408,7 @@ type QuestionResponse struct {
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	RawQuestion   []byte                 `protobuf:"bytes,2,opt,name=raw_question,json=rawQuestion,proto3" json:"raw_question,omitempty"`
 	CategoryId    int64                  `protobuf:"varint,4,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	Type          string                 `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
+	Type          int32                  `protobuf:"varint,5,opt,name=type,proto3" json:"type,omitempty"`
 	Tags          []string               `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty"`
 	PaperId       int64                  `protobuf:"varint,7,opt,name=paper_id,json=paperId,proto3" json:"paper_id,omitempty"`
 	MaxScore      int32                  `protobuf:"varint,8,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
@@ -469,11 +469,11 @@ func (x *QuestionResponse) GetCategoryId() int64 {
 	return 0
 }
 
-func (x *QuestionResponse) GetType() string {
+func (x *QuestionResponse) GetType() int32 {
 	if x != nil {
 		return x.Type
 	}
-	return ""
+	return 0
 }
 
 func (x *QuestionResponse) GetTags() []string {
@@ -636,7 +636,7 @@ type CreateQuestionRequest struct {
 	PaperId       int64                  `protobuf:"varint,1,opt,name=paper_id,json=paperId,proto3" json:"paper_id,omitempty"`
 	RawQuestion   []byte                 `protobuf:"bytes,2,opt,name=raw_question,json=rawQuestion,proto3" json:"raw_question,omitempty"`
 	CategoryId    int64                  `protobuf:"varint,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	Type          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	Type          int32                  `protobuf:"varint,4,opt,name=type,proto3" json:"type,omitempty"`
 	Tags          []string               `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
 	MaxScore      int32                  `protobuf:"varint,6,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
 	CorrectAnswer *string                `protobuf:"bytes,7,opt,name=correct_answer,json=correctAnswer,proto3,oneof" json:"correct_answer,omitempty"`
@@ -695,11 +695,11 @@ func (x *CreateQuestionRequest) GetCategoryId() int64 {
 	return 0
 }
 
-func (x *CreateQuestionRequest) GetType() string {
+func (x *CreateQuestionRequest) GetType() int32 {
 	if x != nil {
 		return x.Type
 	}
-	return ""
+	return 0
 }
 
 func (x *CreateQuestionRequest) GetTags() []string {
@@ -770,7 +770,7 @@ func (x *CreateQuestionResponse) GetId() int64 {
 type UpdateQuestionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	QuestionId    int64                  `protobuf:"varint,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
-	Type          *string                `protobuf:"bytes,2,opt,name=type,proto3,oneof" json:"type,omitempty"`
+	Type          *int32                 `protobuf:"varint,2,opt,name=type,proto3,oneof" json:"type,omitempty"`
 	RawQuestion   []byte                 `protobuf:"bytes,3,opt,name=raw_question,json=rawQuestion,proto3,oneof" json:"raw_question,omitempty"`
 	MaxScore      *int32                 `protobuf:"varint,4,opt,name=max_score,json=maxScore,proto3,oneof" json:"max_score,omitempty"`
 	Tags          []string               `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
@@ -816,11 +816,11 @@ func (x *UpdateQuestionRequest) GetQuestionId() int64 {
 	return 0
 }
 
-func (x *UpdateQuestionRequest) GetType() string {
+func (x *UpdateQuestionRequest) GetType() int32 {
 	if x != nil && x.Type != nil {
 		return *x.Type
 	}
-	return ""
+	return 0
 }
 
 func (x *UpdateQuestionRequest) GetRawQuestion() []byte {
@@ -1040,7 +1040,7 @@ type QuestionBatchItem struct {
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	RawQuestion   []byte                 `protobuf:"bytes,2,opt,name=raw_question,json=rawQuestion,proto3" json:"raw_question,omitempty"`
 	MaxScore      int32                  `protobuf:"varint,4,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
-	Type          string                 `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
+	Type          int32                  `protobuf:"varint,6,opt,name=type,proto3" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1096,11 +1096,11 @@ func (x *QuestionBatchItem) GetMaxScore() int32 {
 	return 0
 }
 
-func (x *QuestionBatchItem) GetType() string {
+func (x *QuestionBatchItem) GetType() int32 {
 	if x != nil {
 		return x.Type
 	}
-	return ""
+	return 0
 }
 
 // Category messages
@@ -1924,7 +1924,7 @@ const file_paper_proto_rawDesc = "" +
 	"\fraw_question\x18\x02 \x01(\fR\vrawQuestion\x12\x1f\n" +
 	"\vcategory_id\x18\x04 \x01(\x03R\n" +
 	"categoryId\x12\x12\n" +
-	"\x04type\x18\x05 \x01(\tR\x04type\x12\x12\n" +
+	"\x04type\x18\x05 \x01(\x05R\x04type\x12\x12\n" +
 	"\x04tags\x18\x06 \x03(\tR\x04tags\x12\x19\n" +
 	"\bpaper_id\x18\a \x01(\x03R\apaperId\x12\x1b\n" +
 	"\tmax_score\x18\b \x01(\x05R\bmaxScore\x12*\n" +
@@ -1947,7 +1947,7 @@ const file_paper_proto_rawDesc = "" +
 	"\fraw_question\x18\x02 \x01(\fR\vrawQuestion\x12\x1f\n" +
 	"\vcategory_id\x18\x03 \x01(\x03R\n" +
 	"categoryId\x12\x12\n" +
-	"\x04type\x18\x04 \x01(\tR\x04type\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\x05R\x04type\x12\x12\n" +
 	"\x04tags\x18\x05 \x03(\tR\x04tags\x12\x1b\n" +
 	"\tmax_score\x18\x06 \x01(\x05R\bmaxScore\x12*\n" +
 	"\x0ecorrect_answer\x18\a \x01(\tH\x00R\rcorrectAnswer\x88\x01\x01B\x11\n" +
@@ -1957,7 +1957,7 @@ const file_paper_proto_rawDesc = "" +
 	"\x15UpdateQuestionRequest\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\x03R\n" +
 	"questionId\x12\x17\n" +
-	"\x04type\x18\x02 \x01(\tH\x00R\x04type\x88\x01\x01\x12&\n" +
+	"\x04type\x18\x02 \x01(\x05H\x00R\x04type\x88\x01\x01\x12&\n" +
 	"\fraw_question\x18\x03 \x01(\fH\x01R\vrawQuestion\x88\x01\x01\x12 \n" +
 	"\tmax_score\x18\x04 \x01(\x05H\x02R\bmaxScore\x88\x01\x01\x12\x12\n" +
 	"\x04tags\x18\x05 \x03(\tR\x04tags\x12*\n" +
@@ -1982,7 +1982,7 @@ const file_paper_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12!\n" +
 	"\fraw_question\x18\x02 \x01(\fR\vrawQuestion\x12\x1b\n" +
 	"\tmax_score\x18\x04 \x01(\x05R\bmaxScore\x12\x12\n" +
-	"\x04type\x18\x06 \x01(\tR\x04type\">\n" +
+	"\x04type\x18\x06 \x01(\x05R\x04type\">\n" +
 	"\x19GetCategoriesByIdsRequest\x12!\n" +
 	"\fcategory_ids\x18\x01 \x03(\x03R\vcategoryIds\"Q\n" +
 	"\x15CategoryBatchResponse\x128\n" +

@@ -97,7 +97,7 @@ func examToProto(exam *models.Exam) (*proto.ExamResponse, error) {
 }
 
 // validateAnswerJSON validates the answer JSON based on question type
-func validateAnswerJSON(answerJSON []byte, questionType string) error {
+func validateAnswerJSON(answerJSON []byte, questionType int16) error {
 	if len(answerJSON) == 0 {
 		return nil // Allow empty answers
 	}

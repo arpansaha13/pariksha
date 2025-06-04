@@ -131,7 +131,7 @@ func createTestExamQuestion(t *testing.T, exam *models.Exam, question models.Exa
 	if question.MaxScore == 0 {
 		question.MaxScore = 10
 	}
-	if question.Type == "" {
+	if question.Type == 0 {
 		question.Type = constants.QUESTION_TYPE_MCQ
 	}
 	require.NoError(t, db.DB.Create(&question).Error)

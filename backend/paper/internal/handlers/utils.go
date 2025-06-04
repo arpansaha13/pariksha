@@ -82,7 +82,7 @@ func questionToProto(question models.Question, testCases []models.TestCase) (*pr
 	response := &proto.QuestionResponse{
 		Id:            question.ID,
 		CategoryId:    question.CategoryID,
-		Type:          question.Type,
+		Type:          int32(question.Type),
 		Tags:          tags,
 		PaperId:       question.PaperID.Int64,
 		MaxScore:      int32(question.MaxScore),
@@ -147,7 +147,7 @@ func categoriesToProto(categories []models.QuestionCategory) *proto.CategoryList
 }
 
 // Helper function to update question counts
-func updateQuestionCounts(rawCounts json.RawMessage, questionType string, delta int16) (json.RawMessage, error) {
+func updateQuestionCounts(rawCounts json.RawMessage, questionType int16, delta int16) (json.RawMessage, error) {
 	var counts models.QuestionCount
 	if err := json.Unmarshal(rawCounts, &counts); err != nil {
 		return nil, err
@@ -182,7 +182,7 @@ func updatePaperStats(tx *gorm.DB, paper models.Paper, scoreDiff int32, newQuest
 }
 
 // updateQuestionStats updates the paper's statistics after a question update
-func updateQuestionStats(tx *gorm.DB, paper models.Paper, oldType, newType string, oldScore, newScore int16) error {
+func updateQuestionStats(tx *gorm.DB, paper models.Paper, oldType, newType int16, oldScore, newScore int16) error {
 	scoreDiff := int32(newScore - oldScore)
 	newCounts := paper.QuestionCounts
 	var err error

@@ -273,7 +273,7 @@ watchImmediate(route, newRoute => {
 
 // ________________CREATE/EDIT QUESTION PREREQUISITES_______________
 const defaultCreateQuestionFormState: MergedQuestion = {
-  type: '' as QuestionType,
+  type: 0 as QuestionType,
   question: {
     title: '',
     statement: '',

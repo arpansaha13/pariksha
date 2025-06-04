@@ -14,7 +14,7 @@ type QuestionResponseDto struct {
 	ID            int64               `json:"id"`
 	Question      json.RawMessage     `json:"question"`
 	CategoryID    int64               `json:"category_id"`
-	Type          string              `json:"type"`
+	Type          int32               `json:"type"`
 	Tags          json.RawMessage     `json:"tags"`
 	PaperID       string              `json:"paper_id"`
 	MaxScore      int32               `json:"max_score"`
@@ -39,14 +39,14 @@ type QuestionCategoryResponseDto struct {
 type CreateQuestionDto struct {
 	Question      json.RawMessage `json:"question" validate:"required"`
 	CategoryID    int64           `json:"category_id" validate:"required"`
-	Type          string          `json:"type" validate:"required"`
+	Type          int32           `json:"type" validate:"required"`
 	Tags          json.RawMessage `json:"tags,omitempty" validate:"required"`
 	MaxScore      int32           `json:"max_score" validate:"required"`
 	CorrectAnswer string          `json:"correct_answer,omitempty"`
 }
 
 type UpdateQuestionDto struct {
-	Type          string          `json:"type,omitempty"`
+	Type          int32           `json:"type,omitempty"`
 	Question      json.RawMessage `json:"question,omitempty"`
 	MaxScore      int32           `json:"max_score,omitempty"`
 	Tags          json.RawMessage `json:"tags,omitempty"`

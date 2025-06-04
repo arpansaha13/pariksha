@@ -84,7 +84,7 @@ func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 		CorrectAnswer: response.GetCorrectAnswer(),
 	}
 
-	if response.Type == constants.QUESTION_TYPE_CODING {
+	if response.Type == int32(constants.QUESTION_TYPE_CODING) {
 		testCases := make([]dtos.PaperTestCaseDto, 0, len(response.TestCases))
 		for _, tc := range response.TestCases {
 			testCases = append(testCases, dtos.PaperTestCaseDto{
@@ -180,7 +180,7 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set optional fields only if they are provided
-	if updateDto.Type != "" {
+	if updateDto.Type != 0 {
 		request.Type = &updateDto.Type
 	}
 

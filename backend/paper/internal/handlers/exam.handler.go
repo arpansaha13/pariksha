@@ -26,7 +26,7 @@ func (s *PaperServer) GetQuestionsByIds(ctx context.Context, req *proto.GetQuest
 		response.Questions[i] = &proto.QuestionBatchItem{
 			Id:          question.ID,
 			MaxScore:    int32(question.MaxScore),
-			Type:        question.Type,
+			Type:        int32(question.Type),
 			RawQuestion: question.Question,
 		}
 	}

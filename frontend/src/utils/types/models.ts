@@ -99,9 +99,9 @@ export type ExamResult = {
 export const QUESTION_ID_ADD = 0 as QuestionId
 
 export enum QuestionType {
-  MCQ = 'MCQ',
-  SUBJECTIVE = 'SUBJECTIVE',
-  CODING = 'CODING',
+  MCQ = 1,
+  SUBJECTIVE = 2,
+  CODING = 3,
 }
 
 export interface QuestionCategory {

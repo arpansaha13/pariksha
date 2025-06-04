@@ -68,7 +68,7 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 }
 
 // handleLockedQuestionUpdate handles updates to a locked (column) question by creating a new one
-func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper models.Paper, req *proto.UpdateQuestionRequest, oldType string, oldMaxScore int16) (*int64, error) {
+func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper models.Paper, req *proto.UpdateQuestionRequest, oldType int16, oldMaxScore int16) (*int64, error) {
 	newQuestion := question
 	newQuestion.ID = 0
 	newQuestion.Locked = false
@@ -110,7 +110,7 @@ func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper mod
 }
 
 // handleUnlockedQuestionUpdate handles updates to an unlocked (column) question
-func handleUnlockedQuestionUpdate(tx *gorm.DB, question models.Question, paper models.Paper, req *proto.UpdateQuestionRequest, oldType string, oldMaxScore int16) error {
+func handleUnlockedQuestionUpdate(tx *gorm.DB, question models.Question, paper models.Paper, req *proto.UpdateQuestionRequest, oldType int16, oldMaxScore int16) error {
 	updatedQuestion, err := applyQuestionUpdates(question, req)
 	if err != nil {
 		return err
@@ -197,7 +197,7 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 		if req.RawQuestion == nil {
 			return question, status.Error(codes.InvalidArgument, "question content must be provided when changing question type")
 		}
-		question.Type = req.GetType()
+		question.Type = int16(req.GetType())
 	}
 
 	if req.RawQuestion != nil {

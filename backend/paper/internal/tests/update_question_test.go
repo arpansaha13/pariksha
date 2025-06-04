@@ -300,7 +300,7 @@ func TestUpdateLockedQuestion(t *testing.T) {
 
 func TestUpdateQuestionTypeChange(t *testing.T) {
 	maxScore := int32(10)
-	questionTypeSubjective := constants.QUESTION_TYPE_SUBJECTIVE
+	questionTypeSubjective := int32(constants.QUESTION_TYPE_SUBJECTIVE)
 
 	tests := []UpdateQuestionCase{
 		{
@@ -488,7 +488,7 @@ func TestUpdateCodingQuestionBoilerplates(t *testing.T) {
 			createReq := &proto.CreateQuestionRequest{
 				PaperId:     paper.ID,
 				CategoryId:  category.ID,
-				Type:        constants.QUESTION_TYPE_CODING,
+				Type:        int32(constants.QUESTION_TYPE_CODING),
 				RawQuestion: []byte(tt.initialQuestion),
 				MaxScore:    10,
 			}

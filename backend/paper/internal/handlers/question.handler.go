@@ -68,7 +68,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 
 	// Validate question data based on type
 	var coding structs.CodingQuestion
-	switch req.Type {
+	switch int16(req.Type) {
 	case constants.QUESTION_TYPE_MCQ:
 		var mcq structs.MCQQuestion
 		if err := utils.StrictUnmarshal(req.RawQuestion, &mcq); err != nil {
@@ -119,7 +119,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 			CategoryID: req.CategoryId,
 			Order:      maxOrder.MaxOrder + 1,
 			Question:   json.RawMessage(req.RawQuestion),
-			Type:       req.Type,
+			Type:       int16(req.Type),
 			Tags:       ptr.JsonRawMessage(tags),
 			MaxScore:   int16(req.MaxScore),
 			CorrectAnswer: sql.NullString{
@@ -133,13 +133,13 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		}
 
 		// Create boilerplates for coding questions
-		if req.Type == constants.QUESTION_TYPE_CODING {
+		if int16(req.Type) == constants.QUESTION_TYPE_CODING {
 			if err := upsertBoilerplates(tx, question.ID, coding.InputDefinitions, coding.OutputDefinition); err != nil {
 				return status.Error(codes.Internal, "failed to create boilerplates")
 			}
 		}
 
-		newCounts, err := updateQuestionCounts(paper.QuestionCounts, req.Type, 1)
+		newCounts, err := updateQuestionCounts(paper.QuestionCounts, int16(req.Type), 1)
 		if err != nil {
 			return err
 		}

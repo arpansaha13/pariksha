@@ -85,7 +85,7 @@ message QuestionResponse {
   int64 id = 1;
   bytes raw_question = 2;
   int64 category_id = 4;
-  string type = 5;
+  int32 type = 5;
   repeated string tags = 6;
   int64 paper_id = 7;
   int32 max_score = 8;
@@ -109,7 +109,7 @@ message CreateQuestionRequest {
   int64 paper_id = 1;
   bytes raw_question = 2;
   int64 category_id = 3;
-  string type = 4;
+  int32 type = 4;
   repeated string tags = 5;
   int32 max_score = 6;
   optional string correct_answer = 7;
@@ -121,7 +121,7 @@ message CreateQuestionResponse {
 
 message UpdateQuestionRequest {
   int64 question_id = 1;
-  optional string type = 2;
+  optional int32 type = 2;
   optional bytes raw_question = 3;
   optional int32 max_score = 4;
   repeated string tags = 5;
@@ -149,7 +149,7 @@ message QuestionBatchItem {
   int64 id = 1;
   bytes raw_question = 2;
   int32 max_score = 4;
-  string type = 6;
+  int32 type = 6;
 }
 
 // Category messages
