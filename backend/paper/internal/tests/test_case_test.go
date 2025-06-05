@@ -251,6 +251,289 @@ func TestUpsertPaperTestCases(t *testing.T) {
 				assert.Equal(t, "9", content2.Output)
 			},
 		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Revive soft-deleted test case",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) *models.Question {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_CODING,
+						Question:   json.RawMessage(`{"title":"Test","statement":"Test","input_definitions":[{"variable_name":"x","type":1}],"output_definition":{"type":1}}`),
+					},
+				})
+
+				// Create a test case and soft delete it
+				testCases := createTestCases(t, []models.TestCase{
+					{
+						QuestionID: questions[0].ID,
+						Order:      1,
+						Content:    json.RawMessage(`{"inputs": ["1"], "output": "1"}`),
+						Hidden:     false,
+					},
+				})
+				require.NoError(t, db.DB.Delete(&testCases[0]).Error)
+
+				return &questions[0]
+			},
+			request: &proto.UpsertTestCasesRequest{
+				TestCases: []*proto.UpsertTestCase{
+					{
+						Inputs: []string{"1"},
+						Output: "1",
+						Hidden: true,
+					},
+				},
+			},
+			validate: func(t *testing.T, questionID int64) {
+				var testCases []models.TestCase
+				// Check both active and soft-deleted records
+				require.NoError(t, db.DB.Unscoped().Where("question_id = ?", questionID).Find(&testCases).Error)
+				require.Len(t, testCases, 1)
+
+				// Verify the test case was revived
+				assert.False(t, testCases[0].DeletedAt.Valid)
+				assert.True(t, testCases[0].Hidden)
+
+				var content models.TestCaseContent
+				require.NoError(t, json.Unmarshal(testCases[0].Content, &content))
+				assert.Equal(t, []string{"1"}, content.Inputs)
+				assert.Equal(t, "1", content.Output)
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Handle unique constraint with soft-deleted records",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) *models.Question {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_CODING,
+						Question:   json.RawMessage(`{"title":"Test","statement":"Test","input_definitions":[{"variable_name":"x","type":1}],"output_definition":{"type":1}}`),
+					},
+				})
+
+				// Create and soft-delete multiple test cases
+				testCases := createTestCases(t, []models.TestCase{
+					{
+						QuestionID: questions[0].ID,
+						Order:      1,
+						Content:    json.RawMessage(`{"inputs": ["1"], "output": "1"}`),
+					},
+					{
+						QuestionID: questions[0].ID,
+						Order:      2,
+						Content:    json.RawMessage(`{"inputs": ["2"], "output": "4"}`),
+					},
+				})
+				require.NoError(t, db.DB.Delete(&testCases).Error)
+
+				return &questions[0]
+			},
+			request: &proto.UpsertTestCasesRequest{
+				TestCases: []*proto.UpsertTestCase{
+					{
+						Inputs: []string{"3"},
+						Output: "9",
+					},
+					{
+						Inputs: []string{"4"},
+						Output: "16",
+					},
+				},
+			},
+			validate: func(t *testing.T, questionID int64) {
+				var testCases []models.TestCase
+				require.NoError(t, db.DB.Unscoped().Where("question_id = ?", questionID).Order("\"order\"").Find(&testCases).Error)
+				require.Len(t, testCases, 2)
+
+				// Verify both test cases were revived
+				for _, tc := range testCases {
+					assert.False(t, tc.DeletedAt.Valid)
+				}
+
+				// Verify first test case content
+				var content1 models.TestCaseContent
+				require.NoError(t, json.Unmarshal(testCases[0].Content, &content1))
+				assert.Equal(t, []string{"3"}, content1.Inputs)
+				assert.Equal(t, "9", content1.Output)
+
+				// Verify second test case content
+				var content2 models.TestCaseContent
+				require.NoError(t, json.Unmarshal(testCases[1].Content, &content2))
+				assert.Equal(t, []string{"4"}, content2.Inputs)
+				assert.Equal(t, "16", content2.Output)
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Error - Input count mismatch",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
+			setup: func(t *testing.T) *models.Question {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_CODING,
+						Question: json.RawMessage(`{
+							"title": "Test",
+							"statement": "Test",
+							"input_definitions": [
+								{ "variable_name": "a", "type": 1 },
+								{ "variable_name": "b", "type": 1 }
+							],
+							"output_definition": {"type": 1}
+						}`),
+					},
+				})
+				return &questions[0]
+			},
+			request: &proto.UpsertTestCasesRequest{
+				TestCases: []*proto.UpsertTestCase{
+					{
+						Inputs: []string{"1"}, // Only one input when two are required
+						Output: "1",
+					},
+				},
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Error - Empty input value",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
+			setup: func(t *testing.T) *models.Question {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_CODING,
+						Question: json.RawMessage(`{
+							"title": "Test",
+							"statement": "Test",
+							"input_definitions": [{"variable_name": "x", "type": 1}],
+							"output_definition": {"type": 1}
+						}`),
+					},
+				})
+				return &questions[0]
+			},
+			request: &proto.UpsertTestCasesRequest{
+				TestCases: []*proto.UpsertTestCase{
+					{
+						Inputs: []string{"   "}, // Empty input (whitespace only)
+						Output: "1",
+					},
+				},
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Error - Empty output value",
+				userID:       userID,
+				expectedCode: codes.InvalidArgument,
+			},
+			setup: func(t *testing.T) *models.Question {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_CODING,
+						Question: json.RawMessage(`{
+							"title": "Test",
+							"statement": "Test",
+							"input_definitions": [{"variable_name": "x", "type": 1}],
+							"output_definition": {"type": 1}
+						}`),
+					},
+				})
+				return &questions[0]
+			},
+			request: &proto.UpsertTestCasesRequest{
+				TestCases: []*proto.UpsertTestCase{
+					{
+						Inputs: []string{"1"},
+						Output: "  ", // Empty output (whitespace only)
+					},
+				},
+			},
+		},
+		{
+			BaseTestCase: BaseTestCase{
+				name:         "Success - Empty explanation is converted to nil",
+				userID:       userID,
+				expectedCode: codes.OK,
+			},
+			setup: func(t *testing.T) *models.Question {
+				paper := createTestPaper(t, userID)
+				var category models.QuestionCategory
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						CategoryID: category.ID,
+						Type:       constants.QUESTION_TYPE_CODING,
+						Question: json.RawMessage(`{
+							"title": "Test",
+							"statement": "Test",
+							"input_definitions": [{"variable_name": "x", "type": 1}],
+							"output_definition": {"type": 1}
+						}`),
+					},
+				})
+				return &questions[0]
+			},
+			request: &proto.UpsertTestCasesRequest{
+				TestCases: []*proto.UpsertTestCase{
+					{
+						Inputs:      []string{"1"},
+						Output:      "1",
+						Explanation: ptr.String("   "), // Empty explanation (whitespace only)
+					},
+				},
+			},
+			validate: func(t *testing.T, questionID int64) {
+				var testCases []models.TestCase
+				require.NoError(t, db.DB.Where("question_id = ?", questionID).Find(&testCases).Error)
+				require.Len(t, testCases, 1)
+
+				var content models.TestCaseContent
+				require.NoError(t, json.Unmarshal(testCases[0].Content, &content))
+				assert.Nil(t, content.Explanation, "Empty explanation should be converted to nil")
+			},
+		},
 	}
 
 	for _, tt := range tests {
