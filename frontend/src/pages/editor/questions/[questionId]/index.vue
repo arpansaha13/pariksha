@@ -57,9 +57,9 @@
         :id="Splitter.GROUP_1_RESIZE_HANDLE_1_ID"
         class="group w-2 outline-none"
       >
-        <div
-          class="group-hover:bg-primary-500 group-focus:bg-primary-500 mx-auto h-full w-0.5 transition-colors delay-150"
-        />
+        <div class="splitter-resizer-handle mx-auto h-full w-0.5">
+          <div class="splitter-resizer-marker h-4 w-[2px]" />
+        </div>
       </SplitterResizeHandle>
 
       <SplitterPanel
@@ -97,9 +97,9 @@
             :id="Splitter.GROUP_2_RESIZE_HANDLE_1_ID"
             class="group flex h-2 flex-col outline-none"
           >
-            <div
-              class="group-hover:bg-primary-500 group-focus:bg-primary-500 my-auto h-0.5 w-full transition-colors delay-150"
-            />
+            <div class="splitter-resizer-handle my-auto h-0.5 w-full">
+              <div class="splitter-resizer-marker h-[2px] w-4" />
+            </div>
           </SplitterResizeHandle>
 
           <SplitterPanel
@@ -251,10 +251,12 @@ enum Splitter {
 
 // ______________________SPLITTER LAYOUT SSR______________________
 const splitterGroup1Layout = useCookie<number[]>(
-  'editor:splitter-group-1-layout'
+  'editor:splitter-group-1-layout',
+  { path: '/editor' }
 )
 const splitterGroup2Layout = useCookie<number[]>(
-  'editor:splitter-group-2-layout'
+  'editor:splitter-group-2-layout',
+  { path: '/editor' }
 )
 
 // ____________CALCULATE GROUP-2 PANEL-2 COLLAPSED SIZE___________
@@ -373,5 +375,13 @@ async function runCode() {
 
 .splitter-panel {
   @apply rounded-md border border-neutral-400;
+}
+
+.splitter-resizer-handle {
+  @apply group-hover:bg-primary-500 group-focus:bg-primary-500 flex items-center justify-center transition-colors delay-150;
+}
+
+.splitter-resizer-marker {
+  @apply rounded-full bg-neutral-400 transition-colors delay-150 group-hover:bg-transparent group-focus:bg-transparent;
 }
 </style>
