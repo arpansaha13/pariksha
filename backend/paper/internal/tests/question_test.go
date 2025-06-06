@@ -13,6 +13,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/paper/internal/config/db"
 )
@@ -29,19 +30,19 @@ func TestGetPaperQuestions(t *testing.T) {
 				paper, category := setupTestCategory(t, userID, false)
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"MCQ Question","options":["A","B","C"]}`),
 					},
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_SUBJECTIVE,
 						Question:   json.RawMessage(`{"statement":"Subjective Question"}`),
 					},
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_CODING,
 						Question: json.RawMessage(`{
@@ -126,7 +127,7 @@ func TestGetPaperQuestions(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.PaperRequest{PaperId: paper.ID},
+				&proto.PaperRequest{PaperId: int64(paper.ID)},
 				client.GetPaperQuestions,
 				tt.validate,
 			)
@@ -153,7 +154,7 @@ func TestDeleteQuestion(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
@@ -161,7 +162,7 @@ func TestDeleteQuestion(t *testing.T) {
 				})
 				return &paper, &questions[0]
 			},
-			validate: func(t *testing.T, paper *models.Paper, questionID int64) {
+			validate: func(t *testing.T, paper *models.Paper, questionID types.QuestionID) {
 				// Verify question was deleted
 				var question models.Question
 				err := db.DB.First(&question, questionID).Error
@@ -192,7 +193,7 @@ func TestDeleteQuestion(t *testing.T) {
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
 				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 					CategoryID: category.ID,
 					Order:      1,
 					Type:       constants.QUESTION_TYPE_MCQ,
@@ -203,7 +204,7 @@ func TestDeleteQuestion(t *testing.T) {
 				require.NoError(t, db.DB.Create(&question).Error)
 				return &paper, &question
 			},
-			validate: func(t *testing.T, paper *models.Paper, questionID int64) {
+			validate: func(t *testing.T, paper *models.Paper, questionID types.QuestionID) {
 				// Verify question is unlinked but exists
 				var question models.Question
 				require.NoError(t, db.DB.First(&question, questionID).Error)
@@ -228,7 +229,7 @@ func TestDeleteQuestion(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.QuestionRequest{QuestionId: question.ID},
+				&proto.QuestionRequest{QuestionId: int64(question.ID)},
 				client.DeleteQuestion,
 				func(t *testing.T, resp *proto.Empty) {
 					if tt.validate != nil {
@@ -254,13 +255,13 @@ func TestReorderQuestions(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Q1"}`),
 					},
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Q2"}`),
@@ -283,8 +284,8 @@ func TestReorderQuestions(t *testing.T) {
 			clearTables(t)
 			_, category, questions := tt.setup(t)
 
-			tt.request.CategoryId = category.ID
-			tt.request.QuestionIds = []int64{questions[1].ID, questions[0].ID} // Reverse order
+			tt.request.CategoryId = int64(category.ID)
+			tt.request.QuestionIds = []int64{int64(questions[1].ID), int64(questions[0].ID)} // Reverse order
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
@@ -311,7 +312,7 @@ func TestGetPaperQuestion(t *testing.T) {
 				paper, category := setupTestCategory(t, userID, false)
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"MCQ Question","options":["A","B","C"]}`),
@@ -339,7 +340,7 @@ func TestGetPaperQuestion(t *testing.T) {
 				paper, category := setupTestCategory(t, userID, false)
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_CODING,
 						Question: json.RawMessage(`{
@@ -415,7 +416,7 @@ func TestGetPaperQuestion(t *testing.T) {
 				paper, category := setupTestCategory(t, 2, false) // different user
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_SUBJECTIVE,
 						Question:   json.RawMessage(`{"statement":"Q1"}`),
@@ -433,7 +434,7 @@ func TestGetPaperQuestion(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.QuestionRequest{QuestionId: question.ID},
+				&proto.QuestionRequest{QuestionId: int64(question.ID)},
 				client.GetPaperQuestion,
 				tt.validate,
 			)

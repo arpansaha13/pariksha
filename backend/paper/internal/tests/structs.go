@@ -7,12 +7,13 @@ import (
 
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 )
 
 // BaseTestCase contains common fields used across all test cases
 type BaseTestCase struct {
 	name         string
-	userID       int64
+	userID       types.UserID
 	expectedCode codes.Code
 }
 
@@ -31,7 +32,7 @@ type ListPapersTestCase struct {
 type DeleteCategoryCase struct {
 	BaseTestCase
 	setup    func(t *testing.T) *models.QuestionCategory
-	validate func(t *testing.T, categoryID int64)
+	validate func(t *testing.T, categoryID types.CategoryID)
 }
 
 type UpdatePaperCase struct {
@@ -76,7 +77,7 @@ type UpdateQuestionCase struct {
 type DeleteQuestionCase struct {
 	BaseTestCase
 	setup    func(t *testing.T) (*models.Paper, *models.Question)
-	validate func(t *testing.T, paper *models.Paper, questionID int64)
+	validate func(t *testing.T, paper *models.Paper, questionID types.QuestionID)
 }
 
 type ReorderQuestionsCase struct {

@@ -10,6 +10,7 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/env"
 )
@@ -89,7 +90,7 @@ func EnqueueAutoEndExam(payload structs.AutoEndExamPayload, scheduledEndTime tim
 	}
 }
 
-func EnqueuePostDeleteExamsCleanup(examIds []int64) error {
+func EnqueuePostDeleteExamsCleanup(examIds []types.ExamID) error {
 	payload := structs.DeleteExamsPayload{
 		ExamIDs: examIds,
 	}

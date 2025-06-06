@@ -13,6 +13,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/paper/internal/config/db"
@@ -22,7 +23,7 @@ import (
 
 // UpdateQuestion handles question updates with proper locking to prevent race conditions
 func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuestionRequest) (*proto.UpdateQuestionResponse, error) {
-	_, err := interceptors.GetQuestionFromContext(ctx)
+	question, err := interceptors.GetQuestionFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -33,12 +34,12 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 		}
 	}
 
-	var updatedQuestionID *int64
+	var updatedQuestionID *types.QuestionID
 	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		// Row-level lock for both question and paper rows
-		var question models.Question
+		var questionForUpdate models.Question
 		if err := tx.Set("gorm:query_option", "FOR UPDATE").
-			First(&question, question.ID).Error; err != nil {
+			Take(&questionForUpdate, question.ID).Error; err != nil {
 			return status.Error(codes.Internal, "failed to lock question")
 		}
 
@@ -52,24 +53,24 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 		oldMaxScore := question.MaxScore
 
 		if question.Locked {
-			updatedQuestionID, err = handleLockedQuestionUpdate(tx, question, paper, req, oldType, oldMaxScore)
+			updatedQuestionID, err = handleLockedQuestionUpdate(tx, *question, paper, req, oldType, oldMaxScore)
 			return err
 		}
 
 		// In case of unlocked question, the the questionId will remain same
 		updatedQuestionID = &question.ID
-		return handleUnlockedQuestionUpdate(tx, question, paper, req, oldType, oldMaxScore)
+		return handleUnlockedQuestionUpdate(tx, *question, paper, req, oldType, oldMaxScore)
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &proto.UpdateQuestionResponse{QuestionId: *updatedQuestionID}, nil
+	return &proto.UpdateQuestionResponse{QuestionId: int64(*updatedQuestionID)}, nil
 }
 
 // handleLockedQuestionUpdate handles updates to a locked (column) question by creating a new one
-func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper models.Paper, req *proto.UpdateQuestionRequest, oldType int16, oldMaxScore int16) (*int64, error) {
+func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper models.Paper, req *proto.UpdateQuestionRequest, oldType int16, oldMaxScore int16) (*types.QuestionID, error) {
 	newQuestion := question
 	newQuestion.ID = 0
 	newQuestion.Locked = false

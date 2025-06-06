@@ -38,7 +38,7 @@ func TestUpdateMcqQuestion(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
@@ -93,7 +93,7 @@ func TestUpdateSubjectiveQuestion(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_SUBJECTIVE,
 						Question:   json.RawMessage(`{"statement":"Old Subjective Question"}`),
@@ -143,7 +143,7 @@ func TestUpdateCodingQuestion(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_CODING,
 						Question: json.RawMessage(`{
@@ -241,7 +241,7 @@ func TestUpdateLockedQuestion(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
@@ -281,7 +281,7 @@ func TestUpdateLockedQuestion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			paper, question := tt.setup(t)
-			tt.request.QuestionId = question.ID
+			tt.request.QuestionId = int64(question.ID)
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
@@ -319,7 +319,7 @@ func TestUpdateQuestionTypeChange(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
@@ -354,7 +354,7 @@ func TestUpdateQuestionTypeChange(t *testing.T) {
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
 				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 					CategoryID: category.ID,
 					Order:      1,
 					Type:       constants.QUESTION_TYPE_MCQ,
@@ -379,7 +379,7 @@ func TestUpdateQuestionTypeChange(t *testing.T) {
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 
 				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 					CategoryID: category.ID,
 					Order:      1,
 					Type:       constants.QUESTION_TYPE_MCQ,
@@ -486,8 +486,8 @@ func TestUpdateCodingQuestionBoilerplates(t *testing.T) {
 			// Create initial coding question
 			ctx := createContextWithUserID(userID)
 			createReq := &proto.CreateQuestionRequest{
-				PaperId:     paper.ID,
-				CategoryId:  category.ID,
+				PaperId:     int64(paper.ID),
+				CategoryId:  int64(category.ID),
 				Type:        int32(constants.QUESTION_TYPE_CODING),
 				RawQuestion: []byte(tt.initialQuestion),
 				MaxScore:    10,
@@ -549,7 +549,7 @@ func runUpdateQuestionTests(t *testing.T, tests []UpdateQuestionCase) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			paper, question := tt.setup(t)
-			tt.request.QuestionId = question.ID
+			tt.request.QuestionId = int64(question.ID)
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
@@ -558,7 +558,7 @@ func runUpdateQuestionTests(t *testing.T, tests []UpdateQuestionCase) {
 				func(t *testing.T, resp *proto.UpdateQuestionResponse) {
 					if tt.validate != nil {
 						// Question ID should remain same for non-locked questions
-						assert.Equal(t, question.ID, resp.QuestionId, "Question ID should remain same")
+						assert.EqualValues(t, question.ID, resp.QuestionId, "Question ID should remain same")
 						tt.validate(t, paper, question)
 					}
 				})

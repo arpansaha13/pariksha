@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
+	"pariksha/common/pkg/types"
 	"pariksha/exam/internal/config/db"
 	"strconv"
 	"testing"
@@ -14,9 +15,9 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func createContextWithUserID(userID int64) context.Context {
+func createContextWithUserID(userID types.UserID) context.Context {
 	md := metadata.New(map[string]string{
-		"user_id": strconv.FormatInt(userID, 10),
+		"user_id": strconv.FormatInt(int64(userID), 10),
 	})
 	return metadata.NewOutgoingContext(context.Background(), md)
 }
@@ -26,7 +27,7 @@ func createContextWithMetadata(mdMap map[string]string) context.Context {
 	return metadata.NewOutgoingContext(context.Background(), md)
 }
 
-func createTestExam(t *testing.T, createdBy int64) models.Exam {
+func createTestExam(t *testing.T, createdBy types.UserID) models.Exam {
 	exam := models.Exam{
 		Title:              "Test Exam",
 		CreatedBy:          createdBy,
@@ -105,7 +106,7 @@ func createTestExamParticipants(t *testing.T, exam *models.Exam, participants []
 	return db.DB.Save(&exam).Error
 }
 
-func createTestAnswer(t *testing.T, examParticipant *models.ExamParticipant, questionID int64) models.Answer {
+func createTestAnswer(t *testing.T, examParticipant *models.ExamParticipant, questionID types.QuestionID) models.Answer {
 	rawAnswer := json.RawMessage(`{"text": "Test Answer"}`)
 	answer := models.Answer{
 		ExamParticipantID: examParticipant.ID,

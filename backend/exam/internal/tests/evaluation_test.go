@@ -13,6 +13,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/exam/internal/config/db"
 )
@@ -20,14 +21,14 @@ import (
 func TestGetAnswerForEvaluation(t *testing.T) {
 	tests := []struct {
 		name         string
-		setup        func(t *testing.T) (*models.ExamParticipant, int64)
+		setup        func(t *testing.T) (*models.ExamParticipant, types.QuestionID)
 		metadata     map[string]string
 		expectedCode codes.Code
 		validate     func(t *testing.T, resp *proto.AnswerMinimalResponse)
 	}{
 		{
 			name: "Success - Get answer as evaluator",
-			setup: func(t *testing.T) (*models.ExamParticipant, int64) {
+			setup: func(t *testing.T) (*models.ExamParticipant, types.QuestionID) {
 				exam := createTestExam(t, 2) // Created by different user
 				createTestExamQuestion(t, &exam, models.ExamQuestion{
 					QuestionID: 1,
@@ -39,7 +40,7 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 				// Create evaluator permission for test user
 				permission := models.ExamPermission{
 					ExamID: exam.ID,
-					UserID: userID,
+					UserID: typedUserID,
 				}
 				permission.SetEvaluate()
 				require.NoError(t, db.DB.Create(&permission).Error)
@@ -72,7 +73,7 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 		},
 		{
 			name: "Fail - No evaluate permission",
-			setup: func(t *testing.T) (*models.ExamParticipant, int64) {
+			setup: func(t *testing.T) (*models.ExamParticipant, types.QuestionID) {
 				exam := createTestExam(t, 2) // Created by different user
 
 				// Create participant and answer
@@ -94,8 +95,8 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 		},
 		{
 			name: "Success - Empty response for non-existent answer",
-			setup: func(t *testing.T) (*models.ExamParticipant, int64) {
-				exam := createTestExam(t, userID) // Create as owner to get evaluate permission
+			setup: func(t *testing.T) (*models.ExamParticipant, types.QuestionID) {
+				exam := createTestExam(t, typedUserID) // Create as owner to get evaluate permission
 
 				// Create participant without answer
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
@@ -106,7 +107,7 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 
-				return &participant, int64(999) // Non-existent question ID
+				return &participant, 999 // Non-existent question ID
 			},
 			metadata: map[string]string{
 				"user_id": strconv.FormatInt(userID, 10),
@@ -128,8 +129,8 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 			ctx := createContextWithMetadata(tt.metadata)
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				&proto.ParticipantQuestionRequest{
-					ParticipantId: participant.ID,
-					QuestionId:    questionId,
+					ParticipantId: int64(participant.ID),
+					QuestionId:    int64(questionId),
 				},
 				client.GetAnswerForEvaluation,
 				tt.validate,
@@ -141,14 +142,14 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 func TestGetAnswerEvaluationData(t *testing.T) {
 	tests := []struct {
 		name         string
-		setup        func(t *testing.T) (*models.ExamParticipant, int64)
+		setup        func(t *testing.T) (*models.ExamParticipant, types.QuestionID)
 		metadata     map[string]string
 		expectedCode codes.Code
 		validate     func(t *testing.T, resp *proto.GetAnswerEvaluationDataResponse)
 	}{
 		{
 			name: "Success - Get evaluation data as evaluator",
-			setup: func(t *testing.T) (*models.ExamParticipant, int64) {
+			setup: func(t *testing.T) (*models.ExamParticipant, types.QuestionID) {
 				exam := createTestExam(t, 2) // Created by different user
 				createTestExamQuestion(t, &exam, models.ExamQuestion{
 					QuestionID: 1,
@@ -159,7 +160,7 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 				// Create evaluator permission for test user
 				permission := models.ExamPermission{
 					ExamID: exam.ID,
-					UserID: userID,
+					UserID: typedUserID,
 				}
 				permission.SetEvaluate()
 				require.NoError(t, db.DB.Create(&permission).Error)
@@ -188,7 +189,7 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 		},
 		{
 			name: "Fail - No evaluate permission",
-			setup: func(t *testing.T) (*models.ExamParticipant, int64) {
+			setup: func(t *testing.T) (*models.ExamParticipant, types.QuestionID) {
 				exam := createTestExam(t, 2) // Created by different user
 
 				// Create participant and answer
@@ -210,8 +211,8 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 		},
 		{
 			name: "Fail - Exam not ended",
-			setup: func(t *testing.T) (*models.ExamParticipant, int64) {
-				exam := createTestExam(t, userID) // Create as owner to get evaluate permission
+			setup: func(t *testing.T) (*models.ExamParticipant, types.QuestionID) {
+				exam := createTestExam(t, typedUserID) // Create as owner to get evaluate permission
 
 				// Create participant with STARTED status
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
@@ -240,8 +241,8 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 			ctx := createContextWithMetadata(tt.metadata)
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				&proto.ParticipantQuestionRequest{
-					ParticipantId: participant.ID,
-					QuestionId:    questionId,
+					ParticipantId: int64(participant.ID),
+					QuestionId:    int64(questionId),
 				},
 				client.GetAnswerEvaluationData,
 				tt.validate,
@@ -262,12 +263,12 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 		request      *proto.UpdateAnswerRequest
 		metadata     map[string]string
 		expectedCode codes.Code
-		validate     func(t *testing.T, answerId int64)
+		validate     func(t *testing.T, answerId types.AnswerID)
 	}{
 		{
 			name: "Success - Update all fields",
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
@@ -302,7 +303,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				"user_id": strconv.FormatInt(userID, 10),
 			},
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, answerId int64) {
+			validate: func(t *testing.T, answerId types.AnswerID) {
 				var answer models.Answer
 				require.NoError(t, db.DB.First(&answer, answerId).Error)
 				assert.EqualValues(t, newScore, answer.ScoreAwarded)
@@ -318,7 +319,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 		{
 			name: "Success - Update only comments",
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				createTestExamQuestion(t, &exam, models.ExamQuestion{
 					QuestionID: 1,
 					CategoryID: 10,
@@ -351,7 +352,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				"user_id": strconv.FormatInt(userID, 10),
 			},
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, answerId int64) {
+			validate: func(t *testing.T, answerId types.AnswerID) {
 				var answer models.Answer
 				require.NoError(t, db.DB.First(&answer, answerId).Error)
 				assert.Equal(t, comments, answer.Comments.String)
@@ -361,7 +362,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 		{
 			name: "Fail - Answer not found",
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				// Create exam question even for non-existent answer to maintain consistency
 				createTestExamQuestion(t, &exam, models.ExamQuestion{
 					QuestionID: 1,
@@ -381,7 +382,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 		{
 			name: "Fail - Score exceeds max score",
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
@@ -415,7 +416,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			answer := tt.setup(t)
-			tt.request.AnswerId = answer.ID
+			tt.request.AnswerId = int64(answer.ID)
 
 			ctx := createContextWithMetadata(tt.metadata)
 			_, err := client.UpdateAnswerForEvaluation(ctx, tt.request)
@@ -443,7 +444,7 @@ func TestMarkParticipantAsEvaluated(t *testing.T) {
 		{
 			name: "Success - All answers evaluated",
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
@@ -477,7 +478,7 @@ func TestMarkParticipantAsEvaluated(t *testing.T) {
 		{
 			name: "Success - Some answers unevaluated",
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
@@ -518,7 +519,7 @@ func TestMarkParticipantAsEvaluated(t *testing.T) {
 		{
 			name: "Fail - Exam not ended",
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
@@ -541,7 +542,7 @@ func TestMarkParticipantAsEvaluated(t *testing.T) {
 				"user_id": strconv.FormatInt(userID, 10),
 			})
 			resp, err := client.MarkParticipantAsEvaluated(ctx, &proto.ParticipantRequest{
-				ParticipantId: participant.ID,
+				ParticipantId: int64(participant.ID),
 			})
 
 			if tt.expectedCode != codes.OK {

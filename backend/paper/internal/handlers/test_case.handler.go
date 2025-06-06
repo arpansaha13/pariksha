@@ -14,6 +14,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/interceptors"
@@ -36,7 +37,9 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("Number of test cases cannot be more than %d", constants.MAX_CODING_TEST_CASES_COUNT))
 	}
 
-	inputDefinitionsLength, err := getInputDefinitionsLength(db.DB, req.QuestionId)
+	questionID := types.QuestionID(req.QuestionId)
+
+	inputDefinitionsLength, err := getInputDefinitionsLength(db.DB, questionID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "could not get input_definitions length")
 	}
@@ -93,7 +96,7 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 				// If test case exists (even if soft-deleted), update it
 				toUpdate = append(toUpdate, models.TestCase{
 					ID:         existingAtOrder.ID,
-					QuestionID: req.QuestionId,
+					QuestionID: questionID,
 					Order:      order,
 					Content:    contentBytes,
 					DataHash:   dataHash,
@@ -102,7 +105,7 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 				})
 			} else {
 				toCreate = append(toCreate, models.TestCase{
-					QuestionID: req.QuestionId,
+					QuestionID: questionID,
 					Order:      order,
 					Content:    contentBytes,
 					DataHash:   dataHash,
@@ -113,7 +116,7 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 
 		// Delete extra test cases if request list is shorter
 		if len(req.TestCases) < len(existingTestCases) {
-			idsToDelete := make([]int64, 0)
+			idsToDelete := make([]types.TestCaseID, 0)
 			for _, tc := range existingTestCases[len(req.TestCases):] {
 				if !tc.DeletedAt.Valid { // Only delete if not already soft-deleted
 					idsToDelete = append(idsToDelete, tc.ID)
@@ -161,7 +164,7 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 
 // getInputDefinitionsLength retrieves the length of the InputDefinitions array
 // from the JSONB Question field for a given question ID.
-func getInputDefinitionsLength(db *gorm.DB, questionID int64) (int, error) {
+func getInputDefinitionsLength(db *gorm.DB, questionID types.QuestionID) (int, error) {
 	var length int
 	err := db.Raw(`
         SELECT jsonb_array_length(

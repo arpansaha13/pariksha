@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/types"
 )
 
 type ParticipantCount struct {
@@ -18,16 +19,16 @@ type ParticipantCount struct {
 }
 
 type Exam struct {
-	ID                 int64 `gorm:"primaryKey;type:bigint"`
+	ID                 types.ExamID `gorm:"primaryKey;type:bigint"`
 	Title              string
 	StartsAt           time.Time       `gorm:"column:starts_at;not null"`
 	EndsAt             time.Time       `gorm:"column:ends_at;not null"`
-	CreatedBy          int64           `gorm:"type:bigint"`
+	CreatedBy          types.UserID    `gorm:"type:bigint"`
 	Type               string          `gorm:"type:varchar(16);default:LINK"`
 	MaxCandidatesCount int32           `gorm:"not null"`
 	MaxScore           int32           `gorm:"type:integer;default:0"`
 	DurationMinutes    int16           `gorm:"type:smallint;not null;check:duration_minutes >= 0 AND duration_minutes <= 1440"`
-	PaperID            int64           `gorm:"type:bigint"`
+	PaperID            types.PaperID   `gorm:"type:bigint"`
 	ParticipantCounts  json.RawMessage `gorm:"type:jsonb;default:'{\"unattended\":0,\"invited\":0,\"started\":0,\"ended\":0}'"`
 	DeletedAt          gorm.DeletedAt  `gorm:"index"`
 

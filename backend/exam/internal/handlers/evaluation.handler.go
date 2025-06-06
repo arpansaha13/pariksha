@@ -156,8 +156,8 @@ func (s *ExamServer) UpdateAnswerForEvaluation(ctx context.Context, req *proto.U
 	}
 
 	return &proto.GetAnswerEvaluationDataResponse{
-		Id:           answer.ID,
-		QuestionId:   answer.QuestionID,
+		Id:           int64(answer.ID),
+		QuestionId:   int64(answer.QuestionID),
 		ScoreAwarded: int32(answer.ScoreAwarded),
 		Comments:     answer.Comments.String,
 	}, nil

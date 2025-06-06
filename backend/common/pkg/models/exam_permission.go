@@ -1,11 +1,14 @@
 package models
 
-import "pariksha/common/pkg/constants"
+import (
+	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/types"
+)
 
 type ExamPermission struct {
-	ExamID      int64 `gorm:"primaryKey;type:bigint;not null"`
-	UserID      int64 `gorm:"primaryKey;type:bigint;not null"`
-	Permissions int16 `gorm:"type:smallint;not null"`
+	ExamID      types.ExamID `gorm:"primaryKey;type:bigint;not null"`
+	UserID      types.UserID `gorm:"primaryKey;type:bigint;not null"`
+	Permissions int16        `gorm:"type:smallint;not null"`
 }
 
 func (ExamPermission) TableName() string {

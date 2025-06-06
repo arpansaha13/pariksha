@@ -1,15 +1,19 @@
 package structs
 
+import (
+	"pariksha/common/pkg/types"
+)
+
 type PrepareQuestionsPayload struct {
-	ExamID  int64 `json:"examId"`
-	PaperID int64 `json:"paperId"`
+	ExamID  types.ExamID  `json:"examId"`
+	PaperID types.PaperID `json:"paperId"`
 }
 
 type AutoEndExamPayload struct {
-	ExamID        int64 `json:"exam_id"`
-	ParticipantID int64 `json:"participant_id"`
+	ExamID        types.ExamID        `json:"exam_id"`
+	ParticipantID types.ParticipantID `json:"participant_id"`
 }
 
 type DeleteExamsPayload struct {
-	ExamIDs []int64 `json:"examIds"`
+	ExamIDs []types.ExamID `json:"examIds"`
 }

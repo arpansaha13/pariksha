@@ -20,7 +20,7 @@ func TestGetExamResults(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Get results with all questions answered",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -28,7 +28,7 @@ func TestGetExamResults(t *testing.T) {
 
 				// Create participant
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_EVALUATED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_EVALUATED},
 				})
 				require.NoError(t, err)
 
@@ -55,13 +55,13 @@ func TestGetExamResults(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Exam with no answers",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_EVALUATED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_EVALUATED},
 				})
 				require.NoError(t, err)
 				return &exam
@@ -73,7 +73,7 @@ func TestGetExamResults(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Fail - User is not a participant",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.PermissionDenied,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -93,7 +93,7 @@ func TestGetExamResults(t *testing.T) {
 			})
 
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.ExamRequest{ExamId: exam.ID},
+				&proto.ExamRequest{ExamId: int64(exam.ID)},
 				client.GetExamResults,
 				tt.validate,
 			)

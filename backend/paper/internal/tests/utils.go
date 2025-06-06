@@ -15,20 +15,21 @@ import (
 
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/types"
 	"pariksha/paper/internal/config/db"
 	paperUtils "pariksha/paper/internal/utils"
 )
 
 const defaultPaperCategoryName string = "Category 1"
 
-func createContextWithUserID(userID int64) context.Context {
+func createContextWithUserID(userID types.UserID) context.Context {
 	md := metadata.New(map[string]string{
-		"user_id": strconv.FormatInt(userID, 10),
+		"user_id": strconv.FormatInt(int64(userID), 10),
 	})
 	return metadata.NewOutgoingContext(context.Background(), md)
 }
 
-func createTestPaper(t *testing.T, userID int64) models.Paper {
+func createTestPaper(t *testing.T, userID types.UserID) models.Paper {
 	paper := models.Paper{
 		Title:           "Test Paper",
 		MaxScore:        0,
@@ -48,7 +49,7 @@ func createTestPaper(t *testing.T, userID int64) models.Paper {
 	require.NoError(t, err)
 
 	category := models.QuestionCategory{
-		PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
+		PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 		Name:    defaultPaperCategoryName,
 		Order:   1,
 	}
@@ -59,7 +60,7 @@ func createTestPaper(t *testing.T, userID int64) models.Paper {
 }
 
 // verifyQuestionCounts validates the question counts on a paper
-func verifyQuestionCounts(t *testing.T, paperID int64, expected *models.QuestionCount) {
+func verifyQuestionCounts(t *testing.T, paperID types.PaperID, expected *models.QuestionCount) {
 	var paper models.Paper
 	require.NoError(t, db.DB.Take(&paper, paperID).Error)
 	counts, err := paper.GetQuestionCounts()
@@ -78,7 +79,7 @@ func verifyMCQContent(t *testing.T, question models.Question, expectedStatement 
 }
 
 // verifyPaperPermissions validates the permissions of a user for a paper
-func verifyPaperPermissions(t *testing.T, paperID, userID int64, expectedRead, expectedWrite bool) {
+func verifyPaperPermissions(t *testing.T, paperID types.PaperID, userID types.UserID, expectedRead, expectedWrite bool) {
 	var permissions models.PaperPermission
 	err := db.DB.Where("paper_id = ? AND user_id = ?", paperID, userID).Take(&permissions).Error
 	require.NoError(t, err)
@@ -93,10 +94,10 @@ func updatePaperCounts(t *testing.T, paper *models.Paper, counts string) {
 }
 
 // setupTestCategory creates a test category with the given configuration
-func setupTestCategory(t *testing.T, userID int64, isLocked bool) (*models.Paper, *models.QuestionCategory) {
+func setupTestCategory(t *testing.T, userID types.UserID, isLocked bool) (*models.Paper, *models.QuestionCategory) {
 	paper := createTestPaper(t, userID)
 	category := models.QuestionCategory{
-		PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
+		PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 		Name:    "Test Category",
 		Order:   2,
 		Locked:  isLocked,
@@ -108,7 +109,7 @@ func setupTestCategory(t *testing.T, userID int64, isLocked bool) (*models.Paper
 // createTestQuestions creates test questions in the database with default values and auto-generated order
 func createTestQuestions(t *testing.T, questions []models.Question) []models.Question {
 	// Map to track order counter per category
-	categoryOrders := make(map[int64]int16)
+	categoryOrders := make(map[types.CategoryID]int16)
 
 	for i := range questions {
 		// Set default MaxScore if not provided

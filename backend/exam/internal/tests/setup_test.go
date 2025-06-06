@@ -15,6 +15,7 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/config/env"
 	"pariksha/exam/internal/handlers"
@@ -23,8 +24,9 @@ import (
 )
 
 const (
-	bufSize       = 1024 * 1024
-	userID  int64 = 1 // Creator/admin user ID
+	bufSize                  = 1024 * 1024
+	typedUserID types.UserID = 1 // Creator/admin user ID
+	userID      int64        = 1 // Creator/admin user ID
 )
 
 var (

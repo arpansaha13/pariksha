@@ -34,12 +34,12 @@ func TestGetUser(t *testing.T) {
 			},
 			makeRequest: func(user *models.User) *proto.GetUserRequest {
 				return &proto.GetUserRequest{
-					UserId: user.ID,
+					UserId: int64(user.ID),
 				}
 			},
 			expectedCode: codes.OK,
 			validateFunc: func(t *testing.T, user *models.User, resp *proto.UserProfileResponse) {
-				assert.Equal(t, user.ID, resp.Id)
+				assert.EqualValues(t, user.ID, resp.Id)
 				assert.Equal(t, user.Username, resp.Username)
 				assert.Equal(t, user.Email, resp.Email)
 				assert.Equal(t, user.FirstName.String, resp.FirstName)
@@ -101,7 +101,7 @@ func TestUpdateUser(t *testing.T) {
 			},
 			makeRequest: func(user *models.User) *proto.UpdateUserRequest {
 				return &proto.UpdateUserRequest{
-					UserId:    user.ID,
+					UserId:    int64(user.ID),
 					Username:  strPtr("newusername"),
 					FirstName: strPtr("John"),
 					LastName:  strPtr("Doe"),
@@ -132,7 +132,7 @@ func TestUpdateUser(t *testing.T) {
 			},
 			makeRequest: func(user *models.User) *proto.UpdateUserRequest {
 				return &proto.UpdateUserRequest{
-					UserId:   user.ID,
+					UserId:   int64(user.ID),
 					Username: strPtr("user2"),
 				}
 			},
@@ -161,7 +161,7 @@ func TestUpdateUser(t *testing.T) {
 			},
 			makeRequest: func(user *models.User) *proto.UpdateUserRequest {
 				return &proto.UpdateUserRequest{
-					UserId: user.ID,
+					UserId: int64(user.ID),
 				}
 			},
 			expectedCode: codes.OK,
@@ -178,7 +178,7 @@ func TestUpdateUser(t *testing.T) {
 			},
 			makeRequest: func(user *models.User) *proto.UpdateUserRequest {
 				return &proto.UpdateUserRequest{
-					UserId:    user.ID,
+					UserId:    int64(user.ID),
 					FirstName: strPtr("John123"), // Invalid first name with numbers
 				}
 			},
@@ -192,7 +192,7 @@ func TestUpdateUser(t *testing.T) {
 			},
 			makeRequest: func(user *models.User) *proto.UpdateUserRequest {
 				return &proto.UpdateUserRequest{
-					UserId:   user.ID,
+					UserId:   int64(user.ID),
 					LastName: strPtr("Doe!@#"), // Invalid last name with special characters
 				}
 			},

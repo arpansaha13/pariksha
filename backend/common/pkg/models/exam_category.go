@@ -2,14 +2,15 @@ package models
 
 import (
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/types"
 )
 
 type ExamCategory struct {
-	ID         int64 `gorm:"primaryKey;type:bigint"`
-	ExamID     int64 `gorm:"type:bigint;not null"`
-	CategoryID int64 `gorm:"type:bigint;not null"`
-	Order      int16 `gorm:"type:smallint;not null;default:0"`
-	Exam       Exam  `gorm:"foreignKey:ExamID"`
+	ID         types.CategoryID `gorm:"primaryKey;type:bigint"`
+	ExamID     types.ExamID     `gorm:"type:bigint;not null"`
+	CategoryID types.CategoryID `gorm:"type:bigint;not null"`
+	Order      int16            `gorm:"type:smallint;not null;default:0"`
+	Exam       Exam             `gorm:"foreignKey:ExamID"`
 }
 
 func (ExamCategory) TableName() string {

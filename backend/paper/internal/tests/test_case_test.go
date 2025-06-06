@@ -12,6 +12,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/paper/internal/config/db"
@@ -21,7 +22,7 @@ type UpsertTestCasesCase struct {
 	BaseTestCase
 	setup    func(t *testing.T) *models.Question
 	request  *proto.UpsertTestCasesRequest
-	validate func(t *testing.T, questionID int64)
+	validate func(t *testing.T, questionID types.QuestionID)
 }
 
 func TestUpsertPaperTestCases(t *testing.T) {
@@ -39,7 +40,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_CODING,
 						Question: json.RawMessage(`{
@@ -70,7 +71,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 					},
 				},
 			},
-			validate: func(t *testing.T, questionID int64) {
+			validate: func(t *testing.T, questionID types.QuestionID) {
 				var testCases []models.TestCase
 				require.NoError(t, db.DB.Where("question_id = ?", questionID).Order("\"order\"").Find(&testCases).Error)
 				require.Len(t, testCases, 2)
@@ -103,7 +104,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_CODING,
 						Question:   json.RawMessage(`{"title":"Test","statement":"Test","input_definitions":[{"variable_name":"x","type":1}],"output_definition":{"type":1}}`),
@@ -135,7 +136,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 					},
 				},
 			},
-			validate: func(t *testing.T, questionID int64) {
+			validate: func(t *testing.T, questionID types.QuestionID) {
 				var testCases []models.TestCase
 				require.NoError(t, db.DB.Where("question_id = ?", questionID).Order("id").Find(&testCases).Error)
 				require.Len(t, testCases, 2)
@@ -169,7 +170,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
@@ -199,7 +200,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_CODING,
 						Question:   json.RawMessage(`{"title":"Test","statement":"Test","input_definitions":[{"variable_name":"x","type":1}],"output_definition":{"type":1}}`),
@@ -233,7 +234,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 					},
 				},
 			},
-			validate: func(t *testing.T, questionID int64) {
+			validate: func(t *testing.T, questionID types.QuestionID) {
 				var testCases []models.TestCase
 				require.NoError(t, db.DB.Where("question_id = ?", questionID).Order("id").Find(&testCases).Error)
 				require.Len(t, testCases, 2)
@@ -264,7 +265,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_CODING,
 						Question:   json.RawMessage(`{"title":"Test","statement":"Test","input_definitions":[{"variable_name":"x","type":1}],"output_definition":{"type":1}}`),
@@ -293,7 +294,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 					},
 				},
 			},
-			validate: func(t *testing.T, questionID int64) {
+			validate: func(t *testing.T, questionID types.QuestionID) {
 				var testCases []models.TestCase
 				// Check both active and soft-deleted records
 				require.NoError(t, db.DB.Unscoped().Where("question_id = ?", questionID).Find(&testCases).Error)
@@ -322,7 +323,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_CODING,
 						Question:   json.RawMessage(`{"title":"Test","statement":"Test","input_definitions":[{"variable_name":"x","type":1}],"output_definition":{"type":1}}`),
@@ -358,7 +359,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 					},
 				},
 			},
-			validate: func(t *testing.T, questionID int64) {
+			validate: func(t *testing.T, questionID types.QuestionID) {
 				var testCases []models.TestCase
 				require.NoError(t, db.DB.Unscoped().Where("question_id = ?", questionID).Order("\"order\"").Find(&testCases).Error)
 				require.Len(t, testCases, 2)
@@ -394,7 +395,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_CODING,
 						Question: json.RawMessage(`{
@@ -432,7 +433,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_CODING,
 						Question: json.RawMessage(`{
@@ -467,7 +468,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_CODING,
 						Question: json.RawMessage(`{
@@ -502,7 +503,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_CODING,
 						Question: json.RawMessage(`{
@@ -524,7 +525,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 					},
 				},
 			},
-			validate: func(t *testing.T, questionID int64) {
+			validate: func(t *testing.T, questionID types.QuestionID) {
 				var testCases []models.TestCase
 				require.NoError(t, db.DB.Where("question_id = ?", questionID).Find(&testCases).Error)
 				require.Len(t, testCases, 1)
@@ -540,7 +541,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			question := tt.setup(t)
-			tt.request.QuestionId = question.ID
+			tt.request.QuestionId = int64(question.ID)
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,

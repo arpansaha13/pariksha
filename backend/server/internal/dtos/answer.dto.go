@@ -18,7 +18,7 @@ type AnswerListAnswerDto struct {
 }
 
 type AnswerListItemDto struct {
-	Type     string                `json:"type"`
+	Type     int32                 `json:"type"`
 	Question AnswerListQuestionDto `json:"question"`
 	Answer   *AnswerListAnswerDto  `json:"answer"`
 }

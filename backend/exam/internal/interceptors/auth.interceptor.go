@@ -12,6 +12,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
 )
@@ -149,9 +150,9 @@ func GeneralExamAuthInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-func fetchExam(examID int64) (*models.Exam, error) {
+func fetchExam(examID types.ExamID) (*models.Exam, error) {
 	var exam models.Exam
-	if err := db.DB.Where("id IN (?)", []int64{examID}).Take(&exam).Error; err != nil {
+	if err := db.DB.Where("id IN (?)", []int64{int64(examID)}).Take(&exam).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, status.Error(codes.NotFound, "exam not found")
 		}
@@ -160,7 +161,7 @@ func fetchExam(examID int64) (*models.Exam, error) {
 	return &exam, nil
 }
 
-func fetchExamPermission(examID int64, userID int64) (*models.ExamPermission, error) {
+func fetchExamPermission(examID types.ExamID, userID types.UserID) (*models.ExamPermission, error) {
 	var permission models.ExamPermission
 	err := db.DB.Where("exam_id = ? AND user_id = ?", examID, userID).Take(&permission).Error
 	if err != nil {
@@ -169,7 +170,7 @@ func fetchExamPermission(examID int64, userID int64) (*models.ExamPermission, er
 	return &permission, nil
 }
 
-func getExamIdFromRequest(req any) (*int64, error) {
+func getExamIdFromRequest(req any) (*types.ExamID, error) {
 	var examID int64
 
 	switch r := req.(type) {
@@ -224,7 +225,8 @@ func getExamIdFromRequest(req any) (*int64, error) {
 		return nil, status.Error(codes.Internal, "unhandled request type in exam access interceptor")
 	}
 
-	return &examID, nil
+	typedExamID := types.ExamID(examID)
+	return &typedExamID, nil
 }
 
 // Getter function to safely access exam from context

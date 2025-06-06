@@ -4,11 +4,12 @@ import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/types"
 )
 
 type PaperPermission struct {
-	PaperID     int64          `gorm:"primaryKey;type:bigint;not null"`
-	UserID      int64          `gorm:"primaryKey;type:bigint;not null"`
+	PaperID     types.PaperID  `gorm:"primaryKey;type:bigint;not null"`
+	UserID      types.UserID   `gorm:"primaryKey;type:bigint;not null"`
 	Permissions int16          `gorm:"type:smallint;not null"`
 	DeletedAt   gorm.DeletedAt `gorm:"index"`
 }

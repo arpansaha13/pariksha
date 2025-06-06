@@ -12,6 +12,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/interceptors"
@@ -29,8 +30,8 @@ func (s *ExamServer) GetExamParticipants(ctx context.Context, req *proto.ExamReq
 
 	for i, p := range participants {
 		response.Participants[i] = &proto.ParticipantResponse{
-			Id:           p.ID,
-			UserId:       p.UserID,
+			Id:           int64(p.ID),
+			UserId:       int64(p.UserID),
 			Status:       int32(p.Status),
 			ScoreAwarded: int32(p.ScoreAwarded),
 		}
@@ -68,9 +69,12 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 		return nil, status.Error(codes.FailedPrecondition, "maximum participant limit reached for the exam")
 	}
 
+	typedExamId := types.ExamID(req.ExamId)
+	typedUserId := types.UserID(req.UserId)
+
 	participant := models.ExamParticipant{
-		ExamID: req.ExamId,
-		UserID: req.UserId,
+		ExamID: typedExamId,
+		UserID: typedUserId,
 	}
 
 	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
@@ -79,8 +83,8 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 		}
 
 		permission := models.ExamPermission{
-			ExamID: req.ExamId,
-			UserID: req.UserId,
+			ExamID: typedExamId,
+			UserID: typedUserId,
 		}
 		permission.SetParticipate()
 
@@ -101,8 +105,8 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 	}
 
 	return &proto.ParticipantResponse{
-		Id:           participant.ID,
-		UserId:       participant.UserID,
+		Id:           int64(participant.ID),
+		UserId:       int64(participant.UserID),
 		Status:       int32(participant.Status),
 		ScoreAwarded: int32(participant.ScoreAwarded),
 	}, nil
@@ -175,7 +179,7 @@ func (s *ExamServer) GetExamParticipant(ctx context.Context, req *proto.GetExamP
 	}
 
 	response := &proto.GetExamParticipantResponse{
-		ParticipantId: participant.ID,
+		ParticipantId: int64(participant.ID),
 		ScoreAwarded:  participant.ScoreAwarded,
 	}
 
@@ -197,7 +201,7 @@ func (s *ExamServer) GetParticipantById(ctx context.Context, req *proto.Particip
 	}
 
 	return &proto.ParticipantResponse{
-		Id:     participant.ID,
+		Id:     int64(participant.ID),
 		Status: int32(participant.Status),
 	}, nil
 }

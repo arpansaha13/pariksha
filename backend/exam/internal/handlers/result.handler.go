@@ -37,7 +37,7 @@ func (s *ExamServer) GetExamResults(ctx context.Context, req *proto.ExamRequest)
 	results := make([]*proto.ExamResultItem, len(answers))
 	for i, answer := range answers {
 		results[i] = &proto.ExamResultItem{
-			AnswerId:     answer.ID,
+			AnswerId:     int64(answer.ID),
 			ScoreAwarded: int32(answer.ScoreAwarded),
 			Comments:     answer.Comments.String,
 		}

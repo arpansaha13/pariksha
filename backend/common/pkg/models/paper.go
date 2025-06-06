@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/types"
 )
 
 type QuestionCount struct {
@@ -19,12 +20,12 @@ type QuestionCount struct {
 // Use int32 for paper's max_score.
 
 type Paper struct {
-	ID              int64           `gorm:"primaryKey;type:bigint"`
+	ID              types.PaperID   `gorm:"primaryKey;type:bigint"`
 	Title           string          `gorm:"type:varchar(255);not null;default:'Untitled Paper'"`
 	MaxScore        int32           `gorm:"type:integer;default:0"`
 	DurationMinutes int16           `gorm:"type:smallint;not null;check:duration_minutes >= 0 AND duration_minutes <= 1440"`
 	QuestionCounts  json.RawMessage `gorm:"type:jsonb;default:'{\"mcq\":0,\"subjective\":0,\"coding\":0}'"`
-	CreatedBy       int64           `gorm:"type:bigint;not null"`
+	CreatedBy       types.UserID    `gorm:"type:bigint;not null"`
 	DeletedAt       gorm.DeletedAt  `gorm:"index"`
 
 	Questions  []Question         `gorm:"foreignKey:PaperID"`

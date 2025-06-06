@@ -16,6 +16,7 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/config/env"
 	"pariksha/paper/internal/handlers"
@@ -23,8 +24,8 @@ import (
 )
 
 const (
-	bufSize       = 1024 * 1024
-	userID  int64 = 1
+	bufSize              = 1024 * 1024
+	userID  types.UserID = 1
 )
 
 var (

@@ -24,7 +24,7 @@ func (s *PaperServer) GetQuestionsByIds(ctx context.Context, req *proto.GetQuest
 
 	for i, question := range questions {
 		response.Questions[i] = &proto.QuestionBatchItem{
-			Id:          question.ID,
+			Id:          int64(question.ID),
 			MaxScore:    int32(question.MaxScore),
 			Type:        int32(question.Type),
 			RawQuestion: question.Question,
@@ -47,7 +47,7 @@ func (s *PaperServer) GetCategoriesByIds(ctx context.Context, req *proto.GetCate
 
 	for i, category := range categories {
 		response.Categories[i] = &proto.CategoryBatchItem{
-			Id:   category.ID,
+			Id:   int64(category.ID),
 			Name: category.Name,
 		}
 	}

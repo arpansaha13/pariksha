@@ -23,6 +23,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 )
 
@@ -53,7 +54,7 @@ func generateUniqueUsername(tx *gorm.DB, emailPrefix string) (string, error) {
 	return "", status.Error(codes.Internal, "failed to generate unique username after maximum retries")
 }
 
-func createSession(userID int64) (*models.Session, error) {
+func createSession(userID types.UserID) (*models.Session, error) {
 	sessionKey := uuid.New()
 	sessionExpiresAt := time.Now().Add(time.Duration(env.SESSION_EXPIRES_IN_HOURS) * time.Hour)
 
@@ -114,7 +115,7 @@ func (s *AuthServer) LoginWithPassword(ctx context.Context, req *proto.LoginWith
 	grpc.SetHeader(ctx, md)
 
 	return &proto.UserResponse{
-		Id:        user.ID,
+		Id:        int64(user.ID),
 		Username:  user.Username,
 		Email:     user.Email,
 		FirstName: user.FirstName.String,
@@ -277,7 +278,7 @@ func (s *AuthServer) VerifySignup(ctx context.Context, req *proto.VerificationRe
 	}
 
 	return &proto.UserResponse{
-		Id:        user.ID,
+		Id:        int64(user.ID),
 		Username:  user.Username,
 		Email:     user.Email,
 		FirstName: user.FirstName.String,
@@ -333,7 +334,7 @@ func (s *AuthServer) VerifyLoginOtp(ctx context.Context, req *proto.Verification
 	}
 
 	return &proto.UserResponse{
-		Id:        user.ID,
+		Id:        int64(user.ID),
 		Username:  user.Username,
 		Email:     user.Email,
 		FirstName: user.FirstName.String,
@@ -453,8 +454,8 @@ func (s *AuthServer) Authenticate(ctx context.Context, req *proto.AuthenticateRe
 		return nil, status.Error(codes.Unauthenticated, "invalid token claims")
 	}
 
-	userID := int64(claims["user_id"].(float64))
-	return &proto.AuthenticateResponse{UserId: userID}, nil
+	userID := types.UserID(claims["user_id"].(float64))
+	return &proto.AuthenticateResponse{UserId: int64(userID)}, nil
 }
 
 func (s *AuthServer) Logout(ctx context.Context, req *proto.LogoutRequest) (*proto.Empty, error) {

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"pariksha/common/pkg/types"
 	"strconv"
 
 	"google.golang.org/grpc/codes"
@@ -9,7 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func GetUserIDFromMetadata(ctx context.Context) (int64, error) {
+func GetUserIDFromMetadata(ctx context.Context) (types.UserID, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return 0, status.Error(codes.Unauthenticated, "missing metadata")
@@ -25,5 +26,5 @@ func GetUserIDFromMetadata(ctx context.Context) (int64, error) {
 		return 0, status.Error(codes.InvalidArgument, "invalid user id")
 	}
 
-	return userID, nil
+	return types.UserID(userID), nil
 }

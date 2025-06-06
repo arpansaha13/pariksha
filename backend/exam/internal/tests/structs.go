@@ -2,6 +2,7 @@ package tests
 
 import (
 	"pariksha/common/pkg/models"
+	"pariksha/common/pkg/types"
 	"testing"
 
 	"google.golang.org/grpc/codes"
@@ -9,7 +10,7 @@ import (
 
 // TestParticipantData represents test data for creating exam participants
 type TestParticipantData struct {
-	UserID int64
+	UserID types.UserID
 	Status int16
 }
 
@@ -18,7 +19,7 @@ type BaseTestCase struct {
 	name         string
 	metadata     map[string]string
 	expectedCode codes.Code
-	userID       int64
+	userID       types.UserID
 }
 
 // ParticipantTestCase represents a test case for participant-related operations
@@ -31,7 +32,7 @@ type ParticipantTestCase[T any] struct {
 // ExamTestCase represents a test case for exam-related operations
 type ExamTestCase[T any] struct {
 	BaseTestCase
-	setup    func(t *testing.T) (*models.Exam, int64)
+	setup    func(t *testing.T) (*models.Exam, types.QuestionID)
 	validate func(t *testing.T, resp T)
 }
 
@@ -47,14 +48,14 @@ type ExamParticipantRequestTestCase[T any, R any] struct {
 	BaseTestCase
 	setup    func(t *testing.T) *models.Exam
 	request  R
-	validate func(t *testing.T, examID int64, resp T)
+	validate func(t *testing.T, examID types.ExamID, resp T)
 }
 
 // ExamParticipantPairTestCase represents a test case returning both exam and participant
 type ExamParticipantPairTestCase struct {
 	BaseTestCase
 	setup    func(t *testing.T) (*models.Exam, *models.ExamParticipant)
-	validate func(t *testing.T, examID, participantID int64)
+	validate func(t *testing.T, examID types.ExamID, participantID types.ParticipantID)
 }
 
 // ExamRequestTestCase represents a test case with a request

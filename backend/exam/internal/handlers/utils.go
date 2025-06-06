@@ -78,11 +78,11 @@ func examToProto(exam *models.Exam) (*proto.ExamResponse, error) {
 	}
 
 	return &proto.ExamResponse{
-		Id:                 exam.ID,
+		Id:                 int64(exam.ID),
 		Title:              exam.Title,
 		StartsAt:           timestamppb.New(exam.StartsAt),
 		EndsAt:             timestamppb.New(exam.EndsAt),
-		CreatedBy:          exam.CreatedBy,
+		CreatedBy:          int64(exam.CreatedBy),
 		Type:               exam.Type,
 		MaxCandidatesCount: exam.MaxCandidatesCount,
 		MaxScore:           exam.MaxScore,

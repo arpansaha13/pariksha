@@ -9,6 +9,7 @@ import (
 
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/paper/internal/config/db"
@@ -79,7 +80,7 @@ func TestCreatePaper(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T)
-		userID       int64
+		userID       types.UserID
 		expectedCode codes.Code
 		validate     func(t *testing.T, resp *proto.PaperResponse)
 	}{
@@ -297,7 +298,7 @@ func TestUpdatePaper(t *testing.T) {
 			paper := tt.setup(t)
 
 			ctx := createContextWithUserID(tt.userID)
-			tt.request.PaperId = paper.ID
+			tt.request.PaperId = int64(paper.ID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				tt.request,
 				client.UpdatePaper,
@@ -361,7 +362,7 @@ func TestGetPaper(t *testing.T) {
 			},
 			validate: func(t *testing.T, resp *proto.PaperResponse) {
 				assert.NotZero(t, resp.Id)
-				verifyPaperPermissions(t, resp.Id, userID, true, false)
+				verifyPaperPermissions(t, types.PaperID(resp.Id), userID, true, false)
 			},
 		},
 		{
@@ -406,7 +407,7 @@ func TestGetPaper(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.PaperRequest{PaperId: paper.ID},
+				&proto.PaperRequest{PaperId: int64(paper.ID)},
 				client.GetPaper,
 				tt.validate)
 		})
@@ -496,7 +497,7 @@ func TestGetPaperPermissions(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.PaperRequest{PaperId: paper.ID},
+				&proto.PaperRequest{PaperId: int64(paper.ID)},
 				client.GetPaperPermissions,
 				tt.validate)
 		})
@@ -520,7 +521,7 @@ func TestDeletePapers(t *testing.T) {
 				paper1 := createTestPaper(t, userID)
 				paper2 := createTestPaper(t, userID)
 				paper3 := createTestPaper(t, userID)
-				return []int64{paper1.ID, paper2.ID, paper3.ID}
+				return []int64{int64(paper1.ID), int64(paper2.ID), int64(paper3.ID)}
 			},
 			validate: func(t *testing.T) {
 				// Verify papers are soft deleted
@@ -550,7 +551,7 @@ func TestDeletePapers(t *testing.T) {
 				err := db.DB.Create(&permissions).Error
 				require.NoError(t, err)
 
-				return []int64{paper1.ID, paper2.ID}
+				return []int64{int64(paper1.ID), int64(paper2.ID)}
 			},
 		},
 		{

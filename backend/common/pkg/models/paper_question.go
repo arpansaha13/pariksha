@@ -9,11 +9,12 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/types"
 )
 
 type Question struct {
-	ID            int64            `gorm:"primaryKey;type:bigint"`
-	CategoryID    int64            `gorm:"type:bigint;not null"`
+	ID            types.QuestionID `gorm:"primaryKey;type:bigint"`
+	CategoryID    types.CategoryID `gorm:"type:bigint;not null"`
 	Question      json.RawMessage  `gorm:"type:jsonb;not null"`
 	Order         int16            `gorm:"type:smallint;not null"`
 	Type          int16            `gorm:"type:smallint;not null;check:type > 0 AND type <= 3"`

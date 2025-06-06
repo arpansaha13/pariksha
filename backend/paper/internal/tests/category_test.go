@@ -12,6 +12,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/paper/internal/config/db"
 )
@@ -32,12 +33,12 @@ func TestGetPaperCategories(t *testing.T) {
 				categories := []models.QuestionCategory{
 					defaultCategory,
 					{
-						PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						Name:    "Category 2",
 						Order:   2,
 					},
 					{
-						PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						Name:    "Category 3",
 						Order:   3,
 					},
@@ -75,7 +76,7 @@ func TestGetPaperCategories(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.PaperRequest{PaperId: paper.ID},
+				&proto.PaperRequest{PaperId: int64(paper.ID)},
 				client.GetPaperCategories,
 				func(t *testing.T, resp *proto.CategoryList) {
 					if tt.validate != nil {
@@ -134,7 +135,7 @@ func TestCreateCategory(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.CreateCategoryRequest{PaperId: paper.ID},
+				&proto.CreateCategoryRequest{PaperId: int64(paper.ID)},
 				client.CreateCategory,
 				func(t *testing.T, resp *proto.CategoryResponse) {
 					if tt.validate != nil {
@@ -174,7 +175,7 @@ func TestUpdateCategory(t *testing.T) {
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, userID)
 				category := models.QuestionCategory{
-					PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
+					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 					Name:    "Original Name",
 					Order:   1,
 					Locked:  true,
@@ -211,14 +212,14 @@ func TestUpdateCategory(t *testing.T) {
 
 				createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Test Question 1","options":["A","B","C"]}`),
 						Locked:     true,
 					},
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Test Question 2","options":["A","B","C"]}`),
@@ -270,7 +271,7 @@ func TestUpdateCategory(t *testing.T) {
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, userID)
 				category := models.QuestionCategory{
-					PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
+					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 					Name:    "Original Name",
 					Order:   1,
 				}
@@ -293,7 +294,7 @@ func TestUpdateCategory(t *testing.T) {
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, 2) // Different user
 				category := models.QuestionCategory{
-					PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
+					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 					Name:    "Original Name",
 					Order:   1,
 				}
@@ -312,7 +313,7 @@ func TestUpdateCategory(t *testing.T) {
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				&proto.UpdateCategoryRequest{
-					CategoryId: category.ID,
+					CategoryId: int64(category.ID),
 					Name:       tt.newName,
 				},
 				client.UpdateCategory,
@@ -339,7 +340,7 @@ func TestReorderCategories(t *testing.T) {
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&defaultCategory).Error)
 
 				additionalCategory := models.QuestionCategory{
-					PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
+					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 					Name:    "Category 2",
 					Order:   2,
 				}
@@ -370,8 +371,8 @@ func TestReorderCategories(t *testing.T) {
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				&proto.ReorderCategoriesRequest{
-					PaperId:     paper.ID,
-					CategoryIds: []int64{categories[1].ID, categories[0].ID}, // Reverse order
+					PaperId:     int64(paper.ID),
+					CategoryIds: []int64{int64(categories[1].ID), int64(categories[0].ID)}, // Reverse order
 				},
 				client.ReorderCategories,
 				func(t *testing.T, resp *proto.Empty) {
@@ -395,7 +396,7 @@ func TestDeleteCategory(t *testing.T) {
 				_, category := setupTestCategory(t, userID, false)
 				return category
 			},
-			validate: func(t *testing.T, categoryID int64) {
+			validate: func(t *testing.T, categoryID types.CategoryID) {
 				var category models.QuestionCategory
 				err := db.DB.First(&category, categoryID).Error
 				assert.Error(t, err)
@@ -413,7 +414,7 @@ func TestDeleteCategory(t *testing.T) {
 				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
 				return &category
 			},
-			validate: func(t *testing.T, categoryID int64) {
+			validate: func(t *testing.T, categoryID types.CategoryID) {
 				var category models.QuestionCategory
 				err := db.DB.First(&category, categoryID).Error
 				assert.NoError(t, err)
@@ -428,7 +429,7 @@ func TestDeleteCategory(t *testing.T) {
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, 2) // Different user
 				category := models.QuestionCategory{
-					PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
+					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 					Name:    "Test Category",
 					Order:   2,
 				}
@@ -448,7 +449,7 @@ func TestDeleteCategory(t *testing.T) {
 				// Create test question
 				createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B","C"]}`),
@@ -458,7 +459,7 @@ func TestDeleteCategory(t *testing.T) {
 
 				return category
 			},
-			validate: func(t *testing.T, categoryID int64) {
+			validate: func(t *testing.T, categoryID types.CategoryID) {
 				// Verify category still exists but is unlinked
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.First(&category, categoryID).Error)
@@ -488,7 +489,7 @@ func TestDeleteCategory(t *testing.T) {
 				// Note: A locked category may have both locked and unlocked questions.
 				// But an unlocked category can only have unlocked questions.
 				category := models.QuestionCategory{
-					PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
+					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 					Name:    "Test Category",
 					Order:   2,
 					Locked:  true,
@@ -498,7 +499,7 @@ func TestDeleteCategory(t *testing.T) {
 				// Add locked and unlocked questions
 				questions := []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Locked MCQ","options":["A","B"]}`),
@@ -506,7 +507,7 @@ func TestDeleteCategory(t *testing.T) {
 						Locked:     true,
 					},
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"Unlocked MCQ","options":["A","B"]}`),
@@ -518,7 +519,7 @@ func TestDeleteCategory(t *testing.T) {
 
 				return &category
 			},
-			validate: func(t *testing.T, categoryID int64) {
+			validate: func(t *testing.T, categoryID types.CategoryID) {
 				// Verify category still exists but is unlinked
 				var category models.QuestionCategory
 				require.NoError(t, db.DB.First(&category, categoryID).Error)
@@ -545,7 +546,7 @@ func TestDeleteCategory(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.CategoryRequest{CategoryId: category.ID},
+				&proto.CategoryRequest{CategoryId: int64(category.ID)},
 				client.DeleteCategory,
 				func(t *testing.T, resp *proto.Empty) {
 					if tt.validate != nil {

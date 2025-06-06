@@ -1123,10 +1123,10 @@ type AnswerResponse struct {
 	QuestionId        int64                  `protobuf:"varint,3,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
 	Answer            []byte                 `protobuf:"bytes,4,opt,name=answer,proto3" json:"answer,omitempty"` // JSON encoded answer
 	// question fields
-	Order         int32  `protobuf:"varint,5,opt,name=order,proto3" json:"order,omitempty"`
-	CategoryId    int64  `protobuf:"varint,6,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	QuestionType  string `protobuf:"bytes,7,opt,name=question_type,json=questionType,proto3" json:"question_type,omitempty"`
-	MaxScore      int32  `protobuf:"varint,8,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
+	Order         int32 `protobuf:"varint,5,opt,name=order,proto3" json:"order,omitempty"`
+	CategoryId    int64 `protobuf:"varint,6,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	QuestionType  int32 `protobuf:"varint,7,opt,name=question_type,json=questionType,proto3" json:"question_type,omitempty"`
+	MaxScore      int32 `protobuf:"varint,8,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1203,11 +1203,11 @@ func (x *AnswerResponse) GetCategoryId() int64 {
 	return 0
 }
 
-func (x *AnswerResponse) GetQuestionType() string {
+func (x *AnswerResponse) GetQuestionType() int32 {
 	if x != nil {
 		return x.QuestionType
 	}
-	return ""
+	return 0
 }
 
 func (x *AnswerResponse) GetMaxScore() int32 {
@@ -2263,7 +2263,7 @@ const file_exam_proto_rawDesc = "" +
 	"\x05order\x18\x05 \x01(\x05R\x05order\x12\x1f\n" +
 	"\vcategory_id\x18\x06 \x01(\x03R\n" +
 	"categoryId\x12#\n" +
-	"\rquestion_type\x18\a \x01(\tR\fquestionType\x12\x1b\n" +
+	"\rquestion_type\x18\a \x01(\x05R\fquestionType\x12\x1b\n" +
 	"\tmax_score\x18\b \x01(\x05R\bmaxScore\"=\n" +
 	"\n" +
 	"AnswerList\x12/\n" +

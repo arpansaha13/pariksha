@@ -13,6 +13,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/paper/internal/config/db"
@@ -116,7 +117,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 
 		question = models.Question{
 			PaperID:    sql.NullInt64{Int64: req.PaperId, Valid: true},
-			CategoryID: req.CategoryId,
+			CategoryID: types.CategoryID(req.CategoryId),
 			Order:      maxOrder.MaxOrder + 1,
 			Question:   json.RawMessage(req.RawQuestion),
 			Type:       int16(req.Type),
@@ -152,7 +153,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 	}
 
 	return &proto.CreateQuestionResponse{
-		Id: question.ID,
+		Id: int64(question.ID),
 	}, nil
 }
 

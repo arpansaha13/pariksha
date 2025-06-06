@@ -10,6 +10,7 @@ import (
 
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
 )
@@ -61,7 +62,7 @@ func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
 		case *proto.CreateCategoryRequest:
 			paperID = r.PaperId
 		case *proto.UpdateCategoryRequest:
-			category, err := fetchCategoryData(r.CategoryId)
+			category, err := fetchCategoryData(types.CategoryID(r.CategoryId))
 			if err != nil {
 				return nil, err
 			}
@@ -69,7 +70,7 @@ func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
 			paperID = category.PaperID.Int64
 			ctx = context.WithValue(ctx, categoryContextKey, category)
 		case *proto.CategoryRequest:
-			category, err := fetchCategoryData(r.CategoryId)
+			category, err := fetchCategoryData(types.CategoryID(r.CategoryId))
 			if err != nil {
 				return nil, err
 			}
@@ -79,21 +80,21 @@ func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
 		case *proto.ReorderCategoriesRequest:
 			paperID = r.PaperId
 		case *proto.QuestionRequest:
-			question, err := fetchQuestionData(r.QuestionId)
+			question, err := fetchQuestionData(types.QuestionID(r.QuestionId))
 			if err != nil {
 				return nil, err
 			}
 			paperID = question.PaperID.Int64
 			ctx = context.WithValue(ctx, questionContextKey, question)
 		case *proto.UpdateQuestionRequest:
-			question, err := fetchQuestionData(r.QuestionId)
+			question, err := fetchQuestionData(types.QuestionID(r.QuestionId))
 			if err != nil {
 				return nil, err
 			}
 			paperID = question.PaperID.Int64
 			ctx = context.WithValue(ctx, questionContextKey, question)
 		case *proto.UpsertTestCasesRequest:
-			question, err := fetchQuestionData(r.QuestionId)
+			question, err := fetchQuestionData(types.QuestionID(r.QuestionId))
 			if err != nil {
 				return nil, err
 			}
@@ -120,7 +121,7 @@ func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
 			return nil, status.Error(codes.NotFound, "paper not found")
 		}
 
-		permissions, err := fetchPaperPermissions(paperID, userID)
+		permissions, err := fetchPaperPermissions(types.PaperID(paperID), userID)
 		if err != nil {
 			return nil, err
 		}
@@ -142,7 +143,7 @@ func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
 }
 
 // Helper function to fetch category data
-func fetchCategoryData(categoryID int64) (models.QuestionCategory, error) {
+func fetchCategoryData(categoryID types.CategoryID) (models.QuestionCategory, error) {
 	var category models.QuestionCategory
 	if err := db.DB.Take(&category, categoryID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -154,7 +155,7 @@ func fetchCategoryData(categoryID int64) (models.QuestionCategory, error) {
 }
 
 // Helper function to fetch question data
-func fetchQuestionData(questionID int64) (models.Question, error) {
+func fetchQuestionData(questionID types.QuestionID) (models.Question, error) {
 	var question models.Question
 	if err := db.DB.Preload("Paper").Preload("Category").
 		Take(&question, questionID).Error; err != nil {
@@ -167,7 +168,7 @@ func fetchQuestionData(questionID int64) (models.Question, error) {
 }
 
 // fetchPaperPermissions fetches the PaperPermission entry for the given paperId and userId.
-func fetchPaperPermissions(paperId int64, userId int64) (models.PaperPermission, error) {
+func fetchPaperPermissions(paperId types.PaperID, userId types.UserID) (models.PaperPermission, error) {
 	var permissions models.PaperPermission
 	if err := db.DB.Where("paper_id = ? AND user_id = ?", paperId, userId).Take(&permissions).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {

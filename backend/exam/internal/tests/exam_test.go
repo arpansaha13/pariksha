@@ -15,6 +15,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/exam/internal/config/db"
@@ -25,13 +26,13 @@ func TestGetUserExams(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Get user exams",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
 				// Create multiple exams for the user
-				createTestExam(t, userID)
-				createTestExam(t, userID)
+				createTestExam(t, typedUserID)
+				createTestExam(t, typedUserID)
 				return nil
 			},
 			validate: func(t *testing.T, resp *proto.ExamList) {
@@ -46,7 +47,7 @@ func TestGetUserExams(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - No exams",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -59,11 +60,11 @@ func TestGetUserExams(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Only get own exams",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
-				createTestExam(t, userID)
+				createTestExam(t, typedUserID)
 				createTestExam(t, 2) // Different user's exam
 				return nil
 			},
@@ -94,7 +95,7 @@ func TestCreateExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Create exam with no type specified",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			request: &proto.CreateExamRequest{
@@ -122,7 +123,7 @@ func TestCreateExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Create exam with explicit LINK type",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			request: &proto.CreateExamRequest{
@@ -147,7 +148,7 @@ func TestCreateExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Create exam with INVITE type",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			request: &proto.CreateExamRequest{
@@ -172,7 +173,7 @@ func TestCreateExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Invalid - End time before start time",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.InvalidArgument,
 			},
 			request: &proto.CreateExamRequest{
@@ -188,7 +189,7 @@ func TestCreateExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Invalid - Start time in past",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.InvalidArgument,
 			},
 			request: &proto.CreateExamRequest{
@@ -204,7 +205,7 @@ func TestCreateExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Invalid - Zero max candidates",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.InvalidArgument,
 			},
 			request: &proto.CreateExamRequest{
@@ -220,7 +221,7 @@ func TestCreateExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Invalid - Unknown exam type",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.InvalidArgument,
 			},
 			request: &proto.CreateExamRequest{
@@ -236,7 +237,7 @@ func TestCreateExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Invalid - Zero duration minutes",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.InvalidArgument,
 			},
 			request: &proto.CreateExamRequest{
@@ -252,7 +253,7 @@ func TestCreateExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Invalid - Missing duration minutes",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.InvalidArgument,
 			},
 			request: &proto.CreateExamRequest{
@@ -267,7 +268,7 @@ func TestCreateExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Invalid - Negative duration minutes",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.InvalidArgument,
 			},
 			request: &proto.CreateExamRequest{
@@ -283,7 +284,7 @@ func TestCreateExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Invalid - Duration exceeds maximum allowed",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.InvalidArgument,
 			},
 			request: &proto.CreateExamRequest{
@@ -325,14 +326,14 @@ func TestUpdateExam(t *testing.T) {
 		name         string
 		setup        func(t *testing.T) *models.Exam
 		request      *proto.UpdateExamRequest
-		userID       int64
+		userID       types.UserID
 		expectedCode codes.Code
 		validate     func(t *testing.T, exam *models.Exam)
 	}{
 		{
 			name: "Success - Update all fields",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				exam.StartsAt = time.Now().Add(24 * time.Hour)
 				exam.EndsAt = time.Now().Add(48 * time.Hour)
 				require.NoError(t, db.DB.Save(&exam).Error)
@@ -344,7 +345,7 @@ func TestUpdateExam(t *testing.T) {
 				EndsAt:   timestamppb.New(time.Now().Add(72 * time.Hour)),
 				Type:     &examType,
 			},
-			userID:       userID,
+			userID:       typedUserID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, exam *models.Exam) {
 				var updated models.Exam
@@ -357,7 +358,7 @@ func TestUpdateExam(t *testing.T) {
 		{
 			name: "Fail - Cannot update StartsAt time after exam has started",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				exam.StartsAt = time.Now().Add(-1 * time.Hour)
 				require.NoError(t, db.DB.Save(&exam).Error)
 				return &exam
@@ -365,13 +366,13 @@ func TestUpdateExam(t *testing.T) {
 			request: &proto.UpdateExamRequest{
 				StartsAt: timestamppb.New(time.Now().Add(1 * time.Hour)),
 			},
-			userID:       userID,
+			userID:       typedUserID,
 			expectedCode: codes.FailedPrecondition,
 		},
 		{
 			name: "Fail - End time before start time",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				exam.StartsAt = time.Now().Add(24 * time.Hour)
 				exam.EndsAt = time.Now().Add(48 * time.Hour)
 				require.NoError(t, db.DB.Save(&exam).Error)
@@ -380,7 +381,7 @@ func TestUpdateExam(t *testing.T) {
 			request: &proto.UpdateExamRequest{
 				EndsAt: timestamppb.New(time.Now().Add(12 * time.Hour)),
 			},
-			userID:       userID,
+			userID:       typedUserID,
 			expectedCode: codes.InvalidArgument,
 		},
 		{
@@ -391,7 +392,7 @@ func TestUpdateExam(t *testing.T) {
 			request: &proto.UpdateExamRequest{
 				Title: &title,
 			},
-			userID:       userID,
+			userID:       typedUserID,
 			expectedCode: codes.NotFound,
 		},
 		{
@@ -403,13 +404,13 @@ func TestUpdateExam(t *testing.T) {
 			request: &proto.UpdateExamRequest{
 				Title: &title,
 			},
-			userID:       userID,
+			userID:       typedUserID,
 			expectedCode: codes.PermissionDenied,
 		},
 		{
 			name: "Success - Update duration",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				exam.StartsAt = time.Now().Add(24 * time.Hour)
 				exam.EndsAt = time.Now().Add(48 * time.Hour)
 				require.NoError(t, db.DB.Save(&exam).Error)
@@ -419,7 +420,7 @@ func TestUpdateExam(t *testing.T) {
 				ExamId:          0, // Will be set in test
 				DurationMinutes: ptr.Int32(180),
 			},
-			userID:       userID,
+			userID:       typedUserID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, exam *models.Exam) {
 				var updated models.Exam
@@ -430,7 +431,7 @@ func TestUpdateExam(t *testing.T) {
 		{
 			name: "Success - Update title after exam has ended",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				exam.StartsAt = time.Now().Add(-2 * time.Hour)
 				exam.EndsAt = time.Now().Add(-1 * time.Hour)
 				require.NoError(t, db.DB.Save(&exam).Error)
@@ -439,7 +440,7 @@ func TestUpdateExam(t *testing.T) {
 			request: &proto.UpdateExamRequest{
 				Title: &title,
 			},
-			userID:       userID,
+			userID:       typedUserID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, exam *models.Exam) {
 				var updated models.Exam
@@ -450,7 +451,7 @@ func TestUpdateExam(t *testing.T) {
 		{
 			name: "Fail - Update non-title field after exam has ended",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				exam.StartsAt = time.Now().Add(-2 * time.Hour)
 				exam.EndsAt = time.Now().Add(-1 * time.Hour)
 				exam.DurationMinutes = 60
@@ -462,7 +463,7 @@ func TestUpdateExam(t *testing.T) {
 				Title:           &title,
 				DurationMinutes: ptr.Int32(180),
 			},
-			userID:       userID,
+			userID:       typedUserID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, exam *models.Exam) {
 				var updated models.Exam
@@ -479,7 +480,7 @@ func TestUpdateExam(t *testing.T) {
 		{
 			name: "Success - Update EndsAt after exam has started",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				exam.StartsAt = time.Now().Add(-1 * time.Hour) // Started 1 hour ago
 				exam.EndsAt = time.Now().Add(1 * time.Hour)    // Originally ends in 1 hour
 				require.NoError(t, db.DB.Save(&exam).Error)
@@ -488,7 +489,7 @@ func TestUpdateExam(t *testing.T) {
 			request: &proto.UpdateExamRequest{
 				EndsAt: timestamppb.New(time.Now().Add(2 * time.Hour)), // Extend to 2 hours from now
 			},
-			userID:       userID,
+			userID:       typedUserID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, exam *models.Exam) {
 				var updated models.Exam
@@ -504,7 +505,7 @@ func TestUpdateExam(t *testing.T) {
 		{
 			name: "Fail - Update duration exceeds maximum",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				exam.StartsAt = time.Now().Add(24 * time.Hour)
 				exam.EndsAt = time.Now().Add(48 * time.Hour)
 				require.NoError(t, db.DB.Save(&exam).Error)
@@ -513,13 +514,13 @@ func TestUpdateExam(t *testing.T) {
 			request: &proto.UpdateExamRequest{
 				DurationMinutes: ptr.Int32(int32(constants.MAX_EXAM_DURATION_MINUTES + 1)),
 			},
-			userID:       userID,
+			userID:       typedUserID,
 			expectedCode: codes.InvalidArgument,
 		},
 		{
 			name: "Fail - Update duration after exam has started",
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				exam.StartsAt = time.Now().Add(-1 * time.Hour) // Started 1 hour ago
 				exam.EndsAt = time.Now().Add(1 * time.Hour)    // Ends in 1 hour
 				exam.DurationMinutes = 60
@@ -529,7 +530,7 @@ func TestUpdateExam(t *testing.T) {
 			request: &proto.UpdateExamRequest{
 				DurationMinutes: ptr.Int32(120), // Try to update to 2 hours
 			},
-			userID:       userID,
+			userID:       typedUserID,
 			expectedCode: codes.FailedPrecondition,
 		},
 	}
@@ -538,7 +539,7 @@ func TestUpdateExam(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			exam := tt.setup(t)
-			tt.request.ExamId = exam.ID
+			tt.request.ExamId = int64(exam.ID)
 
 			ctx := createContextWithUserID(tt.userID)
 			resp, err := client.UpdateExam(ctx, tt.request)
@@ -561,9 +562,9 @@ func TestEndExam(t *testing.T) {
 	tests := []struct {
 		name         string
 		setup        func(t *testing.T) (*models.Exam, *models.ExamParticipant)
-		userID       int64
+		userID       types.UserID
 		expectedCode codes.Code
-		validate     func(t *testing.T, examID int64, participantID int64)
+		validate     func(t *testing.T, examID types.ExamID, participantID types.ParticipantID)
 	}{
 		{
 			name: "Success - End exam",
@@ -574,7 +575,7 @@ func TestEndExam(t *testing.T) {
 				require.NoError(t, db.DB.Save(&exam).Error)
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
 
@@ -582,9 +583,9 @@ func TestEndExam(t *testing.T) {
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 				return &exam, &participant
 			},
-			userID:       userID,
+			userID:       typedUserID,
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, examID int64, participantID int64) {
+			validate: func(t *testing.T, examID types.ExamID, participantID types.ParticipantID) {
 				var exam models.Exam
 				require.NoError(t, db.DB.First(&exam, examID).Error)
 				counts, err := exam.GetParticipantCounts()
@@ -605,9 +606,9 @@ func TestEndExam(t *testing.T) {
 				exam := createTestExam(t, 2)
 				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
 				require.NoError(t, db.DB.Save(&exam).Error)
-				return &exam, &models.ExamParticipant{ID: userID}
+				return &exam, &models.ExamParticipant{ID: 1}
 			},
-			userID:       userID,
+			userID:       typedUserID,
 			expectedCode: codes.PermissionDenied,
 		},
 		{
@@ -615,7 +616,7 @@ func TestEndExam(t *testing.T) {
 			setup: func(t *testing.T) (*models.Exam, *models.ExamParticipant) {
 				return &models.Exam{ID: 9999}, &models.ExamParticipant{}
 			},
-			userID:       userID,
+			userID:       typedUserID,
 			expectedCode: codes.NotFound,
 		},
 		{
@@ -626,7 +627,7 @@ func TestEndExam(t *testing.T) {
 				require.NoError(t, db.DB.Save(&exam).Error)
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
 
@@ -634,7 +635,7 @@ func TestEndExam(t *testing.T) {
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 				return &exam, &participant
 			},
-			userID:       userID,
+			userID:       typedUserID,
 			expectedCode: codes.FailedPrecondition,
 		},
 	}
@@ -646,7 +647,7 @@ func TestEndExam(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			_, err := client.EndExam(ctx, &proto.EndExamRequest{
-				ExamId: exam.ID,
+				ExamId: int64(exam.ID),
 			})
 
 			if tt.expectedCode != codes.OK {
@@ -667,7 +668,7 @@ func TestStartExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Start INVITE exam as invited participant",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -678,7 +679,7 @@ func TestStartExam(t *testing.T) {
 				require.NoError(t, db.DB.Save(&exam).Error)
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
 				return &exam
@@ -704,7 +705,7 @@ func TestStartExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Start LINK exam as new participant",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -735,7 +736,7 @@ func TestStartExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Fail - Exam not started yet",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.FailedPrecondition,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -744,7 +745,7 @@ func TestStartExam(t *testing.T) {
 				require.NoError(t, db.DB.Save(&exam).Error)
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
 				return &exam
@@ -754,7 +755,7 @@ func TestStartExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Fail - Exam already ended",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.FailedPrecondition,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -764,7 +765,7 @@ func TestStartExam(t *testing.T) {
 				require.NoError(t, db.DB.Save(&exam).Error)
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
 				return &exam
@@ -774,7 +775,7 @@ func TestStartExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Fail - Already started exam",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.FailedPrecondition,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -784,7 +785,7 @@ func TestStartExam(t *testing.T) {
 				require.NoError(t, db.DB.Save(&exam).Error)
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
 				return &exam
@@ -794,7 +795,7 @@ func TestStartExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Fail - Participant not added in INVITE exam",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.PermissionDenied,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -810,7 +811,7 @@ func TestStartExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Start LINK exam with existing participant entry",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -821,7 +822,7 @@ func TestStartExam(t *testing.T) {
 				require.NoError(t, db.DB.Save(&exam).Error)
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
 				return &exam
@@ -853,7 +854,7 @@ func TestStartExam(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			_, err := client.StartExam(ctx, &proto.StartExamRequest{
-				ExamId:          exam.ID,
+				ExamId:          int64(exam.ID),
 				DurationMinutes: tt.duration,
 			})
 
@@ -875,7 +876,7 @@ func TestGetExamQuestions(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Get questions as registered participant",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -894,7 +895,7 @@ func TestGetExamQuestions(t *testing.T) {
 				})
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
 				return &exam
@@ -922,7 +923,7 @@ func TestGetExamQuestions(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Fail - Unregistered participant cannot access questions",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.PermissionDenied,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -939,7 +940,7 @@ func TestGetExamQuestions(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Fail - Exam not found",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.NotFound,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -949,7 +950,7 @@ func TestGetExamQuestions(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Get questions as evaluator",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -970,7 +971,7 @@ func TestGetExamQuestions(t *testing.T) {
 				// Create evaluator permission
 				permission := models.ExamPermission{
 					ExamID: exam.ID,
-					UserID: userID,
+					UserID: typedUserID,
 				}
 				permission.SetEvaluate()
 				require.NoError(t, db.DB.Create(&permission).Error)
@@ -1006,7 +1007,7 @@ func TestGetExamQuestions(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.ExamRequest{ExamId: exam.ID},
+				&proto.ExamRequest{ExamId: int64(exam.ID)},
 				client.GetExamQuestions,
 				tt.validate,
 			)
@@ -1019,7 +1020,7 @@ func TestGetExamCategories(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Get categories as registered participant",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -1031,7 +1032,7 @@ func TestGetExamCategories(t *testing.T) {
 				require.NoError(t, db.DB.Create(&categories).Error)
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
 				return &exam
@@ -1047,7 +1048,7 @@ func TestGetExamCategories(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Fail - Unregistered participant cannot access categories",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.PermissionDenied,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -1064,7 +1065,7 @@ func TestGetExamCategories(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Fail - Exam not found",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.NotFound,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -1074,7 +1075,7 @@ func TestGetExamCategories(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Get categories as evaluator",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -1088,7 +1089,7 @@ func TestGetExamCategories(t *testing.T) {
 				// Create evaluator permission
 				permission := models.ExamPermission{
 					ExamID: exam.ID,
-					UserID: userID,
+					UserID: typedUserID,
 				}
 				permission.SetEvaluate()
 				require.NoError(t, db.DB.Create(&permission).Error)
@@ -1112,7 +1113,7 @@ func TestGetExamCategories(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.ExamRequest{ExamId: exam.ID},
+				&proto.ExamRequest{ExamId: int64(exam.ID)},
 				client.GetExamCategories,
 				tt.validate,
 			)
@@ -1125,11 +1126,11 @@ func TestGetExamPermission(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Owner permissions",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				return &exam
 			},
 			validate: func(t *testing.T, resp *proto.ExamPermissionResponse) {
@@ -1143,13 +1144,13 @@ func TestGetExamPermission(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Participant permissions",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, 2) // Created by different user
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
 				return &exam
@@ -1166,7 +1167,7 @@ func TestGetExamPermission(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Non-owners and uninvited users get participate permission with INVITED status in LINK exam",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -1186,11 +1187,11 @@ func TestGetExamPermission(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - LINK exam owner has normal permissions",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, userID) // Created by test user
+				exam := createTestExam(t, typedUserID) // Created by test user
 				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
 				require.NoError(t, db.DB.Save(&exam).Error)
 				return &exam
@@ -1206,7 +1207,7 @@ func TestGetExamPermission(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Fail - Exam not found",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.NotFound,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -1216,7 +1217,7 @@ func TestGetExamPermission(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Check participant status in response",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -1224,7 +1225,7 @@ func TestGetExamPermission(t *testing.T) {
 				// Add participants with different statuses
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
 					{UserID: 3, Status: constants.PARTICIPANT_STATUS_INVITED},
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED}, // Our test user
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED}, // Our test user
 					{UserID: 4, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
 				require.NoError(t, err)
@@ -1249,7 +1250,7 @@ func TestGetExamPermission(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			resp, err := client.GetExamPermission(ctx, &proto.ExamRequest{
-				ExamId: exam.ID,
+				ExamId: int64(exam.ID),
 			})
 
 			if tt.expectedCode != codes.OK {
@@ -1269,11 +1270,11 @@ func TestGetExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Get exam as owner",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, userID)
+				exam := createTestExam(t, typedUserID)
 				return &exam
 			},
 			validate: func(t *testing.T, resp *proto.ExamResponse) {
@@ -1293,13 +1294,13 @@ func TestGetExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Get exam as participant",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
 				exam := createTestExam(t, 2) // Created by different user
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
 				return &exam
@@ -1313,7 +1314,7 @@ func TestGetExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Get LINK exam as new participant",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -1329,7 +1330,7 @@ func TestGetExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Fail - Exam not found",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.NotFound,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -1339,7 +1340,7 @@ func TestGetExam(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Fail - No permission to access INVITE exam",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.PermissionDenied,
 			},
 			setup: func(t *testing.T) *models.Exam {
@@ -1358,7 +1359,7 @@ func TestGetExam(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.ExamRequest{ExamId: exam.ID},
+				&proto.ExamRequest{ExamId: int64(exam.ID)},
 				client.GetExam,
 				tt.validate,
 			)
@@ -1371,13 +1372,13 @@ func TestDeleteExams(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Delete multiple exams",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) []int64 {
-				exam1 := createTestExam(t, userID)
-				exam2 := createTestExam(t, userID)
-				return []int64{exam1.ID, exam2.ID}
+				exam1 := createTestExam(t, typedUserID)
+				exam2 := createTestExam(t, typedUserID)
+				return []int64{int64(exam1.ID), int64(exam2.ID)}
 			},
 			validate: func(t *testing.T, deletedExamIDs []int64) {
 				for _, id := range deletedExamIDs {
@@ -1391,7 +1392,7 @@ func TestDeleteExams(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Fail - Attempt to delete exams created by another user",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.PermissionDenied,
 			},
 			setup: func(t *testing.T) []int64 {
@@ -1400,18 +1401,18 @@ func TestDeleteExams(t *testing.T) {
 				// Create read-only permission for the test user
 				permission := models.ExamPermission{
 					ExamID: exam.ID,
-					UserID: userID,
+					UserID: typedUserID,
 				}
 				permission.SetRead()
 				require.NoError(t, db.DB.Create(&permission).Error)
 
-				return []int64{exam.ID}
+				return []int64{int64(exam.ID)}
 			},
 		},
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Success - Non-existent exam returns success",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) []int64 {
@@ -1421,7 +1422,7 @@ func TestDeleteExams(t *testing.T) {
 		{
 			BaseTestCase: BaseTestCase{
 				name:         "Fail - Empty exam IDs list",
-				userID:       userID,
+				userID:       typedUserID,
 				expectedCode: codes.InvalidArgument,
 			},
 			setup: func(t *testing.T) []int64 {

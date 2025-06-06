@@ -25,7 +25,7 @@ func (s *AuthServer) GetUser(ctx context.Context, req *proto.GetUserRequest) (*p
 	}
 
 	return &proto.UserProfileResponse{
-		Id:        user.ID,
+		Id:        int64(user.ID), // Convert back to int64 for proto response
 		Username:  user.Username,
 		Email:     user.Email,
 		FirstName: user.FirstName.String,
@@ -79,7 +79,7 @@ func (s *AuthServer) UpdateUser(ctx context.Context, req *proto.UpdateUserReques
 
 	return &proto.UpdateUserResponse{
 		User: &proto.UserProfileResponse{
-			Id:        user.ID,
+			Id:        int64(user.ID),
 			Username:  user.Username,
 			Email:     user.Email,
 			FirstName: user.FirstName.String,
@@ -137,7 +137,7 @@ func (s *AuthServer) UpsertUser(ctx context.Context, req *proto.UpsertUserReques
 	}
 
 	return &proto.UserProfileResponse{
-		Id:        user.ID,
+		Id:        int64(user.ID),
 		Username:  user.Username,
 		Email:     user.Email,
 		FirstName: user.FirstName.String,

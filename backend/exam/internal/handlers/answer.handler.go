@@ -12,6 +12,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/interceptors"
@@ -28,11 +29,11 @@ func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.Parti
 		ExamParticipantID int64            `gorm:"type:bigint"`
 		Answer            *json.RawMessage `gorm:"type:json"`
 
-		QuestionID int64  `gorm:"type:bigint"`
-		Order      int16  `gorm:"column:order"`
-		CategoryID int64  `gorm:"column:category_id"`
-		Type       string `gorm:"column:type"`
-		MaxScore   int16  `gorm:"column:max_score"`
+		QuestionID int64 `gorm:"type:bigint"`
+		Order      int16 `gorm:"column:order"`
+		CategoryID int64 `gorm:"column:category_id"`
+		Type       int32 `gorm:"column:type"`
+		MaxScore   int16 `gorm:"column:max_score"`
 	}
 
 	var results []QueryResult
@@ -100,9 +101,9 @@ func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerR
 	}
 
 	return &proto.AnswerMinimalResponse{
-		Id:         answer.ID,
+		Id:         int64(answer.ID),
 		Answer:     *answer.Answer,
-		QuestionId: answer.QuestionID,
+		QuestionId: int64(answer.QuestionID),
 	}, nil
 }
 
@@ -126,10 +127,12 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 		return nil, status.Error(codes.FailedPrecondition, "participant must be in STARTED state")
 	}
 
+	typedQuestionId := types.QuestionID(req.Answer.QuestionId)
+
 	var examQuestion models.ExamQuestion
 	if err := db.DB.Model(&models.ExamQuestion{}).
 		Select("type").
-		Where("exam_id = ? AND question_id = ?", req.ExamId, req.Answer.QuestionId).
+		Where("exam_id = ? AND question_id = ?", req.ExamId, typedQuestionId).
 		Find(&examQuestion).Error; err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question")
 	}
@@ -148,14 +151,14 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 	var answer models.Answer
 	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		err := tx.Where("exam_participant_id = ? AND question_id = ?",
-			participant.ID, req.Answer.QuestionId).Take(&answer).Error
+			participant.ID, typedQuestionId).Take(&answer).Error
 
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				// Create new answer
 				answer = models.Answer{
 					ExamParticipantID: participant.ID,
-					QuestionID:        req.Answer.QuestionId,
+					QuestionID:        typedQuestionId,
 					Answer:            answerContent,
 				}
 				return tx.Create(&answer).Error
@@ -173,7 +176,7 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 	}
 
 	response := &proto.UpsertAnswersResponse{
-		AnswerId:   answer.ID,
+		AnswerId:   int64(answer.ID),
 		QuestionId: req.Answer.QuestionId,
 		Answer:     nil,
 	}

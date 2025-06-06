@@ -44,7 +44,7 @@ func TestGetQuestionsByIds(t *testing.T) {
 
 				questions := []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Order:      1,
 						Type:       constants.QUESTION_TYPE_MCQ,
@@ -52,7 +52,7 @@ func TestGetQuestionsByIds(t *testing.T) {
 						MaxScore:   5,
 					},
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Order:      2,
 						Type:       constants.QUESTION_TYPE_SUBJECTIVE,
@@ -72,14 +72,14 @@ func TestGetQuestionsByIds(t *testing.T) {
 
 				// Validate MCQ question
 				mcqResp := resp.Questions[0]
-				assert.Equal(t, questions[0].ID, mcqResp.Id)
+				assert.EqualValues(t, questions[0].ID, mcqResp.Id)
 				assert.EqualValues(t, questions[0].Type, mcqResp.Type)
 				assert.EqualValues(t, questions[0].MaxScore, mcqResp.MaxScore)
 				assert.True(t, compareJSONByteArrays(questions[0].Question, mcqResp.RawQuestion))
 
 				// Validate Subjective question
 				subjectiveResp := resp.Questions[1]
-				assert.Equal(t, questions[1].ID, subjectiveResp.Id)
+				assert.EqualValues(t, questions[1].ID, subjectiveResp.Id)
 				assert.EqualValues(t, questions[1].Type, subjectiveResp.Type)
 				assert.EqualValues(t, questions[1].MaxScore, subjectiveResp.MaxScore)
 				assert.True(t, compareJSONByteArrays(questions[1].Question, subjectiveResp.RawQuestion))
@@ -107,7 +107,7 @@ func TestGetQuestionsByIds(t *testing.T) {
 			if len(questions) > 0 {
 				tt.request.QuestionIds = make([]int64, len(questions))
 				for i, q := range questions {
-					tt.request.QuestionIds[i] = q.ID
+					tt.request.QuestionIds[i] = int64(q.ID)
 				}
 			}
 
@@ -141,12 +141,12 @@ func TestGetCategoriesByIds(t *testing.T) {
 				categories := []models.QuestionCategory{
 					defaultCategory,
 					{
-						PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						Name:    "Category 2",
 						Order:   2,
 					},
 					{
-						PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						Name:    "Category 3",
 						Order:   3,
 					},
@@ -162,7 +162,7 @@ func TestGetCategoriesByIds(t *testing.T) {
 			validate: func(t *testing.T, resp *proto.CategoryBatchResponse, categories []models.QuestionCategory) {
 				require.Len(t, resp.Categories, len(categories))
 				for i, category := range resp.Categories {
-					assert.Equal(t, categories[i].ID, category.Id)
+					assert.EqualValues(t, categories[i].ID, category.Id)
 					assert.Equal(t, categories[i].Name, category.Name)
 				}
 			},
@@ -189,7 +189,7 @@ func TestGetCategoriesByIds(t *testing.T) {
 			if len(categories) > 0 {
 				tt.request.CategoryIds = make([]int64, len(categories))
 				for i, c := range categories {
-					tt.request.CategoryIds[i] = c.ID
+					tt.request.CategoryIds[i] = int64(c.ID)
 				}
 			}
 
@@ -223,7 +223,7 @@ func TestGetExamQuestion(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_MCQ,
 						Question:   json.RawMessage(`{"statement":"MCQ Question","options":["A","B","C"]}`),
@@ -249,7 +249,7 @@ func TestGetExamQuestion(t *testing.T) {
 
 				questions := createTestQuestions(t, []models.Question{
 					{
-						PaperID:    sql.NullInt64{Int64: paper.ID, Valid: true},
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Type:       constants.QUESTION_TYPE_CODING,
 						Question: json.RawMessage(`{
@@ -310,7 +310,7 @@ func TestGetExamQuestion(t *testing.T) {
 			question := tt.setup(t)
 
 			testrunner.Runner(t, context.Background(), tt.expectedCode,
-				&proto.QuestionRequest{QuestionId: question.ID},
+				&proto.QuestionRequest{QuestionId: int64(question.ID)},
 				client.GetExamQuestion,
 				func(t *testing.T, resp *proto.QuestionResponse) {
 					if tt.validate != nil {

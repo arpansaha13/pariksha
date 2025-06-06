@@ -61,8 +61,8 @@ func TestCreateMcqQuestion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			paper, category := tt.setup(t)
-			tt.request.PaperId = paper.ID
-			tt.request.CategoryId = category.ID
+			tt.request.PaperId = int64(paper.ID)
+			tt.request.CategoryId = int64(category.ID)
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
@@ -122,8 +122,8 @@ func TestCreateSubjectiveQuestion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			paper, category := tt.setup(t)
-			tt.request.PaperId = paper.ID
-			tt.request.CategoryId = category.ID
+			tt.request.PaperId = int64(paper.ID)
+			tt.request.CategoryId = int64(category.ID)
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
@@ -364,8 +364,8 @@ func TestCreateCodingQuestion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			paper, category := tt.setup(t)
-			tt.request.PaperId = paper.ID
-			tt.request.CategoryId = category.ID
+			tt.request.PaperId = int64(paper.ID)
+			tt.request.CategoryId = int64(category.ID)
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
@@ -434,8 +434,8 @@ func TestCreateCodingQuestionBoilerplates(t *testing.T) {
 			// Create coding question
 			ctx := createContextWithUserID(userID)
 			req := &proto.CreateQuestionRequest{
-				PaperId:     paper.ID,
-				CategoryId:  category.ID,
+				PaperId:     int64(paper.ID),
+				CategoryId:  int64(category.ID),
 				Type:        int32(constants.QUESTION_TYPE_CODING),
 				RawQuestion: []byte(tt.question),
 				MaxScore:    10,
@@ -500,8 +500,8 @@ func TestGeneralCreateQuestion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			paper, category := tt.setup(t)
-			tt.request.PaperId = paper.ID
-			tt.request.CategoryId = category.ID
+			tt.request.PaperId = int64(paper.ID)
+			tt.request.CategoryId = int64(category.ID)
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,

@@ -63,7 +63,7 @@ func (s *PaperServer) CreatePaper(ctx context.Context, _ *proto.Empty) (*proto.P
 
 		// Create default category
 		defaultCategory := models.QuestionCategory{
-			PaperID: sql.NullInt64{Int64: paper.ID, Valid: true},
+			PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 			Name:    "Category 1",
 			Order:   1,
 		}

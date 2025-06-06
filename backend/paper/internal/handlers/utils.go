@@ -11,6 +11,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/types"
 	"pariksha/paper/internal/utils/boilerplate"
 )
 
@@ -33,12 +34,12 @@ func paperToProto(paper models.Paper) *proto.PaperResponse {
 	json.Unmarshal(paper.QuestionCounts, &questionCounts)
 
 	return &proto.PaperResponse{
-		Id:              paper.ID,
+		Id:              int64(paper.ID),
 		Title:           paper.Title,
 		MaxScore:        int32(paper.MaxScore),
 		DurationMinutes: int32(paper.DurationMinutes),
 		QuestionCounts:  &questionCounts,
-		CreatedBy:       paper.CreatedBy,
+		CreatedBy:       int64(paper.CreatedBy),
 	}
 }
 
@@ -51,8 +52,8 @@ func questionToProto(question models.Question, testCases []models.TestCase) (*pr
 	}
 
 	response := &proto.QuestionResponse{
-		Id:            question.ID,
-		CategoryId:    question.CategoryID,
+		Id:            int64(question.ID),
+		CategoryId:    int64(question.CategoryID),
 		Type:          int32(question.Type),
 		Tags:          tags,
 		PaperId:       question.PaperID.Int64,
@@ -85,8 +86,8 @@ func questionToProto(question models.Question, testCases []models.TestCase) (*pr
 
 func questionToMinimalProto(question models.Question) (*proto.QuestionMinimal, error) {
 	response := &proto.QuestionMinimal{
-		Id:          question.ID,
-		CategoryId:  question.CategoryID,
+		Id:          int64(question.ID),
+		CategoryId:  int64(question.CategoryID),
 		PaperId:     question.PaperID.Int64,
 		Order:       int32(question.Order),
 		RawQuestion: question.Question,
@@ -98,7 +99,7 @@ func questionToMinimalProto(question models.Question) (*proto.QuestionMinimal, e
 // Helper function to convert QuestionCategory model to proto response
 func categoryToProto(category models.QuestionCategory) *proto.CategoryResponse {
 	return &proto.CategoryResponse{
-		Id:    category.ID,
+		Id:    int64(category.ID),
 		Name:  category.Name,
 		Order: int32(category.Order),
 	}
@@ -174,7 +175,7 @@ func updateQuestionStats(tx *gorm.DB, paper models.Paper, oldType, newType int16
 }
 
 // upsertBoilerplates creates or updates boilerplate code for all languages
-func upsertBoilerplates(tx *gorm.DB, questionID int64, inputs []structs.InputDefinition, output structs.OutputDefinition) error {
+func upsertBoilerplates(tx *gorm.DB, questionID types.QuestionID, inputs []structs.InputDefinition, output structs.OutputDefinition) error {
 	var languages []models.Language
 	if err := tx.Where("is_enabled = ?", true).Find(&languages).Error; err != nil {
 		return err

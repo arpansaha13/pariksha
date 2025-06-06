@@ -15,6 +15,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/exam/internal/config/db"
 )
@@ -28,12 +29,12 @@ func TestGetParticipantAnswers(t *testing.T) {
 					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.OK,
-				userID:       userID,
+				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) *models.ExamParticipant {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: 1},
+					{UserID: typedUserID, Status: 1},
 				})
 				require.NoError(t, err)
 
@@ -114,7 +115,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.NotFound,
-				userID:       userID,
+				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) *models.ExamParticipant {
 				return &models.ExamParticipant{ID: 9999}
@@ -127,12 +128,12 @@ func TestGetParticipantAnswers(t *testing.T) {
 					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.NotFound,
-				userID:       userID,
+				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) *models.ExamParticipant {
 				exam := createTestExam(t, 2) // Created by different user
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: 1},
+					{UserID: typedUserID, Status: 1},
 				})
 				require.NoError(t, err)
 
@@ -235,7 +236,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 
 			ctx := createContextWithMetadata(tt.metadata)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.ParticipantRequest{ParticipantId: participant.ID},
+				&proto.ParticipantRequest{ParticipantId: int64(participant.ID)},
 				client.GetParticipantAnswers,
 				tt.validate,
 			)
@@ -252,11 +253,11 @@ func TestGetAnswerForExam(t *testing.T) {
 					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.OK,
-				userID:       userID,
+				userID:       typedUserID,
 			},
-			setup: func(t *testing.T) (*models.Exam, int64) {
+			setup: func(t *testing.T) (*models.Exam, types.QuestionID) {
 				exam := createTestExam(t, 2) // Created by different user
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED}})
 				require.NoError(t, err)
 
 				var participant models.ExamParticipant
@@ -281,9 +282,9 @@ func TestGetAnswerForExam(t *testing.T) {
 					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.PermissionDenied,
-				userID:       userID,
+				userID:       typedUserID,
 			},
-			setup: func(t *testing.T) (*models.Exam, int64) {
+			setup: func(t *testing.T) (*models.Exam, types.QuestionID) {
 				exam := createTestExam(t, 2)
 				return &exam, 1
 			},
@@ -295,11 +296,11 @@ func TestGetAnswerForExam(t *testing.T) {
 					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.OK,
-				userID:       userID,
+				userID:       typedUserID,
 			},
-			setup: func(t *testing.T) (*models.Exam, int64) {
+			setup: func(t *testing.T) (*models.Exam, types.QuestionID) {
 				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED}})
+				err := createTestExamParticipants(t, &exam, []TestParticipantData{{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED}})
 				require.NoError(t, err)
 				return &exam, 9999 // Non-existent question ID
 			},
@@ -319,8 +320,8 @@ func TestGetAnswerForExam(t *testing.T) {
 			ctx := createContextWithMetadata(tt.metadata)
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				&proto.GetAnswerRequest{
-					ExamId:     exam.ID,
-					QuestionId: questionId,
+					ExamId:     int64(exam.ID),
+					QuestionId: int64(questionId),
 				},
 				client.GetAnswerForExam,
 				tt.validate,
@@ -338,7 +339,7 @@ func TestUpsertAnswer(t *testing.T) {
 					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.OK,
-				userID:       userID,
+				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2) // Created by different user
@@ -350,7 +351,7 @@ func TestUpsertAnswer(t *testing.T) {
 				})
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
 
@@ -362,7 +363,7 @@ func TestUpsertAnswer(t *testing.T) {
 				require.NoError(t, db.DB.Save(&participant).Error)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: exam.ID,
+					ExamId: int64(exam.ID),
 					Answer: &proto.Answer{
 						QuestionId:  1,
 						Answer:      []byte(`{"text": "Test answer content"}`),
@@ -391,7 +392,7 @@ func TestUpsertAnswer(t *testing.T) {
 					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.OK,
-				userID:       userID,
+				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
@@ -403,7 +404,7 @@ func TestUpsertAnswer(t *testing.T) {
 				})
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
 
@@ -418,9 +419,9 @@ func TestUpsertAnswer(t *testing.T) {
 				answer := createTestAnswer(t, &participant, 1)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: exam.ID,
+					ExamId: int64(exam.ID),
 					Answer: &proto.Answer{
-						QuestionId:  answer.QuestionID,
+						QuestionId:  int64(answer.QuestionID),
 						Answer:      []byte(`{"text": "Updated answer content"}`),
 						SubmittedAt: timestamppb.Now(),
 					},
@@ -446,12 +447,12 @@ func TestUpsertAnswer(t *testing.T) {
 					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.PermissionDenied,
-				userID:       userID,
+				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
 				return nil, &proto.UpsertAnswersRequest{
-					ExamId: exam.ID,
+					ExamId: int64(exam.ID),
 					Answer: &proto.Answer{
 						QuestionId:  1,
 						Answer:      []byte(`{"text": "Test answer"}`),
@@ -467,17 +468,17 @@ func TestUpsertAnswer(t *testing.T) {
 					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.FailedPrecondition,
-				userID:       userID,
+				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_INVITED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
 				require.NoError(t, err)
 
 				return nil, &proto.UpsertAnswersRequest{
-					ExamId: exam.ID,
+					ExamId: int64(exam.ID),
 					Answer: &proto.Answer{
 						QuestionId:  1,
 						Answer:      []byte(`{"text": "Test answer"}`),
@@ -493,12 +494,12 @@ func TestUpsertAnswer(t *testing.T) {
 					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.FailedPrecondition,
-				userID:       userID,
+				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_ENDED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
 				require.NoError(t, err)
 
@@ -506,7 +507,7 @@ func TestUpsertAnswer(t *testing.T) {
 				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: exam.ID,
+					ExamId: int64(exam.ID),
 					Answer: &proto.Answer{
 						QuestionId:  1,
 						Answer:      []byte(`{"text": "Test answer after exam ended"}`),
@@ -522,7 +523,7 @@ func TestUpsertAnswer(t *testing.T) {
 					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.OK,
-				userID:       userID,
+				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
@@ -534,7 +535,7 @@ func TestUpsertAnswer(t *testing.T) {
 				})
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
 
@@ -544,7 +545,7 @@ func TestUpsertAnswer(t *testing.T) {
 				require.NoError(t, db.DB.Save(&participant).Error)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: exam.ID,
+					ExamId: int64(exam.ID),
 					Answer: &proto.Answer{
 						QuestionId:  1,
 						Answer:      []byte(`{"text": ""}`),
@@ -571,7 +572,7 @@ func TestUpsertAnswer(t *testing.T) {
 					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.OK,
-				userID:       userID,
+				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
@@ -583,7 +584,7 @@ func TestUpsertAnswer(t *testing.T) {
 				})
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
 
@@ -596,9 +597,9 @@ func TestUpsertAnswer(t *testing.T) {
 				answer := createTestAnswer(t, &participant, 1)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: exam.ID,
+					ExamId: int64(exam.ID),
 					Answer: &proto.Answer{
-						QuestionId:  answer.QuestionID,
+						QuestionId:  int64(answer.QuestionID),
 						Answer:      nil, // Explicit nil answer
 						SubmittedAt: timestamppb.Now(),
 					},
@@ -619,7 +620,7 @@ func TestUpsertAnswer(t *testing.T) {
 					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.InvalidArgument,
-				userID:       userID,
+				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
@@ -631,7 +632,7 @@ func TestUpsertAnswer(t *testing.T) {
 				})
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
 
@@ -644,9 +645,9 @@ func TestUpsertAnswer(t *testing.T) {
 				answer := createTestAnswer(t, &participant, 1)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: exam.ID,
+					ExamId: int64(exam.ID),
 					Answer: &proto.Answer{
-						QuestionId:  answer.QuestionID,
+						QuestionId:  int64(answer.QuestionID),
 						Answer:      []byte(`{}`), // Empty answer object
 						SubmittedAt: timestamppb.Now(),
 					},
@@ -660,7 +661,7 @@ func TestUpsertAnswer(t *testing.T) {
 					"user_id": strconv.FormatInt(userID, 10),
 				},
 				expectedCode: codes.InvalidArgument,
-				userID:       userID,
+				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
@@ -672,7 +673,7 @@ func TestUpsertAnswer(t *testing.T) {
 				})
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: userID, Status: constants.PARTICIPANT_STATUS_STARTED},
+					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
 				require.NoError(t, err)
 
@@ -685,9 +686,9 @@ func TestUpsertAnswer(t *testing.T) {
 				answer := createTestAnswer(t, &participant, 1)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: exam.ID,
+					ExamId: int64(exam.ID),
 					Answer: &proto.Answer{
-						QuestionId:  answer.QuestionID,
+						QuestionId:  int64(answer.QuestionID),
 						Answer:      []byte(`{"optionIndex": null}`), // explicit null for optionIndex
 						SubmittedAt: timestamppb.Now(),
 					},

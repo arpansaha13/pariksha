@@ -2,12 +2,14 @@ package models
 
 import (
 	"database/sql"
-	"pariksha/common/pkg/constants"
 	"time"
+
+	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/types"
 )
 
 type User struct {
-	ID        int64          `gorm:"primaryKey;type:bigint"`
+	ID        types.UserID   `gorm:"primaryKey;type:bigint"`
 	Username  string         `gorm:"type:varchar(255);not null;unique"`
 	Email     string         `gorm:"type:varchar(255);not null;unique"`
 	Password  sql.NullString `gorm:"type:varchar(255)"`

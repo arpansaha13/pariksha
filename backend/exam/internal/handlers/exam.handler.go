@@ -13,6 +13,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/exam/internal/config/db"
@@ -86,7 +87,7 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 		EndsAt:             endsAt,
 		CreatedBy:          userID,
 		MaxCandidatesCount: req.MaxCandidatesCount,
-		PaperID:            req.PaperId,
+		PaperID:            types.PaperID(req.PaperId),
 		DurationMinutes:    int16(req.DurationMinutes),
 	}
 
@@ -180,6 +181,7 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 		return nil, err
 	}
 
+	typedExamId := types.ExamID(req.ExamId)
 	participant := &models.ExamParticipant{}
 	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		err := tx.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(participant).Error
@@ -192,7 +194,7 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 			// Create participant with started status for LINK type exams
 			scheduledEndTime := now.Add(time.Duration(exam.DurationMinutes) * time.Minute)
 			participant = &models.ExamParticipant{
-				ExamID:           req.ExamId,
+				ExamID:           typedExamId,
 				UserID:           userID,
 				Status:           constants.PARTICIPANT_STATUS_STARTED,
 				StartedAt:        sql.NullTime{Time: now, Valid: true},
@@ -204,7 +206,7 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 
 			// Create permissions for the new participant
 			permission := models.ExamPermission{
-				ExamID: req.ExamId,
+				ExamID: typedExamId,
 				UserID: userID,
 			}
 			permission.SetParticipate()
@@ -245,7 +247,7 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 		// After successfully creating/updating participant
 		// Add delayed task for auto-ending exam
 		autoEndPayload := structs.AutoEndExamPayload{
-			ExamID:        req.ExamId,
+			ExamID:        typedExamId,
 			ParticipantID: participant.ID,
 		}
 		services.EnqueueAutoEndExam(autoEndPayload, participant.ScheduledEndTime.Time)
@@ -318,8 +320,8 @@ func (s *ExamServer) GetExamQuestions(ctx context.Context, req *proto.ExamReques
 	questions := make([]*proto.ExamQuestion, len(examQuestions))
 	for i, eq := range examQuestions {
 		questions[i] = &proto.ExamQuestion{
-			QuestionId: eq.QuestionID,
-			CategoryId: eq.CategoryID,
+			QuestionId: int64(eq.QuestionID),
+			CategoryId: int64(eq.CategoryID),
 			Order:      int32(eq.Order),
 			MaxScore:   int32(eq.MaxScore),
 			Type:       int32(eq.Type),
@@ -344,7 +346,7 @@ func (s *ExamServer) GetExamCategories(ctx context.Context, req *proto.ExamReque
 	categories := make([]*proto.ExamCategory, len(examCategories))
 	for i, ec := range examCategories {
 		categories[i] = &proto.ExamCategory{
-			CategoryId: ec.CategoryID,
+			CategoryId: int64(ec.CategoryID),
 			Order:      int32(ec.Order),
 		}
 	}
@@ -410,7 +412,11 @@ func (s *ExamServer) DeleteExams(ctx context.Context, req *proto.DeleteExamsRequ
 			return status.Error(codes.Internal, "failed to delete exam permissions")
 		}
 
-		if err := services.EnqueuePostDeleteExamsCleanup(req.ExamIds); err != nil {
+		var typedExamIDs []types.ExamID
+		for _, id := range req.ExamIds {
+			typedExamIDs = append(typedExamIDs, types.ExamID(id))
+		}
+		if err := services.EnqueuePostDeleteExamsCleanup(typedExamIDs); err != nil {
 			return status.Error(codes.Internal, "failed to enqueue post-delete-exam cleanup task")
 		}
 
