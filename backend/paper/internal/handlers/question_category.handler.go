@@ -14,6 +14,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/interceptors"
 )
 
 func (s *PaperServer) GetPaperCategories(ctx context.Context, req *proto.PaperRequest) (*proto.CategoryList, error) {
@@ -68,11 +69,10 @@ func (s *PaperServer) CreateCategory(ctx context.Context, req *proto.CreateCateg
 }
 
 func (s *PaperServer) UpdateCategory(ctx context.Context, req *proto.UpdateCategoryRequest) (*proto.Empty, error) {
-	pc, err := NewPaperContext(ctx)
-	if err != nil || pc.Category == nil {
-		return nil, status.Error(codes.Internal, "category data not found in context")
+	category, err := interceptors.GetCategoryFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
-	category := *pc.Category
 
 	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		// If category is locked, create a new row with updates
@@ -103,7 +103,7 @@ func (s *PaperServer) UpdateCategory(ctx context.Context, req *proto.UpdateCateg
 
 		// Apply updates to existing category
 		category.Name = req.Name
-		return tx.Save(&category).Error
+		return tx.Save(category).Error
 	})
 
 	if err != nil {
@@ -114,11 +114,10 @@ func (s *PaperServer) UpdateCategory(ctx context.Context, req *proto.UpdateCateg
 }
 
 func (s *PaperServer) DeleteCategory(ctx context.Context, req *proto.CategoryRequest) (*proto.Empty, error) {
-	pc, err := NewPaperContext(ctx)
-	if err != nil || pc.Category == nil {
-		return nil, status.Error(codes.Internal, "category data not found in context")
+	category, err := interceptors.GetCategoryFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
-	category := *pc.Category
 
 	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		// Check if there is only one category
@@ -163,7 +162,7 @@ func (s *PaperServer) DeleteCategory(ctx context.Context, req *proto.CategoryReq
 		}
 
 		// Handle locked and non-locked questions
-		if err := handleCategoryDeletion(tx, category, req.CategoryId); err != nil {
+		if err := handleCategoryDeletion(tx, *category, req.CategoryId); err != nil {
 			return err
 		}
 

@@ -16,18 +16,19 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/interceptors"
 	paperUtils "pariksha/paper/internal/utils"
 	"pariksha/paper/internal/utils/validate"
 )
 
 // UpsertPaperTestCases handles bulk creation and updates of test cases
 func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.UpsertTestCasesRequest) (*proto.Empty, error) {
-	pc, err := NewPaperContext(ctx)
-	if err != nil || pc.Question == nil {
-		return nil, status.Error(codes.Internal, "question data not found in context")
+	question, err := interceptors.GetQuestionFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	if pc.Question.Type != constants.QUESTION_TYPE_CODING {
+	if question.Type != constants.QUESTION_TYPE_CODING {
 		return nil, status.Error(codes.InvalidArgument, "test cases can only be added to coding questions")
 	}
 

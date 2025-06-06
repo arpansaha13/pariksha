@@ -16,14 +16,15 @@ import (
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/interceptors"
 	"pariksha/paper/internal/utils/validate"
 )
 
 // UpdateQuestion handles question updates with proper locking to prevent race conditions
 func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuestionRequest) (*proto.UpdateQuestionResponse, error) {
-	pc, err := NewPaperContext(ctx)
-	if err != nil || pc.Question == nil {
-		return nil, status.Error(codes.Internal, "question data not found in context")
+	_, err := interceptors.GetQuestionFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	if req.MaxScore != nil {
@@ -37,7 +38,7 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 		// Row-level lock for both question and paper rows
 		var question models.Question
 		if err := tx.Set("gorm:query_option", "FOR UPDATE").
-			First(&question, pc.Question.ID).Error; err != nil {
+			First(&question, question.ID).Error; err != nil {
 			return status.Error(codes.Internal, "failed to lock question")
 		}
 

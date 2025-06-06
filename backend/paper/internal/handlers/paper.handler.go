@@ -13,6 +13,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/interceptors"
 	"pariksha/paper/internal/utils/validate"
 )
 
@@ -140,14 +141,14 @@ func (s *PaperServer) UpdatePaper(ctx context.Context, req *proto.UpdatePaperReq
 }
 
 func (s *PaperServer) GetPaperPermissions(ctx context.Context, req *proto.PaperRequest) (*proto.PaperPermissionsResponse, error) {
-	pc, err := NewPaperContext(ctx)
-	if err != nil || pc.Permissions == nil {
-		return nil, status.Error(codes.Internal, "permissions data not found in context")
+	perm, err := interceptors.GetPermissionFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	return &proto.PaperPermissionsResponse{
-		CanRead:  pc.Permissions.CanRead(),
-		CanWrite: pc.Permissions.CanWrite(),
+		CanRead:  perm.CanRead(),
+		CanWrite: perm.CanWrite(),
 	}, nil
 }
 

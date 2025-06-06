@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 
 	"google.golang.org/grpc/codes"
@@ -12,7 +11,6 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
-	"pariksha/paper/internal/interceptors"
 	"pariksha/paper/internal/utils/boilerplate"
 )
 
@@ -27,33 +25,6 @@ func validateEntityIDs(tx *gorm.DB, tableName string, ids []int64) error {
 		return status.Error(codes.InvalidArgument, "invalid ids provided")
 	}
 	return nil
-}
-
-// PaperContext represents the context of paper-related operations
-type PaperContext struct {
-	Paper       models.Paper
-	Question    *models.Question
-	Category    *models.QuestionCategory
-	Permissions *models.PaperPermission
-}
-
-// NewPaperContext creates a new paper context from the given gRPC context
-func NewPaperContext(ctx context.Context) (*PaperContext, error) {
-	pc := &PaperContext{}
-
-	if perm, ok := ctx.Value(interceptors.PermissionsCtxKey{}).(models.PaperPermission); ok {
-		pc.Permissions = &perm
-	}
-
-	if q, ok := ctx.Value(interceptors.QuestionCtxKey{}).(models.Question); ok {
-		pc.Question = &q
-	}
-
-	if cat, ok := ctx.Value(interceptors.CategoryCtxKey{}).(models.QuestionCategory); ok {
-		pc.Category = &cat
-	}
-
-	return pc, nil
 }
 
 // Helper function to convert Paper model to proto response

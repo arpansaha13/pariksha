@@ -14,9 +14,13 @@ import (
 	"pariksha/paper/internal/config/db"
 )
 
-type CategoryCtxKey struct{}
-type QuestionCtxKey struct{}
-type PermissionsCtxKey struct{}
+type paperContextKey string
+
+const (
+	questionContextKey   paperContextKey = "question"
+	categoryContextKey   paperContextKey = "category"
+	permissionContextKey paperContextKey = "permission"
+)
 
 var requiresRead = map[string]bool{
 	"/proto.Paper/GetPaper":            true,
@@ -63,7 +67,7 @@ func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
 			}
 
 			paperID = category.PaperID.Int64
-			ctx = context.WithValue(ctx, CategoryCtxKey{}, category)
+			ctx = context.WithValue(ctx, categoryContextKey, category)
 		case *proto.CategoryRequest:
 			category, err := fetchCategoryData(r.CategoryId)
 			if err != nil {
@@ -71,7 +75,7 @@ func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
 			}
 
 			paperID = category.PaperID.Int64
-			ctx = context.WithValue(ctx, CategoryCtxKey{}, category)
+			ctx = context.WithValue(ctx, categoryContextKey, category)
 		case *proto.ReorderCategoriesRequest:
 			paperID = r.PaperId
 		case *proto.QuestionRequest:
@@ -80,21 +84,21 @@ func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
 				return nil, err
 			}
 			paperID = question.PaperID.Int64
-			ctx = context.WithValue(ctx, QuestionCtxKey{}, question)
+			ctx = context.WithValue(ctx, questionContextKey, question)
 		case *proto.UpdateQuestionRequest:
 			question, err := fetchQuestionData(r.QuestionId)
 			if err != nil {
 				return nil, err
 			}
 			paperID = question.PaperID.Int64
-			ctx = context.WithValue(ctx, QuestionCtxKey{}, question)
+			ctx = context.WithValue(ctx, questionContextKey, question)
 		case *proto.UpsertTestCasesRequest:
 			question, err := fetchQuestionData(r.QuestionId)
 			if err != nil {
 				return nil, err
 			}
 			paperID = question.PaperID.Int64
-			ctx = context.WithValue(ctx, QuestionCtxKey{}, question)
+			ctx = context.WithValue(ctx, questionContextKey, question)
 		case *proto.CreateQuestionRequest:
 			paperID = r.PaperId
 		}
@@ -121,7 +125,7 @@ func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
 			return nil, err
 		}
 
-		ctx = context.WithValue(ctx, PermissionsCtxKey{}, permissions)
+		ctx = context.WithValue(ctx, permissionContextKey, permissions)
 
 		// Check if the method requires READ permission
 		if requiresRead[methodName] && !permissions.CanRead() {
@@ -172,4 +176,31 @@ func fetchPaperPermissions(paperId int64, userId int64) (models.PaperPermission,
 		return permissions, status.Error(codes.Internal, "failed to fetch permissions")
 	}
 	return permissions, nil
+}
+
+// Getter function to safely access question from context
+func GetQuestionFromContext(ctx context.Context) (*models.Question, error) {
+	question, ok := ctx.Value(questionContextKey).(models.Question)
+	if !ok {
+		return nil, status.Error(codes.Internal, "question data not found in context")
+	}
+	return &question, nil
+}
+
+// Getter function to safely access category from context
+func GetCategoryFromContext(ctx context.Context) (*models.QuestionCategory, error) {
+	category, ok := ctx.Value(categoryContextKey).(models.QuestionCategory)
+	if !ok {
+		return nil, status.Error(codes.Internal, "category data not found in context")
+	}
+	return &category, nil
+}
+
+// Getter function to safely access permission from context
+func GetPermissionFromContext(ctx context.Context) (*models.PaperPermission, error) {
+	permission, ok := ctx.Value(permissionContextKey).(models.PaperPermission)
+	if !ok {
+		return nil, status.Error(codes.Internal, "paper permission data not found in context")
+	}
+	return &permission, nil
 }

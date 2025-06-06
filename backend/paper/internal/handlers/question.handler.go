@@ -45,20 +45,20 @@ func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperReq
 }
 
 func (s *PaperServer) GetPaperQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.QuestionResponse, error) {
-	pc, err := NewPaperContext(ctx)
-	if err != nil || pc.Question == nil {
-		return nil, status.Error(codes.Internal, "question data not found in context")
+	question, err := interceptors.GetQuestionFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	var testCases []models.TestCase
-	if pc.Question.Type == constants.QUESTION_TYPE_CODING {
+	if question.Type == constants.QUESTION_TYPE_CODING {
 		// Fetch test cases for coding questions
-		if err := db.DB.Where("question_id = ?", pc.Question.ID).Find(&testCases).Error; err != nil {
+		if err := db.DB.Where("question_id = ?", question.ID).Find(&testCases).Error; err != nil {
 			return nil, status.Error(codes.Internal, constants.ErrInternalServer)
 		}
 	}
 
-	return questionToProto(*pc.Question, testCases)
+	return questionToProto(*question, testCases)
 }
 
 func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuestionRequest) (*proto.CreateQuestionResponse, error) {
@@ -157,12 +157,12 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 }
 
 func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.Empty, error) {
-	question, ok := ctx.Value(interceptors.QuestionCtxKey{}).(models.Question)
-	if !ok {
-		return nil, status.Error(codes.Internal, "question data not found in context")
+	question, err := interceptors.GetQuestionFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		// Update paper max score
 		if err := tx.Model(&question.Paper).
 			UpdateColumn("max_score", gorm.Expr("max_score - ?", question.MaxScore)).
