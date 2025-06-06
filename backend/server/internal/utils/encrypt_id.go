@@ -3,27 +3,25 @@ package utils
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
-	"pariksha/server/internal/config/env"
+	"io"
 	"strings"
+
+	"pariksha/server/internal/config/env"
 )
 
 var (
 	encryptionKey []byte
-	initVector    []byte
 )
 
 func init() {
 	encryptionKey = []byte(env.ID_ENCRYPTION_KEY)
-
-	// Use a fixed IV for consistent encryption/decryption
-	initVector = make([]byte, aes.BlockSize)
-	copy(initVector, []byte("ParikshaPlatform")) // 16 bytes IV
 }
 
-// EncryptID encrypts an int64 ID to a URL-safe string
+// EncryptID encrypts an int64 ID to a URL-safe string using AES-GCM
 func EncryptID(id int64) (string, error) {
 	// Convert int64 to bytes
 	plaintext := make([]byte, 8)
@@ -35,20 +33,22 @@ func EncryptID(id int64) (string, error) {
 		return "", fmt.Errorf("failed to create cipher: %v", err)
 	}
 
-	// Pad the plaintext to match block size
-	padding := aes.BlockSize - (len(plaintext) % aes.BlockSize)
-	padtext := make([]byte, len(plaintext)+padding)
-	copy(padtext, plaintext)
-	for i := len(plaintext); i < len(padtext); i++ {
-		padtext[i] = byte(padding)
+	// Create GCM mode
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", fmt.Errorf("failed to create GCM: %v", err)
 	}
 
-	// Encrypt
-	ciphertext := make([]byte, len(padtext))
-	mode := cipher.NewCBCEncrypter(block, initVector)
-	mode.CryptBlocks(ciphertext, padtext)
+	// Generate random nonce
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", fmt.Errorf("failed to generate nonce: %v", err)
+	}
 
-	// Convert to base64 and remove padding
+	// Encrypt and authenticate
+	ciphertext := gcm.Seal(nonce, nonce, plaintext, nil)
+
+	// Convert to URL-safe base64
 	encoded := base64.URLEncoding.EncodeToString(ciphertext)
 	return strings.TrimRight(encoded, "="), nil
 }
@@ -73,14 +73,24 @@ func DecryptID(encrypted string) (int64, error) {
 		return 0, fmt.Errorf("failed to create cipher: %v", err)
 	}
 
-	// Decrypt
-	mode := cipher.NewCBCDecrypter(block, initVector)
-	plaintext := make([]byte, len(ciphertext))
-	mode.CryptBlocks(plaintext, ciphertext)
+	// Create GCM mode
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create GCM: %v", err)
+	}
 
-	// Remove padding
-	padding = int(plaintext[len(plaintext)-1])
-	plaintext = plaintext[:len(plaintext)-padding]
+	// Extract nonce and decrypt
+	if len(ciphertext) < gcm.NonceSize() {
+		return 0, fmt.Errorf("invalid encrypted-id: too short")
+	}
+	nonce := ciphertext[:gcm.NonceSize()]
+	ciphertext = ciphertext[gcm.NonceSize():]
+
+	// Decrypt and verify
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return 0, fmt.Errorf("invalid encrypted-id: authentication failed")
+	}
 
 	// Convert bytes back to int64
 	if len(plaintext) != 8 {
