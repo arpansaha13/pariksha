@@ -1,7 +1,7 @@
 interface UsePaperAutoCancelQuestionEditArgs {
   question: Ref<Question | null>
-  editQuestionFormStates: Record<number, MergedQuestion | null>
-  decUnsavedCount: (categoryId: number) => void
+  editQuestionFormStates: Record<QuestionId, MergedQuestion | null>
+  decUnsavedCount: (categoryId: CategoryId) => void
 }
 
 export function usePaperAutoCancelQuestionEdit(

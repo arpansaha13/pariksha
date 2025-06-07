@@ -1,7 +1,7 @@
 export async function deleteQuestion(
-  questionId: number,
+  questionId: QuestionId,
   paperId: PaperId,
-  categoryId: number
+  categoryId: CategoryId
 ): Promise<void> {
   const { $api } = useNuxtApp()
 

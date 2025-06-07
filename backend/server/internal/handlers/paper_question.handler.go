@@ -35,8 +35,9 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 	httpResponse := make([]dtos.QuestionMinimalResponseDto, len(response.Questions))
 	for i, q := range response.Questions {
 		encryptedPaperId, _ := utils.EncryptID(q.PaperId)
+		encryptedQuestionId, _ := utils.EncryptID(q.Id)
 		httpResponse[i] = dtos.QuestionMinimalResponseDto{
-			ID:         q.Id,
+			ID:         encryptedQuestionId,
 			CategoryID: q.CategoryId,
 			PaperID:    encryptedPaperId,
 			Order:      q.Order,
@@ -49,12 +50,8 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
-	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	questionID := r.Context().Value(middlewares.DecryptedQuestionID).(int64)
 
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
@@ -71,9 +68,9 @@ func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 	tags, _ := json.Marshal(response.Tags)
 
 	encryptedPaperId, _ := utils.EncryptID(response.PaperId)
-
+	encryptedQuestionId, _ := utils.EncryptID(response.Id)
 	httpResponse := dtos.QuestionResponseDto{
-		ID:            response.Id,
+		ID:            encryptedQuestionId,
 		Question:      response.RawQuestion,
 		CategoryID:    response.CategoryId,
 		Type:          response.Type,
@@ -150,8 +147,9 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	encryptedQuestionId, _ := utils.EncryptID(response.Id)
 	responseDto := dtos.CreateQuestionResponseDto{
-		ID: response.Id,
+		ID: encryptedQuestionId,
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -159,11 +157,7 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
-	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	questionID := r.Context().Value(middlewares.DecryptedQuestionID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	var updateDto dtos.UpdateQuestionDto
@@ -217,8 +211,9 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	encryptedQuestionId, _ := utils.EncryptID(response.QuestionId)
 	responseDto := dtos.UpdateQuestionResponseDto{
-		ID: response.QuestionId,
+		ID: encryptedQuestionId,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -226,17 +221,13 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
-	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	questionID := r.Context().Value(middlewares.DecryptedQuestionID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	_, err = paperService.Client().DeleteQuestion(ctx, &proto.QuestionRequest{
+	_, err := paperService.Client().DeleteQuestion(ctx, &proto.QuestionRequest{
 		QuestionId: questionID,
 	})
 
@@ -271,8 +262,13 @@ func ReorderQuestions(w http.ResponseWriter, r *http.Request) {
 	ctx := paperService.CreateMetadata(userID)
 
 	questionIDs := make([]int64, len(reorderDto.Questions))
-	for i, id := range reorderDto.Questions {
-		questionIDs[i] = id
+	for i, encryptedId := range reorderDto.Questions {
+		decryptedId, err := utils.DecryptID(encryptedId)
+		if err != nil {
+			http.Error(w, "Invalid question ID", http.StatusBadRequest)
+			return
+		}
+		questionIDs[i] = decryptedId
 	}
 
 	_, err = paperService.Client().ReorderQuestions(ctx, &proto.ReorderQuestionsRequest{
@@ -289,11 +285,7 @@ func ReorderQuestions(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpsertPaperTestCases(w http.ResponseWriter, r *http.Request) {
-	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	questionID := r.Context().Value(middlewares.DecryptedQuestionID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	var testCasesDto dtos.UpsertTestCasesDto
@@ -320,7 +312,7 @@ func UpsertPaperTestCases(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, err = paperService.Client().UpsertPaperTestCases(ctx, &proto.UpsertTestCasesRequest{
+	_, err := paperService.Client().UpsertPaperTestCases(ctx, &proto.UpsertTestCasesRequest{
 		QuestionId: questionID,
 		TestCases:  testCases,
 	})

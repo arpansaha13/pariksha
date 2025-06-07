@@ -197,7 +197,7 @@ definePageMeta({
 })
 
 const route = useRoute()
-const questionId = parseInt(route.params.questionId as string) as QuestionId
+const questionId = route.params.questionId as QuestionId
 
 const {
   data: questionData,

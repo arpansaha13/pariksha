@@ -1,5 +1,5 @@
 interface UseExamQuestionNavigationOptions {
-  currentQuestionId: ComputedRef<number | null>
+  currentQuestionId: ComputedRef<QuestionId | null>
   currentCategoryQuestions: ComputedRef<ExamQuestionMinimal[]>
 }
 

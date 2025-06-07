@@ -44,10 +44,10 @@ func SetupRouter() *mux.Router {
 	decryptIdRouter.HandleFunc("/papers/{paperId}/permissions", handlers.GetPaperPermissions).Methods("GET", "OPTIONS")
 
 	// Question Routes
-	protectedRouter.HandleFunc("/questions/{questionId}", handlers.GetPaperQuestion).Methods("GET", "OPTIONS")
-	protectedRouter.HandleFunc("/questions/{questionId}", handlers.UpdateQuestion).Methods("PATCH", "OPTIONS")
-	protectedRouter.HandleFunc("/questions/{questionId}", handlers.DeleteQuestion).Methods("DELETE", "OPTIONS")
-	protectedRouter.HandleFunc("/questions/{questionId}/test-cases", handlers.UpsertPaperTestCases).Methods("PUT", "OPTIONS")
+	decryptIdRouter.HandleFunc("/questions/{questionId}", handlers.GetPaperQuestion).Methods("GET", "OPTIONS")
+	decryptIdRouter.HandleFunc("/questions/{questionId}", handlers.UpdateQuestion).Methods("PATCH", "OPTIONS")
+	decryptIdRouter.HandleFunc("/questions/{questionId}", handlers.DeleteQuestion).Methods("DELETE", "OPTIONS")
+	decryptIdRouter.HandleFunc("/questions/{questionId}/test-cases", handlers.UpsertPaperTestCases).Methods("PUT", "OPTIONS")
 	protectedRouter.HandleFunc("/categories/{category_id}/questions/reorder", handlers.ReorderQuestions).Methods("PATCH", "OPTIONS")
 
 	// Question Category Routes
@@ -68,7 +68,7 @@ func SetupRouter() *mux.Router {
 	decryptIdRouter.HandleFunc("/exams/{examId}/end", handlers.EndExam).Methods("PATCH", "OPTIONS")
 	decryptIdRouter.HandleFunc("/exams/{examId}/questions", handlers.GetExamQuestions).Methods("GET", "OPTIONS")
 	decryptIdRouter.HandleFunc("/exams/{examId}/categories", handlers.GetExamCategories).Methods("GET", "OPTIONS")
-	protectedRouter.HandleFunc("/exams/questions/{questionId}", handlers.GetExamQuestion).Methods("GET", "OPTIONS")
+	decryptIdRouter.HandleFunc("/exams/questions/{questionId}", handlers.GetExamQuestion).Methods("GET", "OPTIONS")
 	decryptIdRouter.HandleFunc("/exams/{examId}/results", handlers.GetExamResults).Methods("GET", "OPTIONS")
 
 	// Exam Participant Routes
@@ -85,8 +85,8 @@ func SetupRouter() *mux.Router {
 	decryptIdRouter.HandleFunc("/exams/{examId}/questions/{questionId}/answer", handlers.GetAnswerForExam).Methods("GET", "OPTIONS")
 
 	// Answer Evaluation Routes
-	protectedRouter.HandleFunc("/participants/{participantId}/questions/{questionId}/evaluation-data", handlers.GetAnswerEvaluationData).Methods("GET", "OPTIONS")
-	protectedRouter.HandleFunc("/participants/{participantId}/questions/{questionId}/answer", handlers.GetAnswerForEvaluation).Methods("GET", "OPTIONS")
+	decryptIdRouter.HandleFunc("/participants/{participantId}/questions/{questionId}/evaluation-data", handlers.GetAnswerEvaluationData).Methods("GET", "OPTIONS")
+	decryptIdRouter.HandleFunc("/participants/{participantId}/questions/{questionId}/answer", handlers.GetAnswerForEvaluation).Methods("GET", "OPTIONS")
 	protectedRouter.HandleFunc("/answers/{answerId}", handlers.UpdateAnswerForEvaluation).Methods("PATCH", "OPTIONS")
 
 	// User Routes
@@ -98,7 +98,7 @@ func SetupRouter() *mux.Router {
 	protectedRouter.HandleFunc("/engine/run", handlers.RunCode).Methods("POST", "OPTIONS")
 
 	// Boilerplate Routes
-	protectedRouter.HandleFunc("/questions/{questionId}/languages/{languageId}/boilerplate", handlers.GetBoilerplate).Methods("GET", "OPTIONS")
+	decryptIdRouter.HandleFunc("/questions/{questionId}/languages/{languageId}/boilerplate", handlers.GetBoilerplate).Methods("GET", "OPTIONS")
 
 	return r
 }

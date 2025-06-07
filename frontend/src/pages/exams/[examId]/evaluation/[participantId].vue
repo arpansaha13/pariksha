@@ -227,9 +227,7 @@ const currentCategoryId = computed(() => {
 })
 
 const currentQuestionId = computed(() => {
-  return route.query.question
-    ? (parseInt(route.query.question as string) as QuestionId)
-    : null
+  return route.query.question ? (route.query.question as QuestionId) : null
 })
 
 const currentCategoryQuestions = computed(() => {

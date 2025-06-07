@@ -4,16 +4,17 @@ import (
 	"context"
 	"net/http"
 
-	"pariksha/server/internal/utils"
-
 	"github.com/gorilla/mux"
+
+	"pariksha/server/internal/utils"
 )
 
 type decryptedIDKey string
 
 const (
-	DecryptedExamID  decryptedIDKey = "decrypted_exam_id"
-	DecryptedPaperID decryptedIDKey = "decrypted_paper_id"
+	DecryptedExamID     decryptedIDKey = "decrypted_exam_id"
+	DecryptedPaperID    decryptedIDKey = "decrypted_paper_id"
+	DecryptedQuestionID decryptedIDKey = "decrypted_question_id"
 )
 
 // DecryptIDMiddleware decrypts examId and paperId from URL parameters
@@ -40,6 +41,15 @@ func DecryptIDMiddleware(next http.Handler) http.Handler {
 				return
 			}
 			ctx = context.WithValue(ctx, DecryptedPaperID, decryptedID)
+		}
+
+		if questionID, exists := vars["questionId"]; exists {
+			decryptedID, err := utils.DecryptID(questionID)
+			if err != nil {
+				http.Error(w, "Invalid question ID", http.StatusNotFound)
+				return
+			}
+			ctx = context.WithValue(ctx, DecryptedQuestionID, decryptedID)
 		}
 
 		next.ServeHTTP(w, r.WithContext(ctx))

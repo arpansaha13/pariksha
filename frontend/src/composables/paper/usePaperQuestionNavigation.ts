@@ -1,5 +1,5 @@
 interface UsePaperQuestionNavigationArgs {
-  currentQuestionId: ComputedRef<number | null>
+  currentQuestionId: ComputedRef<QuestionId | null>
   currentCategoryQuestions: ComputedRef<QuestionMinimal[]>
 }
 

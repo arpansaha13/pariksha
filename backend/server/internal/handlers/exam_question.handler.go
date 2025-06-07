@@ -11,6 +11,7 @@ import (
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
 	"pariksha/server/internal/services"
+	"pariksha/server/internal/utils"
 )
 
 func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
@@ -30,8 +31,9 @@ func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
 
 	response := make([]dtos.ExamQuestionMinimalResponseDto, len(questions.Questions))
 	for i, q := range questions.Questions {
+		encryptedQuestionId, _ := utils.EncryptID(q.QuestionId)
 		response[i] = dtos.ExamQuestionMinimalResponseDto{
-			QuestionID: q.QuestionId,
+			QuestionID: encryptedQuestionId,
 			CategoryID: q.CategoryId,
 			Type:       q.Type,
 			Order:      q.Order,
@@ -119,8 +121,9 @@ func GetExamQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	encryptedQuestionId, _ := utils.EncryptID(question.Id)
 	response := dtos.ExamQuestionResponseDto{
-		ID:       question.Id,
+		ID:       encryptedQuestionId,
 		Question: question.RawQuestion,
 	}
 

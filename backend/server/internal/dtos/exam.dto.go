@@ -64,11 +64,11 @@ type AddExamParticipantResponseDto struct {
 }
 
 type ExamQuestionMinimalResponseDto struct {
-	QuestionID int64 `json:"id"`
-	CategoryID int64 `json:"category_id"`
-	Type       int32 `json:"type"`
-	Order      int32 `json:"order"`
-	MaxScore   int32 `json:"max_score"`
+	QuestionID string `json:"id"`
+	CategoryID int64  `json:"category_id"`
+	Type       int32  `json:"type"`
+	Order      int32  `json:"order"`
+	MaxScore   int32  `json:"max_score"`
 }
 
 type ExamCategoriesResponseDto struct {
@@ -78,7 +78,7 @@ type ExamCategoriesResponseDto struct {
 }
 
 type ExamQuestionResponseDto struct {
-	ID       int64           `json:"id"`
+	ID       string          `json:"id"`
 	Question json.RawMessage `json:"question"`
 }
 

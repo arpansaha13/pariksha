@@ -121,7 +121,7 @@ function onQuestionsReorderEnd() {
 }
 
 // ________________________DELETE QUESTION________________________
-async function handleDeleteQuestion(questionId: number) {
+async function handleDeleteQuestion(questionId: QuestionId) {
   if (!props.currentCategoryId) return
 
   const instance = confirmModal.open({

@@ -11,7 +11,7 @@ type PaperTestCaseDto struct {
 }
 
 type QuestionResponseDto struct {
-	ID            int64               `json:"id"`
+	ID            string              `json:"id"`
 	Question      json.RawMessage     `json:"question"`
 	CategoryID    int64               `json:"category_id"`
 	Type          int32               `json:"type"`
@@ -23,7 +23,7 @@ type QuestionResponseDto struct {
 }
 
 type QuestionMinimalResponseDto struct {
-	ID         int64           `json:"id"`
+	ID         string          `json:"id"`
 	CategoryID int64           `json:"category_id"`
 	PaperID    string          `json:"paper_id"`
 	Order      int32           `json:"order"`
@@ -54,19 +54,18 @@ type UpdateQuestionDto struct {
 }
 
 type ReorderQuestionsDto struct {
-	Questions []int64 `json:"questions" validate:"required,min=1"`
+	Questions []string `json:"questions" validate:"required,min=1"`
 }
 
 type CreateQuestionResponseDto struct {
-	ID int64 `json:"id"`
+	ID string `json:"id"`
 }
 
 type UpdateQuestionResponseDto struct {
-	ID int64 `json:"id"`
+	ID string `json:"id"`
 }
 
 type UpsertTestCaseDto struct {
-	ID          *int64   `json:"id,omitempty"`
 	Inputs      []string `json:"inputs" validate:"required"`
 	Output      string   `json:"output" validate:"required"`
 	Explanation *string  `json:"explanation,omitempty"`

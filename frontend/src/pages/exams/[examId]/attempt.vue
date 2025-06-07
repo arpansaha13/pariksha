@@ -205,9 +205,7 @@ const currentCategoryQuestions = computed(() => {
 })
 
 const currentQuestionId = computed(() => {
-  return route.query.question
-    ? (parseInt(route.query.question as string) as QuestionId)
-    : null
+  return route.query.question ? (route.query.question as QuestionId) : null
 })
 
 const { prevQuestionId, nextQuestionId, currentQuestionIdx } =
@@ -294,7 +292,10 @@ watchImmediate(currentQuestionId, async qid => {
   storeAnswerFromResponse(qid, data)
 })
 
-function storeAnswerFromResponse(qid: number, answerResponse: AnswerMinimal) {
+function storeAnswerFromResponse(
+  qid: QuestionId,
+  answerResponse: AnswerMinimal
+) {
   if (isNullOrUndefined(currentCategoryQuestions.value)) {
     console.warn('currentCategoryQuestions is null or undefined')
     return

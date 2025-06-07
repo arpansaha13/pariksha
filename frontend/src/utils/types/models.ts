@@ -96,7 +96,7 @@ export type ExamResult = {
 }
 
 // ___________________________QUESTION____________________________
-export const QUESTION_ID_ADD = 0 as QuestionId
+export const QUESTION_ID_ADD = '0' as QuestionId
 
 export enum QuestionType {
   MCQ = 1,

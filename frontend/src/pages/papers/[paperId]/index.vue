@@ -250,9 +250,7 @@ const currentCategoryQuestions = computed(() => {
 })
 
 const currentQuestionId = computed(() => {
-  return route.query.question
-    ? (parseInt(route.query.question as string) as QuestionId)
-    : null
+  return route.query.question ? (route.query.question as QuestionId) : null
 })
 
 const { questionNavigation } = usePaperQuestionNavigation({
@@ -341,9 +339,9 @@ const showQuestionEditChip = ref<Record<QuestionId, boolean>>({})
 // ________________________EDIT QUESTION__________________________
 const editQuestionFormRef =
   useTemplateRef<ComponentExposed<typeof PaperQuestionForm>>('editQuestionForm')
-const editQuestionFormStates = reactive<Record<number, MergedQuestion | null>>(
-  {}
-)
+const editQuestionFormStates = reactive<
+  Record<QuestionId, MergedQuestion | null>
+>({})
 
 function startQuestionEdit() {
   const qid = currentQuestionId.value
