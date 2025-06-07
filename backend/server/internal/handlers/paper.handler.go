@@ -39,6 +39,7 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 			QuestionCounts: dtos.QuestionCountDto{
 				MCQ:        p.QuestionCounts.Mcq,
 				Subjective: p.QuestionCounts.Subjective,
+				Coding:     p.QuestionCounts.Coding,
 			},
 			CreatedBy: p.CreatedBy,
 		}
@@ -76,6 +77,7 @@ func GetPaper(w http.ResponseWriter, r *http.Request) {
 		QuestionCounts: dtos.QuestionCountDto{
 			MCQ:        response.QuestionCounts.Mcq,
 			Subjective: response.QuestionCounts.Subjective,
+			Coding:     response.QuestionCounts.Coding,
 		},
 		CreatedBy: response.CreatedBy,
 	}

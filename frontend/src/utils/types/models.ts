@@ -11,6 +11,7 @@ export interface User {
 export interface PaperQuestionCounts {
   mcq: number
   subjective: number
+  coding: number
 }
 
 export interface Paper {

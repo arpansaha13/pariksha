@@ -1,8 +1,5 @@
 export function countTotalQuestions(question_counts: PaperQuestionCounts) {
-  let count = 0
-  count += question_counts.mcq ?? 0
-  count += question_counts.subjective ?? 0
-  return count
+  return _sum(Object.values(question_counts))
 }
 
 export function calcHours(durationMinutes: number) {

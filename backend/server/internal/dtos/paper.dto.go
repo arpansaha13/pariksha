@@ -3,6 +3,7 @@ package dtos
 type QuestionCountDto struct {
 	MCQ        int32 `json:"mcq"`
 	Subjective int32 `json:"subjective"`
+	Coding     int32 `json:"coding"`
 }
 
 type PaperResponseDto struct {
