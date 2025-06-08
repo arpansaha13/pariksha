@@ -21,6 +21,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ExecutionStatus int32
+
+const (
+	ExecutionStatus_UNKNOWN       ExecutionStatus = 0
+	ExecutionStatus_SUCCESS       ExecutionStatus = 1
+	ExecutionStatus_WRONG_ANSWER  ExecutionStatus = 2
+	ExecutionStatus_RUNTIME_ERROR ExecutionStatus = 3
+)
+
+// Enum value maps for ExecutionStatus.
+var (
+	ExecutionStatus_name = map[int32]string{
+		0: "UNKNOWN",
+		1: "SUCCESS",
+		2: "WRONG_ANSWER",
+		3: "RUNTIME_ERROR",
+	}
+	ExecutionStatus_value = map[string]int32{
+		"UNKNOWN":       0,
+		"SUCCESS":       1,
+		"WRONG_ANSWER":  2,
+		"RUNTIME_ERROR": 3,
+	}
+)
+
+func (x ExecutionStatus) Enum() *ExecutionStatus {
+	p := new(ExecutionStatus)
+	*p = x
+	return p
+}
+
+func (x ExecutionStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ExecutionStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_engine_proto_enumTypes[0].Descriptor()
+}
+
+func (ExecutionStatus) Type() protoreflect.EnumType {
+	return &file_engine_proto_enumTypes[0]
+}
+
+func (x ExecutionStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ExecutionStatus.Descriptor instead.
+func (ExecutionStatus) EnumDescriptor() ([]byte, []int) {
+	return file_engine_proto_rawDescGZIP(), []int{0}
+}
+
 type RunCodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
@@ -82,10 +134,11 @@ func (x *RunCodeRequest) GetTestCases() []*TestCase {
 }
 
 type TestCase struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Inputs        []string               `protobuf:"bytes,1,rep,name=inputs,proto3" json:"inputs,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Inputs         []string               `protobuf:"bytes,1,rep,name=inputs,proto3" json:"inputs,omitempty"`
+	ExpectedOutput string                 `protobuf:"bytes,2,opt,name=expectedOutput,proto3" json:"expectedOutput,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *TestCase) Reset() {
@@ -125,20 +178,168 @@ func (x *TestCase) GetInputs() []string {
 	return nil
 }
 
+func (x *TestCase) GetExpectedOutput() string {
+	if x != nil {
+		return x.ExpectedOutput
+	}
+	return ""
+}
+
+type CompilationResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Stderr        *string                `protobuf:"bytes,2,opt,name=stderr,proto3,oneof" json:"stderr,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CompilationResult) Reset() {
+	*x = CompilationResult{}
+	mi := &file_engine_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CompilationResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CompilationResult) ProtoMessage() {}
+
+func (x *CompilationResult) ProtoReflect() protoreflect.Message {
+	mi := &file_engine_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CompilationResult.ProtoReflect.Descriptor instead.
+func (*CompilationResult) Descriptor() ([]byte, []int) {
+	return file_engine_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CompilationResult) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *CompilationResult) GetStderr() string {
+	if x != nil && x.Stderr != nil {
+		return *x.Stderr
+	}
+	return ""
+}
+
+type TestCaseResult struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Inputs         []string               `protobuf:"bytes,1,rep,name=inputs,proto3" json:"inputs,omitempty"`
+	Output         string                 `protobuf:"bytes,2,opt,name=output,proto3" json:"output,omitempty"`
+	ExpectedOutput string                 `protobuf:"bytes,3,opt,name=expectedOutput,proto3" json:"expectedOutput,omitempty"`
+	Status         ExecutionStatus        `protobuf:"varint,4,opt,name=status,proto3,enum=proto.ExecutionStatus" json:"status,omitempty"`
+	Stdout         string                 `protobuf:"bytes,5,opt,name=stdout,proto3" json:"stdout,omitempty"`
+	Error          string                 `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`
+	ExecutionTime  int64                  `protobuf:"varint,7,opt,name=executionTime,proto3" json:"executionTime,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *TestCaseResult) Reset() {
+	*x = TestCaseResult{}
+	mi := &file_engine_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TestCaseResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestCaseResult) ProtoMessage() {}
+
+func (x *TestCaseResult) ProtoReflect() protoreflect.Message {
+	mi := &file_engine_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestCaseResult.ProtoReflect.Descriptor instead.
+func (*TestCaseResult) Descriptor() ([]byte, []int) {
+	return file_engine_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *TestCaseResult) GetInputs() []string {
+	if x != nil {
+		return x.Inputs
+	}
+	return nil
+}
+
+func (x *TestCaseResult) GetOutput() string {
+	if x != nil {
+		return x.Output
+	}
+	return ""
+}
+
+func (x *TestCaseResult) GetExpectedOutput() string {
+	if x != nil {
+		return x.ExpectedOutput
+	}
+	return ""
+}
+
+func (x *TestCaseResult) GetStatus() ExecutionStatus {
+	if x != nil {
+		return x.Status
+	}
+	return ExecutionStatus_UNKNOWN
+}
+
+func (x *TestCaseResult) GetStdout() string {
+	if x != nil {
+		return x.Stdout
+	}
+	return ""
+}
+
+func (x *TestCaseResult) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *TestCaseResult) GetExecutionTime() int64 {
+	if x != nil {
+		return x.ExecutionTime
+	}
+	return 0
+}
+
 type RunCodeResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Stdout        string                 `protobuf:"bytes,1,opt,name=stdout,proto3" json:"stdout,omitempty"`
-	Stderr        string                 `protobuf:"bytes,2,opt,name=stderr,proto3" json:"stderr,omitempty"`
-	Error         string                 `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
-	ExitCode      int32                  `protobuf:"varint,4,opt,name=exitCode,proto3" json:"exitCode,omitempty"`
-	ExecutionTime int64                  `protobuf:"varint,5,opt,name=executionTime,proto3" json:"executionTime,omitempty"`
+	Compilation   *CompilationResult     `protobuf:"bytes,1,opt,name=compilation,proto3" json:"compilation,omitempty"`
+	Results       []*TestCaseResult      `protobuf:"bytes,2,rep,name=results,proto3" json:"results,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RunCodeResponse) Reset() {
 	*x = RunCodeResponse{}
-	mi := &file_engine_proto_msgTypes[2]
+	mi := &file_engine_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -150,7 +351,7 @@ func (x *RunCodeResponse) String() string {
 func (*RunCodeResponse) ProtoMessage() {}
 
 func (x *RunCodeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_engine_proto_msgTypes[2]
+	mi := &file_engine_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -163,42 +364,21 @@ func (x *RunCodeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunCodeResponse.ProtoReflect.Descriptor instead.
 func (*RunCodeResponse) Descriptor() ([]byte, []int) {
-	return file_engine_proto_rawDescGZIP(), []int{2}
+	return file_engine_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *RunCodeResponse) GetStdout() string {
+func (x *RunCodeResponse) GetCompilation() *CompilationResult {
 	if x != nil {
-		return x.Stdout
+		return x.Compilation
 	}
-	return ""
+	return nil
 }
 
-func (x *RunCodeResponse) GetStderr() string {
+func (x *RunCodeResponse) GetResults() []*TestCaseResult {
 	if x != nil {
-		return x.Stderr
+		return x.Results
 	}
-	return ""
-}
-
-func (x *RunCodeResponse) GetError() string {
-	if x != nil {
-		return x.Error
-	}
-	return ""
-}
-
-func (x *RunCodeResponse) GetExitCode() int32 {
-	if x != nil {
-		return x.ExitCode
-	}
-	return 0
-}
-
-func (x *RunCodeResponse) GetExecutionTime() int64 {
-	if x != nil {
-		return x.ExecutionTime
-	}
-	return 0
+	return nil
 }
 
 var File_engine_proto protoreflect.FileDescriptor
@@ -209,15 +389,30 @@ const file_engine_proto_rawDesc = "" +
 	"\x0eRunCodeRequest\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12 \n" +
 	"\venvironment\x18\x02 \x01(\tR\venvironment\x12-\n" +
-	"\ttestCases\x18\x03 \x03(\v2\x0f.proto.TestCaseR\ttestCases\"\"\n" +
+	"\ttestCases\x18\x03 \x03(\v2\x0f.proto.TestCaseR\ttestCases\"J\n" +
 	"\bTestCase\x12\x16\n" +
-	"\x06inputs\x18\x01 \x03(\tR\x06inputs\"\x99\x01\n" +
-	"\x0fRunCodeResponse\x12\x16\n" +
-	"\x06stdout\x18\x01 \x01(\tR\x06stdout\x12\x16\n" +
-	"\x06stderr\x18\x02 \x01(\tR\x06stderr\x12\x14\n" +
-	"\x05error\x18\x03 \x01(\tR\x05error\x12\x1a\n" +
-	"\bexitCode\x18\x04 \x01(\x05R\bexitCode\x12$\n" +
-	"\rexecutionTime\x18\x05 \x01(\x03R\rexecutionTime2D\n" +
+	"\x06inputs\x18\x01 \x03(\tR\x06inputs\x12&\n" +
+	"\x0eexpectedOutput\x18\x02 \x01(\tR\x0eexpectedOutput\"U\n" +
+	"\x11CompilationResult\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x1b\n" +
+	"\x06stderr\x18\x02 \x01(\tH\x00R\x06stderr\x88\x01\x01B\t\n" +
+	"\a_stderr\"\xec\x01\n" +
+	"\x0eTestCaseResult\x12\x16\n" +
+	"\x06inputs\x18\x01 \x03(\tR\x06inputs\x12\x16\n" +
+	"\x06output\x18\x02 \x01(\tR\x06output\x12&\n" +
+	"\x0eexpectedOutput\x18\x03 \x01(\tR\x0eexpectedOutput\x12.\n" +
+	"\x06status\x18\x04 \x01(\x0e2\x16.proto.ExecutionStatusR\x06status\x12\x16\n" +
+	"\x06stdout\x18\x05 \x01(\tR\x06stdout\x12\x14\n" +
+	"\x05error\x18\x06 \x01(\tR\x05error\x12$\n" +
+	"\rexecutionTime\x18\a \x01(\x03R\rexecutionTime\"~\n" +
+	"\x0fRunCodeResponse\x12:\n" +
+	"\vcompilation\x18\x01 \x01(\v2\x18.proto.CompilationResultR\vcompilation\x12/\n" +
+	"\aresults\x18\x02 \x03(\v2\x15.proto.TestCaseResultR\aresults*P\n" +
+	"\x0fExecutionStatus\x12\v\n" +
+	"\aUNKNOWN\x10\x00\x12\v\n" +
+	"\aSUCCESS\x10\x01\x12\x10\n" +
+	"\fWRONG_ANSWER\x10\x02\x12\x11\n" +
+	"\rRUNTIME_ERROR\x10\x032D\n" +
 	"\x06Engine\x12:\n" +
 	"\aRunCode\x12\x15.proto.RunCodeRequest\x1a\x16.proto.RunCodeResponse\"\x00B\bZ\x06/protob\x06proto3"
 
@@ -233,21 +428,28 @@ func file_engine_proto_rawDescGZIP() []byte {
 	return file_engine_proto_rawDescData
 }
 
-var file_engine_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_engine_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_engine_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_engine_proto_goTypes = []any{
-	(*RunCodeRequest)(nil),  // 0: proto.RunCodeRequest
-	(*TestCase)(nil),        // 1: proto.TestCase
-	(*RunCodeResponse)(nil), // 2: proto.RunCodeResponse
+	(ExecutionStatus)(0),      // 0: proto.ExecutionStatus
+	(*RunCodeRequest)(nil),    // 1: proto.RunCodeRequest
+	(*TestCase)(nil),          // 2: proto.TestCase
+	(*CompilationResult)(nil), // 3: proto.CompilationResult
+	(*TestCaseResult)(nil),    // 4: proto.TestCaseResult
+	(*RunCodeResponse)(nil),   // 5: proto.RunCodeResponse
 }
 var file_engine_proto_depIdxs = []int32{
-	1, // 0: proto.RunCodeRequest.testCases:type_name -> proto.TestCase
-	0, // 1: proto.Engine.RunCode:input_type -> proto.RunCodeRequest
-	2, // 2: proto.Engine.RunCode:output_type -> proto.RunCodeResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	2, // 0: proto.RunCodeRequest.testCases:type_name -> proto.TestCase
+	0, // 1: proto.TestCaseResult.status:type_name -> proto.ExecutionStatus
+	3, // 2: proto.RunCodeResponse.compilation:type_name -> proto.CompilationResult
+	4, // 3: proto.RunCodeResponse.results:type_name -> proto.TestCaseResult
+	1, // 4: proto.Engine.RunCode:input_type -> proto.RunCodeRequest
+	5, // 5: proto.Engine.RunCode:output_type -> proto.RunCodeResponse
+	5, // [5:6] is the sub-list for method output_type
+	4, // [4:5] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_engine_proto_init() }
@@ -255,18 +457,20 @@ func file_engine_proto_init() {
 	if File_engine_proto != nil {
 		return
 	}
+	file_engine_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_engine_proto_rawDesc), len(file_engine_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   3,
+			NumEnums:      1,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_engine_proto_goTypes,
 		DependencyIndexes: file_engine_proto_depIdxs,
+		EnumInfos:         file_engine_proto_enumTypes,
 		MessageInfos:      file_engine_proto_msgTypes,
 	}.Build()
 	File_engine_proto = out.File

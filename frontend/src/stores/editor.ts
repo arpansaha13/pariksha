@@ -15,6 +15,7 @@ export const useEditorStore = defineStore(editorStoreId, {
   getters: {
     getEditorOptions: (): editor.IStandaloneEditorConstructionOptions => ({
       minimap: { enabled: false },
+      stickyScroll: { enabled: false },
       fontFamily: `'Fira Code', 'Cascadia Code', 'Monaco'`,
     }),
   },

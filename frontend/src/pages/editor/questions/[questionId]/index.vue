@@ -163,7 +163,7 @@
                   </UTabs>
                 </template>
 
-                <template #run-results>
+                <template #results>
                   <div
                     v-if="isNullOrUndefined(engineRunResult)"
                     class="grid size-full place-items-center"
@@ -174,8 +174,12 @@
                       description="Run your code to see the output here"
                     />
                   </div>
-
-                  <EditorRunResult v-else :run-result="engineRunResult" />
+                  <!-- prettier-ignore -->
+                  <EditorTestCaseResults
+                    v-else
+                    :engine-run-result="engineRunResult"
+                    :question-data="(questionData as QuestionCoding)"
+                  />
                 </template>
               </UTabs>
             </UCard>
@@ -336,7 +340,7 @@ const panelTabItems: TabsItem[] = [
   {
     value: PanelTabItemValue.RUN_RESULTS,
     label: 'Run results',
-    slot: 'run-results',
+    slot: 'results',
   },
 ]
 
@@ -353,7 +357,7 @@ const isEditorLoaded = ref(false)
 const editorLang = ref(EditorLang.JAVASCRIPT)
 const editorCode = ref(boilerplateData.value?.code ?? '')
 
-const engineRunResult = ref<EngineRunResult | null>(null)
+const engineRunResult = ref<EngineRunResponse | null>(null)
 async function runCode() {
   if (!isEditorLoaded.value) return
   engineRunResult.value = await engineRun({

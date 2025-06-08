@@ -14,21 +14,45 @@ const nodeTemplate = `
 
 // Test runner
 function runTests() {
-    const testCases = {{.TestCases}};
-    
-    console.log("Running test cases...\n");
-    
-    testCases.forEach((test, index) => {
-        try {
-            console.log(` + "`" + `Test Case ${index + 1}:` + "`" + `);
-            console.log(` + "`" + `Input: [${test.inputs.join(", ")}]` + "`" + `);
-            
-            const result = solve(...test.inputs);
-            console.log(` + "`" + `Output: ${result}\n` + "`" + `);
-        } catch (error) {
-            console.error(` + "`" + `Error in test case ${index + 1}: ${error.message}\n` + "`" + `);
-        }
-    });
+	const testCases = {{.TestCases}};
+	let results = [];
+	
+	console.log("Running test cases...\n");
+	
+	for (let i = 0; i < testCases.length; i++) {
+		const test = testCases[i];
+		const startTime = Date.now();
+		
+		console.log("` + TEST_CASE_START + `");
+		try {
+			const result = solve(...test.inputs);
+			const endTime = Date.now();
+			const stringifiedResult = JSON.stringify(result)
+			const expected = test.expectedOutput;
+			
+			results.push({
+				output: stringifiedResult,
+				executionTime: endTime - startTime,
+				match: stringifiedResult === expected,
+				inputs: test.inputs,
+				expectedOutput: test.expectedOutput
+			});
+		} catch (error) {
+			const endTime = Date.now();
+			results.push({
+				error: error.message,
+				executionTime: endTime - startTime,
+				match: false,
+				inputs: test.inputs,
+				expectedOutput: test.expectedOutput
+			});
+		}
+		console.log("` + TEST_CASE_END + `");
+	}
+
+	console.log("` + RESULTS_START + `");
+	console.log(JSON.stringify(results));
+	console.log("` + RESULTS_END + `");
 }
 
 runTests();

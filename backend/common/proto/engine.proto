@@ -16,12 +16,32 @@ message RunCodeRequest {
 
 message TestCase {
   repeated string inputs = 1;
+  string expectedOutput = 2;
+}
+
+enum ExecutionStatus {
+  UNKNOWN = 0;
+  SUCCESS = 1;
+  WRONG_ANSWER = 2;
+  RUNTIME_ERROR = 3;
+}
+
+message CompilationResult {
+  bool success = 1;
+  optional string stderr = 2;
+}
+
+message TestCaseResult {
+  repeated string inputs = 1;
+  string output = 2;
+  string expectedOutput = 3;
+  ExecutionStatus status = 4;
+  string stdout = 5;
+  string error = 6;
+  int64 executionTime = 7;
 }
 
 message RunCodeResponse {
-  string stdout = 1;
-  string stderr = 2;
-  string error = 3;
-  int32 exitCode = 4;
-  int64 executionTime = 5;
+  CompilationResult compilation = 1;
+  repeated TestCaseResult results = 2;
 }

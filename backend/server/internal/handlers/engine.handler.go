@@ -27,7 +27,8 @@ func RunCode(w http.ResponseWriter, r *http.Request) {
 	testCases := make([]*proto.TestCase, len(requestDto.TestCases))
 	for i, tc := range requestDto.TestCases {
 		testCases[i] = &proto.TestCase{
-			Inputs: tc.Inputs,
+			Inputs:         tc.Inputs,
+			ExpectedOutput: tc.ExpectedOutput,
 		}
 	}
 
@@ -43,12 +44,26 @@ func RunCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	testCaseResults := make([]dtos.TestCaseResult, len(response.Results))
+
+	for i, result := range response.Results {
+		testCaseResults[i] = dtos.TestCaseResult{
+			Inputs:         result.Inputs,
+			Output:         result.Output,
+			ExpectedOutput: result.ExpectedOutput,
+			Stdout:         result.Stdout,
+			Error:          result.Error,
+			Status:         result.Status,
+			ExecutionTime:  result.ExecutionTime,
+		}
+	}
+
 	responseDto := dtos.RunCodeResponseDto{
-		Stdout:        response.Stdout,
-		Stderr:        response.Stderr,
-		Error:         response.Error,
-		ExitCode:      response.ExitCode,
-		ExecutionTime: response.ExecutionTime,
+		Compilation: dtos.CompilationResult{
+			Success: response.Compilation.Success,
+			Stderr:  response.Compilation.Stderr,
+		},
+		Results: testCaseResults,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -1,7 +1,10 @@
 package dtos
 
+import "pariksha/common/pkg/proto"
+
 type TestCaseDto struct {
-	Inputs []string `json:"inputs" validate:"required,min=1"`
+	Inputs         []string `json:"inputs" validate:"required,min=1"`
+	ExpectedOutput string   `json:"expectedOutput" validate:"required"`
 }
 
 type RunCodeRequestDto struct {
@@ -10,10 +13,22 @@ type RunCodeRequestDto struct {
 	TestCases   []TestCaseDto `json:"testCases" validate:"required,min=1"`
 }
 
+type CompilationResult struct {
+	Success bool    `json:"success"`
+	Stderr  *string `json:"stderr,omitempty"`
+}
+
+type TestCaseResult struct {
+	Inputs         []string              `json:"inputs"`
+	Output         string                `json:"output"`
+	ExpectedOutput string                `json:"expected_output"`
+	Status         proto.ExecutionStatus `json:"status"`
+	Stdout         string                `json:"stdout"`
+	Error          string                `json:"error"`
+	ExecutionTime  int64                 `json:"execution_time"`
+}
+
 type RunCodeResponseDto struct {
-	Stdout        string `json:"stdout"`
-	Stderr        string `json:"stderr"`
-	Error         string `json:"error,omitempty"`
-	ExitCode      int32  `json:"exit_code"`
-	ExecutionTime int64  `json:"execution_time"`
+	Compilation CompilationResult `json:"compilation"`
+	Results     []TestCaseResult  `json:"results"`
 }

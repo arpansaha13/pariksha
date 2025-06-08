@@ -15,11 +15,7 @@ import (
 func GetBoilerplate(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	questionID, err := getInt64FromVars(vars, "questionId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	questionID := r.Context().Value(middlewares.DecryptedQuestionID).(int64)
 
 	languageID, err := getInt64FromVars(vars, "languageId")
 	if err != nil {

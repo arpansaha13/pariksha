@@ -61,6 +61,15 @@ func NewEngineServer() (*EngineServer, error) {
 	return &EngineServer{dockerClient: cli}, nil
 }
 
+type TestResult struct {
+	Inputs         []string `json:"inputs"`
+	Output         string   `json:"output"`
+	ExpectedOutput string   `json:"expectedOutput"`
+	Match          bool     `json:"match"`
+	Error          string   `json:"error,omitempty"`
+	ExecutionTime  int64    `json:"executionTime"`
+}
+
 func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (*proto.RunCodeResponse, error) {
 	// Get environment config
 	envConfig, ok := envConfigs[req.Environment]
@@ -155,8 +164,7 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 		}
 	}()
 
-	startTime := time.Now()
-	statusCode, err := s.startContainerAndWait(&execCtx, resp.ID)
+	_, err = s.startContainerAndWait(&execCtx, resp.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -172,13 +180,56 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 	defer logs.Close()
 
 	stdout, stderr := splitLogs(logs)
-	executionTime := time.Since(startTime).Milliseconds()
+
+	// Check for compilation errors first
+	if strings.Contains(stderr, "SyntaxError") {
+		return &proto.RunCodeResponse{
+			Compilation: &proto.CompilationResult{
+				Success: false,
+				Stderr:  &stderr,
+			},
+			Results: nil,
+		}, nil
+	}
+
+	// Extract results from stdout
+	results, err := extractResults(stdout)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get extract results: %v", err)
+	}
+
+	testCaseResults := make([]*proto.TestCaseResult, 0, len(req.TestCases))
+
+	// Split stdout and stderr by test cases
+	// Note: Make sure the stdout stream has the start and end sequences
+	stdoutParts := ExtractBetween(stdout, templates.TEST_CASE_START+"\n", templates.TEST_CASE_END)
+
+	for i, result := range results {
+		status := proto.ExecutionStatus_RUNTIME_ERROR
+		if result.Error != "" {
+			status = proto.ExecutionStatus_RUNTIME_ERROR
+		} else if result.Match {
+			status = proto.ExecutionStatus_SUCCESS
+		} else {
+			status = proto.ExecutionStatus_WRONG_ANSWER
+		}
+
+		testCaseResults = append(testCaseResults, &proto.TestCaseResult{
+			Status:         status,
+			Inputs:         result.Inputs,
+			Output:         result.Output,
+			ExpectedOutput: result.ExpectedOutput,
+			ExecutionTime:  result.ExecutionTime,
+			Stdout:         stdoutParts[i],
+			Error:          result.Error,
+		})
+	}
 
 	return &proto.RunCodeResponse{
-		Stdout:        stdout,
-		Stderr:        strings.TrimSpace(stderr),
-		ExitCode:      int32(*statusCode),
-		ExecutionTime: executionTime,
+		Compilation: &proto.CompilationResult{
+			Success: true,
+		},
+		Results: testCaseResults,
 	}, nil
 }
 
@@ -236,4 +287,54 @@ func splitLogs(logs io.Reader) (string, string) {
 	}
 
 	return stdout.String(), stderr.String()
+}
+
+func extractResults(stdout string) ([]TestResult, error) {
+	start := strings.Index(stdout, templates.RESULTS_START)
+	end := strings.Index(stdout, templates.RESULTS_END)
+	if start == -1 || end == -1 {
+		return nil, nil
+	}
+
+	startOffset := len(templates.RESULTS_START) + 1 // Add 1 for the \n character
+	jsonStr := stdout[start+startOffset : end]
+
+	var results []TestResult
+	if err := json.Unmarshal([]byte(strings.TrimSpace(jsonStr)), &results); err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+// ExtractBetween takes a full string, start sequence, end sequence, and returns an array of extracted substrings in between start sequence and end sequence.
+//
+// ExtractBetween scans the string character by character, detecting start and end sequences.
+func ExtractBetween(text, startSeq, endSeq string) []string {
+	var results []string
+	var buffer strings.Builder
+	inCaptureMode := false
+
+	for i := 0; i < len(text); i++ {
+		// Check if start sequence is forming
+		if strings.HasPrefix(text[i:], startSeq) {
+			inCaptureMode = true
+			i += len(startSeq) - 1 // Skip past the start sequence
+			continue
+		}
+
+		// If we are recording, add characters to buffer
+		if inCaptureMode {
+			// Check if end sequence is forming
+			if strings.HasPrefix(text[i:], endSeq) {
+				results = append(results, buffer.String()) // Save recorded segment
+				buffer.Reset()                             // Clear buffer for next segment
+				inCaptureMode = false
+				i += len(endSeq) - 1 // Skip past the end sequence
+				continue
+			}
+			buffer.WriteByte(text[i])
+		}
+	}
+
+	return results
 }
