@@ -4,9 +4,10 @@ export interface TestCase {
 }
 
 interface EngineRunBody {
+  question_id: QuestionId
   code: string
   environment: EngineEnv
-  testCases: TestCase[]
+  test_cases: TestCase[]
 }
 
 export enum EngineRunResultStatus {

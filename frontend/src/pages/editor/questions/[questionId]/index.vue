@@ -361,9 +361,10 @@ const engineRunResult = ref<EngineRunResponse | null>(null)
 async function runCode() {
   if (!isEditorLoaded.value) return
   engineRunResult.value = await engineRun({
+    question_id: questionId,
     code: editorCode.value,
     environment: EngineEnv.NODE,
-    testCases: testCaseTabItems,
+    test_cases: testCaseTabItems,
   })
 
   if (panelRef.value?.isCollapsed) {

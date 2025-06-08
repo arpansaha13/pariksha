@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,9 +18,14 @@ import (
 	"github.com/docker/docker/client"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/types"
+	"pariksha/engine/internal/config/db"
 	engineConstants "pariksha/engine/internal/constants"
 	"pariksha/engine/internal/templates"
 )
@@ -56,7 +62,7 @@ var envConfigs = map[string]EnvironmentConfig{
 func NewEngineServer() (*EngineServer, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Docker client: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to create Docker client: %v", err)
 	}
 	return &EngineServer{dockerClient: cli}, nil
 }
@@ -77,12 +83,20 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 		return nil, status.Errorf(codes.InvalidArgument, "unsupported environment: %s", req.Environment)
 	}
 
+	// Fetch input definitions
+	// Will be used for parsing inputs
+	typedQuestionId := types.QuestionID(req.QuestionId)
+	inputDefinitions, err := fetchInputDefinitions(db.Papers, typedQuestionId)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create execution context with timeout
 	execCtx, cancel := context.WithTimeout(ctx, time.Duration(engineConstants.ExecutionTimeout)*time.Second)
 	defer cancel()
 
 	// Check if image exists locally
-	_, _, err := s.dockerClient.ImageInspectWithRaw(execCtx, envConfig.Image)
+	_, _, err = s.dockerClient.ImageInspectWithRaw(execCtx, envConfig.Image)
 	if err != nil {
 		// Image not found locally, pull it
 		reader, err := s.dockerClient.ImagePull(execCtx, envConfig.Image, image.PullOptions{})
@@ -97,8 +111,23 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 		}
 	}
 
+	// Parse and validate all test cases. The string inputs need to be parsed
+	// to their respective data types before sending as inputs to templates
+	parsedTestCases := make([]map[string]any, len(req.TestCases))
+	for i, testCase := range req.TestCases {
+		parsedInputs, err := parseTestCase(testCase.Inputs, inputDefinitions)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid test case %d: %v", i, err)
+		}
+
+		parsedTestCases[i] = map[string]any{
+			"inputs":         parsedInputs,
+			"expectedOutput": testCase.ExpectedOutput,
+		}
+	}
+
 	// Convert test cases to JSON
-	testCasesJSON, err := json.Marshal(req.TestCases)
+	testCasesJSON, err := json.Marshal(parsedTestCases)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to marshal test cases: %v", err)
 	}
@@ -195,35 +224,13 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 	// Extract results from stdout
 	results, err := extractResults(stdout)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get extract results: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to extract results: %v", err)
 	}
 
-	testCaseResults := make([]*proto.TestCaseResult, 0, len(req.TestCases))
-
-	// Split stdout and stderr by test cases
-	// Note: Make sure the stdout stream has the start and end sequences
+	// Note: Make sure all streams have the start and end sequences
 	stdoutParts := ExtractBetween(stdout, templates.TEST_CASE_START+"\n", templates.TEST_CASE_END)
 
-	for i, result := range results {
-		status := proto.ExecutionStatus_RUNTIME_ERROR
-		if result.Error != "" {
-			status = proto.ExecutionStatus_RUNTIME_ERROR
-		} else if result.Match {
-			status = proto.ExecutionStatus_SUCCESS
-		} else {
-			status = proto.ExecutionStatus_WRONG_ANSWER
-		}
-
-		testCaseResults = append(testCaseResults, &proto.TestCaseResult{
-			Status:         status,
-			Inputs:         result.Inputs,
-			Output:         result.Output,
-			ExpectedOutput: result.ExpectedOutput,
-			ExecutionTime:  result.ExecutionTime,
-			Stdout:         stdoutParts[i],
-			Error:          result.Error,
-		})
-	}
+	testCaseResults := prepareTestCaseResults(results, stdoutParts, len(req.TestCases))
 
 	return &proto.RunCodeResponse{
 		Compilation: &proto.CompilationResult{
@@ -231,6 +238,86 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 		},
 		Results: testCaseResults,
 	}, nil
+}
+
+// fetchInputDefinitions retrieves the InputDefinitions array
+// from the JSONB Question field for a given question ID.
+func fetchInputDefinitions(db *gorm.DB, questionID types.QuestionID) ([]structs.InputDefinition, error) {
+	type QuestionFields struct {
+		Type     int16  `gorm:"column:type"`
+		Question []byte `gorm:"column:question"`
+	}
+
+	var fields QuestionFields
+	if err := db.Model(&models.Question{}).
+		Select("type, question->>'input_definitions' as question").
+		Take(&fields, questionID).Error; err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to fetch question: %v", err)
+	}
+
+	if fields.Type != constants.QUESTION_TYPE_CODING {
+		return nil, status.Errorf(codes.InvalidArgument, "question type must be coding, got type: %d", fields.Type)
+	}
+
+	var inputDefinitions []structs.InputDefinition
+	if err := json.Unmarshal(fields.Question, &inputDefinitions); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to unmarshal input definitions: %v", err)
+	}
+
+	return inputDefinitions, nil
+}
+
+// parseTestCase parses all inputs in a test case according to their input definitions
+func parseTestCase(testCaseInputs []string, inputDefs []structs.InputDefinition) ([]any, error) {
+	if len(testCaseInputs) != len(inputDefs) {
+		return nil, status.Errorf(codes.InvalidArgument, "input count mismatch: expected %d, got %d", len(inputDefs), len(testCaseInputs))
+	}
+
+	parsedInputs := make([]any, len(testCaseInputs))
+	for i, input := range testCaseInputs {
+		parsed, err := parseValue(input, inputDefs[i].Type, inputDefs[i].Items)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse input %s: %v", inputDefs[i].VariableName, err)
+		}
+		parsedInputs[i] = parsed
+	}
+	return parsedInputs, nil
+}
+
+// parseValue converts a string input to its appropriate type based on the parameter type
+func parseValue(input string, paramType constants.ParameterType, items *[]structs.ParameterItem) (any, error) {
+	switch paramType {
+	case constants.PARAMETER_TYPE_NUMBER:
+		return strconv.ParseFloat(input, 64)
+	case constants.PARAMETER_TYPE_STRING:
+		return input, nil
+	case constants.PARAMETER_TYPE_BOOLEAN:
+		return strconv.ParseBool(input)
+	case constants.PARAMETER_TYPE_ARRAY:
+		if items == nil {
+			return nil, status.Errorf(codes.InvalidArgument, "items definition missing for array type")
+		}
+		var rawArray []any
+		if err := json.Unmarshal([]byte(input), &rawArray); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid array format: %v", err)
+		}
+
+		// Parse each array element based on the item type
+		itemType := (*items)[0].Type // Assuming first item defines the array element type
+		parsedArray := make([]any, len(rawArray))
+		for i, item := range rawArray {
+			// Convert item to string since all inputs are strings
+			itemStr := fmt.Sprintf("%v", item)
+			parsed, err := parseValue(itemStr, itemType, nil)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse array item %d: %v", i, err)
+			}
+			parsedArray[i] = parsed
+		}
+		return parsedArray, nil
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "unsupported parameter type: %d", paramType)
+	}
 }
 
 func (s *EngineServer) startContainerAndWait(execCtx *context.Context, containerID string) (*int64, error) {
@@ -299,6 +386,8 @@ func extractResults(stdout string) ([]TestResult, error) {
 	startOffset := len(templates.RESULTS_START) + 1 // Add 1 for the \n character
 	jsonStr := stdout[start+startOffset : end]
 
+	// Note: parsed inputs are sent to the templates.
+	// Make sure the templates stringify the inputs before adding to results
 	var results []TestResult
 	if err := json.Unmarshal([]byte(strings.TrimSpace(jsonStr)), &results); err != nil {
 		return nil, err
@@ -337,4 +426,30 @@ func ExtractBetween(text, startSeq, endSeq string) []string {
 	}
 
 	return results
+}
+
+func prepareTestCaseResults(results []TestResult, stdoutParts []string, resultsCount int) []*proto.TestCaseResult {
+	testCaseResults := make([]*proto.TestCaseResult, 0, resultsCount)
+	for i, result := range results {
+		status := proto.ExecutionStatus_RUNTIME_ERROR
+		if result.Error != "" {
+			status = proto.ExecutionStatus_RUNTIME_ERROR
+		} else if result.Match {
+			status = proto.ExecutionStatus_SUCCESS
+		} else {
+			status = proto.ExecutionStatus_WRONG_ANSWER
+		}
+
+		testCaseResults = append(testCaseResults, &proto.TestCaseResult{
+			Status:         status,
+			Inputs:         result.Inputs,
+			Output:         result.Output,
+			ExpectedOutput: result.ExpectedOutput,
+			ExecutionTime:  result.ExecutionTime,
+			Stdout:         stdoutParts[i],
+			Error:          result.Error,
+		})
+	}
+
+	return testCaseResults
 }

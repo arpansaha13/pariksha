@@ -6,8 +6,7 @@ import { isNullOrUndefined } from '@arpansaha13/utils'
  * @returns boolean - True if string contains only alphabets, false otherwise
  */
 export const isAlpha = (str: string): boolean => {
-  if (!str) return false
-  return /^[A-Za-z]+$/.test(str)
+  return _isString(str) && /^[A-Za-z]+$/.test(str)
 }
 
 type ScoreColor = 'error' | 'warning' | 'primary'

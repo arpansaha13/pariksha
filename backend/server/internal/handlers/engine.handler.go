@@ -9,6 +9,7 @@ import (
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/services"
+	"pariksha/server/internal/utils"
 )
 
 func RunCode(w http.ResponseWriter, r *http.Request) {
@@ -32,8 +33,15 @@ func RunCode(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	decryptedQuestionId, err := utils.DecryptID(requestDto.QuestionID)
+	if err != nil {
+		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		return
+	}
+
 	engineService := services.GetEngineService()
 	response, err := engineService.Client().RunCode(context.Background(), &proto.RunCodeRequest{
+		QuestionId:  decryptedQuestionId,
 		Code:        requestDto.Code,
 		Environment: requestDto.Environment,
 		TestCases:   testCases,

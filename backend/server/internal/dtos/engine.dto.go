@@ -8,9 +8,10 @@ type TestCaseDto struct {
 }
 
 type RunCodeRequestDto struct {
+	QuestionID  string        `json:"question_id" validate:"required"`
 	Code        string        `json:"code" validate:"required"`
 	Environment string        `json:"environment" validate:"required"`
-	TestCases   []TestCaseDto `json:"testCases" validate:"required,min=1"`
+	TestCases   []TestCaseDto `json:"test_cases" validate:"required,min=1"`
 }
 
 type CompilationResult struct {

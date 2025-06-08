@@ -22,6 +22,7 @@ function runTests() {
 	for (let i = 0; i < testCases.length; i++) {
 		const test = testCases[i];
 		const startTime = Date.now();
+		const stringifiedInputs = test.inputs.map(i => JSON.stringify(i))
 		
 		console.log("` + TEST_CASE_START + `");
 		try {
@@ -34,7 +35,7 @@ function runTests() {
 				output: stringifiedResult,
 				executionTime: endTime - startTime,
 				match: stringifiedResult === expected,
-				inputs: test.inputs,
+				inputs: stringifiedInputs,
 				expectedOutput: test.expectedOutput
 			});
 		} catch (error) {
@@ -43,7 +44,7 @@ function runTests() {
 				error: error.message,
 				executionTime: endTime - startTime,
 				match: false,
-				inputs: test.inputs,
+				inputs: stringifiedInputs,
 				expectedOutput: test.expectedOutput
 			});
 		}
