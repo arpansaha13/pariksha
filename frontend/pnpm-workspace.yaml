@@ -1,0 +1,9 @@
+onlyBuiltDependencies:
+  - '@arpansaha13/utils'
+  - '@parcel/watcher'
+  - '@tailwindcss/oxide'
+  - esbuild
+  - puppeteer
+  - sharp
+  - unrs-resolver
+  - vue-demi
