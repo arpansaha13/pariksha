@@ -26,6 +26,7 @@ import (
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/types"
 	"pariksha/engine/internal/config/db"
+	"pariksha/engine/internal/config/env"
 	engineConstants "pariksha/engine/internal/constants"
 	"pariksha/engine/internal/templates"
 )
@@ -60,6 +61,8 @@ var envConfigs = map[string]EnvironmentConfig{
 
 // NewEngineServer creates a new instance of EngineServer
 func NewEngineServer() (*EngineServer, error) {
+	// Ensure DOCKER_API_VERSION = 1.46
+	// Error response from daemon: client version 1.48 is too new. Maximum supported API version is 1.46
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create Docker client: %v", err)
@@ -173,7 +176,7 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 			{
 				Type: mount.TypeBind,
 				// Mount source has to be a host path, not a path inside engineService container
-				Source:   filepath.Join(engineConstants.HOST_TMP_MOUNT_PATH, scriptPath),
+				Source:   filepath.Join(env.HOST_TMP_MOUNT_PATH, scriptPath),
 				Target:   envConfig.MountTarget,
 				ReadOnly: true,
 			},

@@ -3,14 +3,17 @@ package env
 import (
 	"log"
 	"os"
-	"pariksha/common/pkg/constants"
 
 	"github.com/joho/godotenv"
+
+	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/utils"
 )
 
 var (
-	GO_ENV             string
-	ENGINE_SERVER_PORT string
+	GO_ENV              string
+	ENGINE_SERVER_PORT  string
+	HOST_TMP_MOUNT_PATH string
 )
 
 var (
@@ -43,6 +46,7 @@ func init() {
 	PAPERS_DB_USER = os.Getenv("PAPERS_DB_USER")
 	PAPERS_DB_PASS = os.Getenv("PAPERS_DB_PASS")
 	PAPERS_DB_NAME = os.Getenv("PAPERS_DB_NAME")
+	HOST_TMP_MOUNT_PATH = utils.GetEnvWithDefault("HOST_TMP_MOUNT_PATH", "")
 
 	if GO_ENV != constants.GO_ENV_TEST {
 		PAPERS_DB_HOST = os.Getenv("PAPERS_DB_HOST")
@@ -55,6 +59,7 @@ func getRequiredEnvVars() []string {
 	baseEnvVars := []string{
 		"GO_ENV",
 		"ENGINE_SERVER_PORT",
+		"DOCKER_API_VERSION", // used to create docker client with `client.FromEnv`
 		"PAPERS_DB_USER",
 		"PAPERS_DB_PASS",
 		"PAPERS_DB_NAME",

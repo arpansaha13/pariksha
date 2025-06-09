@@ -40,7 +40,7 @@ func autoMigrateDB() error {
 	err := Papers.AutoMigrate(
 		&models.Paper{},
 		&models.Question{},
-		&models.TestCase{},
+		&models.QuestionCategory{},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to auto-migrate database: %v", err)
