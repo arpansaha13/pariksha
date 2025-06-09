@@ -1,4 +1,4 @@
-FROM golang:1.23-alpine AS base
+FROM golang:1.23-alpine AS builder
 
 # Add required build dependencies
 RUN apk add --no-cache gcc musl-dev
@@ -24,9 +24,16 @@ COPY auth/cmd/ ./cmd/
 COPY auth/internal/ ./internal/
 
 RUN --mount=type=cache,target=/gomod-cache \
-	--mount=type=cache,target=/go-cache \
-	go build -o ./bin/pariksha_auth ./cmd/auth/main.go
+    --mount=type=cache,target=/go-cache \
+    go build -ldflags="-w -s" \
+    -o ./bin/pariksha_auth ./cmd/auth/main.go
+
+FROM alpine:3.22.0
+
+RUN apk add --no-cache ca-certificates
+
+COPY --from=builder /app/auth/bin/pariksha_auth /usr/local/bin/
 
 EXPOSE 4000
 
-CMD ["/app/auth/bin/pariksha_auth"]
+CMD ["pariksha_auth"]

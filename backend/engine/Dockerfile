@@ -1,4 +1,4 @@
-FROM golang:1.23-alpine AS base
+FROM golang:1.23-alpine AS builder
 
 # Add required build dependencies
 RUN apk add --no-cache gcc musl-dev
@@ -24,9 +24,16 @@ COPY engine/cmd/ ./cmd/
 COPY engine/internal/ ./internal/
 
 RUN --mount=type=cache,target=/gomod-cache \
-	--mount=type=cache,target=/go-cache \
-	go build -o ./bin/pariksha_engine ./cmd/engine/main.go
+    --mount=type=cache,target=/go-cache \
+    go build -ldflags="-w -s" \
+    -o ./bin/pariksha_engine ./cmd/engine/main.go
+
+FROM alpine:3.22.0
+
+RUN apk add --no-cache ca-certificates
+
+COPY --from=builder /app/engine/bin/pariksha_engine /usr/local/bin/
 
 EXPOSE 4000
 
-CMD ["/app/engine/bin/pariksha_engine"]
+CMD ["pariksha_engine"]

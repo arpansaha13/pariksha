@@ -1,4 +1,4 @@
-FROM golang:1.23-alpine AS base
+FROM golang:1.23-alpine AS builder
 
 # Add required build dependencies
 RUN apk add --no-cache gcc musl-dev
@@ -24,8 +24,14 @@ COPY workers/exam/cmd/ ./cmd/
 COPY workers/exam/internal/ ./internal/
 
 RUN --mount=type=cache,target=/gomod-cache \
-	--mount=type=cache,target=/go-cache \
-	go build -o ./bin/pariksha_exam_worker \
-	./cmd/exam/main.go
+    --mount=type=cache,target=/go-cache \
+    go build -ldflags="-w -s" \
+    -o ./bin/pariksha_exam_worker ./cmd/exam/main.go
 
-CMD ["/app/workers/exam/bin/pariksha_exam_worker"]
+FROM alpine:3.22.0
+
+RUN apk add --no-cache ca-certificates
+
+COPY --from=builder /app/workers/exam/bin/pariksha_exam_worker /usr/local/bin/
+
+CMD ["pariksha_exam_worker"]

@@ -1,4 +1,4 @@
-FROM golang:1.23-alpine AS base
+FROM golang:1.23-alpine AS builder
 
 # Add required build dependencies
 RUN apk add --no-cache gcc musl-dev
@@ -24,7 +24,14 @@ COPY workers/mail/cmd/ ./cmd/
 COPY workers/mail/internal/ ./internal/
 
 RUN --mount=type=cache,target=/gomod-cache \
-	--mount=type=cache,target=/go-cache \
-	go build -o ./bin/pariksha_mail_worker ./cmd/mail/main.go
+    --mount=type=cache,target=/go-cache \
+    go build -ldflags="-w -s" \
+    -o ./bin/pariksha_mail_worker ./cmd/mail/main.go
 
-CMD ["/app/workers/mail/bin/pariksha_mail_worker"]
+FROM alpine:3.22.0
+
+RUN apk add --no-cache ca-certificates
+
+COPY --from=builder /app/workers/mail/bin/pariksha_mail_worker /usr/local/bin/
+
+CMD ["pariksha_mail_worker"]
