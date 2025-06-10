@@ -3,7 +3,7 @@
     <UFormField
       v-for="(_, inputIdx) in testCase.inputs"
       :key="inputIdx"
-      :label="`${inputDefinitions[testCaseIdx].variable_name} =`"
+      :label="`${inputDefinitions[inputIdx].variable_name} =`"
       :name="`test-case-${testCaseIdx + 1}-input-${inputIdx + 1}`"
     >
       <UInput

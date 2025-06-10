@@ -7,7 +7,19 @@
     <p class="text-sm">Execution time: {{ selectedTestCaseExecutionTime }}</p>
   </div> -->
 
-  <UTabs :items="engineRunResult.results" size="sm" variant="link">
+  <template v-if="!engineRunResult.compilation.success">
+    <div class="mt-1 mb-3">
+      <p class="text-error-500 text-xl font-semibold">Compilation error</p>
+    </div>
+
+    <DisplayCodeBlock color="error" padding="small" preserve-white-space>
+      <p class="text-error-500 text-sm">
+        {{ engineRunResult.compilation.stderr }}
+      </p>
+    </DisplayCodeBlock>
+  </template>
+
+  <UTabs v-else :items="engineRunResult.results" size="sm" variant="link">
     <template #default="{ index: resultIdx }">
       Test case {{ resultIdx + 1 }}
     </template>
