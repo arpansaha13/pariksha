@@ -11,6 +11,7 @@ import (
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
 	"pariksha/server/internal/services"
+	"pariksha/server/internal/utils"
 )
 
 func GetAnswerEvaluationData(w http.ResponseWriter, r *http.Request) {
@@ -157,10 +158,11 @@ func GetAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	encryptedQuestionId, _ := utils.EncryptID(answer.QuestionId)
 	response := dtos.AnswerMinimalResponseDto{
 		ID:         answer.Id,
 		Answer:     answer.Answer,
-		QuestionID: answer.QuestionId,
+		QuestionID: encryptedQuestionId,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

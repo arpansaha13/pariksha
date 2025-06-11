@@ -25,11 +25,11 @@ type AnswerListItemDto struct {
 
 type UpsertAnswerDto struct {
 	Answer     *json.RawMessage `json:"answer"`
-	QuestionID int64            `json:"question_id" validate:"required"`
+	QuestionID string           `json:"question_id" validate:"required"`
 }
 
 type AnswerMinimalResponseDto struct {
 	ID         int64           `json:"id"`
 	Answer     json.RawMessage `json:"answer"`
-	QuestionID int64           `json:"question_id"`
+	QuestionID string          `json:"question_id"`
 }

@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gorilla/mux"
-
 	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
@@ -106,11 +104,7 @@ func GetExamCategories(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetExamQuestion(w http.ResponseWriter, r *http.Request) {
-	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	questionID := r.Context().Value(middlewares.DecryptedQuestionID).(int64)
 
 	paperService := services.GetPaperService()
 	question, err := paperService.Client().GetExamQuestion(context.Background(), &proto.QuestionRequest{
@@ -125,6 +119,20 @@ func GetExamQuestion(w http.ResponseWriter, r *http.Request) {
 	response := dtos.ExamQuestionResponseDto{
 		ID:       encryptedQuestionId,
 		Question: question.RawQuestion,
+	}
+
+	if len(question.TestCases) > 0 {
+		testCases := make([]dtos.PaperTestCaseDto, len(question.TestCases))
+		for i, tc := range question.TestCases {
+			testCases[i] = dtos.PaperTestCaseDto{
+				Inputs:      tc.Inputs,
+				Output:      tc.Output,
+				Order:       tc.Order,
+				Hidden:      tc.Hidden,
+				Explanation: tc.Explanation,
+			}
+		}
+		response.TestCases = &testCases
 	}
 
 	w.Header().Set("Content-Type", "application/json")

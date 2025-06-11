@@ -12,6 +12,7 @@ import (
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
 	"pariksha/server/internal/services"
+	"pariksha/server/internal/utils"
 )
 
 func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
@@ -91,11 +92,7 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 
 func GetAnswerForExam(w http.ResponseWriter, r *http.Request) {
 	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
-	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	questionID := r.Context().Value(middlewares.DecryptedQuestionID).(int64)
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
@@ -110,10 +107,11 @@ func GetAnswerForExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	encryptedQuestionId, _ := utils.EncryptID(resp.QuestionId)
 	response := dtos.AnswerMinimalResponseDto{
 		ID:         resp.Id,
 		Answer:     resp.Answer,
-		QuestionID: resp.QuestionId,
+		QuestionID: encryptedQuestionId,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -134,12 +132,17 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 
 	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
 
+	decryptedQuestionId, err := utils.DecryptID(answerDTO.QuestionID)
+	if err != nil {
+		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		return
+	}
 	upsertAnswerRequest := &proto.UpsertAnswersRequest{
 		ExamId: examID,
 		Answer: &proto.Answer{
 			Answer:      nil,
 			SubmittedAt: timestamppb.Now(),
-			QuestionId:  answerDTO.QuestionID,
+			QuestionId:  decryptedQuestionId,
 		},
 	}
 
@@ -159,9 +162,11 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+
+	encryptedQuestionId, _ := utils.EncryptID(resp.QuestionId)
 	json.NewEncoder(w).Encode(dtos.AnswerMinimalResponseDto{
 		ID:         resp.AnswerId,
-		QuestionID: resp.QuestionId,
 		Answer:     resp.Answer,
+		QuestionID: encryptedQuestionId,
 	})
 }

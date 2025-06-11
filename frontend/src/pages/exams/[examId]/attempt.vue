@@ -92,7 +92,7 @@
         </UCard>
       </template>
 
-      <template v-else>
+      <template v-else-if="currentQuestionType === QuestionType.SUBJECTIVE">
         <UCard>
           <p class="font-medium">{{ question.question.statement }}</p>
         </UCard>
@@ -103,6 +103,15 @@
             autoresize
             placeholder="Write your answer here..."
             :ui="{ root: 'flex' }"
+          />
+        </UCard>
+      </template>
+
+      <template v-else="currentQuestionType === QuestionType.CODING">
+        <UCard :ui="{ root: 'grow' }">
+          <DisplayCodingQuestion
+            :content="question.question"
+            :test-cases="question.test_cases ?? []"
           />
         </UCard>
       </template>

@@ -78,8 +78,9 @@ type ExamCategoriesResponseDto struct {
 }
 
 type ExamQuestionResponseDto struct {
-	ID       string          `json:"id"`
-	Question json.RawMessage `json:"question"`
+	ID        string              `json:"id"`
+	Question  json.RawMessage     `json:"question"`
+	TestCases *[]PaperTestCaseDto `json:"test_cases"`
 }
 
 type GetExamParticipantResponseDto struct {
