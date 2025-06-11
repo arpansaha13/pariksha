@@ -45,21 +45,47 @@
       />
     </div>
 
-    <div class="col-start-3 row-span-2 row-start-2">
-      <h2 class="mb-4 text-lg font-semibold">Question Pallet</h2>
+    <UCard
+      v-if="currentCategoryQuestions"
+      :ui="{
+        root: 'col-start-3 row-span-2 row-start-2 flex flex-col',
+        body: 'grow overflow-auto',
+        footer: 'flex',
+      }"
+    >
+      <template #header>
+        <h3 class="heading">Question Pallet</h3>
+      </template>
 
-      <UCard v-if="currentCategoryQuestions">
-        <ExamQuestionList
-          v-if="!isNullOrUndefined(currentQuestionId)"
-          :current-question-id="currentQuestionId"
-          :current-category-questions="currentCategoryQuestions"
+      <ExamQuestionList
+        v-if="!isNullOrUndefined(currentQuestionId)"
+        :current-question-id="currentQuestionId"
+        :current-category-questions="currentCategoryQuestions"
+      />
+
+      <template #footer v-if="currentCategoryQuestions.length > 1">
+        <UButton
+          v-if="prevQuestionId"
+          :to="{ query: { ...route.query, question: prevQuestionId } }"
+          replace
+          label="Previous"
+          color="neutral"
+          variant="outline"
         />
-      </UCard>
-    </div>
+        <UButton
+          v-if="nextQuestionId"
+          :to="{ query: { ...route.query, question: nextQuestionId } }"
+          label="Next"
+          variant="subtle"
+          class="ml-auto"
+          replace
+        />
+      </template>
+    </UCard>
 
     <div
       v-if="!isNullOrUndefined(currentQuestionType) && question"
-      class="col-span-2 flex flex-col gap-y-2.5"
+      class="col-span-2 -m-[2px] flex flex-col gap-y-2.5 overflow-auto p-[2px]"
     >
       <template v-if="currentQuestionType === QuestionType.MCQ">
         <UCard>
@@ -116,27 +142,6 @@
         </UCard>
       </template>
     </div>
-
-    <UCard
-      v-if="currentCategoryQuestions.length > 1"
-      :ui="{ root: 'col-span-2', body: 'flex' }"
-    >
-      <UButton
-        v-if="prevQuestionId"
-        :to="{ query: { ...route.query, question: prevQuestionId } }"
-        replace
-        label="Previous"
-        color="neutral"
-        variant="outline"
-      />
-      <UButton
-        v-if="nextQuestionId"
-        :to="{ query: { ...route.query, question: nextQuestionId } }"
-        label="Save and next"
-        class="ml-auto"
-        replace
-      />
-    </UCard>
   </template>
 </template>
 
