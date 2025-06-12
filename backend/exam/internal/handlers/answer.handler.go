@@ -57,7 +57,7 @@ func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.Parti
 
 	for i, result := range results {
 		response.Answers[i] = &proto.AnswerResponse{
-			Id:                result.ID, // Will be 0 if question is unanswered
+			AnswerId:          result.ID, // Will be 0 if question is unanswered
 			ExamParticipantId: result.ExamParticipantID,
 			QuestionId:        result.QuestionID,
 			Order:             int32(result.Order),
@@ -101,7 +101,7 @@ func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerR
 	}
 
 	return &proto.AnswerMinimalResponse{
-		Id:         int64(answer.ID),
+		AnswerId:   int64(answer.ID),
 		Answer:     *answer.Answer,
 		QuestionId: int64(answer.QuestionID),
 	}, nil

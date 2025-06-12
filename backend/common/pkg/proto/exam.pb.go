@@ -291,7 +291,7 @@ func (x *UpdateExamRequest) GetDurationMinutes() int32 {
 
 type ExamResponse struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	Id                 int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ExamId             int64                  `protobuf:"varint,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
 	Title              string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	StartsAt           *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=starts_at,json=startsAt,proto3" json:"starts_at,omitempty"`
 	EndsAt             *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=ends_at,json=endsAt,proto3" json:"ends_at,omitempty"`
@@ -335,9 +335,9 @@ func (*ExamResponse) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ExamResponse) GetId() int64 {
+func (x *ExamResponse) GetExamId() int64 {
 	if x != nil {
-		return x.Id
+		return x.ExamId
 	}
 	return 0
 }
@@ -564,7 +564,7 @@ func (x *ParticipantRequest) GetParticipantId() int64 {
 
 type ParticipantResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
-	Id               int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ParticipantId    int64                  `protobuf:"varint,1,opt,name=participant_id,json=participantId,proto3" json:"participant_id,omitempty"`
 	UserId           int64                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Status           int32                  `protobuf:"varint,3,opt,name=status,proto3" json:"status,omitempty"`
 	ScoreAwarded     int32                  `protobuf:"varint,4,opt,name=score_awarded,json=scoreAwarded,proto3" json:"score_awarded,omitempty"`
@@ -605,9 +605,9 @@ func (*ParticipantResponse) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *ParticipantResponse) GetId() int64 {
+func (x *ParticipantResponse) GetParticipantId() int64 {
 	if x != nil {
-		return x.Id
+		return x.ParticipantId
 	}
 	return 0
 }
@@ -1118,7 +1118,7 @@ func (x *UpsertAnswersResponse) GetAnswer() []byte {
 
 type AnswerResponse struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
-	Id                int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	AnswerId          int64                  `protobuf:"varint,1,opt,name=answer_id,json=answerId,proto3" json:"answer_id,omitempty"`
 	ExamParticipantId int64                  `protobuf:"varint,2,opt,name=exam_participant_id,json=examParticipantId,proto3" json:"exam_participant_id,omitempty"`
 	QuestionId        int64                  `protobuf:"varint,3,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
 	Answer            []byte                 `protobuf:"bytes,4,opt,name=answer,proto3" json:"answer,omitempty"` // JSON encoded answer
@@ -1161,9 +1161,9 @@ func (*AnswerResponse) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *AnswerResponse) GetId() int64 {
+func (x *AnswerResponse) GetAnswerId() int64 {
 	if x != nil {
-		return x.Id
+		return x.AnswerId
 	}
 	return 0
 }
@@ -1383,7 +1383,7 @@ func (x *GetAnswerRequest) GetQuestionId() int64 {
 
 type AnswerMinimalResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	AnswerId      int64                  `protobuf:"varint,1,opt,name=answer_id,json=answerId,proto3" json:"answer_id,omitempty"`
 	Answer        []byte                 `protobuf:"bytes,2,opt,name=answer,proto3" json:"answer,omitempty"` // JSON encoded answer
 	QuestionId    int64                  `protobuf:"varint,3,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1420,9 +1420,9 @@ func (*AnswerMinimalResponse) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{21}
 }
 
-func (x *AnswerMinimalResponse) GetId() int64 {
+func (x *AnswerMinimalResponse) GetAnswerId() int64 {
 	if x != nil {
-		return x.Id
+		return x.AnswerId
 	}
 	return 0
 }
@@ -1943,7 +1943,7 @@ func (x *ParticipantQuestionRequest) GetQuestionId() int64 {
 
 type GetAnswerEvaluationDataResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	AnswerId      int64                  `protobuf:"varint,1,opt,name=answer_id,json=answerId,proto3" json:"answer_id,omitempty"`
 	QuestionId    int64                  `protobuf:"varint,2,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
 	ScoreAwarded  int32                  `protobuf:"varint,3,opt,name=score_awarded,json=scoreAwarded,proto3" json:"score_awarded,omitempty"`
 	Comments      string                 `protobuf:"bytes,4,opt,name=comments,proto3" json:"comments,omitempty"`
@@ -1981,9 +1981,9 @@ func (*GetAnswerEvaluationDataResponse) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{31}
 }
 
-func (x *GetAnswerEvaluationDataResponse) GetId() int64 {
+func (x *GetAnswerEvaluationDataResponse) GetAnswerId() int64 {
 	if x != nil {
-		return x.Id
+		return x.AnswerId
 	}
 	return 0
 }
@@ -2187,9 +2187,9 @@ const file_exam_proto_rawDesc = "" +
 	"\n" +
 	"\b_ends_atB\a\n" +
 	"\x05_typeB\x13\n" +
-	"\x11_duration_minutes\"\x97\x03\n" +
-	"\fExamResponse\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x14\n" +
+	"\x11_duration_minutes\"\xa0\x03\n" +
+	"\fExamResponse\x12\x17\n" +
+	"\aexam_id\x18\x01 \x01(\x03R\x06examId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x127\n" +
 	"\tstarts_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\bstartsAt\x123\n" +
 	"\aends_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x06endsAt\x12\x1d\n" +
@@ -2211,9 +2211,9 @@ const file_exam_proto_rawDesc = "" +
 	"\astarted\x18\x03 \x01(\x05R\astarted\x12\x14\n" +
 	"\x05ended\x18\x04 \x01(\x05R\x05ended\";\n" +
 	"\x12ParticipantRequest\x12%\n" +
-	"\x0eparticipant_id\x18\x01 \x01(\x03R\rparticipantId\"\xf9\x02\n" +
-	"\x13ParticipantResponse\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
+	"\x0eparticipant_id\x18\x01 \x01(\x03R\rparticipantId\"\x90\x03\n" +
+	"\x13ParticipantResponse\x12%\n" +
+	"\x0eparticipant_id\x18\x01 \x01(\x03R\rparticipantId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\x03R\x06userId\x12\x16\n" +
 	"\x06status\x18\x03 \x01(\x05R\x06status\x12#\n" +
 	"\rscore_awarded\x18\x04 \x01(\x05R\fscoreAwarded\x12>\n" +
@@ -2253,9 +2253,9 @@ const file_exam_proto_rawDesc = "" +
 	"\vquestion_id\x18\x02 \x01(\x03R\n" +
 	"questionId\x12\x1b\n" +
 	"\x06answer\x18\x03 \x01(\fH\x00R\x06answer\x88\x01\x01B\t\n" +
-	"\a_answer\"\x82\x02\n" +
-	"\x0eAnswerResponse\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12.\n" +
+	"\a_answer\"\x8f\x02\n" +
+	"\x0eAnswerResponse\x12\x1b\n" +
+	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12.\n" +
 	"\x13exam_participant_id\x18\x02 \x01(\x03R\x11examParticipantId\x12\x1f\n" +
 	"\vquestion_id\x18\x03 \x01(\x03R\n" +
 	"questionId\x12\x16\n" +
@@ -2281,9 +2281,9 @@ const file_exam_proto_rawDesc = "" +
 	"\x10GetAnswerRequest\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\x03R\x06examId\x12\x1f\n" +
 	"\vquestion_id\x18\x02 \x01(\x03R\n" +
-	"questionId\"`\n" +
-	"\x15AnswerMinimalResponse\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x16\n" +
+	"questionId\"m\n" +
+	"\x15AnswerMinimalResponse\x12\x1b\n" +
+	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12\x16\n" +
 	"\x06answer\x18\x02 \x01(\fR\x06answer\x12\x1f\n" +
 	"\vquestion_id\x18\x03 \x01(\x03R\n" +
 	"questionId\"2\n" +
@@ -2327,9 +2327,9 @@ const file_exam_proto_rawDesc = "" +
 	"\x1aParticipantQuestionRequest\x12%\n" +
 	"\x0eparticipant_id\x18\x01 \x01(\x03R\rparticipantId\x12\x1f\n" +
 	"\vquestion_id\x18\x02 \x01(\x03R\n" +
-	"questionId\"\x93\x01\n" +
-	"\x1fGetAnswerEvaluationDataResponse\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1f\n" +
+	"questionId\"\xa0\x01\n" +
+	"\x1fGetAnswerEvaluationDataResponse\x12\x1b\n" +
+	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12\x1f\n" +
 	"\vquestion_id\x18\x02 \x01(\x03R\n" +
 	"questionId\x12#\n" +
 	"\rscore_awarded\x18\x03 \x01(\x05R\fscoreAwarded\x12\x1a\n" +

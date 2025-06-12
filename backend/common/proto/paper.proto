@@ -48,7 +48,7 @@ message PaperRequest {
 }
 
 message PaperResponse {
-  int64 id = 1;
+  int64 paper_id = 1;
   string title = 2;
   int32 max_score = 3;
   int32 duration_minutes = 4;
@@ -82,7 +82,7 @@ message QuestionRequest {
 }
 
 message QuestionResponse {
-  int64 id = 1;
+  int64 question_id = 1;
   bytes raw_question = 2;
   int64 category_id = 4;
   int32 type = 5;
@@ -98,7 +98,7 @@ message QuestionList {
 }
 
 message QuestionMinimal {
-  int64 id = 1;
+  int64 question_id = 1;
   int64 category_id = 2;
   int64 paper_id = 3;
   int32 order = 4;
@@ -116,7 +116,7 @@ message CreateQuestionRequest {
 }
 
 message CreateQuestionResponse {
-  int64 id = 1;
+  int64 question_id = 1;
 }
 
 message UpdateQuestionRequest {
@@ -146,7 +146,7 @@ message QuestionBatchResponse {
 }
 
 message QuestionBatchItem {
-  int64 id = 1;
+  int64 question_id = 1;
   bytes raw_question = 2;
   int32 max_score = 4;
   int32 type = 6;
@@ -162,7 +162,7 @@ message CategoryBatchResponse {
 }
 
 message CategoryBatchItem {
-  int64 id = 1;
+  int64 category_id = 1;
   string name = 2;
 }
 
@@ -171,7 +171,7 @@ message CategoryRequest {
 }
 
 message CategoryResponse {
-  int64 id = 1;
+  int64 category_id = 1;
   string name = 2;
   int32 order = 3;
 }

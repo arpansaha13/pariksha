@@ -39,7 +39,7 @@ func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
 		})
 
 		response[i] = dtos.ExamParticipantResponseDto{
-			ID:           p.Id,
+			ID:           p.ParticipantId,
 			UserID:       p.UserId,
 			Status:       p.Status,
 			ScoreAwarded: p.ScoreAwarded,
@@ -147,7 +147,7 @@ func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := dtos.AddExamParticipantResponseDto{
-		ID:           participant.Id,
+		ID:           participant.ParticipantId,
 		UserID:       participant.UserId,
 		Status:       participant.Status,
 		ScoreAwarded: participant.ScoreAwarded,
@@ -202,7 +202,7 @@ func GetParticipantById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := dtos.ParticipantDetailResponseDto{
-		ID:     participant.Id,
+		ID:     participant.ParticipantId,
 		Status: participant.Status,
 	}
 

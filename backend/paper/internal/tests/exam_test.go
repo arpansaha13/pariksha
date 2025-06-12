@@ -11,12 +11,12 @@ import (
 	"pariksha/paper/internal/config/db"
 	"testing"
 
-	"pariksha/common/pkg/utils/testrunner"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"pariksha/common/pkg/utils/testrunner"
 )
 
 func TestGetQuestionsByIds(t *testing.T) {
@@ -72,14 +72,14 @@ func TestGetQuestionsByIds(t *testing.T) {
 
 				// Validate MCQ question
 				mcqResp := resp.Questions[0]
-				assert.EqualValues(t, questions[0].ID, mcqResp.Id)
+				assert.EqualValues(t, questions[0].ID, mcqResp.QuestionId)
 				assert.EqualValues(t, questions[0].Type, mcqResp.Type)
 				assert.EqualValues(t, questions[0].MaxScore, mcqResp.MaxScore)
 				assert.True(t, compareJSONByteArrays(questions[0].Question, mcqResp.RawQuestion))
 
 				// Validate Subjective question
 				subjectiveResp := resp.Questions[1]
-				assert.EqualValues(t, questions[1].ID, subjectiveResp.Id)
+				assert.EqualValues(t, questions[1].ID, subjectiveResp.QuestionId)
 				assert.EqualValues(t, questions[1].Type, subjectiveResp.Type)
 				assert.EqualValues(t, questions[1].MaxScore, subjectiveResp.MaxScore)
 				assert.True(t, compareJSONByteArrays(questions[1].Question, subjectiveResp.RawQuestion))
@@ -162,7 +162,7 @@ func TestGetCategoriesByIds(t *testing.T) {
 			validate: func(t *testing.T, resp *proto.CategoryBatchResponse, categories []models.QuestionCategory) {
 				require.Len(t, resp.Categories, len(categories))
 				for i, category := range resp.Categories {
-					assert.EqualValues(t, categories[i].ID, category.Id)
+					assert.EqualValues(t, categories[i].ID, category.CategoryId)
 					assert.Equal(t, categories[i].Name, category.Name)
 				}
 			},

@@ -47,7 +47,7 @@ func (s *ExamServer) GetAnswerForEvaluation(ctx context.Context, req *proto.Part
 	}
 
 	return &proto.AnswerMinimalResponse{
-		Id:         answer.ID,
+		AnswerId:   answer.ID,
 		Answer:     answerBytes,
 		QuestionId: answer.QuestionID,
 	}, nil
@@ -87,7 +87,7 @@ func (s *ExamServer) GetAnswerEvaluationData(ctx context.Context, req *proto.Par
 	}
 
 	return &proto.GetAnswerEvaluationDataResponse{
-		Id:           answer.ID,
+		AnswerId:     answer.ID,
 		QuestionId:   answer.QuestionID,
 		ScoreAwarded: int32(answer.ScoreAwarded),
 		Comments:     answer.Comments.String,
@@ -156,7 +156,7 @@ func (s *ExamServer) UpdateAnswerForEvaluation(ctx context.Context, req *proto.U
 	}
 
 	return &proto.GetAnswerEvaluationDataResponse{
-		Id:           int64(answer.ID),
+		AnswerId:     int64(answer.ID),
 		QuestionId:   int64(answer.QuestionID),
 		ScoreAwarded: int32(answer.ScoreAwarded),
 		Comments:     answer.Comments.String,

@@ -35,7 +35,7 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 	httpResponse := make([]dtos.QuestionMinimalResponseDto, len(response.Questions))
 	for i, q := range response.Questions {
 		encryptedPaperId, _ := utils.EncryptID(q.PaperId)
-		encryptedQuestionId, _ := utils.EncryptID(q.Id)
+		encryptedQuestionId, _ := utils.EncryptID(q.QuestionId)
 		httpResponse[i] = dtos.QuestionMinimalResponseDto{
 			ID:         encryptedQuestionId,
 			CategoryID: q.CategoryId,
@@ -68,7 +68,7 @@ func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 	tags, _ := json.Marshal(response.Tags)
 
 	encryptedPaperId, _ := utils.EncryptID(response.PaperId)
-	encryptedQuestionId, _ := utils.EncryptID(response.Id)
+	encryptedQuestionId, _ := utils.EncryptID(response.QuestionId)
 	httpResponse := dtos.QuestionResponseDto{
 		ID:            encryptedQuestionId,
 		Question:      response.RawQuestion,
@@ -147,7 +147,7 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encryptedQuestionId, _ := utils.EncryptID(response.Id)
+	encryptedQuestionId, _ := utils.EncryptID(response.QuestionId)
 	responseDto := dtos.CreateQuestionResponseDto{
 		ID: encryptedQuestionId,
 	}

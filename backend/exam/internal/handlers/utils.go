@@ -78,7 +78,7 @@ func examToProto(exam *models.Exam) (*proto.ExamResponse, error) {
 	}
 
 	return &proto.ExamResponse{
-		Id:                 int64(exam.ID),
+		ExamId:             int64(exam.ID),
 		Title:              exam.Title,
 		StartsAt:           timestamppb.New(exam.StartsAt),
 		EndsAt:             timestamppb.New(exam.EndsAt),

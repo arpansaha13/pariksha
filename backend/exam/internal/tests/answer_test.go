@@ -272,7 +272,7 @@ func TestGetAnswerForExam(t *testing.T) {
 				}
 				require.NoError(t, json.Unmarshal(resp.Answer, &answerData))
 				assert.Equal(t, "Test Answer", answerData.Text)
-				assert.NotZero(t, resp.Id)
+				assert.NotZero(t, resp.AnswerId)
 			},
 		},
 		{
@@ -306,7 +306,7 @@ func TestGetAnswerForExam(t *testing.T) {
 			},
 			validate: func(t *testing.T, resp *proto.AnswerMinimalResponse) {
 				assert.EqualValues(t, 9999, resp.QuestionId)
-				assert.Zero(t, resp.Id)
+				assert.Zero(t, resp.AnswerId)
 				assert.Nil(t, resp.Answer)
 			},
 		},

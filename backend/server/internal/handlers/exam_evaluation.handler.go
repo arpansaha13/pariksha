@@ -41,7 +41,7 @@ func GetAnswerEvaluationData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	answer := dtos.GetAnswerEvaluationDataResponseDto{
-		ID:           resp.Id,
+		ID:           resp.AnswerId,
 		QuestionID:   resp.QuestionId,
 		ScoreAwarded: resp.ScoreAwarded,
 		Comments:     resp.Comments,
@@ -96,7 +96,7 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	updatedEvaluationData := dtos.GetAnswerEvaluationDataResponseDto{
-		ID:           resp.Id,
+		ID:           resp.QuestionId,
 		QuestionID:   resp.QuestionId,
 		ScoreAwarded: resp.ScoreAwarded,
 		Comments:     resp.Comments,
@@ -160,7 +160,7 @@ func GetAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	encryptedQuestionId, _ := utils.EncryptID(answer.QuestionId)
 	response := dtos.AnswerMinimalResponseDto{
-		ID:         answer.Id,
+		ID:         answer.AnswerId,
 		Answer:     answer.Answer,
 		QuestionID: encryptedQuestionId,
 	}

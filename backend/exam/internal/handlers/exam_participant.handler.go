@@ -30,10 +30,10 @@ func (s *ExamServer) GetExamParticipants(ctx context.Context, req *proto.ExamReq
 
 	for i, p := range participants {
 		response.Participants[i] = &proto.ParticipantResponse{
-			Id:           int64(p.ID),
-			UserId:       int64(p.UserID),
-			Status:       int32(p.Status),
-			ScoreAwarded: int32(p.ScoreAwarded),
+			ParticipantId: int64(p.ID),
+			UserId:        int64(p.UserID),
+			Status:        int32(p.Status),
+			ScoreAwarded:  int32(p.ScoreAwarded),
 		}
 		if p.StartedAt.Valid {
 			response.Participants[i].StartedAt = timestamppb.New(p.StartedAt.Time)
@@ -105,10 +105,10 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 	}
 
 	return &proto.ParticipantResponse{
-		Id:           int64(participant.ID),
-		UserId:       int64(participant.UserID),
-		Status:       int32(participant.Status),
-		ScoreAwarded: int32(participant.ScoreAwarded),
+		ParticipantId: int64(participant.ID),
+		UserId:        int64(participant.UserID),
+		Status:        int32(participant.Status),
+		ScoreAwarded:  int32(participant.ScoreAwarded),
 	}, nil
 }
 
@@ -201,7 +201,7 @@ func (s *ExamServer) GetParticipantById(ctx context.Context, req *proto.Particip
 	}
 
 	return &proto.ParticipantResponse{
-		Id:     int64(participant.ID),
-		Status: int32(participant.Status),
+		ParticipantId: int64(participant.ID),
+		Status:        int32(participant.Status),
 	}, nil
 }

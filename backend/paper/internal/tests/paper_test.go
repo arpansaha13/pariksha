@@ -89,19 +89,19 @@ func TestCreatePaper(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.PaperResponse) {
-				assert.NotZero(t, resp.Id)
+				assert.NotZero(t, resp.PaperId)
 				assert.Equal(t, "Untitled Paper", resp.Title)
 
 				// Verify default category was created
 				var categories []models.QuestionCategory
-				err := db.DB.Where("paper_id = ?", resp.Id).Find(&categories).Error
+				err := db.DB.Where("paper_id = ?", resp.PaperId).Find(&categories).Error
 				require.NoError(t, err)
 				assert.EqualValues(t, 1, len(categories))
 				assert.Equal(t, "Category 1", categories[0].Name)
 
 				// Verify paper permissions
 				var permissions models.PaperPermission
-				err = db.DB.Where("paper_id = ? AND user_id = ?", resp.Id, userID).Take(&permissions).Error
+				err = db.DB.Where("paper_id = ? AND user_id = ?", resp.PaperId, userID).Take(&permissions).Error
 				require.NoError(t, err)
 				assert.True(t, permissions.CanWrite(), "User should have write access to the paper")
 			},
@@ -325,7 +325,7 @@ func TestGetPaper(t *testing.T) {
 				return &paper
 			},
 			validate: func(t *testing.T, resp *proto.PaperResponse) {
-				assert.NotZero(t, resp.Id)
+				assert.NotZero(t, resp.PaperId)
 				assert.Equal(t, "Test Paper", resp.Title)
 				assert.EqualValues(t, 60, resp.DurationMinutes)
 
@@ -336,7 +336,7 @@ func TestGetPaper(t *testing.T) {
 
 				// Verify paper permissions
 				var permissions models.PaperPermission
-				err := db.DB.Where("paper_id = ? AND user_id = ?", resp.Id, userID).Take(&permissions).Error
+				err := db.DB.Where("paper_id = ? AND user_id = ?", resp.PaperId, userID).Take(&permissions).Error
 				require.NoError(t, err)
 				assert.True(t, permissions.CanWrite(), "User should have write access to the paper")
 			},
@@ -361,8 +361,8 @@ func TestGetPaper(t *testing.T) {
 				return &paper
 			},
 			validate: func(t *testing.T, resp *proto.PaperResponse) {
-				assert.NotZero(t, resp.Id)
-				verifyPaperPermissions(t, types.PaperID(resp.Id), userID, true, false)
+				assert.NotZero(t, resp.PaperId)
+				verifyPaperPermissions(t, types.PaperID(resp.PaperId), userID, true, false)
 			},
 		},
 		{

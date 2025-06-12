@@ -39,7 +39,7 @@ func TestCreateMcqQuestion(t *testing.T) {
 			validate: func(t *testing.T, paper *models.Paper, resp *proto.CreateQuestionResponse) {
 				// Fetch the created question from database
 				var question models.Question
-				require.NoError(t, db.DB.First(&question, resp.Id).Error)
+				require.NoError(t, db.DB.First(&question, resp.QuestionId).Error)
 
 				// Validate question data
 				assert.True(t, compareJSONByteArrays([]byte(`{"statement":"Test MCQ","options":["A","B","C"]}`), question.Question))
@@ -100,7 +100,7 @@ func TestCreateSubjectiveQuestion(t *testing.T) {
 			validate: func(t *testing.T, paper *models.Paper, resp *proto.CreateQuestionResponse) {
 				// Fetch the created question from database
 				var question models.Question
-				require.NoError(t, db.DB.First(&question, resp.Id).Error)
+				require.NoError(t, db.DB.First(&question, resp.QuestionId).Error)
 
 				// Validate question data
 				assert.True(t, compareJSONByteArrays([]byte(`{"statement":"Test Subjective Answer"}`), question.Question))
@@ -171,7 +171,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 			validate: func(t *testing.T, paper *models.Paper, resp *proto.CreateQuestionResponse) {
 				// Fetch the created question from database
 				var question models.Question
-				require.NoError(t, db.DB.First(&question, resp.Id).Error)
+				require.NoError(t, db.DB.First(&question, resp.QuestionId).Error)
 
 				// Validate question data
 				assert.Equal(t, constants.QUESTION_TYPE_CODING, question.Type)
@@ -448,7 +448,7 @@ func TestCreateCodingQuestionBoilerplates(t *testing.T) {
 
 			// Verify boilerplate was created
 			var boilerplate models.Boilerplate
-			require.NoError(t, db.DB.First(&boilerplate, "question_id = ?", resp.Id).Error)
+			require.NoError(t, db.DB.First(&boilerplate, "question_id = ?", resp.QuestionId).Error)
 			assert.Equal(t, tt.want, boilerplate.Code)
 		})
 	}

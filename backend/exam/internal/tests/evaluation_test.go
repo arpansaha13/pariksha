@@ -62,7 +62,7 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.AnswerMinimalResponse) {
-				assert.NotZero(t, resp.Id)
+				assert.NotZero(t, resp.AnswerId)
 				assert.NotNil(t, resp.Answer)
 				var answerData struct {
 					Text string `json:"text"`
@@ -114,7 +114,7 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.AnswerMinimalResponse) {
-				assert.Zero(t, resp.Id)
+				assert.Zero(t, resp.AnswerId)
 				assert.Nil(t, resp.Answer)
 				assert.EqualValues(t, 999, resp.QuestionId)
 			},
@@ -182,7 +182,7 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 			},
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.GetAnswerEvaluationDataResponse) {
-				assert.NotZero(t, resp.Id)
+				assert.NotZero(t, resp.AnswerId)
 				assert.EqualValues(t, 5, resp.ScoreAwarded)
 				assert.Equal(t, "Test Comment", resp.Comments)
 			},

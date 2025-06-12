@@ -500,17 +500,17 @@ func TestUpdateCodingQuestionBoilerplates(t *testing.T) {
 
 			// Set question as locked if test requires
 			if tt.isLocked {
-				require.NoError(t, db.DB.Model(&models.Question{}).Where("id = ?", createResp.Id).Update("locked", true).Error)
+				require.NoError(t, db.DB.Model(&models.Question{}).Where("id = ?", createResp.QuestionId).Update("locked", true).Error)
 			}
 
 			// Verify initial boilerplate
 			var initialBoilerplate models.Boilerplate
-			require.NoError(t, db.DB.First(&initialBoilerplate, "question_id = ?", createResp.Id).Error)
+			require.NoError(t, db.DB.First(&initialBoilerplate, "question_id = ?", createResp.QuestionId).Error)
 			assert.Equal(t, tt.wantOldCode, initialBoilerplate.Code)
 
 			// Update question
 			updateReq := &proto.UpdateQuestionRequest{
-				QuestionId:  createResp.Id,
+				QuestionId:  createResp.QuestionId,
 				RawQuestion: []byte(tt.updatedQuestion),
 			}
 
@@ -522,7 +522,7 @@ func TestUpdateCodingQuestionBoilerplates(t *testing.T) {
 			if tt.isLocked {
 				// For locked questions:
 				// 1. Original question should be unlinked but boilerplate should remain
-				require.NoError(t, db.DB.First(&initialBoilerplate, "question_id = ?", createResp.Id).Error)
+				require.NoError(t, db.DB.First(&initialBoilerplate, "question_id = ?", createResp.QuestionId).Error)
 				assert.Equal(t, tt.wantOldCode, initialBoilerplate.Code, "Original boilerplate should remain unchanged")
 
 				// 2. New question should have new boilerplate
@@ -531,13 +531,13 @@ func TestUpdateCodingQuestionBoilerplates(t *testing.T) {
 				assert.Equal(t, tt.wantNewCode, newBoilerplate.Code, "New question should have updated boilerplate")
 
 				// 3. Question IDs should be different
-				assert.NotEqual(t, createResp.Id, updateResp.QuestionId, "Locked question update should create new question")
+				assert.NotEqual(t, createResp.QuestionId, updateResp.QuestionId, "Locked question update should create new question")
 			} else {
 				// For unlocked questions - same boilerplate should be updated
 				var updatedBoilerplate models.Boilerplate
-				require.NoError(t, db.DB.First(&updatedBoilerplate, "question_id = ?", createResp.Id).Error)
+				require.NoError(t, db.DB.First(&updatedBoilerplate, "question_id = ?", createResp.QuestionId).Error)
 				assert.Equal(t, tt.wantNewCode, updatedBoilerplate.Code)
-				assert.Equal(t, createResp.Id, updateResp.QuestionId, "Unlocked question should keep same ID")
+				assert.Equal(t, createResp.QuestionId, updateResp.QuestionId, "Unlocked question should keep same ID")
 			}
 		})
 	}

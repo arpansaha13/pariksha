@@ -100,7 +100,7 @@ func TestCreateCategory(t *testing.T) {
 				return &paper
 			},
 			validate: func(t *testing.T, resp *proto.CategoryResponse) {
-				assert.NotZero(t, resp.Id)
+				assert.NotZero(t, resp.CategoryId)
 				assert.Equal(t, "Category 2", resp.Name) // Second category since createTestPaper creates one
 				assert.EqualValues(t, 2, resp.Order)
 			},

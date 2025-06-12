@@ -34,7 +34,7 @@ func paperToProto(paper models.Paper) *proto.PaperResponse {
 	json.Unmarshal(paper.QuestionCounts, &questionCounts)
 
 	return &proto.PaperResponse{
-		Id:              int64(paper.ID),
+		PaperId:         int64(paper.ID),
 		Title:           paper.Title,
 		MaxScore:        int32(paper.MaxScore),
 		DurationMinutes: int32(paper.DurationMinutes),
@@ -52,7 +52,7 @@ func questionToProto(question models.Question, testCases []models.TestCase) (*pr
 	}
 
 	response := &proto.QuestionResponse{
-		Id:            int64(question.ID),
+		QuestionId:    int64(question.ID),
 		CategoryId:    int64(question.CategoryID),
 		Type:          int32(question.Type),
 		Tags:          tags,
@@ -86,7 +86,7 @@ func questionToProto(question models.Question, testCases []models.TestCase) (*pr
 
 func questionToMinimalProto(question models.Question) (*proto.QuestionMinimal, error) {
 	response := &proto.QuestionMinimal{
-		Id:          int64(question.ID),
+		QuestionId:  int64(question.ID),
 		CategoryId:  int64(question.CategoryID),
 		PaperId:     question.PaperID.Int64,
 		Order:       int32(question.Order),
@@ -99,9 +99,9 @@ func questionToMinimalProto(question models.Question) (*proto.QuestionMinimal, e
 // Helper function to convert QuestionCategory model to proto response
 func categoryToProto(category models.QuestionCategory) *proto.CategoryResponse {
 	return &proto.CategoryResponse{
-		Id:    int64(category.ID),
-		Name:  category.Name,
-		Order: int32(category.Order),
+		CategoryId: int64(category.ID),
+		Name:       category.Name,
+		Order:      int32(category.Order),
 	}
 }
 

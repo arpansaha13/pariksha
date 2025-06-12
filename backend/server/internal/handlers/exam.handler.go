@@ -28,7 +28,7 @@ func GetUserExams(w http.ResponseWriter, r *http.Request) {
 
 	response := make([]dtos.ExamResponseDto, len(examList.Exams))
 	for i, exam := range examList.Exams {
-		encryptedExamID, _ := utils.EncryptID(exam.Id)
+		encryptedExamID, _ := utils.EncryptID(exam.ExamId)
 		response[i] = dtos.ExamResponseDto{
 			ID:                 encryptedExamID,
 			Title:              exam.Title,
@@ -102,7 +102,7 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encryptedExamID, _ := utils.EncryptID(exam.Id)
+	encryptedExamID, _ := utils.EncryptID(exam.ExamId)
 	response := dtos.ExamResponseDto{
 		ID:                 encryptedExamID,
 		Title:              exam.Title,
@@ -163,7 +163,7 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encryptedExamID, _ := utils.EncryptID(exam.Id)
+	encryptedExamID, _ := utils.EncryptID(exam.ExamId)
 	response := dtos.ExamResponseDto{
 		ID:                 encryptedExamID,
 		Title:              exam.Title,
@@ -229,7 +229,7 @@ func GetExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encryptedExamID, _ := utils.EncryptID(exam.Id)
+	encryptedExamID, _ := utils.EncryptID(exam.ExamId)
 	response := dtos.ExamResponseDto{
 		ID:                 encryptedExamID,
 		Title:              exam.Title,

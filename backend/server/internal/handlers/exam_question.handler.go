@@ -86,7 +86,7 @@ func GetExamCategories(w http.ResponseWriter, r *http.Request) {
 	// Create a map of category data
 	categoryMap := make(map[int64]*proto.CategoryBatchItem)
 	for _, c := range categoryData.Categories {
-		categoryMap[c.Id] = c
+		categoryMap[c.CategoryId] = c
 	}
 
 	// Convert to response format using order from exam categories
@@ -115,7 +115,7 @@ func GetExamQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encryptedQuestionId, _ := utils.EncryptID(question.Id)
+	encryptedQuestionId, _ := utils.EncryptID(question.QuestionId)
 	response := dtos.ExamQuestionResponseDto{
 		ID:       encryptedQuestionId,
 		Question: question.RawQuestion,

@@ -26,7 +26,7 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 
 	papers := make([]dtos.PaperResponseDto, len(response.Papers))
 	for i, p := range response.Papers {
-		encryptedID, err := utils.EncryptID(p.Id)
+		encryptedID, err := utils.EncryptID(p.PaperId)
 		if err != nil {
 			http.Error(w, "Failed to process paper IDs", http.StatusInternalServerError)
 			return
@@ -63,7 +63,7 @@ func GetPaper(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encryptedID, err := utils.EncryptID(response.Id)
+	encryptedID, err := utils.EncryptID(response.PaperId)
 	if err != nil {
 		http.Error(w, "Failed to process paper ID", http.StatusInternalServerError)
 		return
@@ -99,7 +99,7 @@ func CreatePaper(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 
-	encryptedID, err := utils.EncryptID(response.Id)
+	encryptedID, err := utils.EncryptID(response.PaperId)
 	json.NewEncoder(w).Encode(dtos.CreatePaperResponseDto{
 		ID:        encryptedID,
 		Title:     response.Title,

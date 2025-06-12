@@ -153,7 +153,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 	}
 
 	return &proto.CreateQuestionResponse{
-		Id: int64(question.ID),
+		QuestionId: int64(question.ID),
 	}, nil
 }
 

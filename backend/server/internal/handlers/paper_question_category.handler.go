@@ -32,7 +32,7 @@ func GetPaperCategories(w http.ResponseWriter, r *http.Request) {
 	categories := make([]dtos.QuestionCategoryResponseDto, len(response.Categories))
 	for i, c := range response.Categories {
 		categories[i] = dtos.QuestionCategoryResponseDto{
-			ID:    c.Id,
+			ID:    c.CategoryId,
 			Name:  c.Name,
 			Order: c.Order,
 		}
@@ -60,7 +60,7 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(dtos.QuestionCategoryResponseDto{
-		ID:    response.Id,
+		ID:    response.CategoryId,
 		Name:  response.Name,
 		Order: response.Order,
 	})

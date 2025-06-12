@@ -403,7 +403,7 @@ func TestGetParticipantById(t *testing.T) {
 			},
 			validate: func(t *testing.T, resp *proto.ParticipantResponse) {
 				require.NotNil(t, resp)
-				assert.NotZero(t, resp.Id)
+				assert.NotZero(t, resp.ParticipantId)
 				assert.Equal(t, int32(constants.PARTICIPANT_STATUS_STARTED), resp.Status)
 			},
 		},

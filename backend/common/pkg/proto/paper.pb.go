@@ -68,7 +68,7 @@ func (x *PaperRequest) GetPaperId() int64 {
 
 type PaperResponse struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	Id              int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	PaperId         int64                  `protobuf:"varint,1,opt,name=paper_id,json=paperId,proto3" json:"paper_id,omitempty"`
 	Title           string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	MaxScore        int32                  `protobuf:"varint,3,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
 	DurationMinutes int32                  `protobuf:"varint,4,opt,name=duration_minutes,json=durationMinutes,proto3" json:"duration_minutes,omitempty"`
@@ -108,9 +108,9 @@ func (*PaperResponse) Descriptor() ([]byte, []int) {
 	return file_paper_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *PaperResponse) GetId() int64 {
+func (x *PaperResponse) GetPaperId() int64 {
 	if x != nil {
-		return x.Id
+		return x.PaperId
 	}
 	return 0
 }
@@ -405,7 +405,7 @@ func (x *QuestionRequest) GetQuestionId() int64 {
 
 type QuestionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	QuestionId    int64                  `protobuf:"varint,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
 	RawQuestion   []byte                 `protobuf:"bytes,2,opt,name=raw_question,json=rawQuestion,proto3" json:"raw_question,omitempty"`
 	CategoryId    int64                  `protobuf:"varint,4,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	Type          int32                  `protobuf:"varint,5,opt,name=type,proto3" json:"type,omitempty"`
@@ -448,9 +448,9 @@ func (*QuestionResponse) Descriptor() ([]byte, []int) {
 	return file_paper_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *QuestionResponse) GetId() int64 {
+func (x *QuestionResponse) GetQuestionId() int64 {
 	if x != nil {
-		return x.Id
+		return x.QuestionId
 	}
 	return 0
 }
@@ -557,7 +557,7 @@ func (x *QuestionList) GetQuestions() []*QuestionMinimal {
 
 type QuestionMinimal struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	QuestionId    int64                  `protobuf:"varint,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
 	CategoryId    int64                  `protobuf:"varint,2,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	PaperId       int64                  `protobuf:"varint,3,opt,name=paper_id,json=paperId,proto3" json:"paper_id,omitempty"`
 	Order         int32                  `protobuf:"varint,4,opt,name=order,proto3" json:"order,omitempty"`
@@ -596,9 +596,9 @@ func (*QuestionMinimal) Descriptor() ([]byte, []int) {
 	return file_paper_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *QuestionMinimal) GetId() int64 {
+func (x *QuestionMinimal) GetQuestionId() int64 {
 	if x != nil {
-		return x.Id
+		return x.QuestionId
 	}
 	return 0
 }
@@ -725,7 +725,7 @@ func (x *CreateQuestionRequest) GetCorrectAnswer() string {
 
 type CreateQuestionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	QuestionId    int64                  `protobuf:"varint,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -760,9 +760,9 @@ func (*CreateQuestionResponse) Descriptor() ([]byte, []int) {
 	return file_paper_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *CreateQuestionResponse) GetId() int64 {
+func (x *CreateQuestionResponse) GetQuestionId() int64 {
 	if x != nil {
-		return x.Id
+		return x.QuestionId
 	}
 	return 0
 }
@@ -1037,7 +1037,7 @@ func (x *QuestionBatchResponse) GetQuestions() []*QuestionBatchItem {
 
 type QuestionBatchItem struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	QuestionId    int64                  `protobuf:"varint,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
 	RawQuestion   []byte                 `protobuf:"bytes,2,opt,name=raw_question,json=rawQuestion,proto3" json:"raw_question,omitempty"`
 	MaxScore      int32                  `protobuf:"varint,4,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
 	Type          int32                  `protobuf:"varint,6,opt,name=type,proto3" json:"type,omitempty"`
@@ -1075,9 +1075,9 @@ func (*QuestionBatchItem) Descriptor() ([]byte, []int) {
 	return file_paper_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *QuestionBatchItem) GetId() int64 {
+func (x *QuestionBatchItem) GetQuestionId() int64 {
 	if x != nil {
-		return x.Id
+		return x.QuestionId
 	}
 	return 0
 }
@@ -1194,7 +1194,7 @@ func (x *CategoryBatchResponse) GetCategories() []*CategoryBatchItem {
 
 type CategoryBatchItem struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	CategoryId    int64                  `protobuf:"varint,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1230,9 +1230,9 @@ func (*CategoryBatchItem) Descriptor() ([]byte, []int) {
 	return file_paper_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *CategoryBatchItem) GetId() int64 {
+func (x *CategoryBatchItem) GetCategoryId() int64 {
 	if x != nil {
-		return x.Id
+		return x.CategoryId
 	}
 	return 0
 }
@@ -1290,7 +1290,7 @@ func (x *CategoryRequest) GetCategoryId() int64 {
 
 type CategoryResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	CategoryId    int64                  `protobuf:"varint,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Order         int32                  `protobuf:"varint,3,opt,name=order,proto3" json:"order,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1327,9 +1327,9 @@ func (*CategoryResponse) Descriptor() ([]byte, []int) {
 	return file_paper_proto_rawDescGZIP(), []int{22}
 }
 
-func (x *CategoryResponse) GetId() int64 {
+func (x *CategoryResponse) GetCategoryId() int64 {
 	if x != nil {
-		return x.Id
+		return x.CategoryId
 	}
 	return 0
 }
@@ -1891,9 +1891,9 @@ const file_paper_proto_rawDesc = "" +
 	"\n" +
 	"\vpaper.proto\x12\x05proto\x1a\fcommon.proto\")\n" +
 	"\fPaperRequest\x12\x19\n" +
-	"\bpaper_id\x18\x01 \x01(\x03R\apaperId\"\xdb\x01\n" +
-	"\rPaperResponse\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x14\n" +
+	"\bpaper_id\x18\x01 \x01(\x03R\apaperId\"\xe6\x01\n" +
+	"\rPaperResponse\x12\x19\n" +
+	"\bpaper_id\x18\x01 \x01(\x03R\apaperId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1b\n" +
 	"\tmax_score\x18\x03 \x01(\x05R\bmaxScore\x12)\n" +
 	"\x10duration_minutes\x18\x04 \x01(\x05R\x0fdurationMinutes\x12=\n" +
@@ -1918,9 +1918,10 @@ const file_paper_proto_rawDesc = "" +
 	"\tpaper_ids\x18\x01 \x03(\x03R\bpaperIds\"2\n" +
 	"\x0fQuestionRequest\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\x03R\n" +
-	"questionId\"\xba\x02\n" +
-	"\x10QuestionResponse\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12!\n" +
+	"questionId\"\xcb\x02\n" +
+	"\x10QuestionResponse\x12\x1f\n" +
+	"\vquestion_id\x18\x01 \x01(\x03R\n" +
+	"questionId\x12!\n" +
 	"\fraw_question\x18\x02 \x01(\fR\vrawQuestion\x12\x1f\n" +
 	"\vcategory_id\x18\x04 \x01(\x03R\n" +
 	"categoryId\x12\x12\n" +
@@ -1934,9 +1935,10 @@ const file_paper_proto_rawDesc = "" +
 	" \x03(\v2\x14.proto.PaperTestCaseR\ttestCasesB\x11\n" +
 	"\x0f_correct_answer\"D\n" +
 	"\fQuestionList\x124\n" +
-	"\tquestions\x18\x01 \x03(\v2\x16.proto.QuestionMinimalR\tquestions\"\x96\x01\n" +
-	"\x0fQuestionMinimal\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1f\n" +
+	"\tquestions\x18\x01 \x03(\v2\x16.proto.QuestionMinimalR\tquestions\"\xa7\x01\n" +
+	"\x0fQuestionMinimal\x12\x1f\n" +
+	"\vquestion_id\x18\x01 \x01(\x03R\n" +
+	"questionId\x12\x1f\n" +
 	"\vcategory_id\x18\x02 \x01(\x03R\n" +
 	"categoryId\x12\x19\n" +
 	"\bpaper_id\x18\x03 \x01(\x03R\apaperId\x12\x14\n" +
@@ -1951,9 +1953,10 @@ const file_paper_proto_rawDesc = "" +
 	"\x04tags\x18\x05 \x03(\tR\x04tags\x12\x1b\n" +
 	"\tmax_score\x18\x06 \x01(\x05R\bmaxScore\x12*\n" +
 	"\x0ecorrect_answer\x18\a \x01(\tH\x00R\rcorrectAnswer\x88\x01\x01B\x11\n" +
-	"\x0f_correct_answer\"(\n" +
-	"\x16CreateQuestionResponse\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\"\x96\x02\n" +
+	"\x0f_correct_answer\"9\n" +
+	"\x16CreateQuestionResponse\x12\x1f\n" +
+	"\vquestion_id\x18\x01 \x01(\x03R\n" +
+	"questionId\"\x96\x02\n" +
 	"\x15UpdateQuestionRequest\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\x03R\n" +
 	"questionId\x12\x17\n" +
@@ -1977,9 +1980,10 @@ const file_paper_proto_rawDesc = "" +
 	"\x18GetQuestionsByIdsRequest\x12!\n" +
 	"\fquestion_ids\x18\x01 \x03(\x03R\vquestionIds\"O\n" +
 	"\x15QuestionBatchResponse\x126\n" +
-	"\tquestions\x18\x01 \x03(\v2\x18.proto.QuestionBatchItemR\tquestions\"w\n" +
-	"\x11QuestionBatchItem\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12!\n" +
+	"\tquestions\x18\x01 \x03(\v2\x18.proto.QuestionBatchItemR\tquestions\"\x88\x01\n" +
+	"\x11QuestionBatchItem\x12\x1f\n" +
+	"\vquestion_id\x18\x01 \x01(\x03R\n" +
+	"questionId\x12!\n" +
 	"\fraw_question\x18\x02 \x01(\fR\vrawQuestion\x12\x1b\n" +
 	"\tmax_score\x18\x04 \x01(\x05R\bmaxScore\x12\x12\n" +
 	"\x04type\x18\x06 \x01(\x05R\x04type\">\n" +
@@ -1988,15 +1992,17 @@ const file_paper_proto_rawDesc = "" +
 	"\x15CategoryBatchResponse\x128\n" +
 	"\n" +
 	"categories\x18\x01 \x03(\v2\x18.proto.CategoryBatchItemR\n" +
-	"categories\"7\n" +
-	"\x11CategoryBatchItem\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
+	"categories\"H\n" +
+	"\x11CategoryBatchItem\x12\x1f\n" +
+	"\vcategory_id\x18\x01 \x01(\x03R\n" +
+	"categoryId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"2\n" +
 	"\x0fCategoryRequest\x12\x1f\n" +
 	"\vcategory_id\x18\x01 \x01(\x03R\n" +
-	"categoryId\"L\n" +
-	"\x10CategoryResponse\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
+	"categoryId\"]\n" +
+	"\x10CategoryResponse\x12\x1f\n" +
+	"\vcategory_id\x18\x01 \x01(\x03R\n" +
+	"categoryId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
 	"\x05order\x18\x03 \x01(\x05R\x05order\"G\n" +
 	"\fCategoryList\x127\n" +

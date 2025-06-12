@@ -107,7 +107,7 @@ func TestCreateExam(t *testing.T) {
 				DurationMinutes:    120,
 			},
 			validate: func(t *testing.T, resp *proto.ExamResponse) {
-				assert.NotZero(t, resp.Id)
+				assert.NotZero(t, resp.ExamId)
 				assert.Equal(t, "New Exam", resp.Title)
 				assert.Equal(t, userID, resp.CreatedBy)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
@@ -115,7 +115,7 @@ func TestCreateExam(t *testing.T) {
 				assert.EqualValues(t, 120, resp.DurationMinutes)
 
 				var exam models.Exam
-				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
+				require.NoError(t, db.DB.Take(&exam, resp.ExamId).Error)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
 				assert.EqualValues(t, 120, exam.DurationMinutes)
 			},
@@ -140,7 +140,7 @@ func TestCreateExam(t *testing.T) {
 				assert.EqualValues(t, 90, resp.DurationMinutes)
 
 				var exam models.Exam
-				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
+				require.NoError(t, db.DB.First(&exam, resp.ExamId).Error)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
 				assert.EqualValues(t, 90, exam.DurationMinutes)
 			},
@@ -165,7 +165,7 @@ func TestCreateExam(t *testing.T) {
 				assert.EqualValues(t, 60, resp.DurationMinutes)
 
 				var exam models.Exam
-				require.NoError(t, db.DB.First(&exam, resp.Id).Error)
+				require.NoError(t, db.DB.First(&exam, resp.ExamId).Error)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_INVITE, exam.Type)
 				assert.EqualValues(t, 60, exam.DurationMinutes)
 			},

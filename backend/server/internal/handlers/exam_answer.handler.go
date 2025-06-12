@@ -54,7 +54,7 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 	// Create a map for quick lookup of question details
 	questionDetailsMap := make(map[int64]*proto.QuestionBatchItem)
 	for _, q := range questionDetails.Questions {
-		questionDetailsMap[q.Id] = q
+		questionDetailsMap[q.QuestionId] = q
 	}
 
 	response := make([]dtos.AnswerListItemDto, len(resp.Answers))
@@ -78,9 +78,9 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// AnswerId will be 0 is question is unanswered
-		if result.Id != 0 {
+		if result.AnswerId != 0 {
 			response[i].Answer = &dtos.AnswerListAnswerDto{
-				ID:      result.Id,
+				ID:      result.AnswerId,
 				Content: result.Answer,
 			}
 		}
@@ -109,7 +109,7 @@ func GetAnswerForExam(w http.ResponseWriter, r *http.Request) {
 
 	encryptedQuestionId, _ := utils.EncryptID(resp.QuestionId)
 	response := dtos.AnswerMinimalResponseDto{
-		ID:         resp.Id,
+		ID:         resp.AnswerId,
 		Answer:     resp.Answer,
 		QuestionID: encryptedQuestionId,
 	}
