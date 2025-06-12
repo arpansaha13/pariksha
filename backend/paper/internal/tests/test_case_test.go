@@ -35,8 +35,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Question {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -99,8 +98,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Question {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -165,8 +163,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Question {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -195,8 +192,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Question {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -260,8 +256,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Question {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -318,8 +313,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Question {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -390,8 +384,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Question {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -428,8 +421,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Question {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -463,8 +455,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Question {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -498,8 +489,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Question {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{

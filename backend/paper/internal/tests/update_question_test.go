@@ -33,8 +33,7 @@ func TestUpdateMcqQuestion(t *testing.T) {
 				err := db.DB.Model(&paper).Update("question_counts", models.QuestionCount{MCQ: 1}).Error
 				require.NoError(t, err)
 
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -88,8 +87,7 @@ func TestUpdateSubjectiveQuestion(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -138,8 +136,7 @@ func TestUpdateCodingQuestion(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -236,8 +233,7 @@ func TestUpdateLockedQuestion(t *testing.T) {
 				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 1, "subjective": 0}`).Error
 				require.NoError(t, err)
 
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -314,8 +310,7 @@ func TestUpdateQuestionTypeChange(t *testing.T) {
 				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 1, "subjective": 0}`).Error
 				require.NoError(t, err)
 
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -350,8 +345,7 @@ func TestUpdateQuestionTypeChange(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				question := models.Question{
 					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
@@ -375,8 +369,7 @@ func TestUpdateQuestionTypeChange(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				question := models.Question{
 					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
@@ -480,8 +473,8 @@ func TestUpdateCodingQuestionBoilerplates(t *testing.T) {
 			}
 			require.NoError(t, db.DB.Create(&lang).Error)
 
-			// Create test paper and category
-			paper, category := setupTestCategory(t, userID, false)
+			paper := createTestPaper(t, userID)
+			category := createDefaultTestCategory(t, paper.ID)
 
 			// Create initial coding question
 			ctx := createContextWithUserID(userID)

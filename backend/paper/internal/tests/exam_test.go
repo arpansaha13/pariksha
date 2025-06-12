@@ -31,8 +31,7 @@ func TestGetQuestionsByIds(t *testing.T) {
 			name: "Success - Get multiple questions",
 			setup: func(t *testing.T) []models.Question {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				mcqContent, _ := json.Marshal(structs.MCQQuestion{
 					Statement: "MCQ Question",
@@ -135,24 +134,7 @@ func TestGetCategoriesByIds(t *testing.T) {
 			name: "Success - Get multiple categories",
 			setup: func(t *testing.T) []models.QuestionCategory {
 				paper := createTestPaper(t, userID)
-				var defaultCategory models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&defaultCategory).Error)
-
-				categories := []models.QuestionCategory{
-					defaultCategory,
-					{
-						PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-						Name:    "Category 2",
-						Order:   2,
-					},
-					{
-						PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-						Name:    "Category 3",
-						Order:   3,
-					},
-				}
-				// Skip first category as it's already created
-				require.NoError(t, db.DB.Create(categories[1:]).Error)
+				categories := createDefaultTestCategories(t, paper.ID, 3)
 				return categories
 			},
 			request: &proto.GetCategoriesByIdsRequest{
@@ -218,8 +200,7 @@ func TestGetExamQuestion(t *testing.T) {
 			name: "Success - Get MCQ question",
 			setup: func(t *testing.T) *models.Question {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -244,8 +225,7 @@ func TestGetExamQuestion(t *testing.T) {
 			name: "Success - Get coding question with only non-hidden test cases",
 			setup: func(t *testing.T) *models.Question {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{

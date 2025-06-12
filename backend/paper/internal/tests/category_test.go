@@ -27,25 +27,7 @@ func TestGetPaperCategories(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, []models.QuestionCategory) {
 				paper := createTestPaper(t, userID)
-				var defaultCategory models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&defaultCategory).Error)
-
-				categories := []models.QuestionCategory{
-					defaultCategory,
-					{
-						PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-						Name:    "Category 2",
-						Order:   2,
-					},
-					{
-						PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-						Name:    "Category 3",
-						Order:   3,
-					},
-				}
-				// Skip first category as it's already created
-				categoriesToBeCreated := categories[1:]
-				require.NoError(t, db.DB.Create(&categoriesToBeCreated).Error)
+				categories := createDefaultTestCategories(t, paper.ID, 3)
 				return &paper, categories
 			},
 			validate: func(t *testing.T, categories []models.QuestionCategory, resp *proto.CategoryList) {
@@ -101,8 +83,8 @@ func TestCreateCategory(t *testing.T) {
 			},
 			validate: func(t *testing.T, resp *proto.CategoryResponse) {
 				assert.NotZero(t, resp.CategoryId)
-				assert.Equal(t, "Category 2", resp.Name) // Second category since createTestPaper creates one
-				assert.EqualValues(t, 2, resp.Order)
+				assert.Equal(t, "Category 1", resp.Name)
+				assert.EqualValues(t, 1, resp.Order)
 			},
 		},
 		{
@@ -155,8 +137,9 @@ func TestUpdateCategory(t *testing.T) {
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.QuestionCategory {
-				_, category := setupTestCategory(t, userID, false)
-				return category
+				paper := createTestPaper(t, userID)
+				category := createDefaultTestCategory(t, paper.ID)
+				return &category
 			},
 			newName: "Updated Name",
 			validate: func(t *testing.T, category *models.QuestionCategory) {
@@ -174,21 +157,20 @@ func TestUpdateCategory(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, userID)
-				category := models.QuestionCategory{
-					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-					Name:    "Original Name",
-					Order:   1,
-					Locked:  true,
-				}
-				require.NoError(t, db.DB.Create(&category).Error)
-				return &category
+				categories := createTestCategories(t, []models.QuestionCategory{
+					{
+						PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+						Locked:  true,
+					},
+				})
+				return &categories[0]
 			},
 			newName: "Updated Name",
 			validate: func(t *testing.T, category *models.QuestionCategory) {
 				// Original category should be unlinked
 				var original models.QuestionCategory
 				require.NoError(t, db.DB.First(&original, category.ID).Error)
-				assert.Equal(t, "Original Name", original.Name)
+				assert.Equal(t, "Category 1", original.Name)
 				assert.True(t, original.Locked)
 				assert.Zero(t, original.PaperID) // Unlinked
 
@@ -208,7 +190,14 @@ func TestUpdateCategory(t *testing.T) {
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.QuestionCategory {
-				paper, category := setupTestCategory(t, userID, true)
+				paper := createTestPaper(t, userID)
+				categories := createTestCategories(t, []models.QuestionCategory{
+					{
+						PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+						Locked:  true,
+					},
+				})
+				category := &categories[0]
 
 				createTestQuestions(t, []models.Question{
 					{
@@ -234,7 +223,7 @@ func TestUpdateCategory(t *testing.T) {
 				// Original category should be unlinked from paper
 				var original models.QuestionCategory
 				require.NoError(t, db.DB.First(&original, category.ID).Error)
-				assert.Equal(t, "Test Category", original.Name)
+				assert.Equal(t, "Category 1", original.Name)
 				assert.True(t, original.Locked)
 				assert.False(t, original.PaperID.Valid) // Should be unlinked
 
@@ -270,12 +259,7 @@ func TestUpdateCategory(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, userID)
-				category := models.QuestionCategory{
-					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-					Name:    "Original Name",
-					Order:   1,
-				}
-				require.NoError(t, db.DB.Create(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 				return &category
 			},
 			newName: "Updated Name",
@@ -293,12 +277,7 @@ func TestUpdateCategory(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, 2) // Different user
-				category := models.QuestionCategory{
-					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-					Name:    "Original Name",
-					Order:   1,
-				}
-				require.NoError(t, db.DB.Create(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 				return &category
 			},
 			newName: "Updated Name",
@@ -336,17 +315,7 @@ func TestReorderCategories(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, []models.QuestionCategory) {
 				paper := createTestPaper(t, userID)
-				var defaultCategory models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&defaultCategory).Error)
-
-				additionalCategory := models.QuestionCategory{
-					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-					Name:    "Category 2",
-					Order:   2,
-				}
-				require.NoError(t, db.DB.Create(&additionalCategory).Error)
-
-				categories := []models.QuestionCategory{defaultCategory, additionalCategory}
+				categories := createDefaultTestCategories(t, paper.ID, 2)
 				return &paper, categories
 			},
 			validate: func(t *testing.T, categories []models.QuestionCategory) {
@@ -393,12 +362,13 @@ func TestDeleteCategory(t *testing.T) {
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.QuestionCategory {
-				_, category := setupTestCategory(t, userID, false)
-				return category
+				paper := createTestPaper(t, userID)
+				categories := createDefaultTestCategories(t, paper.ID, 2)
+				return &categories[0]
 			},
 			validate: func(t *testing.T, categoryID types.CategoryID) {
 				var category models.QuestionCategory
-				err := db.DB.First(&category, categoryID).Error
+				err := db.DB.Take(&category, categoryID).Error
 				assert.Error(t, err)
 			},
 		},
@@ -410,8 +380,7 @@ func TestDeleteCategory(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 				return &category
 			},
 			validate: func(t *testing.T, categoryID types.CategoryID) {
@@ -428,12 +397,7 @@ func TestDeleteCategory(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, 2) // Different user
-				category := models.QuestionCategory{
-					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-					Name:    "Test Category",
-					Order:   2,
-				}
-				require.NoError(t, db.DB.Create(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 				return &category
 			},
 		},
@@ -444,7 +408,18 @@ func TestDeleteCategory(t *testing.T) {
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.QuestionCategory {
-				paper, category := setupTestCategory(t, userID, true)
+
+				paper := createTestPaper(t, userID)
+				categories := createTestCategories(t, []models.QuestionCategory{
+					{
+						PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+					},
+					{
+						PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+						Locked:  true,
+					},
+				})
+				category := &categories[1]
 
 				// Create test question
 				createTestQuestions(t, []models.Question{
@@ -481,20 +456,19 @@ func TestDeleteCategory(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.QuestionCategory {
 				paper := createTestPaper(t, userID)
-				// Default category from createTestPaper
-				var defaultCategory models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&defaultCategory).Error)
 
-				// Create category
 				// Note: A locked category may have both locked and unlocked questions.
 				// But an unlocked category can only have unlocked questions.
-				category := models.QuestionCategory{
-					PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-					Name:    "Test Category",
-					Order:   2,
-					Locked:  true,
-				}
-				require.NoError(t, db.DB.Create(&category).Error)
+				categories := createTestCategories(t, []models.QuestionCategory{
+					{
+						PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+					},
+					{
+						PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+						Locked:  true,
+					},
+				})
+				category := categories[1]
 
 				// Add locked and unlocked questions
 				questions := []models.Question{

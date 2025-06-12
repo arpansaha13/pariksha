@@ -26,8 +26,7 @@ func TestCreateMcqQuestion(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 				return &paper, &category
 			},
 			request: &proto.CreateQuestionRequest{
@@ -87,8 +86,7 @@ func TestCreateSubjectiveQuestion(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 				return &paper, &category
 			},
 			request: &proto.CreateQuestionRequest{
@@ -148,8 +146,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 				return &paper, &category
 			},
 			request: &proto.CreateQuestionRequest{
@@ -195,8 +192,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 				return &paper, &category
 			},
 			request: &proto.CreateQuestionRequest{
@@ -224,8 +220,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 				return &paper, &category
 			},
 			request: &proto.CreateQuestionRequest{
@@ -247,8 +242,9 @@ func TestCreateCodingQuestion(t *testing.T) {
 				expectedCode: codes.InvalidArgument,
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
-				paper, category := setupTestCategory(t, userID, false)
-				return paper, category
+				paper := createTestPaper(t, userID)
+				category := createDefaultTestCategory(t, paper.ID)
+				return &paper, &category
 			},
 			request: &proto.CreateQuestionRequest{
 				RawQuestion: []byte(`{
@@ -272,8 +268,9 @@ func TestCreateCodingQuestion(t *testing.T) {
 				expectedCode: codes.InvalidArgument,
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
-				paper, category := setupTestCategory(t, userID, false)
-				return paper, category
+				paper := createTestPaper(t, userID)
+				category := createDefaultTestCategory(t, paper.ID)
+				return &paper, &category
 			},
 			request: &proto.CreateQuestionRequest{
 				RawQuestion: []byte(`{
@@ -298,8 +295,9 @@ func TestCreateCodingQuestion(t *testing.T) {
 				expectedCode: codes.InvalidArgument,
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
-				paper, category := setupTestCategory(t, userID, false)
-				return paper, category
+				paper := createTestPaper(t, userID)
+				category := createDefaultTestCategory(t, paper.ID)
+				return &paper, &category
 			},
 			request: &proto.CreateQuestionRequest{
 				RawQuestion: []byte(`{
@@ -318,8 +316,9 @@ func TestCreateCodingQuestion(t *testing.T) {
 				expectedCode: codes.InvalidArgument,
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
-				paper, category := setupTestCategory(t, userID, false)
-				return paper, category
+				paper := createTestPaper(t, userID)
+				category := createDefaultTestCategory(t, paper.ID)
+				return &paper, &category
 			},
 			request: &proto.CreateQuestionRequest{
 				RawQuestion: []byte(`{
@@ -345,8 +344,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 				return &paper, &category
 			},
 			request: &proto.CreateQuestionRequest{
@@ -429,7 +427,8 @@ func TestCreateCodingQuestionBoilerplates(t *testing.T) {
 			require.NoError(t, db.DB.Create(&lang).Error)
 
 			// Create test paper and category
-			paper, category := setupTestCategory(t, userID, false)
+			paper := createTestPaper(t, userID)
+			category := createDefaultTestCategory(t, paper.ID)
 
 			// Create coding question
 			ctx := createContextWithUserID(userID)
@@ -464,8 +463,7 @@ func TestGeneralCreateQuestion(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 				return &paper, &category
 			},
 			request: &proto.CreateQuestionRequest{
@@ -483,8 +481,7 @@ func TestGeneralCreateQuestion(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory) {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 				return &paper, &category
 			},
 			request: &proto.CreateQuestionRequest{

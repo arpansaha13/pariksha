@@ -27,7 +27,9 @@ func TestGetPaperQuestions(t *testing.T) {
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) (*models.Paper, []models.Question) {
-				paper, category := setupTestCategory(t, userID, false)
+				paper := createTestPaper(t, userID)
+				category := createDefaultTestCategory(t, paper.ID)
+
 				questions := createTestQuestions(t, []models.Question{
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
@@ -71,7 +73,7 @@ func TestGetPaperQuestions(t *testing.T) {
 					},
 				})
 
-				return paper, questions
+				return &paper, questions
 			},
 			validate: func(t *testing.T, resp *proto.QuestionList) {
 				assert.Equal(t, 3, len(resp.Questions))
@@ -149,8 +151,7 @@ func TestDeleteQuestion(t *testing.T) {
 				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 1, "subjective": 1}`).Error
 				require.NoError(t, err)
 
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -189,8 +190,7 @@ func TestDeleteQuestion(t *testing.T) {
 				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 2, "subjective": 1}`).Error
 				require.NoError(t, err)
 
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				question := models.Question{
 					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
@@ -250,8 +250,7 @@ func TestReorderQuestions(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory, []models.Question) {
 				paper := createTestPaper(t, userID)
-				var category models.QuestionCategory
-				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&category).Error)
+				category := createDefaultTestCategory(t, paper.ID)
 
 				questions := createTestQuestions(t, []models.Question{
 					{
@@ -309,7 +308,9 @@ func TestGetPaperQuestion(t *testing.T) {
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				paper, category := setupTestCategory(t, userID, false)
+				paper := createTestPaper(t, userID)
+				category := createDefaultTestCategory(t, paper.ID)
+
 				questions := createTestQuestions(t, []models.Question{
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
@@ -319,7 +320,7 @@ func TestGetPaperQuestion(t *testing.T) {
 						MaxScore:   5,
 					},
 				})
-				return paper, &questions[0]
+				return &paper, &questions[0]
 			},
 			validate: func(t *testing.T, resp *proto.QuestionResponse) {
 				var mcq structs.MCQQuestion
@@ -337,7 +338,9 @@ func TestGetPaperQuestion(t *testing.T) {
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				paper, category := setupTestCategory(t, userID, false)
+				paper := createTestPaper(t, userID)
+				category := createDefaultTestCategory(t, paper.ID)
+
 				questions := createTestQuestions(t, []models.Question{
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
@@ -369,7 +372,7 @@ func TestGetPaperQuestion(t *testing.T) {
 					},
 				})
 
-				return paper, &questions[0]
+				return &paper, &questions[0]
 			},
 			validate: func(t *testing.T, resp *proto.QuestionResponse) {
 				// Verify coding question content
@@ -413,7 +416,9 @@ func TestGetPaperQuestion(t *testing.T) {
 				expectedCode: codes.PermissionDenied,
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				paper, category := setupTestCategory(t, 2, false) // different user
+				paper := createTestPaper(t, 2) // different user
+				category := createDefaultTestCategory(t, paper.ID)
+
 				questions := createTestQuestions(t, []models.Question{
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
@@ -422,7 +427,7 @@ func TestGetPaperQuestion(t *testing.T) {
 						Question:   json.RawMessage(`{"statement":"Q1"}`),
 					},
 				})
-				return paper, &questions[0]
+				return &paper, &questions[0]
 			},
 		},
 	}

@@ -20,8 +20,6 @@ import (
 	paperUtils "pariksha/paper/internal/utils"
 )
 
-const defaultPaperCategoryName string = "Category 1"
-
 func createContextWithUserID(userID types.UserID) context.Context {
 	md := metadata.New(map[string]string{
 		"user_id": strconv.FormatInt(int64(userID), 10),
@@ -46,14 +44,6 @@ func createTestPaper(t *testing.T, userID types.UserID) models.Paper {
 	}
 	permissions.SetWrite()
 	err = db.DB.Create(&permissions).Error
-	require.NoError(t, err)
-
-	category := models.QuestionCategory{
-		PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-		Name:    defaultPaperCategoryName,
-		Order:   1,
-	}
-	err = db.DB.Create(&category).Error
 	require.NoError(t, err)
 
 	return paper
@@ -93,17 +83,51 @@ func updatePaperCounts(t *testing.T, paper *models.Paper, counts string) {
 	require.NoError(t, err)
 }
 
-// setupTestCategory creates a test category with the given configuration
-func setupTestCategory(t *testing.T, userID types.UserID, isLocked bool) (*models.Paper, *models.QuestionCategory) {
-	paper := createTestPaper(t, userID)
-	category := models.QuestionCategory{
-		PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-		Name:    "Test Category",
-		Order:   2,
-		Locked:  isLocked,
+// createTestCategories creates test categories in the database with default values and auto-generated order
+func createTestCategories(t *testing.T, categories []models.QuestionCategory) []models.QuestionCategory {
+	for i := range categories {
+		// PaperID must be provided, validate it
+		require.True(t, categories[i].PaperID.Valid, "PaperID is required")
+
+		// Set default name if not provided
+		if categories[i].Name == "" {
+			categories[i].Name = fmt.Sprintf("Category %d", i+1)
+		}
+
+		// Auto-generate Order if not provided
+		if categories[i].Order == 0 {
+			categories[i].Order = int16(i + 1)
+		}
+
+		// Default Locked status is false, no need to set explicitly
 	}
-	require.NoError(t, db.DB.Create(&category).Error)
-	return &paper, &category
+
+	err := db.DB.Create(&categories).Error
+	require.NoError(t, err)
+	return categories
+}
+
+func createDefaultTestCategory(t *testing.T, paperID types.PaperID) models.QuestionCategory {
+	categories := createTestCategories(t, []models.QuestionCategory{
+		{
+			PaperID: sql.NullInt64{Int64: int64(paperID), Valid: true},
+		},
+	})
+	return categories[0]
+}
+
+func createDefaultTestCategories(t *testing.T, paperID types.PaperID, count int8) []models.QuestionCategory {
+	require.Greater(t, count, int8(0), "invalid count argument to createDefaultTestCategories")
+
+	categories := make([]models.QuestionCategory, count)
+	for i := range categories {
+		categories[i] = models.QuestionCategory{
+			PaperID: sql.NullInt64{Int64: int64(paperID), Valid: true},
+		}
+	}
+
+	categories = createTestCategories(t, categories)
+	return categories
 }
 
 // createTestQuestions creates test questions in the database with default values and auto-generated order
