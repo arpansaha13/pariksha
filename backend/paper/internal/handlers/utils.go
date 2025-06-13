@@ -15,7 +15,7 @@ import (
 	"pariksha/paper/internal/utils/boilerplate"
 )
 
-// validateEntityIDs checks if all provided IDs exist in the given table
+// validateEntityIDs checks if all provided IDs exist in the given table and belong to the paper
 func validateEntityIDs(tx *gorm.DB, tableName string, ids []int64) error {
 	var count int64
 	err := tx.Table(tableName).Where("id IN ?", ids).Count(&count).Error
@@ -34,7 +34,7 @@ func paperToProto(paper models.Paper) *proto.PaperResponse {
 	json.Unmarshal(paper.QuestionCounts, &questionCounts)
 
 	return &proto.PaperResponse{
-		PaperId:         int64(paper.ID),
+		PaperHash:       paper.PaperHash.Hash,
 		Title:           paper.Title,
 		MaxScore:        int32(paper.MaxScore),
 		DurationMinutes: int32(paper.DurationMinutes),
@@ -52,11 +52,11 @@ func questionToProto(question models.Question, testCases []models.TestCase) (*pr
 	}
 
 	response := &proto.QuestionResponse{
-		QuestionId:    int64(question.ID),
+		QuestionHash:  question.QuestionHash.Hash,
 		CategoryId:    int64(question.CategoryID),
 		Type:          int32(question.Type),
 		Tags:          tags,
-		PaperId:       question.PaperID.Int64,
+		PaperHash:     question.Paper.PaperHash.Hash,
 		MaxScore:      int32(question.MaxScore),
 		CorrectAnswer: &question.CorrectAnswer.String,
 		RawQuestion:   question.Question,
@@ -86,11 +86,11 @@ func questionToProto(question models.Question, testCases []models.TestCase) (*pr
 
 func questionToMinimalProto(question models.Question) (*proto.QuestionMinimal, error) {
 	response := &proto.QuestionMinimal{
-		QuestionId:  int64(question.ID),
-		CategoryId:  int64(question.CategoryID),
-		PaperId:     question.PaperID.Int64,
-		Order:       int32(question.Order),
-		RawQuestion: question.Question,
+		QuestionHash: question.QuestionHash.Hash,
+		CategoryId:   int64(question.CategoryID),
+		PaperHash:    question.Paper.PaperHash.Hash,
+		Order:        int32(question.Order),
+		RawQuestion:  question.Question,
 	}
 
 	return response, nil

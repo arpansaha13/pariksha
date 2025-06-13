@@ -260,7 +260,7 @@ func TestUpdateLockedQuestion(t *testing.T) {
 
 				// New question should be created
 				var newQuestion models.Question
-				require.NoError(t, db.DB.Where("paper_id = ?", question.PaperID).First(&newQuestion).Error)
+				require.NoError(t, db.DB.Where("paper_id = ?", paper.ID).First(&newQuestion).Error)
 				assert.NotEqualValues(t, question.ID, newQuestion.ID)
 				assert.EqualValues(t, 10, newQuestion.MaxScore)
 				assert.False(t, newQuestion.Locked)
@@ -277,7 +277,7 @@ func TestUpdateLockedQuestion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			paper, question := tt.setup(t)
-			tt.request.QuestionId = int64(question.ID)
+			tt.request.QuestionHash = question.QuestionHash.Hash
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
@@ -286,7 +286,7 @@ func TestUpdateLockedQuestion(t *testing.T) {
 				func(t *testing.T, resp *proto.UpdateQuestionResponse) {
 					if tt.validate != nil {
 						// For locked questions, we expect a new ID
-						assert.NotEqual(t, question.ID, resp.QuestionId, "A new ID should be created")
+						assert.NotEqual(t, question.ID, resp.QuestionHash, "A new ID should be created")
 						tt.validate(t, paper, question)
 					}
 				})
@@ -347,15 +347,16 @@ func TestUpdateQuestionTypeChange(t *testing.T) {
 				paper := createTestPaper(t, userID)
 				category := createDefaultTestCategory(t, paper.ID)
 
-				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-					CategoryID: category.ID,
-					Order:      1,
-					Type:       constants.QUESTION_TYPE_MCQ,
-					Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
-				}
-				require.NoError(t, db.DB.Create(&question).Error)
-				return &paper, &question
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+						CategoryID: category.ID,
+						Order:      1,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
+					},
+				})
+				return &paper, &questions[0]
 			},
 			request: &proto.UpdateQuestionRequest{
 				Type: &questionTypeSubjective, // Trying to change type without providing question
@@ -371,15 +372,16 @@ func TestUpdateQuestionTypeChange(t *testing.T) {
 				paper := createTestPaper(t, userID)
 				category := createDefaultTestCategory(t, paper.ID)
 
-				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-					CategoryID: category.ID,
-					Order:      1,
-					Type:       constants.QUESTION_TYPE_MCQ,
-					Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
-				}
-				require.NoError(t, db.DB.Create(&question).Error)
-				return &paper, &question
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+						CategoryID: category.ID,
+						Order:      1,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
+					},
+				})
+				return &paper, &questions[0]
 			},
 			request: &proto.UpdateQuestionRequest{
 				// Changing to SUBJECTIVE type
@@ -479,7 +481,7 @@ func TestUpdateCodingQuestionBoilerplates(t *testing.T) {
 			// Create initial coding question
 			ctx := createContextWithUserID(userID)
 			createReq := &proto.CreateQuestionRequest{
-				PaperId:     int64(paper.ID),
+				PaperHash:   paper.PaperHash.Hash,
 				CategoryId:  int64(category.ID),
 				Type:        int32(constants.QUESTION_TYPE_CODING),
 				RawQuestion: []byte(tt.initialQuestion),
@@ -491,20 +493,25 @@ func TestUpdateCodingQuestionBoilerplates(t *testing.T) {
 				createResp = r
 			})
 
+			// Get the question to access its Hash
+			var questionHash models.QuestionHash
+			err := db.DB.Where("hash = ?", createResp.QuestionHash).First(&questionHash).Error
+			require.NoError(t, err)
+
 			// Set question as locked if test requires
 			if tt.isLocked {
-				require.NoError(t, db.DB.Model(&models.Question{}).Where("id = ?", createResp.QuestionId).Update("locked", true).Error)
+				require.NoError(t, db.DB.Model(&models.Question{}).Where("id = ?", questionHash.ID).Update("locked", true).Error)
 			}
 
 			// Verify initial boilerplate
 			var initialBoilerplate models.Boilerplate
-			require.NoError(t, db.DB.First(&initialBoilerplate, "question_id = ?", createResp.QuestionId).Error)
+			require.NoError(t, db.DB.First(&initialBoilerplate, "question_id = ?", questionHash.ID).Error)
 			assert.Equal(t, tt.wantOldCode, initialBoilerplate.Code)
 
 			// Update question
 			updateReq := &proto.UpdateQuestionRequest{
-				QuestionId:  createResp.QuestionId,
-				RawQuestion: []byte(tt.updatedQuestion),
+				QuestionHash: questionHash.Hash,
+				RawQuestion:  []byte(tt.updatedQuestion),
 			}
 
 			var updateResp *proto.UpdateQuestionResponse
@@ -512,25 +519,30 @@ func TestUpdateCodingQuestionBoilerplates(t *testing.T) {
 				updateResp = r
 			})
 
+			// Get updated question ID from hash
+			var updatedQuestionHash models.QuestionHash
+			err = db.DB.Where("hash = ?", updateResp.QuestionHash).First(&updatedQuestionHash).Error
+			require.NoError(t, err)
+
 			if tt.isLocked {
 				// For locked questions:
 				// 1. Original question should be unlinked but boilerplate should remain
-				require.NoError(t, db.DB.First(&initialBoilerplate, "question_id = ?", createResp.QuestionId).Error)
+				require.NoError(t, db.DB.First(&initialBoilerplate, "question_id = ?", questionHash.ID).Error)
 				assert.Equal(t, tt.wantOldCode, initialBoilerplate.Code, "Original boilerplate should remain unchanged")
 
 				// 2. New question should have new boilerplate
 				var newBoilerplate models.Boilerplate
-				require.NoError(t, db.DB.First(&newBoilerplate, "question_id = ?", updateResp.QuestionId).Error)
+				require.NoError(t, db.DB.First(&newBoilerplate, "question_id = ?", updatedQuestionHash.ID).Error)
 				assert.Equal(t, tt.wantNewCode, newBoilerplate.Code, "New question should have updated boilerplate")
 
 				// 3. Question IDs should be different
-				assert.NotEqual(t, createResp.QuestionId, updateResp.QuestionId, "Locked question update should create new question")
+				assert.NotEqual(t, questionHash.ID, updatedQuestionHash.ID, "Locked question update should create new question")
 			} else {
 				// For unlocked questions - same boilerplate should be updated
 				var updatedBoilerplate models.Boilerplate
-				require.NoError(t, db.DB.First(&updatedBoilerplate, "question_id = ?", createResp.QuestionId).Error)
+				require.NoError(t, db.DB.First(&updatedBoilerplate, "question_id = ?", questionHash.ID).Error)
 				assert.Equal(t, tt.wantNewCode, updatedBoilerplate.Code)
-				assert.Equal(t, createResp.QuestionId, updateResp.QuestionId, "Unlocked question should keep same ID")
+				assert.Equal(t, questionHash.ID, updatedQuestionHash.ID, "Unlocked question should keep same ID")
 			}
 		})
 	}
@@ -542,7 +554,7 @@ func runUpdateQuestionTests(t *testing.T, tests []UpdateQuestionCase) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			paper, question := tt.setup(t)
-			tt.request.QuestionId = int64(question.ID)
+			tt.request.QuestionHash = question.QuestionHash.Hash
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
@@ -551,7 +563,7 @@ func runUpdateQuestionTests(t *testing.T, tests []UpdateQuestionCase) {
 				func(t *testing.T, resp *proto.UpdateQuestionResponse) {
 					if tt.validate != nil {
 						// Question ID should remain same for non-locked questions
-						assert.EqualValues(t, question.ID, resp.QuestionId, "Question ID should remain same")
+						assert.EqualValues(t, question.QuestionHash.Hash, resp.QuestionHash, "Question ID should remain same")
 						tt.validate(t, paper, question)
 					}
 				})

@@ -75,7 +75,7 @@ func (ExecutionStatus) EnumDescriptor() ([]byte, []int) {
 
 type RunCodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QuestionId    int64                  `protobuf:"varint,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	QuestionHash  string                 `protobuf:"bytes,1,opt,name=question_hash,json=questionHash,proto3" json:"question_hash,omitempty"`
 	Code          string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
 	Environment   string                 `protobuf:"bytes,3,opt,name=environment,proto3" json:"environment,omitempty"`
 	TestCases     []*TestCase            `protobuf:"bytes,4,rep,name=testCases,proto3" json:"testCases,omitempty"`
@@ -113,11 +113,11 @@ func (*RunCodeRequest) Descriptor() ([]byte, []int) {
 	return file_engine_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *RunCodeRequest) GetQuestionId() int64 {
+func (x *RunCodeRequest) GetQuestionHash() string {
 	if x != nil {
-		return x.QuestionId
+		return x.QuestionHash
 	}
-	return 0
+	return ""
 }
 
 func (x *RunCodeRequest) GetCode() string {
@@ -393,10 +393,9 @@ var File_engine_proto protoreflect.FileDescriptor
 
 const file_engine_proto_rawDesc = "" +
 	"\n" +
-	"\fengine.proto\x12\x05proto\"\x96\x01\n" +
-	"\x0eRunCodeRequest\x12\x1f\n" +
-	"\vquestion_id\x18\x01 \x01(\x03R\n" +
-	"questionId\x12\x12\n" +
+	"\fengine.proto\x12\x05proto\"\x9a\x01\n" +
+	"\x0eRunCodeRequest\x12#\n" +
+	"\rquestion_hash\x18\x01 \x01(\tR\fquestionHash\x12\x12\n" +
 	"\x04code\x18\x02 \x01(\tR\x04code\x12 \n" +
 	"\venvironment\x18\x03 \x01(\tR\venvironment\x12-\n" +
 	"\ttestCases\x18\x04 \x03(\v2\x0f.proto.TestCaseR\ttestCases\"J\n" +

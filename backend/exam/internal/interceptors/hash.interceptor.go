@@ -1,0 +1,83 @@
+package interceptors
+
+import (
+	"context"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"pariksha/common/pkg/models"
+	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
+	"pariksha/exam/internal/config/db"
+)
+
+type hashContextKey string
+
+const (
+	examIDContextKey hashContextKey = "examID"
+)
+
+// getExamHashFromRequest extracts ExamHash field from requests
+func getExamHashFromRequest(req any) (string, bool) {
+	switch r := req.(type) {
+	case *proto.ExamRequest:
+		return r.ExamHash, true
+	case *proto.UpdateExamRequest:
+		return r.ExamHash, true
+	case *proto.StartExamRequest:
+		return r.ExamHash, true
+	case *proto.EndExamRequest:
+		return r.ExamHash, true
+	case *proto.AddParticipantRequest:
+		return r.ExamHash, true
+	case *proto.RemoveParticipantRequest:
+		return r.ExamHash, true
+	case *proto.UpsertAnswersRequest:
+		return r.ExamHash, true
+	case *proto.GetAnswerRequest:
+		return r.ExamHash, true
+	case *proto.CheckParticipantRequest:
+		return r.ExamHash, true
+	case *proto.GetExamParticipantRequest:
+		return r.ExamHash, true
+	default:
+		return "", false
+	}
+}
+
+// getIDFromHash fetches exam ID for a given hash from the database
+func getIDFromHash(hash string) (int64, error) {
+	var id int64
+	err := db.DB.Table(models.ExamHash{}.TableName()).
+		Select("id").
+		Where("hash = ?", hash).
+		Take(&id).Error
+	return id, err
+}
+
+// SingleExamHashInterceptor converts exam hash to ID
+func SingleExamHashInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		hash, ok := getExamHashFromRequest(req)
+		if !ok {
+			return handler(ctx, req)
+		}
+
+		examID, err := getIDFromHash(hash)
+		if err != nil {
+			return nil, status.Error(codes.NotFound, "exam not found")
+		}
+
+		// Store exam ID in context
+		ctx = context.WithValue(ctx, examIDContextKey, types.ExamID(examID))
+		return handler(ctx, req)
+	}
+}
+
+// GetExamIDFromContext retrieves the exam ID from context
+func GetExamIDFromContext(ctx context.Context) (types.ExamID, bool) {
+	id, ok := ctx.Value(examIDContextKey).(types.ExamID)
+	return id, ok
+}

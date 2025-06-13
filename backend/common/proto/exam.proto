@@ -42,7 +42,7 @@ service Exam {
 
 // Exam messages
 message ExamRequest {
-  int64 exam_id = 1;
+  string exam_hash = 1;
 }
 
 message CreateExamRequest {
@@ -56,7 +56,7 @@ message CreateExamRequest {
 }
 
 message UpdateExamRequest {
-  int64 exam_id = 1;
+  string exam_hash = 1;
   optional string title = 2;
   optional google.protobuf.Timestamp starts_at = 3;
   optional google.protobuf.Timestamp ends_at = 4;
@@ -65,7 +65,7 @@ message UpdateExamRequest {
 }
 
 message ExamResponse {
-  int64 exam_id = 1;
+  string exam_hash = 1;
   string title = 2;
   google.protobuf.Timestamp starts_at = 3;
   google.protobuf.Timestamp ends_at = 4;
@@ -109,22 +109,22 @@ message ParticipantList {
 
 // Replace AddParticipantsRequest with AddParticipantRequest
 message AddParticipantRequest {
-  int64 exam_id = 1;
+  string exam_hash = 1;
   int64 user_id = 2;
 }
 
 message RemoveParticipantRequest {
-  int64 exam_id = 1;
+  string exam_hash = 1;
   int64 participant_id = 2;
 }
 
 message StartExamRequest {
-  int64 exam_id = 1;
+  string exam_hash = 1;
   int32 duration_minutes = 2;
 }
 
 message EndExamRequest {
-  int64 exam_id = 1;
+  string exam_hash = 1;
 }
 
 message EvaluationStatusResponse {
@@ -139,7 +139,7 @@ message Answer {
 }
 
 message UpsertAnswersRequest {
-  int64 exam_id = 1;
+  string exam_hash = 1;
   Answer answer = 2;
 }
 
@@ -174,7 +174,7 @@ message UpdateAnswerRequest {
 }
 
 message GetAnswerRequest {
-  int64 exam_id = 1;
+  string exam_hash = 1;
   int64 question_id = 2;
 }
 
@@ -185,11 +185,11 @@ message AnswerMinimalResponse {
 }
 
 message CheckParticipantRequest {
-  int64 exam_id = 1;
+  string exam_hash = 1;
 }
 
 message GetExamParticipantRequest {
-  int64 exam_id = 1;
+  string exam_hash = 1;
 }
 
 message GetExamParticipantResponse {

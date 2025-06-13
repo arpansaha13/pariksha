@@ -10,7 +10,8 @@ import (
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
 	"pariksha/server/internal/services"
-	"pariksha/server/internal/utils"
+
+	"github.com/gorilla/mux"
 )
 
 func GetUserPapers(w http.ResponseWriter, r *http.Request) {
@@ -26,13 +27,12 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 
 	papers := make([]dtos.PaperResponseDto, len(response.Papers))
 	for i, p := range response.Papers {
-		encryptedID, err := utils.EncryptID(p.PaperId)
 		if err != nil {
 			http.Error(w, "Failed to process paper IDs", http.StatusInternalServerError)
 			return
 		}
 		papers[i] = dtos.PaperResponseDto{
-			ID:              encryptedID,
+			ID:              p.PaperHash,
 			Title:           p.Title,
 			MaxScore:        p.MaxScore,
 			DurationMinutes: p.DurationMinutes,
@@ -50,27 +50,28 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetPaper(w http.ResponseWriter, r *http.Request) {
-	paperID := r.Context().Value(middlewares.DecryptedPaperID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	paperService := services.GetPaperService()
 
+	paperHash, err := getPaperIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
+
 	response, err := paperService.Client().GetPaper(ctx, &proto.PaperRequest{
-		PaperId: paperID,
+		PaperHash: paperHash,
 	})
+
 	if err != nil {
 		handleGRPCError(w, err)
 		return
 	}
 
-	encryptedID, err := utils.EncryptID(response.PaperId)
-	if err != nil {
-		http.Error(w, "Failed to process paper ID", http.StatusInternalServerError)
-		return
-	}
-
 	paperDto := dtos.PaperResponseDto{
-		ID:              encryptedID,
+		ID:              response.PaperHash,
 		Title:           response.Title,
 		MaxScore:        response.MaxScore,
 		DurationMinutes: response.DurationMinutes,
@@ -99,9 +100,8 @@ func CreatePaper(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 
-	encryptedID, err := utils.EncryptID(response.PaperId)
 	json.NewEncoder(w).Encode(dtos.CreatePaperResponseDto{
-		ID:        encryptedID,
+		ID:        response.PaperHash,
 		Title:     response.Title,
 		CreatedBy: response.CreatedBy,
 	})
@@ -119,12 +119,17 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	paperID := r.Context().Value(middlewares.DecryptedPaperID).(int64)
+	paperHash, err := getPaperIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	paperService := services.GetPaperService()
 
 	updatePaperRequest := &proto.UpdatePaperRequest{
-		PaperId: paperID,
+		PaperHash: paperHash,
 	}
 
 	if paperDto.Title != "" {
@@ -136,7 +141,7 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := paperService.CreateMetadata(userID)
-	_, err := paperService.Client().UpdatePaper(ctx, updatePaperRequest)
+	_, err = paperService.Client().UpdatePaper(ctx, updatePaperRequest)
 	if err != nil {
 		handleGRPCError(w, err)
 		return
@@ -146,13 +151,18 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetPaperPermissions(w http.ResponseWriter, r *http.Request) {
-	paperID := r.Context().Value(middlewares.DecryptedPaperID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	paperService := services.GetPaperService()
 
+	paperHash, err := getPaperIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	ctx := paperService.CreateMetadata(userID)
 	response, err := paperService.Client().GetPaperPermissions(ctx, &proto.PaperRequest{
-		PaperId: paperID,
+		PaperHash: paperHash,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -180,23 +190,12 @@ func DeletePapers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Decrypt paper IDs
-	decryptedPaperIds := make([]int64, len(deletePaperDto.PaperIDs))
-	for i, encryptedID := range deletePaperDto.PaperIDs {
-		decryptedID, err := utils.DecryptID(encryptedID)
-		if err != nil {
-			http.Error(w, "Invalid paper ID", http.StatusBadRequest)
-			return
-		}
-		decryptedPaperIds[i] = decryptedID
-	}
-
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
 	_, err := paperService.Client().DeletePapers(ctx, &proto.DeletePapersRequest{
-		PaperIds: decryptedPaperIds,
+		PaperHashes: deletePaperDto.PaperIDs,
 	})
 
 	if err != nil {

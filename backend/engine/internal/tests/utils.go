@@ -12,6 +12,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/utils/generate"
 	"pariksha/engine/internal/config/db"
 )
 
@@ -58,7 +59,7 @@ func createTestCategory(t *testing.T, paperID types.PaperID) types.CategoryID {
 }
 
 // createCodingQuestion creates a test coding question in the database
-func createCodingQuestion(t *testing.T, inputDefs []structs.InputDefinition, outputDef structs.OutputDefinition) types.QuestionID {
+func createCodingQuestion(t *testing.T, inputDefs []structs.InputDefinition, outputDef structs.OutputDefinition) string {
 	// Create paper and category to satisfy foreign key constraints
 	paperID := createTestPaper(t)
 	categoryID := createTestCategory(t, paperID)
@@ -86,7 +87,15 @@ func createCodingQuestion(t *testing.T, inputDefs []structs.InputDefinition, out
 	err = db.Papers.Create(&question).Error
 	require.NoError(t, err)
 
-	return question.ID
+	// Create question hashes
+	questionHash := models.QuestionHash{
+		ID:   question.ID,
+		Hash: generate.HMACHash(int64(question.ID)),
+	}
+	err = db.Papers.Create(&questionHash).Error
+	require.NoError(t, err)
+
+	return question.QuestionHash.Hash
 }
 
 // getAbsPath returns the absolute path by joining the given path with test tmp directory

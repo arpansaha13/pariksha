@@ -11,7 +11,6 @@ import (
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
 	"pariksha/server/internal/services"
-	"pariksha/server/internal/utils"
 )
 
 func GetAnswerEvaluationData(w http.ResponseWriter, r *http.Request) {
@@ -21,19 +20,38 @@ func GetAnswerEvaluationData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
+	questionHash, err := getQuestionIdFromVars(mux.Vars(r))
 	if err != nil {
-		http.Error(w, "Invalid participant ID", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+
+	// Get question ID from paper service
+	paperService := services.GetPaperService()
+	paperCtx := paperService.CreateMetadata(userID)
+
+	questionIDResp, err := paperService.Client().GetQuestionIds(paperCtx, &proto.GetQuestionIdsRequest{
+		QuestionHashes: []string{questionHash},
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	if len(questionIDResp.QuestionIds) == 0 {
+		http.Error(w, "Question not found", http.StatusNotFound)
+		return
+	}
+
+	// Call exam service with question ID
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	resp, err := examService.Client().GetAnswerEvaluationData(ctx, &proto.ParticipantQuestionRequest{
 		ParticipantId: participantID,
-		QuestionId:    questionID,
+		QuestionId:    questionIDResp.QuestionIds[0],
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -42,7 +60,7 @@ func GetAnswerEvaluationData(w http.ResponseWriter, r *http.Request) {
 
 	answer := dtos.GetAnswerEvaluationDataResponseDto{
 		ID:           resp.AnswerId,
-		QuestionID:   resp.QuestionId,
+		QuestionID:   questionHash,
 		ScoreAwarded: resp.ScoreAwarded,
 		Comments:     resp.Comments,
 	}
@@ -95,9 +113,21 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get question hashes from paper service
+	paperService := services.GetPaperService()
+	paperCtx := paperService.CreateMetadata(userID)
+
+	hashes, err := paperService.Client().GetQuestionHashes(paperCtx, &proto.GetQuestionHashesRequest{
+		QuestionIds: []int64{resp.QuestionId},
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
 	updatedEvaluationData := dtos.GetAnswerEvaluationDataResponseDto{
-		ID:           resp.QuestionId,
-		QuestionID:   resp.QuestionId,
+		ID:           resp.AnswerId,
+		QuestionID:   hashes.QuestionHashes[0],
 		ScoreAwarded: resp.ScoreAwarded,
 		Comments:     resp.Comments,
 	}
@@ -139,30 +169,48 @@ func GetAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	questionID, err := getInt64FromVars(mux.Vars(r), "questionId")
+	questionHash, err := getQuestionIdFromVars(mux.Vars(r))
 	if err != nil {
-		http.Error(w, "Invalid question ID", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
 
-	answer, err := examService.Client().GetAnswerForEvaluation(ctx, &proto.ParticipantQuestionRequest{
-		ParticipantId: participantID,
-		QuestionId:    questionID,
+	// Get question ID from paper service
+	paperService := services.GetPaperService()
+	paperCtx := paperService.CreateMetadata(userID)
+
+	questionIDResp, err := paperService.Client().GetQuestionIds(paperCtx, &proto.GetQuestionIdsRequest{
+		QuestionHashes: []string{questionHash},
 	})
 	if err != nil {
 		handleGRPCError(w, err)
 		return
 	}
 
-	encryptedQuestionId, _ := utils.EncryptID(answer.QuestionId)
+	if len(questionIDResp.QuestionIds) == 0 {
+		http.Error(w, "Question not found", http.StatusNotFound)
+		return
+	}
+
+	// Call exam service with question ID
+	examService := services.GetExamService()
+	ctx := examService.CreateMetadata(userID)
+
+	answer, err := examService.Client().GetAnswerForEvaluation(ctx, &proto.ParticipantQuestionRequest{
+		ParticipantId: participantID,
+		QuestionId:    questionIDResp.QuestionIds[0],
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
 	response := dtos.AnswerMinimalResponseDto{
 		ID:         answer.AnswerId,
 		Answer:     answer.Answer,
-		QuestionID: encryptedQuestionId,
+		QuestionID: questionHash,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

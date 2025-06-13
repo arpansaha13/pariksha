@@ -10,6 +10,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
+	"pariksha/exam/internal/interceptors"
 )
 
 // GetExamResults retrieves all answers for a participant in an exam
@@ -19,9 +20,14 @@ func (s *ExamServer) GetExamResults(ctx context.Context, req *proto.ExamRequest)
 		return nil, err
 	}
 
+	examID, ok := interceptors.GetExamIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "exam ID not found in context")
+	}
+
 	// Get participant ID for this user in this exam
 	var participant models.ExamParticipant
-	if err := db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).
+	if err := db.DB.Where("exam_id = ? AND user_id = ?", examID, userID).
 		Take(&participant).Error; err != nil {
 		return nil, utils.HandleDBError(err, "participant not found")
 	}

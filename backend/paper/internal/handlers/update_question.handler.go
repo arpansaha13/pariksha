@@ -13,8 +13,8 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
-	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
+	"pariksha/common/pkg/utils/generate"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/interceptors"
@@ -34,7 +34,7 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 		}
 	}
 
-	var updatedQuestionID *types.QuestionID
+	var updatedQuestionHash *string
 	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		// Row-level lock for both question and paper rows
 		var questionForUpdate models.Question
@@ -53,12 +53,12 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 		oldMaxScore := question.MaxScore
 
 		if question.Locked {
-			updatedQuestionID, err = handleLockedQuestionUpdate(tx, *question, paper, req, oldType, oldMaxScore)
+			updatedQuestionHash, err = handleLockedQuestionUpdate(tx, *question, paper, req, oldType, oldMaxScore)
 			return err
 		}
 
 		// In case of unlocked question, the the questionId will remain same
-		updatedQuestionID = &question.ID
+		updatedQuestionHash = &req.QuestionHash
 		return handleUnlockedQuestionUpdate(tx, *question, paper, req, oldType, oldMaxScore)
 	})
 
@@ -66,11 +66,11 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 		return nil, err
 	}
 
-	return &proto.UpdateQuestionResponse{QuestionId: int64(*updatedQuestionID)}, nil
+	return &proto.UpdateQuestionResponse{QuestionHash: *updatedQuestionHash}, nil
 }
 
 // handleLockedQuestionUpdate handles updates to a locked (column) question by creating a new one
-func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper models.Paper, req *proto.UpdateQuestionRequest, oldType int16, oldMaxScore int16) (*types.QuestionID, error) {
+func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper models.Paper, req *proto.UpdateQuestionRequest, oldType int16, oldMaxScore int16) (*string, error) {
 	newQuestion := question
 	newQuestion.ID = 0
 	newQuestion.Locked = false
@@ -82,6 +82,15 @@ func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper mod
 
 	if err := tx.Create(&updatedQuestion).Error; err != nil {
 		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
+	}
+
+	// Create HMAC hash for the new question
+	questionHash := models.QuestionHash{
+		ID:   updatedQuestion.ID,
+		Hash: generate.HMACHash(int64(updatedQuestion.ID)),
+	}
+	if err := tx.Create(&questionHash).Error; err != nil {
+		return nil, status.Error(codes.Internal, "failed to create question hash")
 	}
 
 	// Create new boilerplate entry if it's a coding question
@@ -108,7 +117,7 @@ func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper mod
 		return nil, err
 	}
 
-	return &updatedQuestion.ID, nil
+	return &questionHash.Hash, nil
 }
 
 // handleUnlockedQuestionUpdate handles updates to an unlocked (column) question

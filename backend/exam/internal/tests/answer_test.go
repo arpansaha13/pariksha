@@ -320,7 +320,7 @@ func TestGetAnswerForExam(t *testing.T) {
 			ctx := createContextWithMetadata(tt.metadata)
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				&proto.GetAnswerRequest{
-					ExamId:     int64(exam.ID),
+					ExamHash:   exam.ExamHash.Hash,
 					QuestionId: int64(questionId),
 				},
 				client.GetAnswerForExam,
@@ -363,7 +363,7 @@ func TestUpsertAnswer(t *testing.T) {
 				require.NoError(t, db.DB.Save(&participant).Error)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: int64(exam.ID),
+					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
 						QuestionId:  1,
 						Answer:      []byte(`{"text": "Test answer content"}`),
@@ -419,7 +419,7 @@ func TestUpsertAnswer(t *testing.T) {
 				answer := createTestAnswer(t, &participant, 1)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: int64(exam.ID),
+					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
 						QuestionId:  int64(answer.QuestionID),
 						Answer:      []byte(`{"text": "Updated answer content"}`),
@@ -452,7 +452,7 @@ func TestUpsertAnswer(t *testing.T) {
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
 				exam := createTestExam(t, 2)
 				return nil, &proto.UpsertAnswersRequest{
-					ExamId: int64(exam.ID),
+					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
 						QuestionId:  1,
 						Answer:      []byte(`{"text": "Test answer"}`),
@@ -478,7 +478,7 @@ func TestUpsertAnswer(t *testing.T) {
 				require.NoError(t, err)
 
 				return nil, &proto.UpsertAnswersRequest{
-					ExamId: int64(exam.ID),
+					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
 						QuestionId:  1,
 						Answer:      []byte(`{"text": "Test answer"}`),
@@ -507,7 +507,7 @@ func TestUpsertAnswer(t *testing.T) {
 				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: int64(exam.ID),
+					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
 						QuestionId:  1,
 						Answer:      []byte(`{"text": "Test answer after exam ended"}`),
@@ -545,7 +545,7 @@ func TestUpsertAnswer(t *testing.T) {
 				require.NoError(t, db.DB.Save(&participant).Error)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: int64(exam.ID),
+					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
 						QuestionId:  1,
 						Answer:      []byte(`{"text": ""}`),
@@ -597,7 +597,7 @@ func TestUpsertAnswer(t *testing.T) {
 				answer := createTestAnswer(t, &participant, 1)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: int64(exam.ID),
+					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
 						QuestionId:  int64(answer.QuestionID),
 						Answer:      nil, // Explicit nil answer
@@ -645,7 +645,7 @@ func TestUpsertAnswer(t *testing.T) {
 				answer := createTestAnswer(t, &participant, 1)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: int64(exam.ID),
+					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
 						QuestionId:  int64(answer.QuestionID),
 						Answer:      []byte(`{}`), // Empty answer object
@@ -686,7 +686,7 @@ func TestUpsertAnswer(t *testing.T) {
 				answer := createTestAnswer(t, &participant, 1)
 
 				return &participant, &proto.UpsertAnswersRequest{
-					ExamId: int64(exam.ID),
+					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
 						QuestionId:  int64(answer.QuestionID),
 						Answer:      []byte(`{"optionIndex": null}`), // explicit null for optionIndex

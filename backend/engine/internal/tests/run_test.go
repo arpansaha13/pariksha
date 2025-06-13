@@ -233,14 +233,14 @@ func TestRunCode(t *testing.T) {
 			server := setupTest(t)
 
 			// Create question with input/output definitions
-			questionID := createCodingQuestion(t, tt.inputDefs, tt.outputDef)
+			questionHash := createCodingQuestion(t, tt.inputDefs, tt.outputDef)
 
 			// Run code
 			req := &proto.RunCodeRequest{
-				QuestionId:  int64(questionID),
-				Code:        tt.code,
-				TestCases:   tt.testCases,
-				Environment: constants.LangNode,
+				QuestionHash: questionHash,
+				Code:         tt.code,
+				TestCases:    tt.testCases,
+				Environment:  constants.LangNode,
 			}
 
 			resp, err := server.RunCode(context.Background(), req)

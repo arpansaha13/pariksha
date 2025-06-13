@@ -16,6 +16,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/utils/generate"
 	"pariksha/paper/internal/config/db"
 	paperUtils "pariksha/paper/internal/utils"
 )
@@ -35,6 +36,15 @@ func createTestPaper(t *testing.T, userID types.UserID) models.Paper {
 		CreatedBy:       userID,
 	}
 	err := db.DB.Create(&paper).Error
+	require.NoError(t, err)
+
+	// Create paper hash
+	paperHash := models.PaperHash{
+		ID:   paper.ID,
+		Hash: generate.HMACHash(int64(paper.ID)),
+	}
+	err = db.DB.Create(&paperHash).Error
+	paper.PaperHash = paperHash
 	require.NoError(t, err)
 
 	// Create permissions entry with write access
@@ -69,9 +79,14 @@ func verifyMCQContent(t *testing.T, question models.Question, expectedStatement 
 }
 
 // verifyPaperPermissions validates the permissions of a user for a paper
-func verifyPaperPermissions(t *testing.T, paperID types.PaperID, userID types.UserID, expectedRead, expectedWrite bool) {
+func verifyPaperPermissions(t *testing.T, paperHash string, userID types.UserID, expectedRead, expectedWrite bool) {
+	// First get paper ID from hash
+	var paper models.Paper
+	err := db.DB.Joins("INNER JOIN paper_hashes ON paper_hashes.id = papers.id").Where("paper_hashes.hash = ?", paperHash).Take(&paper).Error
+	require.NoError(t, err)
+
 	var permissions models.PaperPermission
-	err := db.DB.Where("paper_id = ? AND user_id = ?", paperID, userID).Take(&permissions).Error
+	err = db.DB.Where("paper_id = ? AND user_id = ?", paper.ID, userID).Take(&permissions).Error
 	require.NoError(t, err)
 	assert.Equal(t, expectedRead, permissions.CanRead(), "Read permission mismatch")
 	assert.Equal(t, expectedWrite, permissions.CanWrite(), "Write permission mismatch")
@@ -149,6 +164,19 @@ func createTestQuestions(t *testing.T, questions []models.Question) []models.Que
 
 	err := db.DB.Create(&questions).Error
 	require.NoError(t, err)
+
+	// Create question hashes
+	questionHashes := make([]models.QuestionHash, len(questions))
+	for i, q := range questions {
+		questionHashes[i] = models.QuestionHash{
+			ID:   q.ID,
+			Hash: generate.HMACHash(int64(q.ID)),
+		}
+		questions[i].QuestionHash = questionHashes[i]
+	}
+	err = db.DB.Create(&questionHashes).Error
+	require.NoError(t, err)
+
 	return questions
 }
 

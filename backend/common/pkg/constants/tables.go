@@ -8,6 +8,7 @@ const (
 	TABLE_EXAM_CATEGORIES   = "exam_categories"
 	TABLE_EXAM_PARTICIPANTS = "exam_participants"
 	TABLE_ANSWERS           = "answers"
+	TABLE_EXAM_HASHES       = "exam_hashes"
 )
 
 // paperDb
@@ -19,6 +20,8 @@ const (
 	TABLE_LANGUAGES         = "languages"
 	TABLE_CATEGORIES        = "categories"
 	TABLE_TEST_CASES        = "test_cases"
+	TABLE_PAPER_HASHES      = "paper_hashes"
+	TABLE_QUESTION_HASHES   = "question_hashes"
 )
 
 // authDb

@@ -30,6 +30,7 @@ type Paper struct {
 
 	Questions  []Question         `gorm:"foreignKey:PaperID"`
 	Categories []QuestionCategory `gorm:"foreignKey:PaperID"`
+	PaperHash  PaperHash          `gorm:"foreignKey:ID;references:ID"`
 }
 
 func (p *Paper) GetQuestionCounts() (QuestionCount, error) {

@@ -15,6 +15,7 @@ import (
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
+	"pariksha/common/pkg/utils/generate"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/interceptors"
@@ -81,29 +82,40 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 		return nil, err
 	}
 
-	exam := models.Exam{
-		Title:              req.Title,
-		StartsAt:           startsAt,
-		EndsAt:             endsAt,
-		CreatedBy:          userID,
-		MaxCandidatesCount: req.MaxCandidatesCount,
-		PaperID:            types.PaperID(req.PaperId),
-		DurationMinutes:    int16(req.DurationMinutes),
-	}
-
-	// Only set Type if it's not LINK - will use database default
-	if req.Type != nil && req.GetType() != constants.EXAM_ACCESS_TYPE_LINK {
-		if req.GetType() != constants.EXAM_ACCESS_TYPE_INVITE {
-			return nil, status.Error(codes.InvalidArgument, "exam type must be either LINK or INVITE")
-		}
-		exam.Type = req.GetType()
-	}
-
+	var exam models.Exam
 	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+		exam = models.Exam{
+			Title:              req.Title,
+			StartsAt:           startsAt,
+			EndsAt:             endsAt,
+			CreatedBy:          userID,
+			MaxCandidatesCount: req.MaxCandidatesCount,
+			PaperID:            types.PaperID(req.PaperId),
+			DurationMinutes:    int16(req.DurationMinutes),
+		}
+
+		// Only set Type if it's not LINK - will use database default
+		if req.Type != nil && req.GetType() != constants.EXAM_ACCESS_TYPE_LINK {
+			if req.GetType() != constants.EXAM_ACCESS_TYPE_INVITE {
+				return status.Error(codes.InvalidArgument, "exam type must be either LINK or INVITE")
+			}
+			exam.Type = req.GetType()
+		}
 		if err := tx.Create(&exam).Error; err != nil {
 			return status.Error(codes.Internal, "failed to create exam")
 		}
 
+		// Create exam hash
+		examHash := models.ExamHash{
+			ID:   exam.ID,
+			Hash: generate.HMACHash(int64(exam.ID)),
+		}
+		if err := tx.Create(&examHash).Error; err != nil {
+			return status.Error(codes.Internal, "failed to create exam hash")
+		}
+		exam.ExamHash = examHash
+
+		// Create owner permission entry
 		permission := models.ExamPermission{
 			ExamID: exam.ID,
 			UserID: userID,
@@ -181,10 +193,10 @@ func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest)
 		return nil, err
 	}
 
-	typedExamId := types.ExamID(req.ExamId)
+	typedExamId := types.ExamID(exam.ID)
 	participant := &models.ExamParticipant{}
 	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		err := tx.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(participant).Error
+		err := tx.Where("exam_id = ? AND user_id = ?", exam.ID, userID).Take(participant).Error
 		participantExists := err == nil
 
 		if !participantExists {
@@ -309,10 +321,15 @@ func (s *ExamServer) GetExam(ctx context.Context, req *proto.ExamRequest) (*prot
 
 // GetExamQuestions retrieves all questions associated with an exam
 func (s *ExamServer) GetExamQuestions(ctx context.Context, req *proto.ExamRequest) (*proto.ExamQuestionsResponse, error) {
+	examID, ok := interceptors.GetExamIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "exam ID not found in context")
+	}
+
 	var examQuestions []models.ExamQuestion
 	if err := db.DB.Model(&models.ExamQuestion{}).
 		Select("question_id", "category_id", "type", "order", "max_score").
-		Where("exam_id = ?", req.ExamId).
+		Where("exam_id = ?", examID).
 		Find(&examQuestions).Error; err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch questions")
 	}
@@ -335,10 +352,15 @@ func (s *ExamServer) GetExamQuestions(ctx context.Context, req *proto.ExamReques
 
 // GetExamCategories retrieves all category IDs associated with an exam
 func (s *ExamServer) GetExamCategories(ctx context.Context, req *proto.ExamRequest) (*proto.ExamCategoriesResponse, error) {
+	examID, ok := interceptors.GetExamIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "exam ID not found in context")
+	}
+
 	var examCategories []models.ExamCategory
 	if err := db.DB.Model(&models.ExamCategory{}).
 		Select("category_id", "order").
-		Where("exam_id = ?", req.ExamId).
+		Where("exam_id = ?", examID).
 		Find(&examCategories).Error; err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch categories")
 	}
@@ -392,7 +414,7 @@ func (s *ExamServer) GetExamPermission(ctx context.Context, req *proto.ExamReque
 	// Check if user is a participant and add status if found
 	if permission.CanParticipate() {
 		var participant models.ExamParticipant
-		err = db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error
+		err = db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).Take(&participant).Error
 		if err == nil {
 			response.ParticipantStatus = ptr.Int32(int32(participant.Status))
 		}

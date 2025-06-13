@@ -51,6 +51,41 @@ func getInt64FromVars(vars map[string]string, key string) (int64, error) {
 	return id, nil
 }
 
+// getHashFromVars parses an string value from a map using the given key.
+// Returns error if the value is missing or empty.
+func getHashFromVars(vars map[string]string, key string) (string, error) {
+	hash, ok := vars[key]
+	if !ok || hash == "" {
+		return "", fmt.Errorf("missing required parameter: %s", key)
+	}
+
+	return hash, nil
+}
+
+func getQuestionIdFromVars(vars map[string]string) (string, error) {
+	questionID, err := getHashFromVars(vars, "questionId")
+	if err != nil {
+		return "", fmt.Errorf("Missing question ID")
+	}
+	return questionID, nil
+}
+
+func getPaperIdFromVars(vars map[string]string) (string, error) {
+	paperID, err := getHashFromVars(vars, "paperId")
+	if err != nil {
+		return "", fmt.Errorf("Missing paper ID")
+	}
+	return paperID, nil
+}
+
+func getExamIdFromVars(vars map[string]string) (string, error) {
+	examID, err := getHashFromVars(vars, "examId")
+	if err != nil {
+		return "", fmt.Errorf("Missing exam ID")
+	}
+	return examID, nil
+}
+
 func mapUserProfileToDto(profile *proto.UserProfileResponse) dtos.UserResponseDto {
 	return dtos.UserResponseDto{
 		ID:        profile.Id,

@@ -2,7 +2,7 @@ package dtos
 
 type GetAnswerEvaluationDataResponseDto struct {
 	ID           int64  `json:"id"`
-	QuestionID   int64  `json:"question_id"`
+	QuestionID   string `json:"question_id"`
 	ScoreAwarded int32  `json:"score_awarded"`
 	Comments     string `json:"comments"`
 }

@@ -15,7 +15,11 @@ import (
 func GetBoilerplate(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	questionID := r.Context().Value(middlewares.DecryptedQuestionID).(int64)
+	questionHash, err := getQuestionIdFromVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	languageID, err := getInt64FromVars(vars, "languageId")
 	if err != nil {
@@ -26,8 +30,8 @@ func GetBoilerplate(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	ctx := services.GetPaperService().CreateMetadata(userID)
 	resp, err := services.GetPaperService().Client().GetBoilerplate(ctx, &proto.GetBoilerplateRequest{
-		QuestionId: questionID,
-		LanguageId: int32(languageID),
+		QuestionHash: questionHash,
+		LanguageId:   int32(languageID),
 	})
 
 	if err != nil {

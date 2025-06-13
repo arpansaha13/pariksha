@@ -4,15 +4,17 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/models"
-	"pariksha/common/pkg/types"
-	"pariksha/exam/internal/config/db"
 	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
+
+	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/models"
+	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/utils/generate"
+	"pariksha/exam/internal/config/db"
 )
 
 func createContextWithUserID(userID types.UserID) context.Context {
@@ -34,11 +36,20 @@ func createTestExam(t *testing.T, createdBy types.UserID) models.Exam {
 		Type:               constants.EXAM_ACCESS_TYPE_LINK,
 		MaxCandidatesCount: 10,
 		PaperID:            1,
-		DurationMinutes:    60, // Add default duration
+		DurationMinutes:    60,
 		ParticipantCounts:  []byte(`{"unattended":0,"invited":0,"started":0,"ended":0}`),
 	}
 	require.NoError(t, db.DB.Create(&exam).Error)
 
+	// Create exam hash
+	examHash := models.ExamHash{
+		ID:   exam.ID,
+		Hash: generate.HMACHash(int64(exam.ID)),
+	}
+	require.NoError(t, db.DB.Create(&examHash).Error)
+	exam.ExamHash = examHash
+
+	// Create permission
 	permission := models.ExamPermission{
 		ExamID: exam.ID,
 		UserID: createdBy,

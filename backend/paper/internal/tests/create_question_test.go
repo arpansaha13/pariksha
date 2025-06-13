@@ -38,7 +38,8 @@ func TestCreateMcqQuestion(t *testing.T) {
 			validate: func(t *testing.T, paper *models.Paper, resp *proto.CreateQuestionResponse) {
 				// Fetch the created question from database
 				var question models.Question
-				require.NoError(t, db.DB.First(&question, resp.QuestionId).Error)
+				err := db.DB.Joins("INNER JOIN question_hashes ON question_hashes.id = questions.id").Where("question_hashes.hash = ?", resp.QuestionHash).First(&question).Error
+				require.NoError(t, err)
 
 				// Validate question data
 				assert.True(t, compareJSONByteArrays([]byte(`{"statement":"Test MCQ","options":["A","B","C"]}`), question.Question))
@@ -60,7 +61,7 @@ func TestCreateMcqQuestion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			paper, category := tt.setup(t)
-			tt.request.PaperId = int64(paper.ID)
+			tt.request.PaperHash = paper.PaperHash.Hash
 			tt.request.CategoryId = int64(category.ID)
 
 			ctx := createContextWithUserID(tt.userID)
@@ -98,7 +99,8 @@ func TestCreateSubjectiveQuestion(t *testing.T) {
 			validate: func(t *testing.T, paper *models.Paper, resp *proto.CreateQuestionResponse) {
 				// Fetch the created question from database
 				var question models.Question
-				require.NoError(t, db.DB.First(&question, resp.QuestionId).Error)
+				err := db.DB.Joins("INNER JOIN question_hashes ON question_hashes.id = questions.id").Where("question_hashes.hash = ?", resp.QuestionHash).First(&question).Error
+				require.NoError(t, err)
 
 				// Validate question data
 				assert.True(t, compareJSONByteArrays([]byte(`{"statement":"Test Subjective Answer"}`), question.Question))
@@ -120,7 +122,7 @@ func TestCreateSubjectiveQuestion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			paper, category := tt.setup(t)
-			tt.request.PaperId = int64(paper.ID)
+			tt.request.PaperHash = paper.PaperHash.Hash
 			tt.request.CategoryId = int64(category.ID)
 
 			ctx := createContextWithUserID(tt.userID)
@@ -168,14 +170,15 @@ func TestCreateCodingQuestion(t *testing.T) {
 			validate: func(t *testing.T, paper *models.Paper, resp *proto.CreateQuestionResponse) {
 				// Fetch the created question from database
 				var question models.Question
-				require.NoError(t, db.DB.First(&question, resp.QuestionId).Error)
+				err := db.DB.Joins("INNER JOIN question_hashes ON question_hashes.id = questions.id").Where("question_hashes.hash = ?", resp.QuestionHash).First(&question).Error
+				require.NoError(t, err)
 
 				// Validate question data
 				assert.Equal(t, constants.QUESTION_TYPE_CODING, question.Type)
 				assert.EqualValues(t, 15, question.MaxScore)
 
 				var codingQ structs.CodingQuestion
-				err := json.Unmarshal(question.Question, &codingQ)
+				err = json.Unmarshal(question.Question, &codingQ)
 				require.NoError(t, err)
 				assert.Equal(t, "Sum of Numbers", codingQ.Title)
 				assert.Equal(t, "Write a program to add two numbers", codingQ.Statement)
@@ -362,7 +365,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			paper, category := tt.setup(t)
-			tt.request.PaperId = int64(paper.ID)
+			tt.request.PaperHash = paper.PaperHash.Hash
 			tt.request.CategoryId = int64(category.ID)
 
 			ctx := createContextWithUserID(tt.userID)
@@ -433,7 +436,7 @@ func TestCreateCodingQuestionBoilerplates(t *testing.T) {
 			// Create coding question
 			ctx := createContextWithUserID(userID)
 			req := &proto.CreateQuestionRequest{
-				PaperId:     int64(paper.ID),
+				PaperHash:   paper.PaperHash.Hash,
 				CategoryId:  int64(category.ID),
 				Type:        int32(constants.QUESTION_TYPE_CODING),
 				RawQuestion: []byte(tt.question),
@@ -446,8 +449,12 @@ func TestCreateCodingQuestionBoilerplates(t *testing.T) {
 			})
 
 			// Verify boilerplate was created
+			var question models.Question
+			err := db.DB.Joins("INNER JOIN question_hashes ON question_hashes.id = questions.id").Where("question_hashes.hash = ?", resp.QuestionHash).First(&question).Error
+			require.NoError(t, err)
+
 			var boilerplate models.Boilerplate
-			require.NoError(t, db.DB.First(&boilerplate, "question_id = ?", resp.QuestionId).Error)
+			require.NoError(t, db.DB.First(&boilerplate, "question_id = ?", question.ID).Error)
 			assert.Equal(t, tt.want, boilerplate.Code)
 		})
 	}
@@ -497,7 +504,7 @@ func TestGeneralCreateQuestion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			paper, category := tt.setup(t)
-			tt.request.PaperId = int64(paper.ID)
+			tt.request.PaperHash = paper.PaperHash.Hash
 			tt.request.CategoryId = int64(category.ID)
 
 			ctx := createContextWithUserID(tt.userID)

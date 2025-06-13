@@ -531,7 +531,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			question := tt.setup(t)
-			tt.request.QuestionId = int64(question.ID)
+			tt.request.QuestionHash = question.QuestionHash.Hash
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,

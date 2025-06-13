@@ -10,6 +10,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/utils/generate"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/paper/internal/config/db"
@@ -89,19 +90,24 @@ func TestCreatePaper(t *testing.T) {
 			userID:       userID,
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.PaperResponse) {
-				assert.NotZero(t, resp.PaperId)
+				assert.NotEmpty(t, resp.PaperHash)
 				assert.Equal(t, "Untitled Paper", resp.Title)
+
+				// First get paper ID from hash
+				var paper models.Paper
+				err := db.DB.Joins("INNER JOIN paper_hashes ON paper_hashes.id = papers.id").Where("paper_hashes.hash = ?", resp.PaperHash).Take(&paper).Error
+				require.NoError(t, err)
 
 				// Verify default category was created
 				var categories []models.QuestionCategory
-				err := db.DB.Where("paper_id = ?", resp.PaperId).Find(&categories).Error
+				err = db.DB.Where("paper_id = ?", paper.ID).Find(&categories).Error
 				require.NoError(t, err)
 				assert.EqualValues(t, 1, len(categories))
 				assert.Equal(t, "Category 1", categories[0].Name)
 
-				// Verify paper permissions
+				// Verify paper permissions using paper ID
 				var permissions models.PaperPermission
-				err = db.DB.Where("paper_id = ? AND user_id = ?", resp.PaperId, userID).Take(&permissions).Error
+				err = db.DB.Where("paper_id = ? AND user_id = ?", paper.ID, userID).Take(&permissions).Error
 				require.NoError(t, err)
 				assert.True(t, permissions.CanWrite(), "User should have write access to the paper")
 			},
@@ -202,7 +208,13 @@ func TestUpdatePaper(t *testing.T) {
 				expectedCode: codes.NotFound,
 			},
 			setup: func(t *testing.T) *models.Paper {
-				return &models.Paper{ID: 999}
+				return &models.Paper{
+					ID: 999,
+					PaperHash: models.PaperHash{
+						Hash: generate.HMACHash(999),
+						ID:   999,
+					},
+				}
 			},
 			request: &proto.UpdatePaperRequest{
 				Title: ptr.String("Updated Title"),
@@ -298,7 +310,7 @@ func TestUpdatePaper(t *testing.T) {
 			paper := tt.setup(t)
 
 			ctx := createContextWithUserID(tt.userID)
-			tt.request.PaperId = int64(paper.ID)
+			tt.request.PaperHash = paper.PaperHash.Hash
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				tt.request,
 				client.UpdatePaper,
@@ -325,18 +337,23 @@ func TestGetPaper(t *testing.T) {
 				return &paper
 			},
 			validate: func(t *testing.T, resp *proto.PaperResponse) {
-				assert.NotZero(t, resp.PaperId)
+				assert.NotEmpty(t, resp.PaperHash)
 				assert.Equal(t, "Test Paper", resp.Title)
 				assert.EqualValues(t, 60, resp.DurationMinutes)
+
+				// First get paper ID from hash
+				var paper models.Paper
+				err := db.DB.Joins("INNER JOIN paper_hashes ON paper_hashes.id = papers.id").Where("paper_hashes.hash = ?", resp.PaperHash).Take(&paper).Error
+				require.NoError(t, err)
 
 				// Validate question counts
 				assert.NotNil(t, resp.QuestionCounts)
 				assert.EqualValues(t, 2, resp.QuestionCounts.Mcq)
 				assert.EqualValues(t, 1, resp.QuestionCounts.Subjective)
 
-				// Verify paper permissions
+				// Verify paper permissions using paper ID
 				var permissions models.PaperPermission
-				err := db.DB.Where("paper_id = ? AND user_id = ?", resp.PaperId, userID).Take(&permissions).Error
+				err = db.DB.Where("paper_id = ? AND user_id = ?", paper.ID, userID).Take(&permissions).Error
 				require.NoError(t, err)
 				assert.True(t, permissions.CanWrite(), "User should have write access to the paper")
 			},
@@ -361,8 +378,8 @@ func TestGetPaper(t *testing.T) {
 				return &paper
 			},
 			validate: func(t *testing.T, resp *proto.PaperResponse) {
-				assert.NotZero(t, resp.PaperId)
-				verifyPaperPermissions(t, types.PaperID(resp.PaperId), userID, true, false)
+				assert.NotEmpty(t, resp.PaperHash)
+				verifyPaperPermissions(t, resp.PaperHash, userID, true, false)
 			},
 		},
 		{
@@ -372,7 +389,13 @@ func TestGetPaper(t *testing.T) {
 				expectedCode: codes.NotFound,
 			},
 			setup: func(t *testing.T) *models.Paper {
-				return &models.Paper{ID: 999}
+				return &models.Paper{
+					ID: 999,
+					PaperHash: models.PaperHash{
+						Hash: generate.HMACHash(999),
+						ID:   999,
+					},
+				}
 			},
 		},
 		{
@@ -407,7 +430,7 @@ func TestGetPaper(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.PaperRequest{PaperId: int64(paper.ID)},
+				&proto.PaperRequest{PaperHash: paper.PaperHash.Hash},
 				client.GetPaper,
 				tt.validate)
 		})
@@ -463,7 +486,13 @@ func TestGetPaperPermissions(t *testing.T) {
 				expectedCode: codes.NotFound,
 			},
 			setup: func(t *testing.T) *models.Paper {
-				return &models.Paper{ID: 999}
+				return &models.Paper{
+					ID: 999,
+					PaperHash: models.PaperHash{
+						Hash: generate.HMACHash(999),
+						ID:   999,
+					},
+				}
 			},
 		},
 		{
@@ -497,7 +526,7 @@ func TestGetPaperPermissions(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.PaperRequest{PaperId: int64(paper.ID)},
+				&proto.PaperRequest{PaperHash: paper.PaperHash.Hash},
 				client.GetPaperPermissions,
 				tt.validate)
 		})
@@ -507,7 +536,7 @@ func TestGetPaperPermissions(t *testing.T) {
 func TestDeletePapers(t *testing.T) {
 	tests := []struct {
 		BaseTestCase
-		setup    func(t *testing.T) []int64
+		setup    func(t *testing.T) []string
 		validate func(t *testing.T)
 	}{
 		{
@@ -516,12 +545,12 @@ func TestDeletePapers(t *testing.T) {
 				userID:       userID,
 				expectedCode: codes.OK,
 			},
-			setup: func(t *testing.T) []int64 {
+			setup: func(t *testing.T) []string {
 				// Create 3 papers owned by test user
 				paper1 := createTestPaper(t, userID)
 				paper2 := createTestPaper(t, userID)
 				paper3 := createTestPaper(t, userID)
-				return []int64{int64(paper1.ID), int64(paper2.ID), int64(paper3.ID)}
+				return []string{paper1.PaperHash.Hash, paper2.PaperHash.Hash, paper3.PaperHash.Hash}
 			},
 			validate: func(t *testing.T) {
 				// Verify papers are soft deleted
@@ -537,7 +566,7 @@ func TestDeletePapers(t *testing.T) {
 				userID:       userID,
 				expectedCode: codes.PermissionDenied,
 			},
-			setup: func(t *testing.T) []int64 {
+			setup: func(t *testing.T) []string {
 				// Create paper owned by test user
 				paper1 := createTestPaper(t, userID)
 
@@ -551,7 +580,7 @@ func TestDeletePapers(t *testing.T) {
 				err := db.DB.Create(&permissions).Error
 				require.NoError(t, err)
 
-				return []int64{int64(paper1.ID), int64(paper2.ID)}
+				return []string{paper1.PaperHash.Hash, paper2.PaperHash.Hash}
 			},
 		},
 		{
@@ -560,8 +589,8 @@ func TestDeletePapers(t *testing.T) {
 				userID:       userID,
 				expectedCode: codes.InvalidArgument,
 			},
-			setup: func(t *testing.T) []int64 {
-				return []int64{}
+			setup: func(t *testing.T) []string {
+				return []string{}
 			},
 		},
 		{
@@ -570,8 +599,11 @@ func TestDeletePapers(t *testing.T) {
 				userID:       userID,
 				expectedCode: codes.OK,
 			},
-			setup: func(t *testing.T) []int64 {
-				return []int64{999, 1000}
+			setup: func(t *testing.T) []string {
+				return []string{
+					generate.HMACHash(999),
+					generate.HMACHash(1000),
+				}
 			},
 		},
 	}
@@ -579,11 +611,11 @@ func TestDeletePapers(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
-			paperIds := tt.setup(t)
+			paperHashes := tt.setup(t)
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.DeletePapersRequest{PaperIds: paperIds},
+				&proto.DeletePapersRequest{PaperHashes: paperHashes},
 				client.DeletePapers,
 				func(t *testing.T, _ *proto.Empty) {
 					if tt.validate != nil {

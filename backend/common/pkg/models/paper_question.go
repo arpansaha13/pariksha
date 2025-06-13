@@ -25,8 +25,9 @@ type Question struct {
 	Locked        bool             `gorm:"not null;default:false"`
 	DeletedAt     gorm.DeletedAt   `gorm:"index"`
 
-	Paper    Paper            `gorm:"foreignKey:PaperID"`
-	Category QuestionCategory `gorm:"foreignKey:CategoryID"`
+	Paper        Paper            `gorm:"foreignKey:PaperID"`
+	Category     QuestionCategory `gorm:"foreignKey:CategoryID"`
+	QuestionHash QuestionHash     `gorm:"foreignKey:ID;references:ID"`
 }
 
 // Unmarshal the raw JSON data into the appropriate struct based on the Type field

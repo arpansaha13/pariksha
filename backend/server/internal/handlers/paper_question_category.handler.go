@@ -14,14 +14,19 @@ import (
 )
 
 func GetPaperCategories(w http.ResponseWriter, r *http.Request) {
-	paperID := r.Context().Value(middlewares.DecryptedPaperID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+
+	paperHash, err := getPaperIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
 	response, err := paperService.Client().GetPaperCategories(ctx, &proto.PaperRequest{
-		PaperId: paperID,
+		PaperHash: paperHash,
 	})
 
 	if err != nil {
@@ -43,14 +48,19 @@ func GetPaperCategories(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateCategory(w http.ResponseWriter, r *http.Request) {
-	paperID := r.Context().Value(middlewares.DecryptedPaperID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+
+	paperHash, err := getPaperIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
 	response, err := paperService.Client().CreateCategory(ctx, &proto.CreateCategoryRequest{
-		PaperId: paperID,
+		PaperHash: paperHash,
 	})
 
 	if err != nil {
@@ -125,8 +135,13 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReorderCategories(w http.ResponseWriter, r *http.Request) {
-	paperID := r.Context().Value(middlewares.DecryptedPaperID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+
+	paperHash, err := getPaperIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	var reorderDto dtos.ReorderCategoryDto
 	if err := json.NewDecoder(r.Body).Decode(&reorderDto); err != nil {
@@ -147,8 +162,8 @@ func ReorderCategories(w http.ResponseWriter, r *http.Request) {
 		categoryIDs[i] = id
 	}
 
-	_, err := paperService.Client().ReorderCategories(ctx, &proto.ReorderCategoriesRequest{
-		PaperId:     paperID,
+	_, err = paperService.Client().ReorderCategories(ctx, &proto.ReorderCategoriesRequest{
+		PaperHash:   paperHash,
 		CategoryIds: categoryIDs,
 	})
 

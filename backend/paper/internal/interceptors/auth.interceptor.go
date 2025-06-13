@@ -51,22 +51,28 @@ func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
 			return handler(ctx, req)
 		}
 
-		// Get paper ID based on the request type and method
-		var paperID int64
+		// First check if paper ID exists in context from hash interceptor
+		if paperID, ok := GetPaperIDFromContext(ctx); ok {
+			return handlePaperAuth(ctx, methodName, paperID, handler, req)
+		}
 
+		// Else check if question ID exists in context from hash interceptor
+		if questionID, ok := GetQuestionIDFromContext(ctx); ok {
+			question, err := fetchQuestionData(questionID)
+			if err != nil {
+				return nil, err
+			}
+			ctx = context.WithValue(ctx, questionContextKey, question)
+			return handlePaperAuth(ctx, methodName, types.PaperID(question.PaperID.Int64), handler, req)
+		}
+
+		var paperID int64
 		switch r := req.(type) {
-		case *proto.PaperRequest:
-			paperID = r.PaperId
-		case *proto.UpdatePaperRequest:
-			paperID = r.PaperId
-		case *proto.CreateCategoryRequest:
-			paperID = r.PaperId
 		case *proto.UpdateCategoryRequest:
 			category, err := fetchCategoryData(types.CategoryID(r.CategoryId))
 			if err != nil {
 				return nil, err
 			}
-
 			paperID = category.PaperID.Int64
 			ctx = context.WithValue(ctx, categoryContextKey, category)
 		case *proto.CategoryRequest:
@@ -74,72 +80,53 @@ func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
 			if err != nil {
 				return nil, err
 			}
-
 			paperID = category.PaperID.Int64
 			ctx = context.WithValue(ctx, categoryContextKey, category)
-		case *proto.ReorderCategoriesRequest:
-			paperID = r.PaperId
-		case *proto.QuestionRequest:
-			question, err := fetchQuestionData(types.QuestionID(r.QuestionId))
-			if err != nil {
-				return nil, err
-			}
-			paperID = question.PaperID.Int64
-			ctx = context.WithValue(ctx, questionContextKey, question)
-		case *proto.UpdateQuestionRequest:
-			question, err := fetchQuestionData(types.QuestionID(r.QuestionId))
-			if err != nil {
-				return nil, err
-			}
-			paperID = question.PaperID.Int64
-			ctx = context.WithValue(ctx, questionContextKey, question)
-		case *proto.UpsertTestCasesRequest:
-			question, err := fetchQuestionData(types.QuestionID(r.QuestionId))
-			if err != nil {
-				return nil, err
-			}
-			paperID = question.PaperID.Int64
-			ctx = context.WithValue(ctx, questionContextKey, question)
-		case *proto.CreateQuestionRequest:
-			paperID = r.PaperId
+		default:
+			return nil, status.Error(codes.Internal, "unable to determine paper ID")
 		}
 
-		userID, err := utils.GetUserIDFromMetadata(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		// Check if paper exists
-		var exists bool
-		if err := db.DB.Model(&models.Paper{}).
-			Select("1").
-			Where("id = ?", paperID).
-			Find(&exists).Error; err != nil {
-			return nil, status.Error(codes.Internal, "failed to check paper existence")
-		}
-		if !exists {
-			return nil, status.Error(codes.NotFound, "paper not found")
-		}
-
-		permissions, err := fetchPaperPermissions(types.PaperID(paperID), userID)
-		if err != nil {
-			return nil, err
-		}
-
-		ctx = context.WithValue(ctx, permissionContextKey, permissions)
-
-		// Check if the method requires READ permission
-		if requiresRead[methodName] && !permissions.CanRead() {
-			return nil, status.Error(codes.PermissionDenied, "READ permission required")
-		}
-
-		// Check if the method requires WRITE permission
-		if requiresWrite[methodName] && !permissions.CanWrite() {
-			return nil, status.Error(codes.PermissionDenied, "WRITE permission required")
-		}
-
-		return handler(ctx, req)
+		return handlePaperAuth(ctx, methodName, types.PaperID(paperID), handler, req)
 	}
+}
+
+// handlePaperAuth handles the common paper authorization logic
+func handlePaperAuth(ctx context.Context, methodName string, paperID types.PaperID, handler grpc.UnaryHandler, req any) (any, error) {
+	userID, err := utils.GetUserIDFromMetadata(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if paper exists
+	var exists bool
+	if err := db.DB.Model(&models.Paper{}).
+		Select("1").
+		Where("id = ?", paperID).
+		Find(&exists).Error; err != nil {
+		return nil, status.Error(codes.Internal, "failed to check paper existence")
+	}
+	if !exists {
+		return nil, status.Error(codes.NotFound, "paper not found")
+	}
+
+	permissions, err := fetchPaperPermissions(paperID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx = context.WithValue(ctx, permissionContextKey, permissions)
+
+	// Check if the method requires READ permission
+	if requiresRead[methodName] && !permissions.CanRead() {
+		return nil, status.Error(codes.PermissionDenied, "READ permission required")
+	}
+
+	// Check if the method requires WRITE permission
+	if requiresWrite[methodName] && !permissions.CanWrite() {
+		return nil, status.Error(codes.PermissionDenied, "WRITE permission required")
+	}
+
+	return handler(ctx, req)
 }
 
 // Helper function to fetch category data
@@ -157,7 +144,7 @@ func fetchCategoryData(categoryID types.CategoryID) (models.QuestionCategory, er
 // Helper function to fetch question data
 func fetchQuestionData(questionID types.QuestionID) (models.Question, error) {
 	var question models.Question
-	if err := db.DB.Preload("Paper").Preload("Category").
+	if err := db.DB.
 		Take(&question, questionID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return question, status.Error(codes.NotFound, "question not found")

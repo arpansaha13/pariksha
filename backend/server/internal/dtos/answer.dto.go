@@ -5,7 +5,7 @@ import (
 )
 
 type AnswerListQuestionDto struct {
-	ID         int64           `json:"id"`
+	ID         string          `json:"id"`
 	Order      int32           `json:"order"`
 	CategoryID int64           `json:"category_id"`
 	Content    json.RawMessage `json:"content"`

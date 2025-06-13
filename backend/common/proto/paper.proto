@@ -31,9 +31,11 @@ service Paper {
   rpc ReorderCategories(ReorderCategoriesRequest) returns (Empty) {}
 
   // Exam operations
-  rpc GetQuestionsByIds(GetQuestionsByIdsRequest) returns (QuestionBatchResponse) {}
+  rpc GetQuestionsByIds(GetQuestionsByIdsRequest) returns (GetQuestionsByIdsResponse) {}
   rpc GetCategoriesByIds(GetCategoriesByIdsRequest) returns (CategoryBatchResponse) {}
   rpc GetExamQuestion(QuestionRequest) returns (QuestionResponse) {}
+  rpc GetQuestionHashes(GetQuestionHashesRequest) returns (GetQuestionHashesResponse) {}
+  rpc GetQuestionIds(GetQuestionIdsRequest) returns (GetQuestionIdsResponse) {}
 
   // Boilerplate operations
   rpc GetBoilerplate(GetBoilerplateRequest) returns (GetBoilerplateResponse) {}
@@ -44,11 +46,11 @@ service Paper {
 
 // Paper messages
 message PaperRequest {
-  int64 paper_id = 1;
+  string paper_hash = 1;
 }
 
 message PaperResponse {
-  int64 paper_id = 1;
+  string paper_hash = 1;
   string title = 2;
   int32 max_score = 3;
   int32 duration_minutes = 4;
@@ -61,7 +63,7 @@ message PaperList {
 }
 
 message UpdatePaperRequest {
-  int64 paper_id = 1;
+  string paper_hash = 1;
   optional string title = 2;
   optional int32 duration_minutes = 3;
 }
@@ -73,21 +75,21 @@ message QuestionCount {
 }
 
 message DeletePapersRequest {
-  repeated int64 paper_ids = 1;
+  repeated string paper_hashes = 1;
 }
 
 // Question messages
 message QuestionRequest {
-  int64 question_id = 1;
+  string question_hash = 1;
 }
 
 message QuestionResponse {
-  int64 question_id = 1;
+  string question_hash = 1;
   bytes raw_question = 2;
   int64 category_id = 4;
   int32 type = 5;
   repeated string tags = 6;
-  int64 paper_id = 7;
+  string paper_hash = 7;
   int32 max_score = 8;
   optional string correct_answer = 9;
   repeated PaperTestCase test_cases = 10;  // New field for coding question test cases
@@ -98,15 +100,15 @@ message QuestionList {
 }
 
 message QuestionMinimal {
-  int64 question_id = 1;
+  string question_hash = 1;
   int64 category_id = 2;
-  int64 paper_id = 3;
+  string paper_hash = 3;
   int32 order = 4;
   bytes raw_question = 5;
 }
 
 message CreateQuestionRequest {
-  int64 paper_id = 1;
+  string paper_hash = 1;
   bytes raw_question = 2;
   int64 category_id = 3;
   int32 type = 4;
@@ -116,11 +118,11 @@ message CreateQuestionRequest {
 }
 
 message CreateQuestionResponse {
-  int64 question_id = 1;
+  string question_hash = 1;
 }
 
 message UpdateQuestionRequest {
-  int64 question_id = 1;
+  string question_hash = 1;
   optional int32 type = 2;
   optional bytes raw_question = 3;
   optional int32 max_score = 4;
@@ -129,27 +131,29 @@ message UpdateQuestionRequest {
 }
 
 message UpdateQuestionResponse {
-  int64 question_id = 1;
+  string question_hash = 1;
 }
 
 message ReorderQuestionsRequest {
   int64 category_id = 1;
-  repeated int64 question_ids = 2;
+  repeated string question_hashes = 2;
 }
 
 message GetQuestionsByIdsRequest {
+  // Internal handler for exam service. IDs can be allowed.
   repeated int64 question_ids = 1;
 }
 
-message QuestionBatchResponse {
+message GetQuestionsByIdsResponse {
   repeated QuestionBatchItem questions = 1;
 }
 
 message QuestionBatchItem {
   int64 question_id = 1;
-  bytes raw_question = 2;
+  string question_hash = 2;
+  bytes raw_question = 3;
   int32 max_score = 4;
-  int32 type = 6;
+  int32 type = 5;
 }
 
 // Category messages
@@ -181,7 +185,7 @@ message CategoryList {
 }
 
 message CreateCategoryRequest {
-  int64 paper_id = 1;
+  string paper_hash = 1;
 }
 
 message UpdateCategoryRequest {
@@ -190,7 +194,7 @@ message UpdateCategoryRequest {
 }
 
 message ReorderCategoriesRequest {
-  int64 paper_id = 1;
+  string paper_hash = 1;
   repeated int64 category_ids = 2;
 }
 
@@ -201,7 +205,7 @@ message PaperPermissionsResponse {
 
 // Boilerplate messages
 message GetBoilerplateRequest {
-  int64 question_id = 1;
+  string question_hash = 1;
   int32 language_id = 2;
 }
 
@@ -225,6 +229,22 @@ message UpsertTestCase {
 }
 
 message UpsertTestCasesRequest {
-  int64 question_id = 1;
+  string question_hash = 1;
   repeated UpsertTestCase test_cases = 2;
+}
+
+message GetQuestionHashesRequest {
+  repeated int64 question_ids = 1;
+}
+
+message GetQuestionHashesResponse {
+  repeated string question_hashes = 1;
+}
+
+message GetQuestionIdsRequest {
+  repeated string question_hashes = 1;
+}
+
+message GetQuestionIdsResponse {
+  repeated int64 question_ids = 1;
 }

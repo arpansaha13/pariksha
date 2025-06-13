@@ -14,6 +14,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/utils/generate"
 	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/paper/internal/config/db"
 )
@@ -106,7 +107,13 @@ func TestGetPaperQuestions(t *testing.T) {
 				expectedCode: codes.NotFound,
 			},
 			setup: func(t *testing.T) (*models.Paper, []models.Question) {
-				return &models.Paper{ID: 999}, nil
+				return &models.Paper{
+					ID: 999,
+					PaperHash: models.PaperHash{
+						Hash: generate.HMACHash(999),
+						ID:   999,
+					},
+				}, nil
 			},
 		},
 		{
@@ -129,7 +136,7 @@ func TestGetPaperQuestions(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.PaperRequest{PaperId: int64(paper.ID)},
+				&proto.PaperRequest{PaperHash: paper.PaperHash.Hash},
 				client.GetPaperQuestions,
 				tt.validate,
 			)
@@ -192,17 +199,17 @@ func TestDeleteQuestion(t *testing.T) {
 
 				category := createDefaultTestCategory(t, paper.ID)
 
-				question := models.Question{
-					PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-					CategoryID: category.ID,
-					Order:      1,
-					Type:       constants.QUESTION_TYPE_MCQ,
-					Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
-
-					Locked: true,
-				}
-				require.NoError(t, db.DB.Create(&question).Error)
-				return &paper, &question
+				questions := createTestQuestions(t, []models.Question{
+					{
+						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+						CategoryID: category.ID,
+						Order:      1,
+						Type:       constants.QUESTION_TYPE_MCQ,
+						Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
+						Locked:     true,
+					},
+				})
+				return &paper, &questions[0]
 			},
 			validate: func(t *testing.T, paper *models.Paper, questionID types.QuestionID) {
 				// Verify question is unlinked but exists
@@ -229,7 +236,7 @@ func TestDeleteQuestion(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.QuestionRequest{QuestionId: int64(question.ID)},
+				&proto.QuestionRequest{QuestionHash: question.QuestionHash.Hash},
 				client.DeleteQuestion,
 				func(t *testing.T, resp *proto.Empty) {
 					if tt.validate != nil {
@@ -284,7 +291,7 @@ func TestReorderQuestions(t *testing.T) {
 			_, category, questions := tt.setup(t)
 
 			tt.request.CategoryId = int64(category.ID)
-			tt.request.QuestionIds = []int64{int64(questions[1].ID), int64(questions[0].ID)} // Reverse order
+			tt.request.QuestionHashes = []string{questions[1].QuestionHash.Hash, questions[0].QuestionHash.Hash} // Reverse order
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
@@ -406,7 +413,13 @@ func TestGetPaperQuestion(t *testing.T) {
 				expectedCode: codes.NotFound,
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				return nil, &models.Question{ID: 999}
+				return nil, &models.Question{
+					ID: 999,
+					QuestionHash: models.QuestionHash{
+						Hash: generate.HMACHash(999),
+						ID:   999,
+					},
+				}
 			},
 		},
 		{
@@ -439,7 +452,7 @@ func TestGetPaperQuestion(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.QuestionRequest{QuestionId: int64(question.ID)},
+				&proto.QuestionRequest{QuestionHash: question.QuestionHash.Hash},
 				client.GetPaperQuestion,
 				tt.validate,
 			)

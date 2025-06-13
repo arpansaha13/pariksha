@@ -13,6 +13,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/utils/generate"
 	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/paper/internal/config/db"
 )
@@ -45,7 +46,7 @@ func TestGetPaperCategories(t *testing.T) {
 				expectedCode: codes.PermissionDenied,
 			},
 			setup: func(t *testing.T) (*models.Paper, []models.QuestionCategory) {
-				paper := createTestPaper(t, 2) // Create paper owned by different user
+				paper := createTestPaper(t, 2) // Owned by different user
 				return &paper, nil
 			},
 		},
@@ -58,7 +59,7 @@ func TestGetPaperCategories(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.PaperRequest{PaperId: int64(paper.ID)},
+				&proto.PaperRequest{PaperHash: paper.PaperHash.Hash},
 				client.GetPaperCategories,
 				func(t *testing.T, resp *proto.CategoryList) {
 					if tt.validate != nil {
@@ -79,6 +80,7 @@ func TestCreateCategory(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Paper {
 				paper := createTestPaper(t, userID)
+				return &paper
 				return &paper
 			},
 			validate: func(t *testing.T, resp *proto.CategoryResponse) {
@@ -105,7 +107,13 @@ func TestCreateCategory(t *testing.T) {
 				expectedCode: codes.NotFound,
 			},
 			setup: func(t *testing.T) *models.Paper {
-				return &models.Paper{ID: 999}
+				return &models.Paper{
+					ID: 999,
+					PaperHash: models.PaperHash{
+						Hash: generate.HMACHash(999),
+						ID:   999,
+					},
+				}
 			},
 		},
 	}
@@ -117,7 +125,7 @@ func TestCreateCategory(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.CreateCategoryRequest{PaperId: int64(paper.ID)},
+				&proto.CreateCategoryRequest{PaperHash: paper.PaperHash.Hash},
 				client.CreateCategory,
 				func(t *testing.T, resp *proto.CategoryResponse) {
 					if tt.validate != nil {
@@ -340,7 +348,7 @@ func TestReorderCategories(t *testing.T) {
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				&proto.ReorderCategoriesRequest{
-					PaperId:     int64(paper.ID),
+					PaperHash:   paper.PaperHash.Hash,
 					CategoryIds: []int64{int64(categories[1].ID), int64(categories[0].ID)}, // Reverse order
 				},
 				client.ReorderCategories,

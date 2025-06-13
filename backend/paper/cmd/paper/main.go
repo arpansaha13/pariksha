@@ -23,6 +23,10 @@ func main() {
 
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
+			interceptors.SinglePaperHashInterceptor(),
+			interceptors.SingleQuestionHashInterceptor(),
+			interceptors.BatchPaperHashInterceptor(),
+			interceptors.BatchQuestionHashInterceptor(),
 			interceptors.PaperAuthInterceptor(),
 			interceptors.DeletePaperAuthInterceptor(),
 		),

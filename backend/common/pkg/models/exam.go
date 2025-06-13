@@ -33,6 +33,7 @@ type Exam struct {
 	DeletedAt          gorm.DeletedAt  `gorm:"index"`
 
 	Participants []ExamParticipant `gorm:"foreignKey:ExamID"`
+	ExamHash     ExamHash          `gorm:"foreignKey:ID;references:ID"`
 }
 
 func (Exam) TableName() string {

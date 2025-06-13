@@ -24,7 +24,6 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
-	"pariksha/common/pkg/types"
 	"pariksha/engine/internal/config/db"
 	"pariksha/engine/internal/config/env"
 	engineConstants "pariksha/engine/internal/constants"
@@ -88,8 +87,7 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 
 	// Fetch input definitions
 	// Will be used for parsing inputs
-	typedQuestionId := types.QuestionID(req.QuestionId)
-	inputDefinitions, err := fetchInputDefinitions(db.Papers, typedQuestionId)
+	inputDefinitions, err := fetchInputDefinitions(db.Papers, req.QuestionHash)
 	if err != nil {
 		return nil, err
 	}
@@ -245,16 +243,18 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 
 // fetchInputDefinitions retrieves the InputDefinitions array
 // from the JSONB Question field for a given question ID.
-func fetchInputDefinitions(db *gorm.DB, questionID types.QuestionID) ([]structs.InputDefinition, error) {
+func fetchInputDefinitions(db *gorm.DB, questionHash string) ([]structs.InputDefinition, error) {
 	type QuestionFields struct {
-		Type     int16  `gorm:"column:type"`
-		Question []byte `gorm:"column:question"`
+		Type      int16  `gorm:"column:type"`
+		InputDefs []byte `gorm:"column:input_defs"`
 	}
 
 	var fields QuestionFields
 	if err := db.Model(&models.Question{}).
-		Select("type, question->>'input_definitions' as question").
-		Take(&fields, questionID).Error; err != nil {
+		Select("type, question->>'input_definitions' as input_defs").
+		Joins("INNER JOIN question_hashes qh ON qh.id = questions.id").
+		Where("qh.hash = ?", questionHash).
+		Take(&fields).Error; err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to fetch question: %v", err)
 	}
 
@@ -263,7 +263,7 @@ func fetchInputDefinitions(db *gorm.DB, questionID types.QuestionID) ([]structs.
 	}
 
 	var inputDefinitions []structs.InputDefinition
-	if err := json.Unmarshal(fields.Question, &inputDefinitions); err != nil {
+	if err := json.Unmarshal(fields.InputDefs, &inputDefinitions); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to unmarshal input definitions: %v", err)
 	}
 

@@ -18,7 +18,7 @@ const deletePaperPath = "/proto.Paper/DeletePapers"
 // DeletePaperAuthInterceptor returns a new unary server interceptor that handles
 // permission checks for the DeletePapers endpoint.
 func DeletePaperAuthInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		// Only intercept DeletePapers requests
 		if info.FullMethod != deletePaperPath {
 			return handler(ctx, req)
@@ -36,13 +36,19 @@ func DeletePaperAuthInterceptor() grpc.UnaryServerInterceptor {
 			return nil, status.Error(codes.Internal, "invalid request type")
 		}
 
-		if len(deleteReq.PaperIds) == 0 {
+		if len(deleteReq.PaperHashes) == 0 {
 			return nil, status.Error(codes.InvalidArgument, "paper_ids cannot be empty")
+		}
+
+		// Take paperIDs from context added by hash interceptor
+		paperIDs, ok := GetPaperIDsFromContext(ctx)
+		if !ok {
+			return nil, status.Error(codes.Internal, "paper_ids not found in context")
 		}
 
 		// Get permissions for all papers
 		var permissions []models.PaperPermission
-		if err := db.DB.Where("paper_id IN ? AND user_id = ?", deleteReq.PaperIds, userID).Find(&permissions).Error; err != nil {
+		if err := db.DB.Where("paper_id IN ? AND user_id = ?", paperIDs, userID).Find(&permissions).Error; err != nil {
 			return nil, status.Error(codes.Internal, "failed to fetch permissions")
 		}
 

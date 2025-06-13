@@ -12,7 +12,6 @@ import (
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
 	"pariksha/server/internal/services"
-	"pariksha/server/internal/utils"
 )
 
 func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +67,7 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 		response[i] = dtos.AnswerListItemDto{
 			Type: result.QuestionType,
 			Question: dtos.AnswerListQuestionDto{
-				ID:         result.QuestionId,
+				ID:         questionDetail.QuestionHash,
 				Order:      result.Order,
 				CategoryID: result.CategoryId,
 				Content:    questionBytes,
@@ -91,27 +90,56 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAnswerForExam(w http.ResponseWriter, r *http.Request) {
-	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
-	questionID := r.Context().Value(middlewares.DecryptedQuestionID).(int64)
+	vars := mux.Vars(r)
+
+	examHash, err := getExamIdFromVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	questionHash, err := getQuestionIdFromVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
 
-	resp, err := examService.Client().GetAnswerForExam(ctx, &proto.GetAnswerRequest{
-		ExamId:     examID,
-		QuestionId: questionID,
+	// Get question ID from paper service
+	paperService := services.GetPaperService()
+	paperCtx := paperService.CreateMetadata(userID)
+
+	questionIDResp, err := paperService.Client().GetQuestionIds(paperCtx, &proto.GetQuestionIdsRequest{
+		QuestionHashes: []string{questionHash},
 	})
 	if err != nil {
 		handleGRPCError(w, err)
 		return
 	}
 
-	encryptedQuestionId, _ := utils.EncryptID(resp.QuestionId)
+	if len(questionIDResp.QuestionIds) == 0 {
+		http.Error(w, "Question not found", http.StatusNotFound)
+		return
+	}
+
+	// Call exam service with question ID
+	examService := services.GetExamService()
+	ctx := examService.CreateMetadata(userID)
+
+	resp, err := examService.Client().GetAnswerForExam(ctx, &proto.GetAnswerRequest{
+		ExamHash:   examHash,
+		QuestionId: questionIDResp.QuestionIds[0],
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
 	response := dtos.AnswerMinimalResponseDto{
 		ID:         resp.AnswerId,
 		Answer:     resp.Answer,
-		QuestionID: encryptedQuestionId,
+		QuestionID: questionHash,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -119,6 +147,12 @@ func GetAnswerForExam(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
+	examHash, err := getExamIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var answerDTO dtos.UpsertAnswerDto
 	if err := json.NewDecoder(r.Body).Decode(&answerDTO); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -130,19 +164,33 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
-	decryptedQuestionId, err := utils.DecryptID(answerDTO.QuestionID)
+	// Get question ID from paper service
+	paperService := services.GetPaperService()
+	paperCtx := paperService.CreateMetadata(userID)
+	questionHash := answerDTO.QuestionID
+
+	questionIDResp, err := paperService.Client().GetQuestionIds(paperCtx, &proto.GetQuestionIdsRequest{
+		QuestionHashes: []string{questionHash},
+	})
 	if err != nil {
-		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		handleGRPCError(w, err)
 		return
 	}
+
+	if len(questionIDResp.QuestionIds) == 0 {
+		http.Error(w, "Question not found", http.StatusNotFound)
+		return
+	}
+
+	// Call exam service with question ID
 	upsertAnswerRequest := &proto.UpsertAnswersRequest{
-		ExamId: examID,
+		ExamHash: examHash,
 		Answer: &proto.Answer{
 			Answer:      nil,
 			SubmittedAt: timestamppb.Now(),
-			QuestionId:  decryptedQuestionId,
+			QuestionId:  questionIDResp.QuestionIds[0],
 		},
 	}
 
@@ -150,7 +198,6 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 		upsertAnswerRequest.Answer.Answer = *answerDTO.Answer
 	}
 
-	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
@@ -163,10 +210,9 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	encryptedQuestionId, _ := utils.EncryptID(resp.QuestionId)
 	json.NewEncoder(w).Encode(dtos.AnswerMinimalResponseDto{
 		ID:         resp.AnswerId,
 		Answer:     resp.Answer,
-		QuestionID: encryptedQuestionId,
+		QuestionID: questionHash,
 	})
 }

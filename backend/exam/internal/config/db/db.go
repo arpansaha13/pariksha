@@ -44,6 +44,7 @@ func autoMigrateDB() error {
 		&models.ExamPermission{},
 		&models.ExamQuestion{},
 		&models.ExamCategory{},
+		&models.ExamHash{},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to auto-migrate database: %v", err)

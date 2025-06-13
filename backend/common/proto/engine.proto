@@ -9,7 +9,7 @@ service Engine {
 }
 
 message RunCodeRequest {
-  int64 question_id = 1;
+  string question_hash = 1;
   string code = 2;
   string environment = 3;
   repeated TestCase testCases = 4;

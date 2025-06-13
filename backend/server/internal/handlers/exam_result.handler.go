@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 
@@ -15,10 +14,9 @@ import (
 
 // GetExamResults handles HTTP request to get all questions and answers for an exam
 func GetExamResults(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	examID, err := strconv.ParseInt(vars["examId"], 10, 64)
+	examHash, err := getExamIdFromVars(mux.Vars(r))
 	if err != nil {
-		http.Error(w, "invalid exam id", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -27,7 +25,7 @@ func GetExamResults(w http.ResponseWriter, r *http.Request) {
 	ctx := examService.CreateMetadata(userID)
 
 	results, err := examService.Client().GetExamResults(ctx, &proto.ExamRequest{
-		ExamId: examID,
+		ExamHash: examHash,
 	})
 	if err != nil {
 		handleGRPCError(w, err)

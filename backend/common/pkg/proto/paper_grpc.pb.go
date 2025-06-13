@@ -39,6 +39,8 @@ const (
 	Paper_GetQuestionsByIds_FullMethodName    = "/proto.Paper/GetQuestionsByIds"
 	Paper_GetCategoriesByIds_FullMethodName   = "/proto.Paper/GetCategoriesByIds"
 	Paper_GetExamQuestion_FullMethodName      = "/proto.Paper/GetExamQuestion"
+	Paper_GetQuestionHashes_FullMethodName    = "/proto.Paper/GetQuestionHashes"
+	Paper_GetQuestionIds_FullMethodName       = "/proto.Paper/GetQuestionIds"
 	Paper_GetBoilerplate_FullMethodName       = "/proto.Paper/GetBoilerplate"
 	Paper_UpsertPaperTestCases_FullMethodName = "/proto.Paper/UpsertPaperTestCases"
 )
@@ -68,9 +70,11 @@ type PaperClient interface {
 	DeleteCategory(ctx context.Context, in *CategoryRequest, opts ...grpc.CallOption) (*Empty, error)
 	ReorderCategories(ctx context.Context, in *ReorderCategoriesRequest, opts ...grpc.CallOption) (*Empty, error)
 	// Exam operations
-	GetQuestionsByIds(ctx context.Context, in *GetQuestionsByIdsRequest, opts ...grpc.CallOption) (*QuestionBatchResponse, error)
+	GetQuestionsByIds(ctx context.Context, in *GetQuestionsByIdsRequest, opts ...grpc.CallOption) (*GetQuestionsByIdsResponse, error)
 	GetCategoriesByIds(ctx context.Context, in *GetCategoriesByIdsRequest, opts ...grpc.CallOption) (*CategoryBatchResponse, error)
 	GetExamQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error)
+	GetQuestionHashes(ctx context.Context, in *GetQuestionHashesRequest, opts ...grpc.CallOption) (*GetQuestionHashesResponse, error)
+	GetQuestionIds(ctx context.Context, in *GetQuestionIdsRequest, opts ...grpc.CallOption) (*GetQuestionIdsResponse, error)
 	// Boilerplate operations
 	GetBoilerplate(ctx context.Context, in *GetBoilerplateRequest, opts ...grpc.CallOption) (*GetBoilerplateResponse, error)
 	// Test Case operations
@@ -255,9 +259,9 @@ func (c *paperClient) ReorderCategories(ctx context.Context, in *ReorderCategori
 	return out, nil
 }
 
-func (c *paperClient) GetQuestionsByIds(ctx context.Context, in *GetQuestionsByIdsRequest, opts ...grpc.CallOption) (*QuestionBatchResponse, error) {
+func (c *paperClient) GetQuestionsByIds(ctx context.Context, in *GetQuestionsByIdsRequest, opts ...grpc.CallOption) (*GetQuestionsByIdsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QuestionBatchResponse)
+	out := new(GetQuestionsByIdsResponse)
 	err := c.cc.Invoke(ctx, Paper_GetQuestionsByIds_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -279,6 +283,26 @@ func (c *paperClient) GetExamQuestion(ctx context.Context, in *QuestionRequest, 
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QuestionResponse)
 	err := c.cc.Invoke(ctx, Paper_GetExamQuestion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paperClient) GetQuestionHashes(ctx context.Context, in *GetQuestionHashesRequest, opts ...grpc.CallOption) (*GetQuestionHashesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetQuestionHashesResponse)
+	err := c.cc.Invoke(ctx, Paper_GetQuestionHashes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paperClient) GetQuestionIds(ctx context.Context, in *GetQuestionIdsRequest, opts ...grpc.CallOption) (*GetQuestionIdsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetQuestionIdsResponse)
+	err := c.cc.Invoke(ctx, Paper_GetQuestionIds_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -330,9 +354,11 @@ type PaperServer interface {
 	DeleteCategory(context.Context, *CategoryRequest) (*Empty, error)
 	ReorderCategories(context.Context, *ReorderCategoriesRequest) (*Empty, error)
 	// Exam operations
-	GetQuestionsByIds(context.Context, *GetQuestionsByIdsRequest) (*QuestionBatchResponse, error)
+	GetQuestionsByIds(context.Context, *GetQuestionsByIdsRequest) (*GetQuestionsByIdsResponse, error)
 	GetCategoriesByIds(context.Context, *GetCategoriesByIdsRequest) (*CategoryBatchResponse, error)
 	GetExamQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error)
+	GetQuestionHashes(context.Context, *GetQuestionHashesRequest) (*GetQuestionHashesResponse, error)
+	GetQuestionIds(context.Context, *GetQuestionIdsRequest) (*GetQuestionIdsResponse, error)
 	// Boilerplate operations
 	GetBoilerplate(context.Context, *GetBoilerplateRequest) (*GetBoilerplateResponse, error)
 	// Test Case operations
@@ -398,7 +424,7 @@ func (UnimplementedPaperServer) DeleteCategory(context.Context, *CategoryRequest
 func (UnimplementedPaperServer) ReorderCategories(context.Context, *ReorderCategoriesRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReorderCategories not implemented")
 }
-func (UnimplementedPaperServer) GetQuestionsByIds(context.Context, *GetQuestionsByIdsRequest) (*QuestionBatchResponse, error) {
+func (UnimplementedPaperServer) GetQuestionsByIds(context.Context, *GetQuestionsByIdsRequest) (*GetQuestionsByIdsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetQuestionsByIds not implemented")
 }
 func (UnimplementedPaperServer) GetCategoriesByIds(context.Context, *GetCategoriesByIdsRequest) (*CategoryBatchResponse, error) {
@@ -406,6 +432,12 @@ func (UnimplementedPaperServer) GetCategoriesByIds(context.Context, *GetCategori
 }
 func (UnimplementedPaperServer) GetExamQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamQuestion not implemented")
+}
+func (UnimplementedPaperServer) GetQuestionHashes(context.Context, *GetQuestionHashesRequest) (*GetQuestionHashesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetQuestionHashes not implemented")
+}
+func (UnimplementedPaperServer) GetQuestionIds(context.Context, *GetQuestionIdsRequest) (*GetQuestionIdsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetQuestionIds not implemented")
 }
 func (UnimplementedPaperServer) GetBoilerplate(context.Context, *GetBoilerplateRequest) (*GetBoilerplateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBoilerplate not implemented")
@@ -794,6 +826,42 @@ func _Paper_GetExamQuestion_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Paper_GetQuestionHashes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetQuestionHashesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaperServer).GetQuestionHashes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Paper_GetQuestionHashes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaperServer).GetQuestionHashes(ctx, req.(*GetQuestionHashesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Paper_GetQuestionIds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetQuestionIdsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaperServer).GetQuestionIds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Paper_GetQuestionIds_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaperServer).GetQuestionIds(ctx, req.(*GetQuestionIdsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Paper_GetBoilerplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetBoilerplateRequest)
 	if err := dec(in); err != nil {
@@ -916,6 +984,14 @@ var Paper_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetExamQuestion",
 			Handler:    _Paper_GetExamQuestion_Handler,
+		},
+		{
+			MethodName: "GetQuestionHashes",
+			Handler:    _Paper_GetQuestionHashes_Handler,
+		},
+		{
+			MethodName: "GetQuestionIds",
+			Handler:    _Paper_GetQuestionIds_Handler,
 		},
 		{
 			MethodName: "GetBoilerplate",

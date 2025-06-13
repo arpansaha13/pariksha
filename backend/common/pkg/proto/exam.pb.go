@@ -71,7 +71,7 @@ func (ExamAccessType) EnumDescriptor() ([]byte, []int) {
 // Exam messages
 type ExamRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ExamId        int64                  `protobuf:"varint,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ExamHash      string                 `protobuf:"bytes,1,opt,name=exam_hash,json=examHash,proto3" json:"exam_hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -106,11 +106,11 @@ func (*ExamRequest) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *ExamRequest) GetExamId() int64 {
+func (x *ExamRequest) GetExamHash() string {
 	if x != nil {
-		return x.ExamId
+		return x.ExamHash
 	}
-	return 0
+	return ""
 }
 
 type CreateExamRequest struct {
@@ -207,7 +207,7 @@ func (x *CreateExamRequest) GetDurationMinutes() int32 {
 
 type UpdateExamRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	ExamId          int64                  `protobuf:"varint,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ExamHash        string                 `protobuf:"bytes,1,opt,name=exam_hash,json=examHash,proto3" json:"exam_hash,omitempty"`
 	Title           *string                `protobuf:"bytes,2,opt,name=title,proto3,oneof" json:"title,omitempty"`
 	StartsAt        *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=starts_at,json=startsAt,proto3,oneof" json:"starts_at,omitempty"`
 	EndsAt          *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=ends_at,json=endsAt,proto3,oneof" json:"ends_at,omitempty"`
@@ -247,11 +247,11 @@ func (*UpdateExamRequest) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *UpdateExamRequest) GetExamId() int64 {
+func (x *UpdateExamRequest) GetExamHash() string {
 	if x != nil {
-		return x.ExamId
+		return x.ExamHash
 	}
-	return 0
+	return ""
 }
 
 func (x *UpdateExamRequest) GetTitle() string {
@@ -291,7 +291,7 @@ func (x *UpdateExamRequest) GetDurationMinutes() int32 {
 
 type ExamResponse struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	ExamId             int64                  `protobuf:"varint,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ExamHash           string                 `protobuf:"bytes,1,opt,name=exam_hash,json=examHash,proto3" json:"exam_hash,omitempty"`
 	Title              string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	StartsAt           *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=starts_at,json=startsAt,proto3" json:"starts_at,omitempty"`
 	EndsAt             *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=ends_at,json=endsAt,proto3" json:"ends_at,omitempty"`
@@ -335,11 +335,11 @@ func (*ExamResponse) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ExamResponse) GetExamId() int64 {
+func (x *ExamResponse) GetExamHash() string {
 	if x != nil {
-		return x.ExamId
+		return x.ExamHash
 	}
-	return 0
+	return ""
 }
 
 func (x *ExamResponse) GetTitle() string {
@@ -701,7 +701,7 @@ func (x *ParticipantList) GetParticipants() []*ParticipantResponse {
 // Replace AddParticipantsRequest with AddParticipantRequest
 type AddParticipantRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ExamId        int64                  `protobuf:"varint,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ExamHash      string                 `protobuf:"bytes,1,opt,name=exam_hash,json=examHash,proto3" json:"exam_hash,omitempty"`
 	UserId        int64                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -737,11 +737,11 @@ func (*AddParticipantRequest) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *AddParticipantRequest) GetExamId() int64 {
+func (x *AddParticipantRequest) GetExamHash() string {
 	if x != nil {
-		return x.ExamId
+		return x.ExamHash
 	}
-	return 0
+	return ""
 }
 
 func (x *AddParticipantRequest) GetUserId() int64 {
@@ -753,7 +753,7 @@ func (x *AddParticipantRequest) GetUserId() int64 {
 
 type RemoveParticipantRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ExamId        int64                  `protobuf:"varint,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ExamHash      string                 `protobuf:"bytes,1,opt,name=exam_hash,json=examHash,proto3" json:"exam_hash,omitempty"`
 	ParticipantId int64                  `protobuf:"varint,2,opt,name=participant_id,json=participantId,proto3" json:"participant_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -789,11 +789,11 @@ func (*RemoveParticipantRequest) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *RemoveParticipantRequest) GetExamId() int64 {
+func (x *RemoveParticipantRequest) GetExamHash() string {
 	if x != nil {
-		return x.ExamId
+		return x.ExamHash
 	}
-	return 0
+	return ""
 }
 
 func (x *RemoveParticipantRequest) GetParticipantId() int64 {
@@ -805,7 +805,7 @@ func (x *RemoveParticipantRequest) GetParticipantId() int64 {
 
 type StartExamRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	ExamId          int64                  `protobuf:"varint,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ExamHash        string                 `protobuf:"bytes,1,opt,name=exam_hash,json=examHash,proto3" json:"exam_hash,omitempty"`
 	DurationMinutes int32                  `protobuf:"varint,2,opt,name=duration_minutes,json=durationMinutes,proto3" json:"duration_minutes,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -841,11 +841,11 @@ func (*StartExamRequest) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *StartExamRequest) GetExamId() int64 {
+func (x *StartExamRequest) GetExamHash() string {
 	if x != nil {
-		return x.ExamId
+		return x.ExamHash
 	}
-	return 0
+	return ""
 }
 
 func (x *StartExamRequest) GetDurationMinutes() int32 {
@@ -857,7 +857,7 @@ func (x *StartExamRequest) GetDurationMinutes() int32 {
 
 type EndExamRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ExamId        int64                  `protobuf:"varint,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ExamHash      string                 `protobuf:"bytes,1,opt,name=exam_hash,json=examHash,proto3" json:"exam_hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -892,11 +892,11 @@ func (*EndExamRequest) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *EndExamRequest) GetExamId() int64 {
+func (x *EndExamRequest) GetExamHash() string {
 	if x != nil {
-		return x.ExamId
+		return x.ExamHash
 	}
-	return 0
+	return ""
 }
 
 type EvaluationStatusResponse struct {
@@ -1006,7 +1006,7 @@ func (x *Answer) GetQuestionId() int64 {
 
 type UpsertAnswersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ExamId        int64                  `protobuf:"varint,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ExamHash      string                 `protobuf:"bytes,1,opt,name=exam_hash,json=examHash,proto3" json:"exam_hash,omitempty"`
 	Answer        *Answer                `protobuf:"bytes,2,opt,name=answer,proto3" json:"answer,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1042,11 +1042,11 @@ func (*UpsertAnswersRequest) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *UpsertAnswersRequest) GetExamId() int64 {
+func (x *UpsertAnswersRequest) GetExamHash() string {
 	if x != nil {
-		return x.ExamId
+		return x.ExamHash
 	}
-	return 0
+	return ""
 }
 
 func (x *UpsertAnswersRequest) GetAnswer() *Answer {
@@ -1331,7 +1331,7 @@ func (x *UpdateAnswerRequest) GetComments() string {
 
 type GetAnswerRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ExamId        int64                  `protobuf:"varint,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ExamHash      string                 `protobuf:"bytes,1,opt,name=exam_hash,json=examHash,proto3" json:"exam_hash,omitempty"`
 	QuestionId    int64                  `protobuf:"varint,2,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1367,11 +1367,11 @@ func (*GetAnswerRequest) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *GetAnswerRequest) GetExamId() int64 {
+func (x *GetAnswerRequest) GetExamHash() string {
 	if x != nil {
-		return x.ExamId
+		return x.ExamHash
 	}
-	return 0
+	return ""
 }
 
 func (x *GetAnswerRequest) GetQuestionId() int64 {
@@ -1443,7 +1443,7 @@ func (x *AnswerMinimalResponse) GetQuestionId() int64 {
 
 type CheckParticipantRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ExamId        int64                  `protobuf:"varint,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ExamHash      string                 `protobuf:"bytes,1,opt,name=exam_hash,json=examHash,proto3" json:"exam_hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1478,16 +1478,16 @@ func (*CheckParticipantRequest) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{22}
 }
 
-func (x *CheckParticipantRequest) GetExamId() int64 {
+func (x *CheckParticipantRequest) GetExamHash() string {
 	if x != nil {
-		return x.ExamId
+		return x.ExamHash
 	}
-	return 0
+	return ""
 }
 
 type GetExamParticipantRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ExamId        int64                  `protobuf:"varint,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ExamHash      string                 `protobuf:"bytes,1,opt,name=exam_hash,json=examHash,proto3" json:"exam_hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1522,11 +1522,11 @@ func (*GetExamParticipantRequest) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{23}
 }
 
-func (x *GetExamParticipantRequest) GetExamId() int64 {
+func (x *GetExamParticipantRequest) GetExamHash() string {
 	if x != nil {
-		return x.ExamId
+		return x.ExamHash
 	}
-	return 0
+	return ""
 }
 
 type GetExamParticipantResponse struct {
@@ -2162,9 +2162,9 @@ var File_exam_proto protoreflect.FileDescriptor
 const file_exam_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"exam.proto\x12\x05proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\fcommon.proto\"&\n" +
-	"\vExamRequest\x12\x17\n" +
-	"\aexam_id\x18\x01 \x01(\x03R\x06examId\"\xb1\x02\n" +
+	"exam.proto\x12\x05proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\fcommon.proto\"*\n" +
+	"\vExamRequest\x12\x1b\n" +
+	"\texam_hash\x18\x01 \x01(\tR\bexamHash\"\xb1\x02\n" +
 	"\x11CreateExamRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x127\n" +
 	"\tstarts_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\bstartsAt\x123\n" +
@@ -2173,9 +2173,9 @@ const file_exam_proto_rawDesc = "" +
 	"\x04type\x18\x05 \x01(\tH\x00R\x04type\x88\x01\x01\x12\x19\n" +
 	"\bpaper_id\x18\x06 \x01(\x03R\apaperId\x12)\n" +
 	"\x10duration_minutes\x18\a \x01(\x05R\x0fdurationMinutesB\a\n" +
-	"\x05_type\"\xca\x02\n" +
-	"\x11UpdateExamRequest\x12\x17\n" +
-	"\aexam_id\x18\x01 \x01(\x03R\x06examId\x12\x19\n" +
+	"\x05_type\"\xce\x02\n" +
+	"\x11UpdateExamRequest\x12\x1b\n" +
+	"\texam_hash\x18\x01 \x01(\tR\bexamHash\x12\x19\n" +
 	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12<\n" +
 	"\tstarts_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\bstartsAt\x88\x01\x01\x128\n" +
 	"\aends_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampH\x02R\x06endsAt\x88\x01\x01\x12\x17\n" +
@@ -2187,9 +2187,9 @@ const file_exam_proto_rawDesc = "" +
 	"\n" +
 	"\b_ends_atB\a\n" +
 	"\x05_typeB\x13\n" +
-	"\x11_duration_minutes\"\xa0\x03\n" +
-	"\fExamResponse\x12\x17\n" +
-	"\aexam_id\x18\x01 \x01(\x03R\x06examId\x12\x14\n" +
+	"\x11_duration_minutes\"\xa4\x03\n" +
+	"\fExamResponse\x12\x1b\n" +
+	"\texam_hash\x18\x01 \x01(\tR\bexamHash\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x127\n" +
 	"\tstarts_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\bstartsAt\x123\n" +
 	"\aends_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x06endsAt\x12\x1d\n" +
@@ -2225,18 +2225,18 @@ const file_exam_proto_rawDesc = "" +
 	"\t_ended_atB\x15\n" +
 	"\x13_scheduled_end_time\"Q\n" +
 	"\x0fParticipantList\x12>\n" +
-	"\fparticipants\x18\x01 \x03(\v2\x1a.proto.ParticipantResponseR\fparticipants\"I\n" +
-	"\x15AddParticipantRequest\x12\x17\n" +
-	"\aexam_id\x18\x01 \x01(\x03R\x06examId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\x03R\x06userId\"Z\n" +
-	"\x18RemoveParticipantRequest\x12\x17\n" +
-	"\aexam_id\x18\x01 \x01(\x03R\x06examId\x12%\n" +
-	"\x0eparticipant_id\x18\x02 \x01(\x03R\rparticipantId\"V\n" +
-	"\x10StartExamRequest\x12\x17\n" +
-	"\aexam_id\x18\x01 \x01(\x03R\x06examId\x12)\n" +
-	"\x10duration_minutes\x18\x02 \x01(\x05R\x0fdurationMinutes\")\n" +
-	"\x0eEndExamRequest\x12\x17\n" +
-	"\aexam_id\x18\x01 \x01(\x03R\x06examId\"G\n" +
+	"\fparticipants\x18\x01 \x03(\v2\x1a.proto.ParticipantResponseR\fparticipants\"M\n" +
+	"\x15AddParticipantRequest\x12\x1b\n" +
+	"\texam_hash\x18\x01 \x01(\tR\bexamHash\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\x03R\x06userId\"^\n" +
+	"\x18RemoveParticipantRequest\x12\x1b\n" +
+	"\texam_hash\x18\x01 \x01(\tR\bexamHash\x12%\n" +
+	"\x0eparticipant_id\x18\x02 \x01(\x03R\rparticipantId\"Z\n" +
+	"\x10StartExamRequest\x12\x1b\n" +
+	"\texam_hash\x18\x01 \x01(\tR\bexamHash\x12)\n" +
+	"\x10duration_minutes\x18\x02 \x01(\x05R\x0fdurationMinutes\"-\n" +
+	"\x0eEndExamRequest\x12\x1b\n" +
+	"\texam_hash\x18\x01 \x01(\tR\bexamHash\"G\n" +
 	"\x18EvaluationStatusResponse\x12+\n" +
 	"\x11unevaluated_count\x18\x01 \x01(\x05R\x10unevaluatedCount\"\x90\x01\n" +
 	"\x06Answer\x12\x1b\n" +
@@ -2244,9 +2244,9 @@ const file_exam_proto_rawDesc = "" +
 	"\fsubmitted_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\vsubmittedAt\x12\x1f\n" +
 	"\vquestion_id\x18\x03 \x01(\x03R\n" +
 	"questionIdB\t\n" +
-	"\a_answer\"V\n" +
-	"\x14UpsertAnswersRequest\x12\x17\n" +
-	"\aexam_id\x18\x01 \x01(\x03R\x06examId\x12%\n" +
+	"\a_answer\"Z\n" +
+	"\x14UpsertAnswersRequest\x12\x1b\n" +
+	"\texam_hash\x18\x01 \x01(\tR\bexamHash\x12%\n" +
 	"\x06answer\x18\x02 \x01(\v2\r.proto.AnswerR\x06answer\"}\n" +
 	"\x15UpsertAnswersResponse\x12\x1b\n" +
 	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12\x1f\n" +
@@ -2277,20 +2277,20 @@ const file_exam_proto_rawDesc = "" +
 	"_new_scoreB\f\n" +
 	"\n" +
 	"_evaluatedB\v\n" +
-	"\t_comments\"L\n" +
-	"\x10GetAnswerRequest\x12\x17\n" +
-	"\aexam_id\x18\x01 \x01(\x03R\x06examId\x12\x1f\n" +
+	"\t_comments\"P\n" +
+	"\x10GetAnswerRequest\x12\x1b\n" +
+	"\texam_hash\x18\x01 \x01(\tR\bexamHash\x12\x1f\n" +
 	"\vquestion_id\x18\x02 \x01(\x03R\n" +
 	"questionId\"m\n" +
 	"\x15AnswerMinimalResponse\x12\x1b\n" +
 	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12\x16\n" +
 	"\x06answer\x18\x02 \x01(\fR\x06answer\x12\x1f\n" +
 	"\vquestion_id\x18\x03 \x01(\x03R\n" +
-	"questionId\"2\n" +
-	"\x17CheckParticipantRequest\x12\x17\n" +
-	"\aexam_id\x18\x01 \x01(\x03R\x06examId\"4\n" +
-	"\x19GetExamParticipantRequest\x12\x17\n" +
-	"\aexam_id\x18\x01 \x01(\x03R\x06examId\"\x9d\x02\n" +
+	"questionId\"6\n" +
+	"\x17CheckParticipantRequest\x12\x1b\n" +
+	"\texam_hash\x18\x01 \x01(\tR\bexamHash\"8\n" +
+	"\x19GetExamParticipantRequest\x12\x1b\n" +
+	"\texam_hash\x18\x01 \x01(\tR\bexamHash\"\x9d\x02\n" +
 	"\x1aGetExamParticipantResponse\x12%\n" +
 	"\x0eparticipant_id\x18\x01 \x01(\x03R\rparticipantId\x12#\n" +
 	"\rscore_awarded\x18\x02 \x01(\x05R\fscoreAwarded\x12>\n" +

@@ -75,13 +75,18 @@ func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.Parti
 
 // GetAnswerForExam finds an answer using participant ID and question ID and returns minimal info
 func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerRequest) (*proto.AnswerMinimalResponse, error) {
+	examID, ok := interceptors.GetExamIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "exam ID not found in context")
+	}
+
 	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	var participant models.ExamParticipant
-	if err := db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error; err != nil {
+	if err := db.DB.Where("exam_id = ? AND user_id = ?", examID, userID).Take(&participant).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, status.Error(codes.NotFound, "participant not found")
 		}
@@ -108,6 +113,11 @@ func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerR
 }
 
 func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersRequest) (*proto.UpsertAnswersResponse, error) {
+	examID, ok := interceptors.GetExamIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "exam ID not found in context")
+	}
+
 	// Should be added to context by EndExamInterceptor
 	participant, ok := interceptors.GetParticipantFromContext(ctx)
 	if !ok {
@@ -132,7 +142,7 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 	var examQuestion models.ExamQuestion
 	if err := db.DB.Model(&models.ExamQuestion{}).
 		Select("type").
-		Where("exam_id = ? AND question_id = ?", req.ExamId, typedQuestionId).
+		Where("exam_id = ? AND question_id = ?", examID, typedQuestionId).
 		Find(&examQuestion).Error; err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question")
 	}

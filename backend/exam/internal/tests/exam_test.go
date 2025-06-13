@@ -107,7 +107,7 @@ func TestCreateExam(t *testing.T) {
 				DurationMinutes:    120,
 			},
 			validate: func(t *testing.T, resp *proto.ExamResponse) {
-				assert.NotZero(t, resp.ExamId)
+				assert.NotEmpty(t, resp.ExamHash)
 				assert.Equal(t, "New Exam", resp.Title)
 				assert.Equal(t, userID, resp.CreatedBy)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
@@ -115,7 +115,7 @@ func TestCreateExam(t *testing.T) {
 				assert.EqualValues(t, 120, resp.DurationMinutes)
 
 				var exam models.Exam
-				require.NoError(t, db.DB.Take(&exam, resp.ExamId).Error)
+				require.NoError(t, db.DB.Joins("INNER JOIN exam_hashes ON exam_hashes.id = exams.id").Where("exam_hashes.hash = ?", resp.ExamHash).Take(&exam).Error)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
 				assert.EqualValues(t, 120, exam.DurationMinutes)
 			},
@@ -140,7 +140,7 @@ func TestCreateExam(t *testing.T) {
 				assert.EqualValues(t, 90, resp.DurationMinutes)
 
 				var exam models.Exam
-				require.NoError(t, db.DB.First(&exam, resp.ExamId).Error)
+				require.NoError(t, db.DB.Joins("INNER JOIN exam_hashes ON exam_hashes.id = exams.id").Where("exam_hashes.hash = ?", resp.ExamHash).Take(&exam).Error)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
 				assert.EqualValues(t, 90, exam.DurationMinutes)
 			},
@@ -165,7 +165,7 @@ func TestCreateExam(t *testing.T) {
 				assert.EqualValues(t, 60, resp.DurationMinutes)
 
 				var exam models.Exam
-				require.NoError(t, db.DB.First(&exam, resp.ExamId).Error)
+				require.NoError(t, db.DB.Joins("INNER JOIN exam_hashes ON exam_hashes.id = exams.id").Where("exam_hashes.hash = ?", resp.ExamHash).Take(&exam).Error)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_INVITE, exam.Type)
 				assert.EqualValues(t, 60, exam.DurationMinutes)
 			},
@@ -417,7 +417,7 @@ func TestUpdateExam(t *testing.T) {
 				return &exam
 			},
 			request: &proto.UpdateExamRequest{
-				ExamId:          0, // Will be set in test
+				ExamHash:        "", // Will be set in test
 				DurationMinutes: ptr.Int32(180),
 			},
 			userID:       typedUserID,
@@ -539,7 +539,7 @@ func TestUpdateExam(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			exam := tt.setup(t)
-			tt.request.ExamId = int64(exam.ID)
+			tt.request.ExamHash = exam.ExamHash.Hash
 
 			ctx := createContextWithUserID(tt.userID)
 			resp, err := client.UpdateExam(ctx, tt.request)
@@ -647,7 +647,7 @@ func TestEndExam(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			_, err := client.EndExam(ctx, &proto.EndExamRequest{
-				ExamId: int64(exam.ID),
+				ExamHash: exam.ExamHash.Hash,
 			})
 
 			if tt.expectedCode != codes.OK {
@@ -854,7 +854,7 @@ func TestStartExam(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			_, err := client.StartExam(ctx, &proto.StartExamRequest{
-				ExamId:          int64(exam.ID),
+				ExamHash:        exam.ExamHash.Hash,
 				DurationMinutes: tt.duration,
 			})
 
@@ -1007,7 +1007,7 @@ func TestGetExamQuestions(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.ExamRequest{ExamId: int64(exam.ID)},
+				&proto.ExamRequest{ExamHash: exam.ExamHash.Hash},
 				client.GetExamQuestions,
 				tt.validate,
 			)
@@ -1113,7 +1113,7 @@ func TestGetExamCategories(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.ExamRequest{ExamId: int64(exam.ID)},
+				&proto.ExamRequest{ExamHash: exam.ExamHash.Hash},
 				client.GetExamCategories,
 				tt.validate,
 			)
@@ -1250,7 +1250,7 @@ func TestGetExamPermission(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			resp, err := client.GetExamPermission(ctx, &proto.ExamRequest{
-				ExamId: int64(exam.ID),
+				ExamHash: exam.ExamHash.Hash,
 			})
 
 			if tt.expectedCode != codes.OK {
@@ -1359,7 +1359,7 @@ func TestGetExam(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.ExamRequest{ExamId: int64(exam.ID)},
+				&proto.ExamRequest{ExamHash: exam.ExamHash.Hash},
 				client.GetExam,
 				tt.validate,
 			)

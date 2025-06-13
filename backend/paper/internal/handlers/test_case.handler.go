@@ -37,9 +37,7 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("Number of test cases cannot be more than %d", constants.MAX_CODING_TEST_CASES_COUNT))
 	}
 
-	questionID := types.QuestionID(req.QuestionId)
-
-	inputDefinitionsLength, err := getInputDefinitionsLength(db.DB, questionID)
+	inputDefinitionsLength, err := getInputDefinitionsLength(db.DB, question.ID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "could not get input_definitions length")
 	}
@@ -49,7 +47,7 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 		var existingTestCases []models.TestCase
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Unscoped(). // Include soft-deleted records
-			Where("question_id = ?", req.QuestionId).
+			Where("question_id = ?", question.ID).
 			Order("\"order\"").
 			Find(&existingTestCases).Error; err != nil {
 			return status.Error(codes.Internal, "failed to fetch existing test cases")
@@ -96,7 +94,7 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 				// If test case exists (even if soft-deleted), update it
 				toUpdate = append(toUpdate, models.TestCase{
 					ID:         existingAtOrder.ID,
-					QuestionID: questionID,
+					QuestionID: question.ID,
 					Order:      order,
 					Content:    contentBytes,
 					DataHash:   dataHash,
@@ -105,7 +103,7 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 				})
 			} else {
 				toCreate = append(toCreate, models.TestCase{
-					QuestionID: questionID,
+					QuestionID: question.ID,
 					Order:      order,
 					Content:    contentBytes,
 					DataHash:   dataHash,

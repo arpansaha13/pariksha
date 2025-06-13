@@ -26,7 +26,7 @@ func HandleDBError(err error, notFoundMsg string) error {
 	if err == gorm.ErrRecordNotFound {
 		return status.Error(codes.NotFound, notFoundMsg)
 	}
-	return status.Error(codes.Internal, constants.ErrInternalServer)
+	return status.Error(codes.Internal, err.Error())
 }
 
 // FindRecord is a generic function to find a record by ID

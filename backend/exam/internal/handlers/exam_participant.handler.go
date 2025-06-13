@@ -19,8 +19,13 @@ import (
 )
 
 func (s *ExamServer) GetExamParticipants(ctx context.Context, req *proto.ExamRequest) (*proto.ParticipantList, error) {
+	examID, ok := interceptors.GetExamIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "exam ID not found in context")
+	}
+
 	var participants []models.ExamParticipant
-	if err := db.DB.Where("exam_id = ?", req.ExamId).Find(&participants).Error; err != nil {
+	if err := db.DB.Where("exam_id = ?", examID).Find(&participants).Error; err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch participants")
 	}
 
@@ -69,7 +74,7 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 		return nil, status.Error(codes.FailedPrecondition, "maximum participant limit reached for the exam")
 	}
 
-	typedExamId := types.ExamID(req.ExamId)
+	typedExamId := types.ExamID(exam.ID)
 	typedUserId := types.UserID(req.UserId)
 
 	participant := models.ExamParticipant{
@@ -173,8 +178,13 @@ func (s *ExamServer) GetExamParticipant(ctx context.Context, req *proto.GetExamP
 		return nil, err
 	}
 
+	examID, ok := interceptors.GetExamIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "exam ID not found in context")
+	}
+
 	var participant models.ExamParticipant
-	if err := db.DB.Where("exam_id = ? AND user_id = ?", req.ExamId, userID).Take(&participant).Error; err != nil {
+	if err := db.DB.Where("exam_id = ? AND user_id = ?", examID, userID).Take(&participant).Error; err != nil {
 		return nil, utils.HandleDBError(err, "participant not found")
 	}
 

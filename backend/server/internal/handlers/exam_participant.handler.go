@@ -15,13 +15,18 @@ import (
 )
 
 func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
+	examHash, err := getExamIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	participants, err := examService.Client().GetExamParticipants(ctx, &proto.ExamRequest{
-		ExamId: examID,
+		ExamHash: examHash,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -71,13 +76,18 @@ func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
 
 // GetExamParticipant gets the participant data for the current user
 func GetExamParticipant(w http.ResponseWriter, r *http.Request) {
-	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
+	examHash, err := getExamIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	participant, err := examService.Client().GetExamParticipant(ctx, &proto.GetExamParticipantRequest{
-		ExamId: examID,
+		ExamHash: examHash,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -101,7 +111,11 @@ func GetExamParticipant(w http.ResponseWriter, r *http.Request) {
 }
 
 func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
-	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
+	examHash, err := getExamIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	var participantDto dtos.AddExamParticipantDto
 	if err := json.NewDecoder(r.Body).Decode(&participantDto); err != nil {
@@ -138,8 +152,8 @@ func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
 
 	// Add participant
 	participant, err := examService.Client().AddExamParticipant(ctx, &proto.AddParticipantRequest{
-		ExamId: examID,
-		UserId: participantDto.UserID,
+		ExamHash: examHash,
+		UserId:   participantDto.UserID,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -159,7 +173,12 @@ func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
 }
 
 func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
-	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
+	examHash, err := getExamIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	participantID, err := getInt64FromVars(mux.Vars(r), "participantId")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -171,7 +190,7 @@ func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
 	ctx := examService.CreateMetadata(userID)
 
 	_, err = examService.Client().RemoveExamParticipant(ctx, &proto.RemoveParticipantRequest{
-		ExamId:        examID,
+		ExamHash:      examHash,
 		ParticipantId: participantID,
 	})
 	if err != nil {

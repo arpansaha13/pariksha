@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"pariksha/common/pkg/proto"
@@ -28,9 +29,8 @@ func GetUserExams(w http.ResponseWriter, r *http.Request) {
 
 	response := make([]dtos.ExamResponseDto, len(examList.Exams))
 	for i, exam := range examList.Exams {
-		encryptedExamID, _ := utils.EncryptID(exam.ExamId)
 		response[i] = dtos.ExamResponseDto{
-			ID:                 encryptedExamID,
+			ID:                 exam.ExamHash,
 			Title:              exam.Title,
 			StartsAt:           exam.StartsAt.AsTime(),
 			EndsAt:             exam.EndsAt.AsTime(),
@@ -65,14 +65,14 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	paperCtx := paperService.CreateMetadata(userID)
 
-	decryptedPaperId, err := utils.DecryptID(examDto.PaperID)
+	paperHash, err := getPaperIdFromVars(mux.Vars(r))
 	if err != nil {
-		http.Error(w, "Invalid exam ID", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	_, err = paperService.Client().GetPaper(paperCtx, &proto.PaperRequest{
-		PaperId: decryptedPaperId,
+		PaperHash: paperHash,
 	})
 	if err != nil {
 		http.Error(w, "Paper not found", http.StatusNotFound)
@@ -88,7 +88,6 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 		EndsAt:             timestamppb.New(examDto.EndsAt),
 		MaxCandidatesCount: 10,
 		Type:               nil,
-		PaperId:            decryptedPaperId,
 		DurationMinutes:    examDto.DurationMinutes,
 	}
 
@@ -102,9 +101,8 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encryptedExamID, _ := utils.EncryptID(exam.ExamId)
 	response := dtos.ExamResponseDto{
-		ID:                 encryptedExamID,
+		ID:                 exam.ExamHash,
 		Title:              exam.Title,
 		StartsAt:           exam.StartsAt.AsTime(),
 		EndsAt:             exam.EndsAt.AsTime(),
@@ -119,6 +117,12 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateExam(w http.ResponseWriter, r *http.Request) {
+	examHash, err := getExamIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var examDto dtos.UpdateExamDto
 	if err := json.NewDecoder(r.Body).Decode(&examDto); err != nil {
 		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
@@ -131,14 +135,13 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	req := &proto.UpdateExamRequest{
-		ExamId: examID,
+		ExamHash: examHash,
 	}
 
 	if examDto.Title != "" {
@@ -163,9 +166,8 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encryptedExamID, _ := utils.EncryptID(exam.ExamId)
 	response := dtos.ExamResponseDto{
-		ID:                 encryptedExamID,
+		ID:                 exam.ExamHash,
 		Title:              exam.Title,
 		StartsAt:           exam.StartsAt.AsTime(),
 		EndsAt:             exam.EndsAt.AsTime(),
@@ -180,14 +182,19 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 }
 
 func StartExam(w http.ResponseWriter, r *http.Request) {
-	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
+	examHash, err := getExamIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
-	_, err := examService.Client().StartExam(ctx, &proto.StartExamRequest{
-		ExamId: examID,
+	_, err = examService.Client().StartExam(ctx, &proto.StartExamRequest{
+		ExamHash: examHash,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -198,14 +205,19 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 }
 
 func EndExam(w http.ResponseWriter, r *http.Request) {
+	examHash, err := getExamIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
-	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
 
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
-	_, err := examService.Client().EndExam(ctx, &proto.EndExamRequest{
-		ExamId: examID,
+	_, err = examService.Client().EndExam(ctx, &proto.EndExamRequest{
+		ExamHash: examHash,
 	})
 	if err != nil {
 		http.Error(w, "Failed to end exam", http.StatusInternalServerError)
@@ -216,22 +228,26 @@ func EndExam(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetExam(w http.ResponseWriter, r *http.Request) {
-	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
+	examHash, err := getExamIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	exam, err := examService.Client().GetExam(ctx, &proto.ExamRequest{
-		ExamId: examID,
+		ExamHash: examHash,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
 		return
 	}
 
-	encryptedExamID, _ := utils.EncryptID(exam.ExamId)
 	response := dtos.ExamResponseDto{
-		ID:                 encryptedExamID,
+		ID:                 exam.ExamHash,
 		Title:              exam.Title,
 		StartsAt:           exam.StartsAt.AsTime(),
 		EndsAt:             exam.EndsAt.AsTime(),
@@ -247,13 +263,18 @@ func GetExam(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetExamPermission(w http.ResponseWriter, r *http.Request) {
-	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
+	examHash, err := getExamIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	permission, err := examService.Client().GetExamPermission(ctx, &proto.ExamRequest{
-		ExamId: examID,
+		ExamHash: examHash,
 	})
 	if err != nil {
 		handleGRPCError(w, err)

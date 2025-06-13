@@ -5,22 +5,45 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
 	"pariksha/server/internal/services"
-	"pariksha/server/internal/utils"
 )
 
 func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
-	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
+	examHash, err := getExamIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	// Get question IDs from exam service
 	questions, err := examService.Client().GetExamQuestions(ctx, &proto.ExamRequest{
-		ExamId: examID,
+		ExamHash: examHash,
+	})
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	// Get question hashes from paper service
+	paperService := services.GetPaperService()
+	paperCtx := paperService.CreateMetadata(userID)
+
+	questionIDs := make([]int64, len(questions.Questions))
+	for i, q := range questions.Questions {
+		questionIDs[i] = q.QuestionId
+	}
+
+	hashes, err := paperService.Client().GetQuestionHashes(paperCtx, &proto.GetQuestionHashesRequest{
+		QuestionIds: questionIDs,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -29,9 +52,8 @@ func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
 
 	response := make([]dtos.ExamQuestionMinimalResponseDto, len(questions.Questions))
 	for i, q := range questions.Questions {
-		encryptedQuestionId, _ := utils.EncryptID(q.QuestionId)
 		response[i] = dtos.ExamQuestionMinimalResponseDto{
-			QuestionID: encryptedQuestionId,
+			QuestionID: hashes.QuestionHashes[i],
 			CategoryID: q.CategoryId,
 			Type:       q.Type,
 			Order:      q.Order,
@@ -44,14 +66,19 @@ func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetExamCategories(w http.ResponseWriter, r *http.Request) {
-	examID := r.Context().Value(middlewares.DecryptedExamID).(int64)
+	examHash, err := getExamIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	// Get category IDs from exam service
 	categories, err := examService.Client().GetExamCategories(ctx, &proto.ExamRequest{
-		ExamId: examID,
+		ExamHash: examHash,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -104,20 +131,23 @@ func GetExamCategories(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetExamQuestion(w http.ResponseWriter, r *http.Request) {
-	questionID := r.Context().Value(middlewares.DecryptedQuestionID).(int64)
+	questionHash, err := getQuestionIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	paperService := services.GetPaperService()
 	question, err := paperService.Client().GetExamQuestion(context.Background(), &proto.QuestionRequest{
-		QuestionId: questionID,
+		QuestionHash: questionHash,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
 		return
 	}
 
-	encryptedQuestionId, _ := utils.EncryptID(question.QuestionId)
 	response := dtos.ExamQuestionResponseDto{
-		ID:       encryptedQuestionId,
+		ID:       question.QuestionHash,
 		Question: question.RawQuestion,
 	}
 

@@ -113,7 +113,7 @@ func GeneralExamAuthInterceptor() grpc.UnaryServerInterceptor {
 			return nil, err
 		}
 
-		examID, err := getExamIdFromRequest(req)
+		examID, err := getExamIdFromRequest(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -170,23 +170,15 @@ func fetchExamPermission(examID types.ExamID, userID types.UserID) (*models.Exam
 	return &permission, nil
 }
 
-func getExamIdFromRequest(req any) (*types.ExamID, error) {
+func getExamIdFromRequest(ctx context.Context, req any) (*types.ExamID, error) {
 	var examID int64
 
-	switch r := req.(type) {
-	// Group all cases that directly use ExamId field
-	case *proto.ExamRequest,
-		*proto.UpdateExamRequest,
-		*proto.StartExamRequest,
-		*proto.EndExamRequest,
-		*proto.AddParticipantRequest,
-		*proto.RemoveParticipantRequest,
-		*proto.UpsertAnswersRequest,
-		*proto.CheckParticipantRequest,
-		*proto.GetExamParticipantRequest,
-		*proto.GetAnswerRequest:
-		examID = r.(interface{ GetExamId() int64 }).GetExamId()
+	// First check if exam ID exists in context from hash interceptor
+	if typedExamID, ok := GetExamIDFromContext(ctx); ok {
+		return &typedExamID, nil
+	}
 
+	switch r := req.(type) {
 	case *proto.UpdateAnswerRequest:
 		// Find exam ID using joins, selecting only exam_id
 		err := db.DB.Model(&models.ExamParticipant{}).
