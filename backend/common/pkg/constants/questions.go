@@ -13,12 +13,6 @@ const (
 )
 
 const (
-	QUESTION_TYPE_MCQ        int16 = 1
-	QUESTION_TYPE_SUBJECTIVE int16 = 2
-	QUESTION_TYPE_CODING     int16 = 3
-)
-
-const (
 	MIN_MCQ_OPTIONS_COUNT       int8 = 2
 	MAX_MCQ_OPTIONS_COUNT       int8 = 5
 	MAX_CODING_INPUTS_COUNT     int8 = 5

@@ -29,7 +29,7 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 		return nil, err
 	}
 
-	if question.Type != constants.QUESTION_TYPE_CODING {
+	if question.Type != proto.QuestionType_CODING {
 		return nil, status.Error(codes.InvalidArgument, "test cases can only be added to coding questions")
 	}
 

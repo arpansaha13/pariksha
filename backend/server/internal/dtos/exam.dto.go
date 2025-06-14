@@ -2,6 +2,7 @@ package dtos
 
 import (
 	"encoding/json"
+	"pariksha/common/pkg/proto"
 	"time"
 )
 
@@ -64,11 +65,11 @@ type AddExamParticipantResponseDto struct {
 }
 
 type ExamQuestionMinimalResponseDto struct {
-	QuestionID string `json:"id"`
-	CategoryID int64  `json:"category_id"`
-	Type       int32  `json:"type"`
-	Order      int32  `json:"order"`
-	MaxScore   int32  `json:"max_score"`
+	QuestionID string             `json:"id"`
+	CategoryID int64              `json:"category_id"`
+	Type       proto.QuestionType `json:"type"`
+	Order      int32              `json:"order"`
+	MaxScore   int32              `json:"max_score"`
 }
 
 type ExamCategoriesResponseDto struct {

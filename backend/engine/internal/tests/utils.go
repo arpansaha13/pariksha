@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
+	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/generate"
@@ -78,7 +78,7 @@ func createCodingQuestion(t *testing.T, inputDefs []structs.InputDefinition, out
 		ID:         typedQuestionID,
 		CategoryID: categoryID,
 		PaperID:    sql.NullInt64{Int64: int64(paperID), Valid: true},
-		Type:       constants.QUESTION_TYPE_CODING,
+		Type:       proto.QuestionType_CODING,
 		Question:   rawQuestion,
 		MaxScore:   defaultMaxScore,
 		Order:      1,

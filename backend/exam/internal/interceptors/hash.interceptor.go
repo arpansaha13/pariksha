@@ -10,6 +10,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
 )
 
@@ -58,16 +59,6 @@ func getExamHashesFromRequest(req any) ([]string, bool) {
 	}
 }
 
-// getIDFromHash fetches exam ID for a given hash from the database
-func getIDFromHash(hash string) (int64, error) {
-	var id int64
-	err := db.DB.Table(models.ExamHash{}.TableName()).
-		Select("id").
-		Where("hash = ?", hash).
-		Take(&id).Error
-	return id, err
-}
-
 // SingleExamHashInterceptor converts exam hash to ID
 func SingleExamHashInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
@@ -76,12 +67,11 @@ func SingleExamHashInterceptor() grpc.UnaryServerInterceptor {
 			return handler(ctx, req)
 		}
 
-		examID, err := getIDFromHash(hash)
+		examID, err := utils.GetIDFromHash(db.DB, hash, models.ExamHash{}.TableName())
 		if err != nil {
 			return nil, status.Error(codes.NotFound, "exam not found")
 		}
 
-		// Store exam ID in context
 		ctx = context.WithValue(ctx, examIDContextKey, types.ExamID(examID))
 		return handler(ctx, req)
 	}
@@ -95,21 +85,16 @@ func BatchExamHashInterceptor() grpc.UnaryServerInterceptor {
 			return handler(ctx, req)
 		}
 
-		// Get all hashes, store in map for lookup
-		var examHashModels []models.ExamHash
-		if err := db.DB.Where("hash IN ?", hashes).Find(&examHashModels).Error; err != nil {
+		hashToID, err := utils.GetIDsFromHashes(db.DB, hashes, models.ExamHash{}.TableName())
+		if err != nil {
 			return nil, status.Error(codes.Internal, "failed to fetch exam IDs")
-		}
-		hashToID := make(map[string]types.ExamID)
-		for _, eh := range examHashModels {
-			hashToID[eh.Hash] = eh.ID
 		}
 
 		// Create response maintaining input order
 		typedExamIDs := make([]types.ExamID, 0, len(hashes))
 		for _, hash := range hashes {
 			if id, exists := hashToID[hash]; exists {
-				typedExamIDs = append(typedExamIDs, id)
+				typedExamIDs = append(typedExamIDs, types.ExamID(id))
 			}
 		}
 

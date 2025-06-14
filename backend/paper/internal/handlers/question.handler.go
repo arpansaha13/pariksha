@@ -84,7 +84,7 @@ func (s *PaperServer) GetPaperQuestion(ctx context.Context, req *proto.QuestionR
 	question.Paper.PaperHash.Hash = result.PaperHash
 
 	var testCases []models.TestCase
-	if question.Type == constants.QUESTION_TYPE_CODING {
+	if question.Type == proto.QuestionType_CODING {
 		// Fetch test cases for coding questions
 		if err := db.DB.Where("question_id = ?", question.ID).Find(&testCases).Error; err != nil {
 			return nil, status.Error(codes.Internal, constants.ErrInternalServer)
@@ -106,8 +106,8 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 
 	// Validate question data based on type
 	var coding structs.CodingQuestion
-	switch int16(req.Type) {
-	case constants.QUESTION_TYPE_MCQ:
+	switch req.Type {
+	case proto.QuestionType_MCQ:
 		var mcq structs.MCQQuestion
 		if err := utils.StrictUnmarshal(req.RawQuestion, &mcq); err != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid MCQ question format")
@@ -115,7 +115,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		if err := validate.McqQuestionData(&mcq); err != nil {
 			return nil, err
 		}
-	case constants.QUESTION_TYPE_SUBJECTIVE:
+	case proto.QuestionType_SUBJECTIVE:
 		var subjective structs.SubjectiveQuestion
 		if err := utils.StrictUnmarshal(req.RawQuestion, &subjective); err != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid subjective question format")
@@ -123,7 +123,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		if err := validate.SubjectiveQuestionData(&subjective); err != nil {
 			return nil, err
 		}
-	case constants.QUESTION_TYPE_CODING:
+	case proto.QuestionType_CODING:
 		if err := utils.StrictUnmarshal(req.RawQuestion, &coding); err != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid coding question format")
 		}
@@ -158,7 +158,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 			CategoryID: types.CategoryID(req.CategoryId),
 			Order:      maxOrder.MaxOrder + 1,
 			Question:   json.RawMessage(req.RawQuestion),
-			Type:       int16(req.Type),
+			Type:       req.Type,
 			Tags:       ptr.JsonRawMessage(tags),
 			MaxScore:   int16(req.MaxScore),
 			CorrectAnswer: sql.NullString{
@@ -181,13 +181,13 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 		}
 
 		// Create boilerplates for coding questions
-		if int16(req.Type) == constants.QUESTION_TYPE_CODING {
+		if req.Type == proto.QuestionType_CODING {
 			if err := upsertBoilerplates(tx, question.ID, coding.InputDefinitions, coding.OutputDefinition); err != nil {
 				return status.Error(codes.Internal, "failed to create boilerplates")
 			}
 		}
 
-		newCounts, err := updateQuestionCounts(paper.QuestionCounts, int16(req.Type), 1)
+		newCounts, err := updateQuestionCounts(paper.QuestionCounts, req.Type, 1)
 		if err != nil {
 			return err
 		}

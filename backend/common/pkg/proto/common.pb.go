@@ -21,6 +21,59 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Question Type enum
+type QuestionType int32
+
+const (
+	QuestionType_UNSPECIFIED QuestionType = 0
+	QuestionType_MCQ         QuestionType = 1
+	QuestionType_SUBJECTIVE  QuestionType = 2
+	QuestionType_CODING      QuestionType = 3
+)
+
+// Enum value maps for QuestionType.
+var (
+	QuestionType_name = map[int32]string{
+		0: "UNSPECIFIED",
+		1: "MCQ",
+		2: "SUBJECTIVE",
+		3: "CODING",
+	}
+	QuestionType_value = map[string]int32{
+		"UNSPECIFIED": 0,
+		"MCQ":         1,
+		"SUBJECTIVE":  2,
+		"CODING":      3,
+	}
+)
+
+func (x QuestionType) Enum() *QuestionType {
+	p := new(QuestionType)
+	*p = x
+	return p
+}
+
+func (x QuestionType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (QuestionType) Descriptor() protoreflect.EnumDescriptor {
+	return file_common_proto_enumTypes[0].Descriptor()
+}
+
+func (QuestionType) Type() protoreflect.EnumType {
+	return &file_common_proto_enumTypes[0]
+}
+
+func (x QuestionType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use QuestionType.Descriptor instead.
+func (QuestionType) EnumDescriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{0}
+}
+
 type Empty struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -62,7 +115,14 @@ var File_common_proto protoreflect.FileDescriptor
 const file_common_proto_rawDesc = "" +
 	"\n" +
 	"\fcommon.proto\x12\x05proto\"\a\n" +
-	"\x05EmptyB\bZ\x06/protob\x06proto3"
+	"\x05Empty*D\n" +
+	"\fQuestionType\x12\x0f\n" +
+	"\vUNSPECIFIED\x10\x00\x12\a\n" +
+	"\x03MCQ\x10\x01\x12\x0e\n" +
+	"\n" +
+	"SUBJECTIVE\x10\x02\x12\n" +
+	"\n" +
+	"\x06CODING\x10\x03B\bZ\x06/protob\x06proto3"
 
 var (
 	file_common_proto_rawDescOnce sync.Once
@@ -76,9 +136,11 @@ func file_common_proto_rawDescGZIP() []byte {
 	return file_common_proto_rawDescData
 }
 
+var file_common_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_common_proto_goTypes = []any{
-	(*Empty)(nil), // 0: proto.Empty
+	(QuestionType)(0), // 0: proto.QuestionType
+	(*Empty)(nil),     // 1: proto.Empty
 }
 var file_common_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -98,13 +160,14 @@ func file_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_proto_rawDesc), len(file_common_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_common_proto_goTypes,
 		DependencyIndexes: file_common_proto_depIdxs,
+		EnumInfos:         file_common_proto_enumTypes,
 		MessageInfos:      file_common_proto_msgTypes,
 	}.Build()
 	File_common_proto = out.File

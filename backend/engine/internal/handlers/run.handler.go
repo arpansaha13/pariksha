@@ -245,8 +245,8 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 // from the JSONB Question field for a given question ID.
 func fetchInputDefinitions(db *gorm.DB, questionHash string) ([]structs.InputDefinition, error) {
 	type QuestionFields struct {
-		Type      int16  `gorm:"column:type"`
-		InputDefs []byte `gorm:"column:input_defs"`
+		Type      proto.QuestionType `gorm:"column:type"`
+		InputDefs []byte             `gorm:"column:input_defs"`
 	}
 
 	var fields QuestionFields
@@ -258,7 +258,7 @@ func fetchInputDefinitions(db *gorm.DB, questionHash string) ([]structs.InputDef
 		return nil, status.Errorf(codes.Internal, "failed to fetch question: %v", err)
 	}
 
-	if fields.Type != constants.QUESTION_TYPE_CODING {
+	if fields.Type != proto.QuestionType_CODING {
 		return nil, status.Errorf(codes.InvalidArgument, "question type must be coding, got type: %d", fields.Type)
 	}
 

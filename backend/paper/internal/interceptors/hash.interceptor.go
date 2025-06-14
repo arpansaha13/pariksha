@@ -10,6 +10,7 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
 )
 
@@ -21,26 +22,6 @@ const (
 	paperIDsKey    hashContextKey = "paperIdsFromHashes"
 	questionIDsKey hashContextKey = "questionIdsFromHashes"
 )
-
-// getIDFromHash fetches entity ID for a given hash from the database
-func getIDFromHash(hash string, table string) (int64, error) {
-	var id int64
-	err := db.DB.Table(table).
-		Select("id").
-		Where("hash = ?", hash).
-		Take(&id).Error
-	return id, err
-}
-
-// getIDsFromHashes fetches entity IDs for given hashes from the database
-func getIDsFromHashes(hashes []string, table string) ([]int64, error) {
-	var ids []int64
-	err := db.DB.Table(table).
-		Select("id").
-		Where("hash IN ?", hashes).
-		Find(&ids).Error
-	return ids, err
-}
 
 // getPaperHashFromRequest extracts PaperHash field from requests
 func getPaperHashFromRequest(req any) (string, bool) {
@@ -106,12 +87,11 @@ func SinglePaperHashInterceptor() grpc.UnaryServerInterceptor {
 			return handler(ctx, req)
 		}
 
-		paperID, err := getIDFromHash(hash, models.PaperHash{}.TableName())
+		paperID, err := utils.GetIDFromHash(db.DB, hash, models.PaperHash{}.TableName())
 		if err != nil {
 			return nil, status.Error(codes.NotFound, "paper not found")
 		}
 
-		// Store paper ID in context
 		ctx = context.WithValue(ctx, paperIDKey, types.PaperID(paperID))
 		return handler(ctx, req)
 	}
@@ -125,7 +105,7 @@ func SingleQuestionHashInterceptor() grpc.UnaryServerInterceptor {
 			return handler(ctx, req)
 		}
 
-		questionID, err := getIDFromHash(hash, models.QuestionHash{}.TableName())
+		questionID, err := utils.GetIDFromHash(db.DB, hash, models.QuestionHash{}.TableName())
 		if err != nil {
 			return nil, status.Error(codes.NotFound, "question not found")
 		}
@@ -144,21 +124,16 @@ func BatchPaperHashInterceptor() grpc.UnaryServerInterceptor {
 			return handler(ctx, req)
 		}
 
-		// Get all hashes, store in map for lookup
-		var paperHashModels []models.PaperHash
-		if err := db.DB.Where("hash IN ?", hashes).Find(&paperHashModels).Error; err != nil {
+		hashToID, err := utils.GetIDsFromHashes(db.DB, hashes, models.PaperHash{}.TableName())
+		if err != nil {
 			return nil, status.Error(codes.Internal, "failed to fetch paper IDs")
-		}
-		hashToID := make(map[string]types.PaperID)
-		for _, ph := range paperHashModels {
-			hashToID[ph.Hash] = ph.ID
 		}
 
 		// Create response maintaining input order
 		typedPaperIDs := make([]types.PaperID, 0, len(hashes))
 		for _, hash := range hashes {
 			if id, exists := hashToID[hash]; exists {
-				typedPaperIDs = append(typedPaperIDs, id)
+				typedPaperIDs = append(typedPaperIDs, types.PaperID(id))
 			}
 		}
 

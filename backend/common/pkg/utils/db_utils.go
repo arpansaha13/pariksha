@@ -37,3 +37,36 @@ func FindRecord[T any](db *gorm.DB, id int64, notFoundMsg string) (*T, error) {
 	}
 	return &record, nil
 }
+
+// GetIDFromHash fetches entity ID for a given hash from the database
+func GetIDFromHash(db *gorm.DB, hash string, table string) (int64, error) {
+	var id int64
+	err := db.Table(table).
+		Select("id").
+		Where("hash = ?", hash).
+		Take(&id).Error
+	return id, err
+}
+
+// GetIDsFromHashes fetches entity IDs for given hashes from the database maintaining order
+func GetIDsFromHashes(db *gorm.DB, hashes []string, table string) (map[string]int64, error) {
+	var results []struct {
+		ID   int64  `gorm:"column:id"`
+		Hash string `gorm:"column:hash"`
+	}
+
+	err := db.Table(table).
+		Select("id, hash").
+		Where("hash IN ?", hashes).
+		Find(&results).Error
+	if err != nil {
+		return nil, err
+	}
+
+	hashToID := make(map[string]int64)
+	for _, result := range results {
+		hashToID[result.Hash] = result.ID
+	}
+
+	return hashToID, nil
+}

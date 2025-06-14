@@ -46,14 +46,14 @@ func TestGetParticipantAnswers(t *testing.T) {
 					QuestionID: 1,
 					CategoryID: 10,
 					Order:      1,
-					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+					Type:       proto.QuestionType_SUBJECTIVE,
 					MaxScore:   10,
 				})
 				q2 := createTestExamQuestion(t, &exam, models.ExamQuestion{
 					QuestionID: 2,
 					CategoryID: 10,
 					Order:      2,
-					Type:       constants.QUESTION_TYPE_MCQ,
+					Type:       proto.QuestionType_MCQ,
 					MaxScore:   5,
 				})
 
@@ -87,7 +87,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 				// Questions should be ordered by the order field
 				answer1 := resp.Answers[0]
 				assert.EqualValues(t, 1, answer1.Order)
-				assert.EqualValues(t, constants.QUESTION_TYPE_SUBJECTIVE, answer1.QuestionType)
+				assert.EqualValues(t, proto.QuestionType_SUBJECTIVE, answer1.QuestionType)
 				assert.EqualValues(t, 10, answer1.MaxScore)
 
 				var answerData1 struct {
@@ -98,7 +98,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 
 				answer2 := resp.Answers[1]
 				assert.EqualValues(t, 2, answer2.Order)
-				assert.EqualValues(t, constants.QUESTION_TYPE_MCQ, answer2.QuestionType)
+				assert.EqualValues(t, proto.QuestionType_MCQ, answer2.QuestionType)
 				assert.EqualValues(t, 5, answer2.MaxScore)
 
 				var answerData2 struct {
@@ -165,14 +165,14 @@ func TestGetParticipantAnswers(t *testing.T) {
 					QuestionID: 1,
 					CategoryID: 10,
 					Order:      1,
-					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+					Type:       proto.QuestionType_SUBJECTIVE,
 					MaxScore:   10,
 				})
 				q2 := createTestExamQuestion(t, &exam, models.ExamQuestion{
 					QuestionID: 2,
 					CategoryID: 10,
 					Order:      2,
-					Type:       constants.QUESTION_TYPE_MCQ,
+					Type:       proto.QuestionType_MCQ,
 					MaxScore:   5,
 				})
 
@@ -206,7 +206,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 				// Questions should be ordered by the order field
 				answer1 := resp.Answers[0]
 				assert.EqualValues(t, 1, answer1.Order)
-				assert.EqualValues(t, constants.QUESTION_TYPE_SUBJECTIVE, answer1.QuestionType)
+				assert.EqualValues(t, proto.QuestionType_SUBJECTIVE, answer1.QuestionType)
 				assert.EqualValues(t, 10, answer1.MaxScore)
 
 				var answerData1 struct {
@@ -217,7 +217,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 
 				answer2 := resp.Answers[1]
 				assert.EqualValues(t, 2, answer2.Order)
-				assert.EqualValues(t, constants.QUESTION_TYPE_MCQ, answer2.QuestionType)
+				assert.EqualValues(t, proto.QuestionType_MCQ, answer2.QuestionType)
 				assert.EqualValues(t, 5, answer2.MaxScore)
 
 				var answerData2 struct {
@@ -347,7 +347,7 @@ func TestUpsertAnswer(t *testing.T) {
 					QuestionID: 1,
 					CategoryID: 10,
 					MaxScore:   10,
-					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+					Type:       proto.QuestionType_SUBJECTIVE,
 				})
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
@@ -400,7 +400,7 @@ func TestUpsertAnswer(t *testing.T) {
 					QuestionID: 1,
 					CategoryID: 10,
 					MaxScore:   10,
-					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+					Type:       proto.QuestionType_SUBJECTIVE,
 				})
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
@@ -531,7 +531,7 @@ func TestUpsertAnswer(t *testing.T) {
 					QuestionID: 1,
 					CategoryID: 10,
 					MaxScore:   10,
-					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+					Type:       proto.QuestionType_SUBJECTIVE,
 				})
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
@@ -580,7 +580,7 @@ func TestUpsertAnswer(t *testing.T) {
 					QuestionID: 1,
 					CategoryID: 10,
 					MaxScore:   10,
-					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+					Type:       proto.QuestionType_SUBJECTIVE,
 				})
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
@@ -628,7 +628,7 @@ func TestUpsertAnswer(t *testing.T) {
 					QuestionID: 1,
 					CategoryID: 10,
 					MaxScore:   10,
-					Type:       constants.QUESTION_TYPE_MCQ,
+					Type:       proto.QuestionType_MCQ,
 				})
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{
@@ -669,7 +669,7 @@ func TestUpsertAnswer(t *testing.T) {
 					QuestionID: 1,
 					CategoryID: 10,
 					MaxScore:   10,
-					Type:       constants.QUESTION_TYPE_MCQ,
+					Type:       proto.QuestionType_MCQ,
 				})
 
 				err := createTestExamParticipants(t, &exam, []TestParticipantData{

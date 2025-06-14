@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
@@ -211,14 +210,14 @@ func TestUpdateCategory(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"Test Question 1","options":["A","B","C"]}`),
 						Locked:     true,
 					},
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"Test Question 2","options":["A","B","C"]}`),
 						Locked:     true,
 					},
@@ -434,7 +433,7 @@ func TestDeleteCategory(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B","C"]}`),
 						Locked:     true,
 					},
@@ -483,7 +482,7 @@ func TestDeleteCategory(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"Locked MCQ","options":["A","B"]}`),
 						MaxScore:   5,
 						Locked:     true,
@@ -491,7 +490,7 @@ func TestDeleteCategory(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"Unlocked MCQ","options":["A","B"]}`),
 						MaxScore:   5,
 						Locked:     false,

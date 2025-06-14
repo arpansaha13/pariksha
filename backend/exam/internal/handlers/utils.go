@@ -97,13 +97,13 @@ func examToProto(exam *models.Exam) (*proto.ExamResponse, error) {
 }
 
 // validateAnswerJSON validates the answer JSON based on question type
-func validateAnswerJSON(answerJSON []byte, questionType int16) error {
+func validateAnswerJSON(answerJSON []byte, questionType proto.QuestionType) error {
 	if len(answerJSON) == 0 {
 		return nil // Allow empty answers
 	}
 
 	switch questionType {
-	case constants.QUESTION_TYPE_MCQ:
+	case proto.QuestionType_MCQ:
 		var mcqAnswer models.MCQAnswer
 		if err := json.Unmarshal(answerJSON, &mcqAnswer); err != nil {
 			return status.Error(codes.InvalidArgument, "invalid MCQ answer format")
@@ -116,7 +116,7 @@ func validateAnswerJSON(answerJSON []byte, questionType int16) error {
 		if *mcqAnswer.OptionIndex < 0 {
 			return status.Error(codes.InvalidArgument, "option index cannot be negative")
 		}
-	case constants.QUESTION_TYPE_SUBJECTIVE:
+	case proto.QuestionType_SUBJECTIVE:
 		var textAnswer models.SubjectiveAnswer
 		if err := json.Unmarshal(answerJSON, &textAnswer); err != nil {
 			return status.Error(codes.InvalidArgument, "invalid text answer format")

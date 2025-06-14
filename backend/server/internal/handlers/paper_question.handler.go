@@ -6,7 +6,6 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
@@ -86,7 +85,7 @@ func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 		CorrectAnswer: response.GetCorrectAnswer(),
 	}
 
-	if response.Type == int32(constants.QUESTION_TYPE_CODING) {
+	if response.Type == proto.QuestionType_CODING {
 		testCases := make([]dtos.PaperTestCaseDto, 0, len(response.TestCases))
 		for _, tc := range response.TestCases {
 			testCases = append(testCases, dtos.PaperTestCaseDto{

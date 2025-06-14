@@ -5,3 +5,11 @@ package proto;
 option go_package = "/proto";
 
 message Empty {}
+
+// Question Type enum
+enum QuestionType {
+  UNSPECIFIED = 0;
+  MCQ = 1;
+  SUBJECTIVE = 2;
+  CODING = 3;
+}

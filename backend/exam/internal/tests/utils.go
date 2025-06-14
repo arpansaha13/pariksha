@@ -12,6 +12,7 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
+	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/generate"
 	"pariksha/exam/internal/config/db"
@@ -144,7 +145,7 @@ func createTestExamQuestion(t *testing.T, exam *models.Exam, question models.Exa
 		question.MaxScore = 10
 	}
 	if question.Type == 0 {
-		question.Type = constants.QUESTION_TYPE_MCQ
+		question.Type = proto.QuestionType_MCQ
 	}
 	require.NoError(t, db.DB.Create(&question).Error)
 	return question

@@ -34,7 +34,7 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 					QuestionID: 1,
 					CategoryID: 1,
 					MaxScore:   10,
-					Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+					Type:       proto.QuestionType_SUBJECTIVE,
 				})
 
 				// Create evaluator permission for test user
@@ -284,7 +284,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 					QuestionID: 1,
 					CategoryID: 1,
 					MaxScore:   10,
-					Type:       constants.QUESTION_TYPE_MCQ,
+					Type:       proto.QuestionType_MCQ,
 				})
 
 				answer := createTestAnswer(t, &participant, 1)
@@ -339,7 +339,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 					QuestionID: 1,
 					CategoryID: 1,
 					MaxScore:   10,
-					Type:       constants.QUESTION_TYPE_MCQ,
+					Type:       proto.QuestionType_MCQ,
 				})
 
 				answer := createTestAnswer(t, &participant, 1)
@@ -396,7 +396,7 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 					QuestionID: 1,
 					CategoryID: 1,
 					MaxScore:   10,
-					Type:       constants.QUESTION_TYPE_MCQ,
+					Type:       proto.QuestionType_MCQ,
 				})
 
 				answer := createTestAnswer(t, &participant, 1)

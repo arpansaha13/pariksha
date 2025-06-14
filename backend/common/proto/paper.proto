@@ -87,12 +87,12 @@ message QuestionResponse {
   string question_hash = 1;
   bytes raw_question = 2;
   int64 category_id = 4;
-  int32 type = 5;
+  QuestionType type = 5;
   repeated string tags = 6;
   string paper_hash = 7;
   int32 max_score = 8;
   optional string correct_answer = 9;
-  repeated PaperTestCase test_cases = 10;  // New field for coding question test cases
+  repeated PaperTestCase test_cases = 10;
 }
 
 message QuestionList {
@@ -111,7 +111,7 @@ message CreateQuestionRequest {
   string paper_hash = 1;
   bytes raw_question = 2;
   int64 category_id = 3;
-  int32 type = 4;
+  QuestionType type = 4;
   repeated string tags = 5;
   int32 max_score = 6;
   optional string correct_answer = 7;
@@ -123,7 +123,7 @@ message CreateQuestionResponse {
 
 message UpdateQuestionRequest {
   string question_hash = 1;
-  optional int32 type = 2;
+  optional QuestionType type = 2;
   optional bytes raw_question = 3;
   optional int32 max_score = 4;
   repeated string tags = 5;

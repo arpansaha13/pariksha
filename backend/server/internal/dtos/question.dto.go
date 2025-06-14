@@ -1,6 +1,9 @@
 package dtos
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"pariksha/common/pkg/proto"
+)
 
 type PaperTestCaseDto struct {
 	Inputs      []string `json:"inputs"`
@@ -14,7 +17,7 @@ type QuestionResponseDto struct {
 	ID            string              `json:"id"`
 	Question      json.RawMessage     `json:"question"`
 	CategoryID    int64               `json:"category_id"`
-	Type          int32               `json:"type"`
+	Type          proto.QuestionType  `json:"type"`
 	Tags          json.RawMessage     `json:"tags"`
 	PaperID       string              `json:"paper_id"`
 	MaxScore      int32               `json:"max_score"`
@@ -37,20 +40,20 @@ type QuestionCategoryResponseDto struct {
 }
 
 type CreateQuestionDto struct {
-	Question      json.RawMessage `json:"question" validate:"required"`
-	CategoryID    int64           `json:"category_id" validate:"required"`
-	Type          int32           `json:"type" validate:"required"`
-	Tags          json.RawMessage `json:"tags,omitempty" validate:"required"`
-	MaxScore      int32           `json:"max_score" validate:"required"`
-	CorrectAnswer string          `json:"correct_answer,omitempty"`
+	Question      json.RawMessage    `json:"question" validate:"required"`
+	CategoryID    int64              `json:"category_id" validate:"required"`
+	Type          proto.QuestionType `json:"type" validate:"required"`
+	Tags          json.RawMessage    `json:"tags,omitempty" validate:"required"`
+	MaxScore      int32              `json:"max_score" validate:"required"`
+	CorrectAnswer string             `json:"correct_answer,omitempty"`
 }
 
 type UpdateQuestionDto struct {
-	Type          int32           `json:"type,omitempty"`
-	Question      json.RawMessage `json:"question,omitempty"`
-	MaxScore      int32           `json:"max_score,omitempty"`
-	Tags          json.RawMessage `json:"tags,omitempty"`
-	CorrectAnswer string          `json:"correct_answer,omitempty"`
+	Type          proto.QuestionType `json:"type,omitempty"`
+	Question      json.RawMessage    `json:"question,omitempty"`
+	MaxScore      int32              `json:"max_score,omitempty"`
+	Tags          json.RawMessage    `json:"tags,omitempty"`
+	CorrectAnswer string             `json:"correct_answer,omitempty"`
 }
 
 type ReorderQuestionsDto struct {

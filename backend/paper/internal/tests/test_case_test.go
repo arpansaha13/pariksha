@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
@@ -41,7 +40,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_CODING,
+						Type:       proto.QuestionType_CODING,
 						Question: json.RawMessage(`{
 							"title": "Sum Numbers",
 							"statement": "Add two numbers",
@@ -104,7 +103,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_CODING,
+						Type:       proto.QuestionType_CODING,
 						Question:   json.RawMessage(`{"title":"Test","statement":"Test","input_definitions":[{"variable_name":"x","type":1}],"output_definition":{"type":1}}`),
 					},
 				})
@@ -169,7 +168,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
 					},
 				})
@@ -198,7 +197,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_CODING,
+						Type:       proto.QuestionType_CODING,
 						Question:   json.RawMessage(`{"title":"Test","statement":"Test","input_definitions":[{"variable_name":"x","type":1}],"output_definition":{"type":1}}`),
 					},
 				})
@@ -262,7 +261,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_CODING,
+						Type:       proto.QuestionType_CODING,
 						Question:   json.RawMessage(`{"title":"Test","statement":"Test","input_definitions":[{"variable_name":"x","type":1}],"output_definition":{"type":1}}`),
 					},
 				})
@@ -319,7 +318,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_CODING,
+						Type:       proto.QuestionType_CODING,
 						Question:   json.RawMessage(`{"title":"Test","statement":"Test","input_definitions":[{"variable_name":"x","type":1}],"output_definition":{"type":1}}`),
 					},
 				})
@@ -390,7 +389,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_CODING,
+						Type:       proto.QuestionType_CODING,
 						Question: json.RawMessage(`{
 							"title": "Test",
 							"statement": "Test",
@@ -427,7 +426,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_CODING,
+						Type:       proto.QuestionType_CODING,
 						Question: json.RawMessage(`{
 							"title": "Test",
 							"statement": "Test",
@@ -461,7 +460,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_CODING,
+						Type:       proto.QuestionType_CODING,
 						Question: json.RawMessage(`{
 							"title": "Test",
 							"statement": "Test",
@@ -495,7 +494,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_CODING,
+						Type:       proto.QuestionType_CODING,
 						Question: json.RawMessage(`{
 							"title": "Test",
 							"statement": "Test",

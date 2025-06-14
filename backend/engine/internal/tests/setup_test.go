@@ -75,8 +75,8 @@ func clearTables(t *testing.T) {
 		constants.TABLE_PAPERS,
 	}
 
-	for i := range tables {
-		err := db.Papers.Exec("TRUNCATE TABLE " + tables[i] + " CASCADE").Error
+	for _, table := range tables {
+		err := db.Papers.Exec("TRUNCATE TABLE " + table + " CASCADE").Error
 		require.NoError(t, err)
 	}
 }

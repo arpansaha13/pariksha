@@ -11,7 +11,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
@@ -46,7 +45,7 @@ func TestGetQuestionsByIds(t *testing.T) {
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Order:      1,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   mcqContent,
 						MaxScore:   5,
 					},
@@ -54,7 +53,7 @@ func TestGetQuestionsByIds(t *testing.T) {
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Order:      2,
-						Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+						Type:       proto.QuestionType_SUBJECTIVE,
 						Question:   subjectiveContent,
 						MaxScore:   10,
 					},
@@ -205,7 +204,7 @@ func TestGetExamQuestion(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"MCQ Question","options":["A","B","C"]}`),
 					},
 				})
@@ -230,7 +229,7 @@ func TestGetExamQuestion(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_CODING,
+						Type:       proto.QuestionType_CODING,
 						Question: json.RawMessage(`{
 							"title": "Sum Numbers",
 							"statement": "Add two numbers",
@@ -330,14 +329,14 @@ func TestGetQuestionHashes(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   mcqContent,
 						MaxScore:   5,
 					},
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+						Type:       proto.QuestionType_SUBJECTIVE,
 						Question:   subjectiveContent,
 						MaxScore:   5,
 					},
@@ -362,7 +361,7 @@ func TestGetQuestionHashes(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   mcqContent,
 						MaxScore:   5,
 					},
@@ -441,14 +440,14 @@ func TestGetQuestionIds(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   mcqContent,
 						MaxScore:   5,
 					},
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+						Type:       proto.QuestionType_SUBJECTIVE,
 						Question:   subjectiveContent,
 						MaxScore:   5,
 					},
@@ -473,7 +472,7 @@ func TestGetQuestionIds(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   mcqContent,
 						MaxScore:   5,
 					},

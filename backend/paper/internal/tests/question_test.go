@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
@@ -35,19 +34,19 @@ func TestGetPaperQuestions(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"MCQ Question","options":["A","B","C"]}`),
 					},
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+						Type:       proto.QuestionType_SUBJECTIVE,
 						Question:   json.RawMessage(`{"statement":"Subjective Question"}`),
 					},
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_CODING,
+						Type:       proto.QuestionType_CODING,
 						Question: json.RawMessage(`{
 							"title": "Sum Numbers",
 							"statement": "Add two numbers",
@@ -164,7 +163,7 @@ func TestDeleteQuestion(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
 					},
 				})
@@ -210,7 +209,7 @@ func TestDeleteQuestion(t *testing.T) {
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Order:      1,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
 						Locked:     true,
 					},
@@ -269,13 +268,13 @@ func TestReorderQuestions(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"Q1"}`),
 					},
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"Q2"}`),
 					},
 				})
@@ -328,7 +327,7 @@ func TestGetPaperQuestion(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"MCQ Question","options":["A","B","C"]}`),
 						MaxScore:   5,
 					},
@@ -358,7 +357,7 @@ func TestGetPaperQuestion(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_CODING,
+						Type:       proto.QuestionType_CODING,
 						Question: json.RawMessage(`{
 							"title": "Sum Numbers",
 							"statement": "Add two numbers",
@@ -442,7 +441,7 @@ func TestGetPaperQuestion(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+						Type:       proto.QuestionType_SUBJECTIVE,
 						Question:   json.RawMessage(`{"statement":"Q1"}`),
 					},
 				})

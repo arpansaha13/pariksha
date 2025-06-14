@@ -39,7 +39,7 @@ func TestUpdateMcqQuestion(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
 						Tags:       ptr.JsonRawMessage([]byte("[\"old\"]")),
 					},
@@ -93,7 +93,7 @@ func TestUpdateSubjectiveQuestion(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_SUBJECTIVE,
+						Type:       proto.QuestionType_SUBJECTIVE,
 						Question:   json.RawMessage(`{"statement":"Old Subjective Question"}`),
 					},
 				})
@@ -142,7 +142,7 @@ func TestUpdateCodingQuestion(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_CODING,
+						Type:       proto.QuestionType_CODING,
 						Question: json.RawMessage(`{
 							"title": "Old Title",
 							"statement": "Old statement",
@@ -239,7 +239,7 @@ func TestUpdateLockedQuestion(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
 						MaxScore:   5,
 						Locked:     true,
@@ -296,7 +296,7 @@ func TestUpdateLockedQuestion(t *testing.T) {
 
 func TestUpdateQuestionTypeChange(t *testing.T) {
 	maxScore := int32(10)
-	questionTypeSubjective := int32(constants.QUESTION_TYPE_SUBJECTIVE)
+	questionTypeSubjective := proto.QuestionType_SUBJECTIVE
 
 	tests := []UpdateQuestionCase{
 		{
@@ -316,7 +316,7 @@ func TestUpdateQuestionTypeChange(t *testing.T) {
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
 					},
 				})
@@ -331,7 +331,7 @@ func TestUpdateQuestionTypeChange(t *testing.T) {
 				// Verify question was updated
 				var updated models.Question
 				require.NoError(t, db.DB.First(&updated, question.ID).Error)
-				assert.Equal(t, constants.QUESTION_TYPE_SUBJECTIVE, updated.Type)
+				assert.Equal(t, proto.QuestionType_SUBJECTIVE, updated.Type)
 
 				// Verify question counts were updated
 				verifyQuestionCounts(t, paper.ID, &models.QuestionCount{Subjective: 1})
@@ -352,7 +352,7 @@ func TestUpdateQuestionTypeChange(t *testing.T) {
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Order:      1,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
 					},
 				})
@@ -377,7 +377,7 @@ func TestUpdateQuestionTypeChange(t *testing.T) {
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
 						Order:      1,
-						Type:       constants.QUESTION_TYPE_MCQ,
+						Type:       proto.QuestionType_MCQ,
 						Question:   json.RawMessage(`{"statement":"Old MCQ","options":["A","B"]}`),
 					},
 				})
@@ -483,7 +483,7 @@ func TestUpdateCodingQuestionBoilerplates(t *testing.T) {
 			createReq := &proto.CreateQuestionRequest{
 				PaperHash:   paper.PaperHash.Hash,
 				CategoryId:  int64(category.ID),
-				Type:        int32(constants.QUESTION_TYPE_CODING),
+				Type:        proto.QuestionType_CODING,
 				RawQuestion: []byte(tt.initialQuestion),
 				MaxScore:    10,
 			}

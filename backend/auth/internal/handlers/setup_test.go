@@ -114,13 +114,15 @@ func setupContainers() func() {
 }
 
 func clearTables(t *testing.T) {
-	tables := []string{constants.TABLE_USERS, constants.TABLE_OTPS}
+	tables := []string{
+		constants.TABLE_USERS,
+		constants.TABLE_OTPS,
+		constants.TABLE_SESSIONS,
+	}
 	for _, table := range tables {
 		err := db.DB.Exec(fmt.Sprintf("DELETE FROM %s", table)).Error
 		require.NoError(t, err)
 	}
-	err := db.DB.Exec("DELETE FROM " + constants.TABLE_SESSIONS).Error
-	require.NoError(t, err)
 }
 
 func bufDialer(context.Context, string) (net.Conn, error) {

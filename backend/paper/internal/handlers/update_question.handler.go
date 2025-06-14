@@ -70,7 +70,7 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 }
 
 // handleLockedQuestionUpdate handles updates to a locked (column) question by creating a new one
-func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper models.Paper, req *proto.UpdateQuestionRequest, oldType int16, oldMaxScore int16) (*string, error) {
+func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper models.Paper, req *proto.UpdateQuestionRequest, oldType proto.QuestionType, oldMaxScore int16) (*string, error) {
 	newQuestion := question
 	newQuestion.ID = 0
 	newQuestion.Locked = false
@@ -94,7 +94,7 @@ func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper mod
 	}
 
 	// Create new boilerplate entry if it's a coding question
-	if updatedQuestion.Type == constants.QUESTION_TYPE_CODING && req.RawQuestion != nil {
+	if updatedQuestion.Type == proto.QuestionType_CODING && req.RawQuestion != nil {
 		var coding structs.CodingQuestion
 		if err := json.Unmarshal(req.RawQuestion, &coding); err != nil {
 			return nil, status.Error(codes.Internal, "invalid coding question format")
@@ -121,14 +121,14 @@ func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper mod
 }
 
 // handleUnlockedQuestionUpdate handles updates to an unlocked (column) question
-func handleUnlockedQuestionUpdate(tx *gorm.DB, question models.Question, paper models.Paper, req *proto.UpdateQuestionRequest, oldType int16, oldMaxScore int16) error {
+func handleUnlockedQuestionUpdate(tx *gorm.DB, question models.Question, paper models.Paper, req *proto.UpdateQuestionRequest, oldType proto.QuestionType, oldMaxScore int16) error {
 	updatedQuestion, err := applyQuestionUpdates(question, req)
 	if err != nil {
 		return err
 	}
 
 	// Check if this is a coding question and content has changed
-	if updatedQuestion.Type == constants.QUESTION_TYPE_CODING && req.RawQuestion != nil {
+	if updatedQuestion.Type == proto.QuestionType_CODING && req.RawQuestion != nil {
 		var newCoding, oldCoding structs.CodingQuestion
 		if err := json.Unmarshal(req.RawQuestion, &newCoding); err != nil {
 			return status.Error(codes.Internal, "invalid coding question format")
@@ -208,17 +208,17 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 		if req.RawQuestion == nil {
 			return question, status.Error(codes.InvalidArgument, "question content must be provided when changing question type")
 		}
-		question.Type = int16(req.GetType())
+		question.Type = req.GetType()
 	}
 
 	if req.RawQuestion != nil {
 		var err error
 		switch question.Type {
-		case constants.QUESTION_TYPE_MCQ:
+		case proto.QuestionType_MCQ:
 			question, err = applyMcqQuestionUpdates(question, req.RawQuestion)
-		case constants.QUESTION_TYPE_SUBJECTIVE:
+		case proto.QuestionType_SUBJECTIVE:
 			question, err = applySubjectiveQuestionUpdates(question, req.RawQuestion)
-		case constants.QUESTION_TYPE_CODING:
+		case proto.QuestionType_CODING:
 			question, err = applyCodingQuestionUpdates(question, req.RawQuestion)
 		default:
 			return question, status.Error(codes.InvalidArgument, "invalid question type")

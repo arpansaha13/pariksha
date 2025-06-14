@@ -18,7 +18,7 @@ import (
 // validateEntityIDs checks if all provided IDs exist in the given table and belong to the paper
 func validateEntityIDs(tx *gorm.DB, tableName string, ids []int64) error {
 	var count int64
-	err := tx.Table(tableName).Where("id IN ?", ids).Count(&count).Error
+	err := tx.Table(string(tableName)).Where("id IN ?", ids).Count(&count).Error
 	if err != nil {
 		return status.Error(codes.Internal, constants.ErrInternalServer)
 	}
@@ -54,7 +54,7 @@ func questionToProto(question models.Question, testCases []models.TestCase) (*pr
 	response := &proto.QuestionResponse{
 		QuestionHash:  question.QuestionHash.Hash,
 		CategoryId:    int64(question.CategoryID),
-		Type:          int32(question.Type),
+		Type:          question.Type,
 		Tags:          tags,
 		PaperHash:     question.Paper.PaperHash.Hash,
 		MaxScore:      int32(question.MaxScore),
@@ -63,7 +63,7 @@ func questionToProto(question models.Question, testCases []models.TestCase) (*pr
 	}
 
 	// Add test cases if this is a coding question
-	if question.Type == constants.QUESTION_TYPE_CODING && len(testCases) > 0 {
+	if question.Type == proto.QuestionType_CODING && len(testCases) > 0 {
 		protoTestCases := make([]*proto.PaperTestCase, 0, len(testCases))
 		for _, tc := range testCases {
 			var content models.TestCaseContent
@@ -119,18 +119,18 @@ func categoriesToProto(categories []models.QuestionCategory) *proto.CategoryList
 }
 
 // Helper function to update question counts
-func updateQuestionCounts(rawCounts json.RawMessage, questionType int16, delta int16) (json.RawMessage, error) {
+func updateQuestionCounts(rawCounts json.RawMessage, questionType proto.QuestionType, delta int16) (json.RawMessage, error) {
 	var counts models.QuestionCount
 	if err := json.Unmarshal(rawCounts, &counts); err != nil {
 		return nil, err
 	}
 
 	switch questionType {
-	case constants.QUESTION_TYPE_MCQ:
+	case proto.QuestionType_MCQ:
 		counts.MCQ += delta
-	case constants.QUESTION_TYPE_SUBJECTIVE:
+	case proto.QuestionType_SUBJECTIVE:
 		counts.Subjective += delta
-	case constants.QUESTION_TYPE_CODING:
+	case proto.QuestionType_CODING:
 		counts.Coding += delta
 	default:
 		return nil, status.Error(codes.InvalidArgument, "invalid question type")
@@ -154,7 +154,7 @@ func updatePaperStats(tx *gorm.DB, paper models.Paper, scoreDiff int32, newQuest
 }
 
 // updateQuestionStats updates the paper's statistics after a question update
-func updateQuestionStats(tx *gorm.DB, paper models.Paper, oldType, newType int16, oldScore, newScore int16) error {
+func updateQuestionStats(tx *gorm.DB, paper models.Paper, oldType, newType proto.QuestionType, oldScore, newScore int16) error {
 	scoreDiff := int32(newScore - oldScore)
 	newCounts := paper.QuestionCounts
 	var err error

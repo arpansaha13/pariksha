@@ -71,7 +71,7 @@ func (s *PaperServer) GetExamQuestion(ctx context.Context, req *proto.QuestionRe
 	}
 
 	var testCases []models.TestCase
-	if question.Type == constants.QUESTION_TYPE_CODING {
+	if question.Type == proto.QuestionType_CODING {
 		// Fetch only non-hidden test cases for coding questions
 		if err := db.DB.Where("question_id = ? AND hidden = ?", question.ID, false).Find(&testCases).Error; err != nil {
 			return nil, status.Error(codes.Internal, constants.ErrInternalServer)

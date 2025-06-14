@@ -31,7 +31,7 @@ func TestCreateMcqQuestion(t *testing.T) {
 			},
 			request: &proto.CreateQuestionRequest{
 				RawQuestion: []byte(`{"statement":"Test MCQ","options":["A","B","C"]}`),
-				Type:        int32(constants.QUESTION_TYPE_MCQ),
+				Type:        proto.QuestionType_MCQ,
 				MaxScore:    5,
 				CategoryId:  1,
 			},
@@ -43,7 +43,7 @@ func TestCreateMcqQuestion(t *testing.T) {
 
 				// Validate question data
 				assert.True(t, compareJSONByteArrays([]byte(`{"statement":"Test MCQ","options":["A","B","C"]}`), question.Question))
-				assert.Equal(t, constants.QUESTION_TYPE_MCQ, question.Type)
+				assert.Equal(t, proto.QuestionType_MCQ, question.Type)
 				assert.EqualValues(t, 5, question.MaxScore)
 
 				// Validate paper's question counts
@@ -92,7 +92,7 @@ func TestCreateSubjectiveQuestion(t *testing.T) {
 			},
 			request: &proto.CreateQuestionRequest{
 				RawQuestion: []byte(`{"statement":"Test Subjective Answer"}`),
-				Type:        int32(constants.QUESTION_TYPE_SUBJECTIVE),
+				Type:        proto.QuestionType_SUBJECTIVE,
 				MaxScore:    10,
 				CategoryId:  1,
 			},
@@ -104,7 +104,7 @@ func TestCreateSubjectiveQuestion(t *testing.T) {
 
 				// Validate question data
 				assert.True(t, compareJSONByteArrays([]byte(`{"statement":"Test Subjective Answer"}`), question.Question))
-				assert.Equal(t, constants.QUESTION_TYPE_SUBJECTIVE, question.Type)
+				assert.Equal(t, proto.QuestionType_SUBJECTIVE, question.Type)
 				assert.EqualValues(t, 10, question.MaxScore)
 
 				// Validate paper's question counts
@@ -164,7 +164,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 						"type": 1
 					}
 				}`),
-				Type:     int32(constants.QUESTION_TYPE_CODING),
+				Type:     proto.QuestionType_CODING,
 				MaxScore: 15,
 			},
 			validate: func(t *testing.T, paper *models.Paper, resp *proto.CreateQuestionResponse) {
@@ -174,7 +174,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 				require.NoError(t, err)
 
 				// Validate question data
-				assert.Equal(t, constants.QUESTION_TYPE_CODING, question.Type)
+				assert.Equal(t, proto.QuestionType_CODING, question.Type)
 				assert.EqualValues(t, 15, question.MaxScore)
 
 				var codingQ structs.CodingQuestion
@@ -211,7 +211,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 						"items": [{ "type": 1 }]
 					}
 				}`),
-				Type:     int32(constants.QUESTION_TYPE_CODING),
+				Type:     proto.QuestionType_CODING,
 				MaxScore: 15,
 			},
 		},
@@ -234,7 +234,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 						{ "variable_name": "arr", "type": 4, "items": [{ "type": 1 }] }
 					]
 				}`),
-				Type:     int32(constants.QUESTION_TYPE_CODING),
+				Type:     proto.QuestionType_CODING,
 				MaxScore: 15,
 			},
 		},
@@ -260,7 +260,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 						}
 					]
 				}`),
-				Type:     int32(constants.QUESTION_TYPE_CODING),
+				Type:     proto.QuestionType_CODING,
 				MaxScore: 15,
 			},
 		},
@@ -287,7 +287,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 						}
 					]
 				}`),
-				Type:     int32(constants.QUESTION_TYPE_CODING),
+				Type:     proto.QuestionType_CODING,
 				MaxScore: 15,
 			},
 		},
@@ -308,7 +308,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 					"statement": "Test",
 					"input_definitions": [{ "variable_name": "arr", "type": 4 }]
 				}`),
-				Type:     int32(constants.QUESTION_TYPE_CODING),
+				Type:     proto.QuestionType_CODING,
 				MaxScore: 15,
 			},
 		},
@@ -335,7 +335,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 						}
 					]
 				}`),
-				Type:     int32(constants.QUESTION_TYPE_CODING),
+				Type:     proto.QuestionType_CODING,
 				MaxScore: 15,
 			},
 		},
@@ -356,7 +356,7 @@ func TestCreateCodingQuestion(t *testing.T) {
 					"statement": "Write a program",
 					"input_definitions": [{ "variable_name": "str", "type": 2 }]
 				}`),
-				Type: int32(constants.QUESTION_TYPE_CODING),
+				Type: proto.QuestionType_CODING,
 			},
 		},
 	}
@@ -438,7 +438,7 @@ func TestCreateCodingQuestionBoilerplates(t *testing.T) {
 			req := &proto.CreateQuestionRequest{
 				PaperHash:   paper.PaperHash.Hash,
 				CategoryId:  int64(category.ID),
-				Type:        int32(constants.QUESTION_TYPE_CODING),
+				Type:        proto.QuestionType_CODING,
 				RawQuestion: []byte(tt.question),
 				MaxScore:    10,
 			}
@@ -475,7 +475,7 @@ func TestGeneralCreateQuestion(t *testing.T) {
 			},
 			request: &proto.CreateQuestionRequest{
 				RawQuestion: []byte(`{"statement":"Test MCQ","options":["A","B","C"]}`),
-				Type:        int32(constants.QUESTION_TYPE_MCQ),
+				Type:        proto.QuestionType_MCQ,
 				MaxScore:    1001, // Exceeds maximum
 				CategoryId:  1,
 			},
@@ -493,7 +493,7 @@ func TestGeneralCreateQuestion(t *testing.T) {
 			},
 			request: &proto.CreateQuestionRequest{
 				RawQuestion: []byte(`{"statement":"Test MCQ","options":["A","B","C"]}`),
-				Type:        int32(constants.QUESTION_TYPE_MCQ),
+				Type:        proto.QuestionType_MCQ,
 				MaxScore:    -1, // Negative score
 				CategoryId:  1,
 			},
