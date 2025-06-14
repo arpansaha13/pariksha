@@ -11,8 +11,8 @@ import (
 	"pariksha/common/pkg/constants"
 )
 
-// Returns a GORM logger config based on environment
-func ConfigureLogger(env string) *gorm.Config {
+// GormLogger returns a GORM logger config based on environment
+func GormLogger(env string) *gorm.Config {
 	config := &gorm.Config{}
 
 	switch env {

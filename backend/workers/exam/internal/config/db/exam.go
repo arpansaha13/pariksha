@@ -20,7 +20,7 @@ func InitExamsDB(host, port, user, password, dbname, sslmode string) error {
 		host, user, password, dbname, port, sslmode)
 
 	var err error
-	Exams, err = gorm.Open(postgres.Open(dsn), config.ConfigureLogger(env.GO_ENV))
+	Exams, err = gorm.Open(postgres.Open(dsn), config.GormLogger(env.GO_ENV))
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %v", err)
 	}
