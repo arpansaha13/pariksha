@@ -160,7 +160,6 @@ func TestCreateCodingQuestion(t *testing.T) {
 						{ "variable_name": "b",  "type": 1 }
 					],
 					"output_definition": {
-						"variable_name": "sum",
 						"type": 1
 					}
 				}`),
@@ -206,7 +205,6 @@ func TestCreateCodingQuestion(t *testing.T) {
 						{ "variable_name": "n", "type": 1 }
 					],
 					"output_definition": {
-						"variable_name": "sequence",
 						"type": 4,
 						"items": [{ "type": 1 }]
 					}

@@ -1,77 +1,31 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
 )
 
-// getJSONFields extracts a map of JSON field names from a struct type using reflection.
-// It returns a set (map with `true` values) of JSON field names.
-func getJSONFields(v interface{}) (map[string]bool, error) {
-	fields := make(map[string]bool)
-	val := reflect.ValueOf(v)
-	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Struct {
-		return nil, errors.New("expected pointer to struct")
-	}
-	typ := val.Elem().Type()
+// StrictUnmarshal performs JSON unmarshaling with strict field checking using json.Decoder.
+// It returns an error mentioning any unknown field encountered.
+func StrictUnmarshal(rawMessage []byte, v any) error {
+	decoder := json.NewDecoder(bytes.NewReader(rawMessage))
+	decoder.DisallowUnknownFields() // Enforce strict field checking
 
-	for i := 0; i < typ.NumField(); i++ {
-		field := typ.Field(i)
-		// Skip unexported fields
-		if field.PkgPath != "" {
-			continue
-		}
-		tag := field.Tag.Get("json")
-		if tag == "-" {
-			continue
-		}
-		name := field.Name
-		if tag != "" {
-			name = tag
-			// Handle tag options (e.g., `json:"name,omitempty"`)
-			if commaIdx := indexComma(tag); commaIdx >= 0 {
-				name = tag[:commaIdx]
-			}
-		}
-		fields[name] = true
-	}
-	return fields, nil
-}
+	if err := decoder.Decode(v); err != nil {
+		var syntaxErr *json.SyntaxError
+		var unmarshalTypeErr *json.UnmarshalTypeError
 
-// indexComma finds the first occurrence of a comma in a string.
-// Returns the index of the comma or -1 if not found.
-func indexComma(tag string) int {
-	for i, r := range tag {
-		if r == ',' {
-			return i
-		}
-	}
-	return -1
-}
-
-// StrictUnmarshal performs JSON unmarshaling with strict field checking.
-// It returns an error if the JSON contains fields not defined in the target struct.
-func StrictUnmarshal(rawMessage []byte, v interface{}) error {
-	allowedFields, err := getJSONFields(v)
-	if err != nil {
-		return err
-	}
-
-	// Decode into map to find all fields
-	var rawFields map[string]json.RawMessage
-	if err := json.Unmarshal(rawMessage, &rawFields); err != nil {
-		return err
-	}
-
-	// Check for unknown fields
-	for key := range rawFields {
-		if !allowedFields[key] {
-			return fmt.Errorf("unknown field: %s", key)
+		switch {
+		case errors.As(err, &syntaxErr):
+			return fmt.Errorf("syntax error at byte offset %d", syntaxErr.Offset)
+		case errors.As(err, &unmarshalTypeErr):
+			return fmt.Errorf("type error: field %q, value %v", unmarshalTypeErr.Field, unmarshalTypeErr.Value)
+		default:
+			return fmt.Errorf("JSON unmarshal error: %w", err)
 		}
 	}
 
-	// Unmarshal into the actual struct
-	return json.Unmarshal(rawMessage, v)
+	return nil
 }

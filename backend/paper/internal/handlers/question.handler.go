@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -110,7 +111,7 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 	case proto.QuestionType_MCQ:
 		var mcq structs.MCQQuestion
 		if err := utils.StrictUnmarshal(req.RawQuestion, &mcq); err != nil {
-			return nil, status.Error(codes.InvalidArgument, "invalid MCQ question format")
+			return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid MCQ question format: %s", err.Error()))
 		}
 		if err := validate.McqQuestionData(&mcq); err != nil {
 			return nil, err
@@ -118,14 +119,14 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 	case proto.QuestionType_SUBJECTIVE:
 		var subjective structs.SubjectiveQuestion
 		if err := utils.StrictUnmarshal(req.RawQuestion, &subjective); err != nil {
-			return nil, status.Error(codes.InvalidArgument, "invalid subjective question format")
+			return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid subjective question format: %s", err.Error()))
 		}
 		if err := validate.SubjectiveQuestionData(&subjective); err != nil {
 			return nil, err
 		}
 	case proto.QuestionType_CODING:
 		if err := utils.StrictUnmarshal(req.RawQuestion, &coding); err != nil {
-			return nil, status.Error(codes.InvalidArgument, "invalid coding question format")
+			return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid coding question format: %s", err.Error()))
 		}
 		if err := validate.CodingQuestionData(&coding); err != nil {
 			return nil, err

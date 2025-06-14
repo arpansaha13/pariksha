@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -251,7 +252,7 @@ func applyQuestionUpdates(question models.Question, req *proto.UpdateQuestionReq
 func applyMcqQuestionUpdates(question models.Question, rawQuestion []byte) (models.Question, error) {
 	var mcq structs.MCQQuestion
 	if err := utils.StrictUnmarshal(rawQuestion, &mcq); err != nil {
-		return question, status.Error(codes.InvalidArgument, "invalid MCQ question format")
+		return question, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid MCQ question format: %s", err.Error()))
 	}
 	if err := validate.McqQuestionData(&mcq); err != nil {
 		return question, err
@@ -264,7 +265,7 @@ func applyMcqQuestionUpdates(question models.Question, rawQuestion []byte) (mode
 func applySubjectiveQuestionUpdates(question models.Question, rawQuestion []byte) (models.Question, error) {
 	var subjective structs.SubjectiveQuestion
 	if err := utils.StrictUnmarshal(rawQuestion, &subjective); err != nil {
-		return question, status.Error(codes.InvalidArgument, "invalid subjective question format")
+		return question, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid subjective question format: %s", err.Error()))
 	}
 	if err := validate.SubjectiveQuestionData(&subjective); err != nil {
 		return question, err
@@ -277,7 +278,7 @@ func applySubjectiveQuestionUpdates(question models.Question, rawQuestion []byte
 func applyCodingQuestionUpdates(question models.Question, rawQuestion []byte) (models.Question, error) {
 	var coding structs.CodingQuestion
 	if err := utils.StrictUnmarshal(rawQuestion, &coding); err != nil {
-		return question, status.Error(codes.InvalidArgument, "invalid coding question format")
+		return question, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid coding question format: %s", err.Error()))
 	}
 
 	if err := validate.CodingQuestionData(&coding); err != nil {
