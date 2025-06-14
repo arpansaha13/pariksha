@@ -30,8 +30,16 @@ func DeleteExamsAuthInterceptor() grpc.UnaryServerInterceptor {
 			return nil, status.Error(codes.Internal, "invalid request type")
 		}
 
-		if len(deleteReq.ExamIds) == 0 {
-			return nil, status.Error(codes.InvalidArgument, "exam IDs list cannot be empty")
+		if len(deleteReq.ExamHashes) == 0 {
+			return nil, status.Error(codes.InvalidArgument, "exam hashes list cannot be empty")
+		}
+
+		examIDs, ok := GetExamIDsFromContext(ctx)
+		if !ok {
+			return nil, status.Error(codes.Internal, "exam ids list not found in context")
+		}
+		if len(examIDs) == 0 {
+			return handler(ctx, req)
 		}
 
 		userID, err := utils.GetUserIDFromMetadata(ctx)
@@ -41,7 +49,7 @@ func DeleteExamsAuthInterceptor() grpc.UnaryServerInterceptor {
 
 		// Get all permissions for these exams for this user
 		var permissions []models.ExamPermission
-		if err := db.DB.Where("exam_id IN ? AND user_id = ?", deleteReq.ExamIds, userID).Find(&permissions).Error; err != nil {
+		if err := db.DB.Where("exam_id IN ? AND user_id = ?", examIDs, userID).Find(&permissions).Error; err != nil {
 			return nil, status.Error(codes.Internal, "failed to fetch permissions")
 		}
 

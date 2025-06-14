@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -10,12 +9,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/utils/generate"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/exam/internal/config/db"
@@ -1368,25 +1367,35 @@ func TestGetExam(t *testing.T) {
 }
 
 func TestDeleteExams(t *testing.T) {
-	tests := []ExamBatchTestCase{
+	tests := []DeleteExamsTestCase{
 		{
 			BaseTestCase: BaseTestCase{
-				name:         "Success - Delete multiple exams",
+				name:         "Success - Delete multiple exams with hashes",
 				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
-			setup: func(t *testing.T) []int64 {
+			setup: func(t *testing.T) []models.Exam {
 				exam1 := createTestExam(t, typedUserID)
 				exam2 := createTestExam(t, typedUserID)
-				return []int64{int64(exam1.ID), int64(exam2.ID)}
+				return []models.Exam{exam1, exam2}
 			},
-			validate: func(t *testing.T, deletedExamIDs []int64) {
-				for _, id := range deletedExamIDs {
-					var exam models.Exam
-					err := db.DB.First(&exam, id).Error
-					assert.Error(t, err)
-					assert.True(t, errors.Is(err, gorm.ErrRecordNotFound))
+			validate: func(t *testing.T, exams []models.Exam) {
+				examIDs := make([]int64, len(exams))
+				for i, e := range exams {
+					examIDs[i] = int64(e.ExamHash.ID)
 				}
+
+				// Verify exams are deleted
+				var examCount int64
+				err := db.DB.Model(&models.Exam{}).Where("id IN ?", examIDs).Count(&examCount).Error
+				require.NoError(t, err)
+				assert.Equal(t, int64(0), examCount, "Exams should be deleted")
+
+				// Verify exam hashes are deleted
+				var hashCount int64
+				err = db.DB.Model(&models.ExamHash{}).Where("id IN ?", examIDs).Count(&hashCount).Error
+				require.NoError(t, err)
+				assert.Equal(t, int64(0), hashCount, "Exam hashes should be deleted")
 			},
 		},
 		{
@@ -1395,7 +1404,7 @@ func TestDeleteExams(t *testing.T) {
 				userID:       typedUserID,
 				expectedCode: codes.PermissionDenied,
 			},
-			setup: func(t *testing.T) []int64 {
+			setup: func(t *testing.T) []models.Exam {
 				exam := createTestExam(t, 2) // Created by a different user
 
 				// Create read-only permission for the test user
@@ -1406,7 +1415,7 @@ func TestDeleteExams(t *testing.T) {
 				permission.SetRead()
 				require.NoError(t, db.DB.Create(&permission).Error)
 
-				return []int64{int64(exam.ID)}
+				return []models.Exam{exam}
 			},
 		},
 		{
@@ -1415,8 +1424,15 @@ func TestDeleteExams(t *testing.T) {
 				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
-			setup: func(t *testing.T) []int64 {
-				return []int64{9999} // Non-existent exam ID
+			setup: func(t *testing.T) []models.Exam {
+				return []models.Exam{
+					{
+						ID: 999, // Non-existent exam ID
+						ExamHash: models.ExamHash{
+							Hash: generate.HMACHash(999),
+						},
+					},
+				}
 			},
 		},
 		{
@@ -1425,8 +1441,8 @@ func TestDeleteExams(t *testing.T) {
 				userID:       typedUserID,
 				expectedCode: codes.InvalidArgument,
 			},
-			setup: func(t *testing.T) []int64 {
-				return []int64{}
+			setup: func(t *testing.T) []models.Exam {
+				return []models.Exam{}
 			},
 		},
 	}
@@ -1434,15 +1450,20 @@ func TestDeleteExams(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
-			examIDs := tt.setup(t)
+			exams := tt.setup(t)
+
+			hashes := make([]string, len(exams))
+			for i, e := range exams {
+				hashes[i] = e.ExamHash.Hash
+			}
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.DeleteExamsRequest{ExamIds: examIDs},
+				&proto.DeleteExamsRequest{ExamHashes: hashes},
 				client.DeleteExams,
 				func(t *testing.T, _ *proto.Empty) {
 					if tt.validate != nil {
-						tt.validate(t, examIDs)
+						tt.validate(t, exams)
 					}
 				},
 			)

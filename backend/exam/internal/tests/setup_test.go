@@ -131,6 +131,7 @@ func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 	srv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			interceptors.SingleExamHashInterceptor(),
+			interceptors.BatchExamHashInterceptor(),
 			interceptors.GeneralExamAuthInterceptor(),
 			interceptors.DeleteExamsAuthInterceptor(),
 			interceptors.EndExamInterceptor(),

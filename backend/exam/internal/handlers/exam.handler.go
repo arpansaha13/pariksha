@@ -425,17 +425,28 @@ func (s *ExamServer) GetExamPermission(ctx context.Context, req *proto.ExamReque
 
 // DeleteExams handles the batch deletion of exams and their associated permissions
 func (s *ExamServer) DeleteExams(ctx context.Context, req *proto.DeleteExamsRequest) (*proto.Empty, error) {
+	examIDs, ok := interceptors.GetExamIDsFromContext(ctx)
+	if !ok || len(examIDs) == 0 {
+		return &proto.Empty{}, nil
+	}
+
 	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		if err := tx.Where("id IN ?", req.ExamIds).Delete(&models.Exam{}).Error; err != nil {
+		// Delete exam hashes first due to foreign key constraint
+		if err := tx.Where("id IN ?", examIDs).Delete(&models.ExamHash{}).Error; err != nil {
+			return status.Error(codes.Internal, "failed to delete exam hashes")
+		}
+
+		// Delete exams and permissions
+		if err := tx.Where("id IN ?", examIDs).Delete(&models.Exam{}).Error; err != nil {
 			return status.Error(codes.Internal, "failed to delete exams")
 		}
 
-		if err := tx.Where("exam_id IN ?", req.ExamIds).Delete(&models.ExamPermission{}).Error; err != nil {
+		if err := tx.Where("exam_id IN ?", examIDs).Delete(&models.ExamPermission{}).Error; err != nil {
 			return status.Error(codes.Internal, "failed to delete exam permissions")
 		}
 
 		var typedExamIDs []types.ExamID
-		for _, id := range req.ExamIds {
+		for _, id := range examIDs {
 			typedExamIDs = append(typedExamIDs, types.ExamID(id))
 		}
 		if err := services.EnqueuePostDeleteExamsCleanup(typedExamIDs); err != nil {

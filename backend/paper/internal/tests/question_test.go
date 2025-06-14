@@ -176,6 +176,12 @@ func TestDeleteQuestion(t *testing.T) {
 				err := db.DB.First(&question, questionID).Error
 				assert.Error(t, err) // Question should not exist
 
+				// Verify question hash was deleted
+				var hashCount int64
+				err = db.DB.Model(&models.QuestionHash{}).Where("id = ?", questionID).Count(&hashCount).Error
+				require.NoError(t, err)
+				assert.Equal(t, int64(0), hashCount, "Question hash should be deleted")
+
 				// Verify question counts were updated
 				var updatedPaper models.Paper
 				require.NoError(t, db.DB.First(&updatedPaper, paper.ID).Error)

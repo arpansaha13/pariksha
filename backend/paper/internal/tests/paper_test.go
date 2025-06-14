@@ -558,6 +558,12 @@ func TestDeletePapers(t *testing.T) {
 				err := db.DB.Model(&models.Paper{}).Where("deleted_at IS NULL").Count(&count).Error
 				require.NoError(t, err)
 				assert.Equal(t, int64(0), count)
+
+				// Verify paper hashes are deleted
+				var hashCount int64
+				err = db.DB.Model(&models.PaperHash{}).Count(&hashCount).Error
+				require.NoError(t, err)
+				assert.Equal(t, int64(0), hashCount, "Paper hashes should be deleted")
 			},
 		},
 		{

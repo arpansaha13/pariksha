@@ -16,7 +16,8 @@ import (
 type hashContextKey string
 
 const (
-	examIDContextKey hashContextKey = "examID"
+	examIDContextKey  hashContextKey = "examID"
+	examIDsContextKey hashContextKey = "examIDs"
 )
 
 // getExamHashFromRequest extracts ExamHash field from requests
@@ -44,6 +45,16 @@ func getExamHashFromRequest(req any) (string, bool) {
 		return r.ExamHash, true
 	default:
 		return "", false
+	}
+}
+
+// getExamHashesFromRequest extracts array of exam hashes from batch requests
+func getExamHashesFromRequest(req any) ([]string, bool) {
+	switch r := req.(type) {
+	case *proto.DeleteExamsRequest:
+		return r.ExamHashes, true
+	default:
+		return nil, false
 	}
 }
 
@@ -76,8 +87,45 @@ func SingleExamHashInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
+// BatchExamHashInterceptor converts array of exam_hashes to IDs maintaining sequence
+func BatchExamHashInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		hashes, ok := getExamHashesFromRequest(req)
+		if !ok {
+			return handler(ctx, req)
+		}
+
+		// Get all hashes, store in map for lookup
+		var examHashModels []models.ExamHash
+		if err := db.DB.Where("hash IN ?", hashes).Find(&examHashModels).Error; err != nil {
+			return nil, status.Error(codes.Internal, "failed to fetch exam IDs")
+		}
+		hashToID := make(map[string]types.ExamID)
+		for _, eh := range examHashModels {
+			hashToID[eh.Hash] = eh.ID
+		}
+
+		// Create response maintaining input order
+		typedExamIDs := make([]types.ExamID, 0, len(hashes))
+		for _, hash := range hashes {
+			if id, exists := hashToID[hash]; exists {
+				typedExamIDs = append(typedExamIDs, id)
+			}
+		}
+
+		ctx = context.WithValue(ctx, examIDsContextKey, typedExamIDs)
+		return handler(ctx, req)
+	}
+}
+
 // GetExamIDFromContext retrieves the exam ID from context
 func GetExamIDFromContext(ctx context.Context) (types.ExamID, bool) {
 	id, ok := ctx.Value(examIDContextKey).(types.ExamID)
 	return id, ok
+}
+
+// GetExamIDsFromContext retrieves the exam IDs array from context
+func GetExamIDsFromContext(ctx context.Context) ([]types.ExamID, bool) {
+	ids, ok := ctx.Value(examIDsContextKey).([]types.ExamID)
+	return ids, ok
 }

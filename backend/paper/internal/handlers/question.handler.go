@@ -210,8 +210,16 @@ func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionReq
 		return nil, err
 	}
 
+	// Preload paper with required fields
+	if err := db.DB.
+		Select("id, question_counts").
+		Where("id = ?", question.PaperID).
+		Take(&question.Paper).Error; err != nil {
+		return nil, utils.HandleDBError(err, "failed to fetch question details")
+	}
+
 	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		// Update paper max score
+		// Update paper max score and question counts
 		if err := tx.Model(&question.Paper).
 			UpdateColumn("max_score", gorm.Expr("max_score - ?", question.MaxScore)).
 			Error; err != nil {
@@ -235,6 +243,12 @@ func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionReq
 				return err
 			}
 		} else {
+			// Delete question hash first due to foreign key constraint
+			if err := tx.Where("id = ?", question.ID).Delete(&models.QuestionHash{}).Error; err != nil {
+				return err
+			}
+
+			// Then delete the question
 			if err := tx.Delete(&question).Error; err != nil {
 				return err
 			}

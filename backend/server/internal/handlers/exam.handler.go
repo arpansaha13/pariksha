@@ -12,7 +12,6 @@ import (
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
 	"pariksha/server/internal/services"
-	"pariksha/server/internal/utils"
 )
 
 func GetUserExams(w http.ResponseWriter, r *http.Request) {
@@ -310,23 +309,12 @@ func DeleteExams(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Decrypt exam IDs
-	decryptedExamIds := make([]int64, len(deleteExamsDto.ExamIds))
-	for i, encryptedID := range deleteExamsDto.ExamIds {
-		decryptedID, err := utils.DecryptID(encryptedID)
-		if err != nil {
-			http.Error(w, "Invalid exam ID", http.StatusBadRequest)
-			return
-		}
-		decryptedExamIds[i] = decryptedID
-	}
-
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	_, err := examService.Client().DeleteExams(ctx, &proto.DeleteExamsRequest{
-		ExamIds: decryptedExamIds,
+		ExamHashes: deleteExamsDto.ExamIds,
 	})
 	if err != nil {
 		handleGRPCError(w, err)

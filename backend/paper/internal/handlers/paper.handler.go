@@ -188,27 +188,32 @@ func (s *PaperServer) DeletePapers(ctx context.Context, req *proto.DeletePapersR
 			ids[i] = int64(id)
 		}
 
+		// Delete paper hashes first due to foreign key constraint
+		if err := tx.Where("id IN ?", ids).Delete(&models.PaperHash{}).Error; err != nil {
+			return status.Error(codes.Internal, "failed to delete paper hashes")
+		}
+
 		// Delete all specified papers
 		if err := tx.Where("id IN ?", ids).Delete(&models.Paper{}).Error; err != nil {
-			return status.Error(codes.Internal, constants.ErrInternalServer)
+			return status.Error(codes.Internal, err.Error())
 		}
 
 		// Delete all non-locked questions for these papers
 		if err := tx.Where("paper_id IN ? AND locked = ?", ids, false).
 			Delete(&models.Question{}).Error; err != nil {
-			return status.Error(codes.Internal, constants.ErrInternalServer)
+			return status.Error(codes.Internal, err.Error())
 		}
 
 		// Delete all non-locked categories for these papers
 		if err := tx.Where("paper_id IN ? AND locked = ?", ids, false).
 			Delete(&models.QuestionCategory{}).Error; err != nil {
-			return status.Error(codes.Internal, constants.ErrInternalServer)
+			return status.Error(codes.Internal, err.Error())
 		}
 
 		// Delete all permissions for these papers
 		if err := tx.Where("paper_id IN ?", ids).
 			Delete(&models.PaperPermission{}).Error; err != nil {
-			return status.Error(codes.Internal, constants.ErrInternalServer)
+			return status.Error(codes.Internal, err.Error())
 		}
 
 		return nil

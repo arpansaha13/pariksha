@@ -246,7 +246,7 @@ message GetAnswerEvaluationDataResponse {
 }
 
 message DeleteExamsRequest {
-  repeated int64 exam_ids = 1;
+  repeated string exam_hashes = 1;
 }
 
 message ExamResultItem {

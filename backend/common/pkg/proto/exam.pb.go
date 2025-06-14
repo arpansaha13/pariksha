@@ -2011,7 +2011,7 @@ func (x *GetAnswerEvaluationDataResponse) GetComments() string {
 
 type DeleteExamsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ExamIds       []int64                `protobuf:"varint,1,rep,packed,name=exam_ids,json=examIds,proto3" json:"exam_ids,omitempty"`
+	ExamHashes    []string               `protobuf:"bytes,1,rep,name=exam_hashes,json=examHashes,proto3" json:"exam_hashes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2046,9 +2046,9 @@ func (*DeleteExamsRequest) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{32}
 }
 
-func (x *DeleteExamsRequest) GetExamIds() []int64 {
+func (x *DeleteExamsRequest) GetExamHashes() []string {
 	if x != nil {
-		return x.ExamIds
+		return x.ExamHashes
 	}
 	return nil
 }
@@ -2333,9 +2333,10 @@ const file_exam_proto_rawDesc = "" +
 	"\vquestion_id\x18\x02 \x01(\x03R\n" +
 	"questionId\x12#\n" +
 	"\rscore_awarded\x18\x03 \x01(\x05R\fscoreAwarded\x12\x1a\n" +
-	"\bcomments\x18\x04 \x01(\tR\bcomments\"/\n" +
-	"\x12DeleteExamsRequest\x12\x19\n" +
-	"\bexam_ids\x18\x01 \x03(\x03R\aexamIds\"n\n" +
+	"\bcomments\x18\x04 \x01(\tR\bcomments\"5\n" +
+	"\x12DeleteExamsRequest\x12\x1f\n" +
+	"\vexam_hashes\x18\x01 \x03(\tR\n" +
+	"examHashes\"n\n" +
 	"\x0eExamResultItem\x12\x1b\n" +
 	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12#\n" +
 	"\rscore_awarded\x18\x02 \x01(\x05R\fscoreAwarded\x12\x1a\n" +
