@@ -19,22 +19,25 @@ import (
 )
 
 func TestGetAnswerForEvaluation(t *testing.T) {
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T) (*models.ExamParticipant, types.QuestionID)
-		metadata     map[string]string
-		expectedCode codes.Code
-		validate     func(t *testing.T, resp *proto.AnswerMinimalResponse)
-	}{
+	tests := []getAnswerForEvaluationTestCase{
 		{
-			name: "Success - Get answer as evaluator",
+			baseTestCase: baseTestCase{
+				name: "Success - Get answer as evaluator",
+				metadata: map[string]string{
+					"user_id": strconv.FormatInt(userID, 10),
+				},
+				expectedCode: codes.OK,
+				userID:       typedUserID,
+			},
 			setup: func(t *testing.T) (*models.ExamParticipant, types.QuestionID) {
-				exam := createTestExam(t, 2) // Created by different user
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 1,
-					MaxScore:   10,
-					Type:       proto.QuestionType_SUBJECTIVE,
+				exam := createDefaultTestExam(t, 2) // Created by different user
+				questions := createTestExamQuestions(t, &exam, []models.ExamQuestion{
+					{
+						QuestionID: 1,
+						CategoryID: 1,
+						Type:       proto.QuestionType_SUBJECTIVE,
+						MaxScore:   10,
+					},
 				})
 
 				// Create evaluator permission for test user
@@ -46,21 +49,16 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 				require.NoError(t, db.DB.Create(&permission).Error)
 
 				// Create participant and answer
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
 					{UserID: 3, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
-				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
-				answer := createTestAnswer(t, &participant, 1)
+				answer := createTestAnswer(t, &participant, questions[0].QuestionID)
 
 				return &participant, answer.QuestionID
 			},
-			metadata: map[string]string{
-				"user_id": strconv.FormatInt(userID, 10),
-			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.AnswerMinimalResponse) {
 				assert.NotZero(t, resp.AnswerId)
 				assert.NotNil(t, resp.Answer)
@@ -72,15 +70,19 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 			},
 		},
 		{
-			name: "Fail - No evaluate permission",
+			baseTestCase: baseTestCase{
+				name:         "Fail - No evaluate permission",
+				metadata:     map[string]string{"user_id": strconv.FormatInt(userID, 10)},
+				expectedCode: codes.PermissionDenied,
+				userID:       typedUserID,
+			},
 			setup: func(t *testing.T) (*models.ExamParticipant, types.QuestionID) {
-				exam := createTestExam(t, 2) // Created by different user
+				exam := createDefaultTestExam(t, 2) // Created by different user
 
 				// Create participant and answer
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
 					{UserID: 3, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
-				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
@@ -88,31 +90,27 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 
 				return &participant, answer.QuestionID
 			},
-			metadata: map[string]string{
-				"user_id": strconv.FormatInt(userID, 10),
-			},
-			expectedCode: codes.PermissionDenied,
 		},
 		{
-			name: "Success - Empty response for non-existent answer",
+			baseTestCase: baseTestCase{
+				name:         "Success - Empty response for non-existent answer",
+				metadata:     map[string]string{"user_id": strconv.FormatInt(userID, 10)},
+				expectedCode: codes.OK,
+				userID:       typedUserID,
+			},
 			setup: func(t *testing.T) (*models.ExamParticipant, types.QuestionID) {
-				exam := createTestExam(t, typedUserID) // Create as owner to get evaluate permission
+				exam := createDefaultTestExam(t, typedUserID) // Create as owner to get evaluate permission
 
 				// Create participant without answer
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
-				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 
 				return &participant, 999 // Non-existent question ID
 			},
-			metadata: map[string]string{
-				"user_id": strconv.FormatInt(userID, 10),
-			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.AnswerMinimalResponse) {
 				assert.Zero(t, resp.AnswerId)
 				assert.Nil(t, resp.Answer)
@@ -140,21 +138,20 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 }
 
 func TestGetAnswerEvaluationData(t *testing.T) {
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T) (*models.ExamParticipant, types.QuestionID)
-		metadata     map[string]string
-		expectedCode codes.Code
-		validate     func(t *testing.T, resp *proto.GetAnswerEvaluationDataResponse)
-	}{
+	tests := []getAnswerEvaluationDataTestCase{
 		{
-			name: "Success - Get evaluation data as evaluator",
+			baseTestCase: baseTestCase{
+				name:         "Success - Get evaluation data as evaluator",
+				metadata:     map[string]string{"user_id": strconv.FormatInt(userID, 10)},
+				expectedCode: codes.OK,
+				userID:       typedUserID,
+			},
 			setup: func(t *testing.T) (*models.ExamParticipant, types.QuestionID) {
-				exam := createTestExam(t, 2) // Created by different user
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 10,
-					MaxScore:   5,
+				exam := createDefaultTestExam(t, 2) // Created by different user
+				questions := createTestExamQuestions(t, &exam, []models.ExamQuestion{
+					{
+						MaxScore: 5,
+					},
 				})
 
 				// Create evaluator permission for test user
@@ -166,21 +163,16 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 				require.NoError(t, db.DB.Create(&permission).Error)
 
 				// Create participant and answer
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
 					{UserID: 3, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
-				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
-				answer := createTestAnswer(t, &participant, 1)
+				answer := createTestAnswer(t, &participant, questions[0].QuestionID)
 
 				return &participant, answer.QuestionID
 			},
-			metadata: map[string]string{
-				"user_id": strconv.FormatInt(userID, 10),
-			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.GetAnswerEvaluationDataResponse) {
 				assert.NotZero(t, resp.AnswerId)
 				assert.EqualValues(t, 5, resp.ScoreAwarded)
@@ -188,15 +180,19 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 			},
 		},
 		{
-			name: "Fail - No evaluate permission",
+			baseTestCase: baseTestCase{
+				name:         "Fail - No evaluate permission",
+				metadata:     map[string]string{"user_id": strconv.FormatInt(userID, 10)},
+				expectedCode: codes.PermissionDenied,
+				userID:       typedUserID,
+			},
 			setup: func(t *testing.T) (*models.ExamParticipant, types.QuestionID) {
-				exam := createTestExam(t, 2) // Created by different user
+				exam := createDefaultTestExam(t, 2) // Created by different user
 
 				// Create participant and answer
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
 					{UserID: 3, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
-				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
@@ -204,21 +200,21 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 
 				return &participant, answer.QuestionID
 			},
-			metadata: map[string]string{
-				"user_id": strconv.FormatInt(userID, 10),
-			},
-			expectedCode: codes.PermissionDenied,
 		},
 		{
-			name: "Fail - Exam not ended",
+			baseTestCase: baseTestCase{
+				name:         "Fail - Exam not ended",
+				metadata:     map[string]string{"user_id": strconv.FormatInt(userID, 10)},
+				expectedCode: codes.FailedPrecondition,
+				userID:       typedUserID,
+			},
 			setup: func(t *testing.T) (*models.ExamParticipant, types.QuestionID) {
-				exam := createTestExam(t, typedUserID) // Create as owner to get evaluate permission
+				exam := createDefaultTestExam(t, typedUserID) // Create as owner to get evaluate permission
 
 				// Create participant with STARTED status
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
-				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
@@ -226,10 +222,6 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 
 				return &participant, answer.QuestionID
 			},
-			metadata: map[string]string{
-				"user_id": strconv.FormatInt(userID, 10),
-			},
-			expectedCode: codes.FailedPrecondition,
 		},
 	}
 
@@ -257,22 +249,19 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 	comments := "Good attempt"
 	exceedingScore := int32(15) // Exceeds max_score in exam_questions
 
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T) *models.Answer
-		request      *proto.UpdateAnswerRequest
-		metadata     map[string]string
-		expectedCode codes.Code
-		validate     func(t *testing.T, answerId types.AnswerID)
-	}{
+	tests := []updateAnswerForEvaluationTestCase{
 		{
-			name: "Success - Update all fields",
+			baseTestCase: baseTestCase{
+				name:         "Success - Update all fields",
+				metadata:     map[string]string{"user_id": strconv.FormatInt(userID, 10)},
+				expectedCode: codes.OK,
+				userID:       typedUserID,
+			},
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, typedUserID)
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+				exam := createDefaultTestExam(t, typedUserID)
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
-				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
@@ -280,14 +269,16 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				require.NoError(t, db.DB.Save(&participant).Error)
 
 				// Create exam question with max score of 10
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 1,
-					MaxScore:   10,
-					Type:       proto.QuestionType_MCQ,
+				questions := createTestExamQuestions(t, &exam, []models.ExamQuestion{
+					{
+						QuestionID: 1,
+						CategoryID: 1,
+						Type:       proto.QuestionType_MCQ,
+						MaxScore:   10,
+					},
 				})
 
-				answer := createTestAnswer(t, &participant, 1)
+				answer := createTestAnswer(t, &participant, questions[0].QuestionID)
 				answer.ScoreAwarded = 5 // Initial score
 				answer.Evaluated = false
 				require.NoError(t, db.DB.Save(&answer).Error)
@@ -299,10 +290,6 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 				Evaluated: &evaluated,
 				Comments:  &comments,
 			},
-			metadata: map[string]string{
-				"user_id": strconv.FormatInt(userID, 10),
-			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, answerId types.AnswerID) {
 				var answer models.Answer
 				require.NoError(t, db.DB.First(&answer, answerId).Error)
@@ -317,41 +304,34 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 			},
 		},
 		{
-			name: "Success - Update only comments",
+			baseTestCase: baseTestCase{
+				name:         "Success - Update only comments",
+				metadata:     map[string]string{"user_id": strconv.FormatInt(userID, 10)},
+				expectedCode: codes.OK,
+				userID:       typedUserID,
+			},
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, typedUserID)
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 10,
-					MaxScore:   5,
+				exam := createDefaultTestExam(t, typedUserID)
+				questions := createTestExamQuestions(t, &exam, []models.ExamQuestion{
+					{
+						Type:     proto.QuestionType_SUBJECTIVE,
+						MaxScore: 5,
+					},
 				})
 
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
-				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 
-				// Create exam question with max score of 10
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 1,
-					MaxScore:   10,
-					Type:       proto.QuestionType_MCQ,
-				})
-
-				answer := createTestAnswer(t, &participant, 1)
+				answer := createTestAnswer(t, &participant, questions[0].QuestionID)
 				return &answer
 			},
 			request: &proto.UpdateAnswerRequest{
 				Comments: &comments,
 			},
-			metadata: map[string]string{
-				"user_id": strconv.FormatInt(userID, 10),
-			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, answerId types.AnswerID) {
 				var answer models.Answer
 				require.NoError(t, db.DB.First(&answer, answerId).Error)
@@ -360,55 +340,58 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 			},
 		},
 		{
-			name: "Fail - Answer not found",
+			baseTestCase: baseTestCase{
+				name:         "Fail - Answer not found",
+				userID:       typedUserID,
+				expectedCode: codes.NotFound,
+				metadata:     map[string]string{"user_id": strconv.FormatInt(userID, 10)},
+			},
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, typedUserID)
+				exam := createDefaultTestExam(t, typedUserID)
 				// Create exam question even for non-existent answer to maintain consistency
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 10,
-					MaxScore:   5,
+				createTestExamQuestions(t, &exam, []models.ExamQuestion{
+					{
+						MaxScore: 5,
+					},
 				})
 				return &models.Answer{ID: 9999}
 			},
 			request: &proto.UpdateAnswerRequest{
 				NewScore: &newScore,
 			},
-			metadata: map[string]string{
-				"user_id": strconv.FormatInt(userID, 10),
-			},
-			expectedCode: codes.NotFound,
 		},
 		{
-			name: "Fail - Score exceeds max score",
+			baseTestCase: baseTestCase{
+				name:         "Fail - Score exceeds max score",
+				userID:       typedUserID,
+				expectedCode: codes.InvalidArgument,
+				metadata:     map[string]string{"user_id": strconv.FormatInt(userID, 10)},
+			},
 			setup: func(t *testing.T) *models.Answer {
-				exam := createTestExam(t, typedUserID)
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+				exam := createDefaultTestExam(t, typedUserID)
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
-				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 
 				// Create exam question with max score of 10
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 1,
-					MaxScore:   10,
-					Type:       proto.QuestionType_MCQ,
+				questions := createTestExamQuestions(t, &exam, []models.ExamQuestion{
+					{
+						QuestionID: 1,
+						CategoryID: 1,
+						Type:       proto.QuestionType_MCQ,
+						MaxScore:   10,
+					},
 				})
 
-				answer := createTestAnswer(t, &participant, 1)
+				answer := createTestAnswer(t, &participant, questions[0].QuestionID)
 				return &answer
 			},
 			request: &proto.UpdateAnswerRequest{
 				NewScore: &exceedingScore, // Try to set score higher than max_score
 			},
-			metadata: map[string]string{
-				"user_id": strconv.FormatInt(userID, 10),
-			},
-			expectedCode: codes.InvalidArgument,
 		},
 	}
 
@@ -435,20 +418,19 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 }
 
 func TestMarkParticipantAsEvaluated(t *testing.T) {
-	tests := []struct {
-		name         string
-		setup        func(t *testing.T) *models.ExamParticipant
-		expectedCode codes.Code
-		validate     func(t *testing.T, participant *models.ExamParticipant, resp *proto.EvaluationStatusResponse)
-	}{
+	tests := []markParticipantAsEvaluatedTestCase{
 		{
-			name: "Success - All answers evaluated",
+			baseTestCase: baseTestCase{
+				name:         "Success - All answers evaluated",
+				userID:       typedUserID,
+				expectedCode: codes.OK,
+				metadata:     map[string]string{"user_id": strconv.FormatInt(userID, 10)},
+			},
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, typedUserID)
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+				exam := createDefaultTestExam(t, typedUserID)
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
-				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
@@ -464,7 +446,6 @@ func TestMarkParticipantAsEvaluated(t *testing.T) {
 
 				return &participant
 			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, participant *models.ExamParticipant, resp *proto.EvaluationStatusResponse) {
 				// Verify unevaluated count is 0
 				assert.EqualValues(t, 0, resp.UnevaluatedCount)
@@ -476,13 +457,17 @@ func TestMarkParticipantAsEvaluated(t *testing.T) {
 			},
 		},
 		{
-			name: "Success - Some answers unevaluated",
+			baseTestCase: baseTestCase{
+				name:         "Success - Some answers unevaluated",
+				userID:       typedUserID,
+				expectedCode: codes.OK,
+				metadata:     map[string]string{"user_id": strconv.FormatInt(userID, 10)},
+			},
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, typedUserID)
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+				exam := createDefaultTestExam(t, typedUserID)
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
-				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
@@ -498,7 +483,6 @@ func TestMarkParticipantAsEvaluated(t *testing.T) {
 
 				return &participant
 			},
-			expectedCode: codes.OK,
 			validate: func(t *testing.T, participant *models.ExamParticipant, resp *proto.EvaluationStatusResponse) {
 				// Verify one answer is still unevaluated
 				assert.EqualValues(t, 1, resp.UnevaluatedCount)
@@ -510,26 +494,33 @@ func TestMarkParticipantAsEvaluated(t *testing.T) {
 			},
 		},
 		{
-			name: "Fail - Participant not found",
+			baseTestCase: baseTestCase{
+				name:         "Fail - Participant not found",
+				userID:       typedUserID,
+				expectedCode: codes.NotFound,
+				metadata:     map[string]string{"user_id": strconv.FormatInt(userID, 10)},
+			},
 			setup: func(t *testing.T) *models.ExamParticipant {
 				return &models.ExamParticipant{ID: 9999}
 			},
-			expectedCode: codes.NotFound,
 		},
 		{
-			name: "Fail - Exam not ended",
+			baseTestCase: baseTestCase{
+				name:         "Fail - Exam not ended",
+				userID:       typedUserID,
+				expectedCode: codes.FailedPrecondition,
+				metadata:     map[string]string{"user_id": strconv.FormatInt(userID, 10)},
+			},
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, typedUserID)
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
+				exam := createDefaultTestExam(t, typedUserID)
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
 					{UserID: 2, Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
-				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 				return &participant
 			},
-			expectedCode: codes.FailedPrecondition,
 		},
 	}
 

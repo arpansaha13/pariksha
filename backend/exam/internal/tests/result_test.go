@@ -16,21 +16,20 @@ import (
 )
 
 func TestGetExamResults(t *testing.T) {
-	tests := []ExamSetupTestCase[*proto.ExamResultsResponse]{
+	tests := []getExamResultsTestCase{
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name:         "Success - Get results with all questions answered",
 				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, 2)
+				exam := createDefaultTestExam(t, 2)
 
 				// Create participant
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_EVALUATED},
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
+					{Status: constants.PARTICIPANT_STATUS_EVALUATED},
 				})
-				require.NoError(t, err)
 
 				// Get participant to create answers
 				var participant models.ExamParticipant
@@ -53,17 +52,18 @@ func TestGetExamResults(t *testing.T) {
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name:         "Success - Exam with no answers",
 				userID:       typedUserID,
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_EVALUATED},
+				exam := createDefaultTestExam(t, 2)
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
+					{
+						Status: constants.PARTICIPANT_STATUS_EVALUATED,
+					},
 				})
-				require.NoError(t, err)
 				return &exam
 			},
 			validate: func(t *testing.T, resp *proto.ExamResultsResponse) {
@@ -71,13 +71,13 @@ func TestGetExamResults(t *testing.T) {
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name:         "Fail - User is not a participant",
 				userID:       typedUserID,
 				expectedCode: codes.PermissionDenied,
 			},
 			setup: func(t *testing.T) *models.Exam {
-				exam := createTestExam(t, 2)
+				exam := createDefaultTestExam(t, 2)
 				return &exam
 			},
 		},

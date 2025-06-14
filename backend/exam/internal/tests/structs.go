@@ -2,87 +2,159 @@ package tests
 
 import (
 	"pariksha/common/pkg/models"
+	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
 	"testing"
 
 	"google.golang.org/grpc/codes"
 )
 
-// TestParticipantData represents test data for creating exam participants
-type TestParticipantData struct {
-	UserID types.UserID
-	Status int16
-}
-
-// BaseTestCase contains common fields used across test cases
-type BaseTestCase struct {
+// baseTestCase contains common fields used across test cases
+type baseTestCase struct {
 	name         string
 	metadata     map[string]string
 	expectedCode codes.Code
 	userID       types.UserID
 }
 
-// ParticipantTestCase represents a test case for participant-related operations
-type ParticipantTestCase[T any] struct {
-	BaseTestCase
-	setup    func(t *testing.T) *models.ExamParticipant
-	validate func(t *testing.T, resp T)
-}
-
-// ExamTestCase represents a test case for exam-related operations
-type ExamTestCase[T any] struct {
-	BaseTestCase
-	setup    func(t *testing.T) (*models.Exam, types.QuestionID)
-	validate func(t *testing.T, resp T)
-}
-
-// ParticipantRequestTestCase represents a test case for operations requiring both participant and request
-type ParticipantRequestTestCase[T any, R any] struct {
-	BaseTestCase
-	setup    func(t *testing.T) (*models.ExamParticipant, R)
-	validate func(t *testing.T, resp T)
-}
-
-// ExamParticipantRequestTestCase represents a test case for exam participant operations with a request
-type ExamParticipantRequestTestCase[T any, R any] struct {
-	BaseTestCase
+type getExamResultsTestCase struct {
+	baseTestCase
 	setup    func(t *testing.T) *models.Exam
-	request  R
-	validate func(t *testing.T, examID types.ExamID, resp T)
+	validate func(t *testing.T, resp *proto.ExamResultsResponse)
 }
 
-// ExamParticipantPairTestCase represents a test case returning both exam and participant
-type ExamParticipantPairTestCase struct {
-	BaseTestCase
+type getExamParticipantsTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) *models.Exam
+	validate func(t *testing.T, resp *proto.ParticipantList)
+}
+
+type getParticipantByIdTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) *models.ExamParticipant
+	validate func(t *testing.T, resp *proto.ParticipantResponse)
+}
+
+type getUserExamsTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) *models.Exam
+	validate func(t *testing.T, resp *proto.ExamList)
+}
+
+type createExamTestCase struct {
+	baseTestCase
+	request  *proto.CreateExamRequest
+	validate func(t *testing.T, resp *proto.ExamResponse)
+}
+
+type updateExamTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) *models.Exam
+	request  *proto.UpdateExamRequest
+	validate func(t *testing.T, exam *models.Exam)
+}
+
+type endExamTestCase struct {
+	baseTestCase
 	setup    func(t *testing.T) (*models.Exam, *models.ExamParticipant)
 	validate func(t *testing.T, examID types.ExamID, participantID types.ParticipantID)
 }
 
-// ExamRequestTestCase represents a test case with a request
-type ExamRequestTestCase[T any, R any] struct {
-	BaseTestCase
-	request  R
-	validate func(t *testing.T, resp T)
-}
-
-// ExamStartTestCase represents a test case for starting an exam
-type ExamStartTestCase[T any] struct {
-	BaseTestCase
+type startExamTestCase struct {
+	baseTestCase
 	setup    func(t *testing.T) *models.Exam
 	duration int32
-	validate func(t *testing.T, exam T)
+	validate func(t *testing.T, exam *models.Exam)
 }
 
-// ExamSetupTestCase represents a basic test case returning an exam
-type ExamSetupTestCase[T any] struct {
-	BaseTestCase
+type getExamQuestionsTestCase struct {
+	baseTestCase
 	setup    func(t *testing.T) *models.Exam
-	validate func(t *testing.T, resp T)
+	validate func(t *testing.T, resp *proto.ExamQuestionsResponse)
 }
 
-// DeleteExamsTestCase represents a test case for delete exams operations
-type DeleteExamsTestCase struct {
-	BaseTestCase
+type deleteExamsTestCase struct {
+	baseTestCase
 	setup    func(t *testing.T) []models.Exam
-	validate func(t *testing.T, examIDs []models.Exam)
+	validate func(t *testing.T, exams []models.Exam)
+}
+
+type getParticipantAnswersTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) *models.ExamParticipant
+	validate func(t *testing.T, resp *proto.AnswerList)
+}
+
+type getAnswerForExamTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) (*models.Exam, types.QuestionID)
+	validate func(t *testing.T, resp *proto.AnswerMinimalResponse)
+}
+
+type upsertAnswerTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest)
+	validate func(t *testing.T, resp *proto.UpsertAnswersResponse)
+}
+
+type getExamCategoriesTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) *models.Exam
+	validate func(t *testing.T, resp *proto.ExamCategoriesResponse)
+}
+
+type getExamPermissionTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) *models.Exam
+	validate func(t *testing.T, resp *proto.ExamPermissionResponse)
+}
+
+type getExamTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) *models.Exam
+	validate func(t *testing.T, resp *proto.ExamResponse)
+}
+
+type getExamParticipantTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) *models.Exam
+	validate func(t *testing.T, resp *proto.GetExamParticipantResponse)
+}
+
+type removeExamParticipantTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) (*models.Exam, *models.ExamParticipant)
+	validate func(t *testing.T, examID types.ExamID, participantID types.ParticipantID)
+}
+
+type addExamParticipantTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) *models.Exam
+	request  *proto.AddParticipantRequest
+	validate func(t *testing.T, examID types.ExamID, resp *proto.ParticipantResponse)
+}
+
+type getAnswerForEvaluationTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) (*models.ExamParticipant, types.QuestionID)
+	validate func(t *testing.T, resp *proto.AnswerMinimalResponse)
+}
+
+type getAnswerEvaluationDataTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) (*models.ExamParticipant, types.QuestionID)
+	validate func(t *testing.T, resp *proto.GetAnswerEvaluationDataResponse)
+}
+
+type updateAnswerForEvaluationTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) *models.Answer
+	request  *proto.UpdateAnswerRequest
+	validate func(t *testing.T, answerId types.AnswerID)
+}
+
+type markParticipantAsEvaluatedTestCase struct {
+	baseTestCase
+	setup    func(t *testing.T) *models.ExamParticipant
+	validate func(t *testing.T, participant *models.ExamParticipant, resp *proto.EvaluationStatusResponse)
 }

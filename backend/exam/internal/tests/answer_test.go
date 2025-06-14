@@ -21,9 +21,9 @@ import (
 )
 
 func TestGetParticipantAnswers(t *testing.T) {
-	tests := []ParticipantTestCase[*proto.AnswerList]{
+	tests := []getParticipantAnswersTestCase{
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name: "Success - Get multiple answers with evaluation data",
 				metadata: map[string]string{
 					"user_id": strconv.FormatInt(userID, 10),
@@ -32,36 +32,26 @@ func TestGetParticipantAnswers(t *testing.T) {
 				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: typedUserID, Status: 1},
-				})
-				require.NoError(t, err)
+				exam := createDefaultTestExam(t, 2)
+				participants := createTestExamParticipants(t, &exam, []models.ExamParticipant{{
+					Status: constants.PARTICIPANT_STATUS_STARTED,
+				}})
 
-				var participant models.ExamParticipant
-				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
-
-				// Create questions first
-				q1 := createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 10,
-					Order:      1,
-					Type:       proto.QuestionType_SUBJECTIVE,
-					MaxScore:   10,
-				})
-				q2 := createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 2,
-					CategoryID: 10,
-					Order:      2,
-					Type:       proto.QuestionType_MCQ,
-					MaxScore:   5,
+				questions := createTestExamQuestions(t, &exam, []models.ExamQuestion{
+					{
+						Type: proto.QuestionType_SUBJECTIVE,
+					},
+					{
+						Type:     proto.QuestionType_MCQ,
+						MaxScore: 5,
+					},
 				})
 
 				// Create answers with different evaluation states
 				rawAnswer1 := json.RawMessage(`{"text": "Answer 1"}`)
 				answer1 := models.Answer{
-					ExamParticipantID: participant.ID,
-					QuestionID:        q1.QuestionID,
+					ExamParticipantID: participants[0].ID,
+					QuestionID:        questions[0].QuestionID,
 					Answer:            &rawAnswer1,
 					ScoreAwarded:      8,
 					Comments:          sql.NullString{String: "Good answer", Valid: true},
@@ -71,15 +61,15 @@ func TestGetParticipantAnswers(t *testing.T) {
 
 				rawAnswer2 := json.RawMessage(`{"optionIndex": 1}`)
 				answer2 := models.Answer{
-					ExamParticipantID: participant.ID,
-					QuestionID:        q2.QuestionID,
+					ExamParticipantID: participants[0].ID,
+					QuestionID:        questions[1].QuestionID,
 					Answer:            &rawAnswer2,
 					ScoreAwarded:      0, // Not evaluated yet
 					Evaluated:         false,
 				}
 				require.NoError(t, db.DB.Create(&answer2).Error)
 
-				return &participant
+				return &participants[0]
 			},
 			validate: func(t *testing.T, resp *proto.AnswerList) {
 				require.Equal(t, 2, len(resp.Answers))
@@ -109,7 +99,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name: "Fail - Participant not found",
 				metadata: map[string]string{
 					"user_id": strconv.FormatInt(userID, 10),
@@ -122,7 +112,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name: "Fail - No answers found",
 				metadata: map[string]string{
 					"user_id": strconv.FormatInt(userID, 10),
@@ -131,11 +121,10 @@ func TestGetParticipantAnswers(t *testing.T) {
 				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, 2) // Created by different user
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: typedUserID, Status: 1},
+				exam := createDefaultTestExam(t, 2) // Created by different user
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
+					{Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
-				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
@@ -143,7 +132,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name: "Success - Get answers as evaluator",
 				metadata: map[string]string{
 					"user_id": "2", // Using exam creator's ID (has EVALUATE permission)
@@ -152,35 +141,30 @@ func TestGetParticipantAnswers(t *testing.T) {
 				userID:       2,
 			},
 			setup: func(t *testing.T) *models.ExamParticipant {
-				exam := createTestExam(t, 2) // Created by user with ID 2, gets EVALUATE permission
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: 3, Status: 1}, // Different user as participant
+				exam := createDefaultTestExam(t, 2) // Created by user with ID 2, gets EVALUATE permission
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
+					{UserID: 3, Status: constants.PARTICIPANT_STATUS_INVITED}, // Different user as participant
 				})
-				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
 
-				q1 := createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 10,
-					Order:      1,
-					Type:       proto.QuestionType_SUBJECTIVE,
-					MaxScore:   10,
-				})
-				q2 := createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 2,
-					CategoryID: 10,
-					Order:      2,
-					Type:       proto.QuestionType_MCQ,
-					MaxScore:   5,
+				questions := createTestExamQuestions(t, &exam, []models.ExamQuestion{
+					{
+						Type:     proto.QuestionType_SUBJECTIVE,
+						MaxScore: 10,
+					},
+					{
+						Type:     proto.QuestionType_MCQ,
+						MaxScore: 5,
+					},
 				})
 
 				// Create answers with different evaluation states
 				rawAnswer1 := json.RawMessage(`{"text": "Answer 1"}`)
 				answer1 := models.Answer{
 					ExamParticipantID: participant.ID,
-					QuestionID:        q1.QuestionID,
+					QuestionID:        questions[0].QuestionID,
 					Answer:            &rawAnswer1,
 					ScoreAwarded:      8,
 					Comments:          sql.NullString{String: "Good answer", Valid: true},
@@ -191,7 +175,7 @@ func TestGetParticipantAnswers(t *testing.T) {
 				rawAnswer2 := json.RawMessage(`{"optionIndex": 1}`)
 				answer2 := models.Answer{
 					ExamParticipantID: participant.ID,
-					QuestionID:        q2.QuestionID,
+					QuestionID:        questions[1].QuestionID,
 					Answer:            &rawAnswer2,
 					ScoreAwarded:      0,
 					Evaluated:         false,
@@ -245,9 +229,9 @@ func TestGetParticipantAnswers(t *testing.T) {
 }
 
 func TestGetAnswerForExam(t *testing.T) {
-	tests := []ExamTestCase[*proto.AnswerMinimalResponse]{
+	tests := []getAnswerForExamTestCase{
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name: "Success - Get single answer",
 				metadata: map[string]string{
 					"user_id": strconv.FormatInt(userID, 10),
@@ -256,14 +240,12 @@ func TestGetAnswerForExam(t *testing.T) {
 				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.Exam, types.QuestionID) {
-				exam := createTestExam(t, 2) // Created by different user
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED}})
-				require.NoError(t, err)
+				exam := createDefaultTestExam(t, 2)
+				participants := createTestExamParticipants(t, &exam, []models.ExamParticipant{{
+					Status: constants.PARTICIPANT_STATUS_STARTED,
+				}})
 
-				var participant models.ExamParticipant
-				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
-
-				answer := createTestAnswer(t, &participant, 1)
+				answer := createTestAnswer(t, &participants[0], 1)
 				return &exam, answer.QuestionID
 			},
 			validate: func(t *testing.T, resp *proto.AnswerMinimalResponse) {
@@ -276,7 +258,7 @@ func TestGetAnswerForExam(t *testing.T) {
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name: "Fail - User not a participant",
 				metadata: map[string]string{
 					"user_id": strconv.FormatInt(userID, 10),
@@ -285,12 +267,12 @@ func TestGetAnswerForExam(t *testing.T) {
 				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.Exam, types.QuestionID) {
-				exam := createTestExam(t, 2)
+				exam := createDefaultTestExam(t, 2)
 				return &exam, 1
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name: "Success - Answer not found returns empty response",
 				metadata: map[string]string{
 					"user_id": strconv.FormatInt(userID, 10),
@@ -299,9 +281,10 @@ func TestGetAnswerForExam(t *testing.T) {
 				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.Exam, types.QuestionID) {
-				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED}})
-				require.NoError(t, err)
+				exam := createDefaultTestExam(t, 2)
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
+					{Status: constants.PARTICIPANT_STATUS_STARTED},
+				})
 				return &exam, 9999 // Non-existent question ID
 			},
 			validate: func(t *testing.T, resp *proto.AnswerMinimalResponse) {
@@ -331,9 +314,9 @@ func TestGetAnswerForExam(t *testing.T) {
 }
 
 func TestUpsertAnswer(t *testing.T) {
-	tests := []ParticipantRequestTestCase[*proto.UpsertAnswersResponse, *proto.UpsertAnswersRequest]{
+	tests := []upsertAnswerTestCase{
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name: "Success - Create new answer",
 				metadata: map[string]string{
 					"user_id": strconv.FormatInt(userID, 10),
@@ -342,30 +325,26 @@ func TestUpsertAnswer(t *testing.T) {
 				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
-				exam := createTestExam(t, 2) // Created by different user
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 10,
-					MaxScore:   10,
-					Type:       proto.QuestionType_SUBJECTIVE,
+				exam := createDefaultTestExam(t, 2)
+				questions := createTestExamQuestions(t, &exam, []models.ExamQuestion{
+					{
+						Type:     proto.QuestionType_SUBJECTIVE,
+						MaxScore: 10,
+					},
 				})
 
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED},
-				})
-				require.NoError(t, err)
+				participants := createTestExamParticipants(t, &exam, []models.ExamParticipant{{
+					Status: constants.PARTICIPANT_STATUS_STARTED,
+					ScheduledEndTime: sql.NullTime{
+						Time:  time.Now().Add(time.Hour),
+						Valid: true,
+					},
+				}})
 
-				var participant models.ExamParticipant
-				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
-
-				// Set scheduled end time to 1 hour in the future
-				participant.ScheduledEndTime = sql.NullTime{Time: time.Now().Add(time.Hour), Valid: true}
-				require.NoError(t, db.DB.Save(&participant).Error)
-
-				return &participant, &proto.UpsertAnswersRequest{
+				return &participants[0], &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
-						QuestionId:  1,
+						QuestionId:  int64(questions[0].QuestionID),
 						Answer:      []byte(`{"text": "Test answer content"}`),
 						SubmittedAt: timestamppb.Now(),
 					},
@@ -386,7 +365,7 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name: "Success - Update existing answer",
 				metadata: map[string]string{
 					"user_id": strconv.FormatInt(userID, 10),
@@ -395,30 +374,26 @@ func TestUpsertAnswer(t *testing.T) {
 				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
-				exam := createTestExam(t, 2)
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 10,
-					MaxScore:   10,
-					Type:       proto.QuestionType_SUBJECTIVE,
+				exam := createDefaultTestExam(t, 2)
+				createTestExamQuestions(t, &exam, []models.ExamQuestion{
+					{
+						Type:     proto.QuestionType_SUBJECTIVE,
+						MaxScore: 10,
+					},
 				})
 
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED},
-				})
-				require.NoError(t, err)
-
-				var participant models.ExamParticipant
-				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
-
-				// Set scheduled end time to 1 hour in the future
-				participant.ScheduledEndTime = sql.NullTime{Time: time.Now().Add(time.Hour), Valid: true}
-				require.NoError(t, db.DB.Save(&participant).Error)
+				participants := createTestExamParticipants(t, &exam, []models.ExamParticipant{{
+					Status: constants.PARTICIPANT_STATUS_STARTED,
+					ScheduledEndTime: sql.NullTime{
+						Time:  time.Now().Add(time.Hour),
+						Valid: true,
+					},
+				}})
 
 				// Create initial answer
-				answer := createTestAnswer(t, &participant, 1)
+				answer := createTestAnswer(t, &participants[0], 1)
 
-				return &participant, &proto.UpsertAnswersRequest{
+				return &participants[0], &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
 						QuestionId:  int64(answer.QuestionID),
@@ -441,7 +416,7 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name: "Fail - Exam participant not found",
 				metadata: map[string]string{
 					"user_id": strconv.FormatInt(userID, 10),
@@ -450,7 +425,7 @@ func TestUpsertAnswer(t *testing.T) {
 				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
-				exam := createTestExam(t, 2)
+				exam := createDefaultTestExam(t, 2)
 				return nil, &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
@@ -462,7 +437,7 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name: "Fail - Exam not started",
 				metadata: map[string]string{
 					"user_id": strconv.FormatInt(userID, 10),
@@ -471,11 +446,10 @@ func TestUpsertAnswer(t *testing.T) {
 				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
-				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_INVITED},
+				exam := createDefaultTestExam(t, 2)
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
+					{Status: constants.PARTICIPANT_STATUS_INVITED},
 				})
-				require.NoError(t, err)
 
 				return nil, &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
@@ -488,7 +462,7 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name: "Fail - Exam ended",
 				metadata: map[string]string{
 					"user_id": strconv.FormatInt(userID, 10),
@@ -497,11 +471,10 @@ func TestUpsertAnswer(t *testing.T) {
 				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
-				exam := createTestExam(t, 2)
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_ENDED},
+				exam := createDefaultTestExam(t, 2)
+				createTestExamParticipants(t, &exam, []models.ExamParticipant{
+					{Status: constants.PARTICIPANT_STATUS_ENDED},
 				})
-				require.NoError(t, err)
 
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
@@ -517,7 +490,7 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name: "Success - Empty answer for SUBJECTIVE question",
 				metadata: map[string]string{
 					"user_id": strconv.FormatInt(userID, 10),
@@ -526,28 +499,26 @@ func TestUpsertAnswer(t *testing.T) {
 				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
-				exam := createTestExam(t, 2)
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 10,
-					MaxScore:   10,
-					Type:       proto.QuestionType_SUBJECTIVE,
+				exam := createDefaultTestExam(t, 2)
+				questions := createTestExamQuestions(t, &exam, []models.ExamQuestion{
+					{
+						Type:     proto.QuestionType_SUBJECTIVE,
+						MaxScore: 10,
+					},
 				})
 
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED},
-				})
-				require.NoError(t, err)
+				participants := createTestExamParticipants(t, &exam, []models.ExamParticipant{{
+					Status: constants.PARTICIPANT_STATUS_STARTED,
+					ScheduledEndTime: sql.NullTime{
+						Time:  time.Now().Add(time.Hour),
+						Valid: true,
+					},
+				}})
 
-				var participant models.ExamParticipant
-				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
-				participant.ScheduledEndTime = sql.NullTime{Time: time.Now().Add(time.Hour), Valid: true}
-				require.NoError(t, db.DB.Save(&participant).Error)
-
-				return &participant, &proto.UpsertAnswersRequest{
+				return &participants[0], &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
-						QuestionId:  1,
+						QuestionId:  int64(questions[0].QuestionID),
 						Answer:      []byte(`{"text": ""}`),
 						SubmittedAt: timestamppb.Now(),
 					},
@@ -566,7 +537,7 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name: "Success - Nil answer clears the answer",
 				metadata: map[string]string{
 					"user_id": strconv.FormatInt(userID, 10),
@@ -575,28 +546,26 @@ func TestUpsertAnswer(t *testing.T) {
 				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
-				exam := createTestExam(t, 2)
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 10,
-					MaxScore:   10,
-					Type:       proto.QuestionType_SUBJECTIVE,
+				exam := createDefaultTestExam(t, 2)
+				questions := createTestExamQuestions(t, &exam, []models.ExamQuestion{
+					{
+						Type:     proto.QuestionType_SUBJECTIVE,
+						MaxScore: 10,
+					},
 				})
 
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED},
-				})
-				require.NoError(t, err)
+				participants := createTestExamParticipants(t, &exam, []models.ExamParticipant{{
+					Status: constants.PARTICIPANT_STATUS_STARTED,
+					ScheduledEndTime: sql.NullTime{
+						Time:  time.Now().Add(time.Hour),
+						Valid: true,
+					},
+				}})
 
-				var participant models.ExamParticipant
-				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
-				participant.ScheduledEndTime = sql.NullTime{Time: time.Now().Add(time.Hour), Valid: true}
-				require.NoError(t, db.DB.Save(&participant).Error)
+				// Create initial answer
+				answer := createTestAnswer(t, &participants[0], questions[0].QuestionID)
 
-				// First create an answer
-				answer := createTestAnswer(t, &participant, 1)
-
-				return &participant, &proto.UpsertAnswersRequest{
+				return &participants[0], &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
 						QuestionId:  int64(answer.QuestionID),
@@ -614,7 +583,7 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name: "Fail - Empty MCQ answer is invalid",
 				metadata: map[string]string{
 					"user_id": strconv.FormatInt(userID, 10),
@@ -623,28 +592,25 @@ func TestUpsertAnswer(t *testing.T) {
 				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
-				exam := createTestExam(t, 2)
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 10,
-					MaxScore:   10,
-					Type:       proto.QuestionType_MCQ,
+				exam := createDefaultTestExam(t, 2)
+				createTestExamQuestions(t, &exam, []models.ExamQuestion{
+					{
+						Type: proto.QuestionType_MCQ,
+					},
 				})
 
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED},
-				})
-				require.NoError(t, err)
-
-				var participant models.ExamParticipant
-				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
-				participant.ScheduledEndTime = sql.NullTime{Time: time.Now().Add(time.Hour), Valid: true}
-				require.NoError(t, db.DB.Save(&participant).Error)
+				participants := createTestExamParticipants(t, &exam, []models.ExamParticipant{{
+					Status: constants.PARTICIPANT_STATUS_STARTED,
+					ScheduledEndTime: sql.NullTime{
+						Time:  time.Now().Add(time.Hour),
+						Valid: true,
+					},
+				}})
 
 				// First create an answer
-				answer := createTestAnswer(t, &participant, 1)
+				answer := createTestAnswer(t, &participants[0], 1)
 
-				return &participant, &proto.UpsertAnswersRequest{
+				return &participants[0], &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
 						QuestionId:  int64(answer.QuestionID),
@@ -655,7 +621,7 @@ func TestUpsertAnswer(t *testing.T) {
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
+			baseTestCase: baseTestCase{
 				name: "Fail - Nil optionIndex in MCQ answer is invalid",
 				metadata: map[string]string{
 					"user_id": strconv.FormatInt(userID, 10),
@@ -664,28 +630,23 @@ func TestUpsertAnswer(t *testing.T) {
 				userID:       typedUserID,
 			},
 			setup: func(t *testing.T) (*models.ExamParticipant, *proto.UpsertAnswersRequest) {
-				exam := createTestExam(t, 2)
-				createTestExamQuestion(t, &exam, models.ExamQuestion{
-					QuestionID: 1,
-					CategoryID: 10,
-					MaxScore:   10,
-					Type:       proto.QuestionType_MCQ,
+				exam := createDefaultTestExam(t, 2)
+				createTestExamQuestions(t, &exam, []models.ExamQuestion{
+					{Type: proto.QuestionType_MCQ},
 				})
 
-				err := createTestExamParticipants(t, &exam, []TestParticipantData{
-					{UserID: typedUserID, Status: constants.PARTICIPANT_STATUS_STARTED},
-				})
-				require.NoError(t, err)
-
-				var participant models.ExamParticipant
-				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
-				participant.ScheduledEndTime = sql.NullTime{Time: time.Now().Add(time.Hour), Valid: true}
-				require.NoError(t, db.DB.Save(&participant).Error)
+				participants := createTestExamParticipants(t, &exam, []models.ExamParticipant{{
+					Status: constants.PARTICIPANT_STATUS_STARTED,
+					ScheduledEndTime: sql.NullTime{
+						Time:  time.Now().Add(time.Hour),
+						Valid: true,
+					},
+				}})
 
 				// First create an answer
-				answer := createTestAnswer(t, &participant, 1)
+				answer := createTestAnswer(t, &participants[0], 1)
 
-				return &participant, &proto.UpsertAnswersRequest{
+				return &participants[0], &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
 						QuestionId:  int64(answer.QuestionID),
