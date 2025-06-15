@@ -78,7 +78,7 @@ func examToProto(exam *models.Exam) (*proto.ExamResponse, error) {
 	}
 
 	return &proto.ExamResponse{
-		ExamHash:           exam.ExamHash.Hash,
+		ExamHash:           exam.Hash,
 		Title:              exam.Title,
 		StartsAt:           timestamppb.New(exam.StartsAt),
 		EndsAt:             timestamppb.New(exam.EndsAt),

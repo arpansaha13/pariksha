@@ -81,6 +81,7 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 		EndsAt:             timestamppb.New(examDto.EndsAt),
 		MaxCandidatesCount: 10,
 		Type:               nil,
+		PaperHash:          examDto.PaperID,
 		DurationMinutes:    examDto.DurationMinutes,
 	}
 

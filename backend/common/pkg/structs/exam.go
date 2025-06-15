@@ -5,8 +5,8 @@ import (
 )
 
 type PrepareQuestionsPayload struct {
-	ExamID  types.ExamID  `json:"examId"`
-	PaperID types.PaperID `json:"paperId"`
+	ExamID    types.ExamID `json:"examId"`
+	PaperHash string       `json:"paperHash"`
 }
 
 type AutoEndExamPayload struct {

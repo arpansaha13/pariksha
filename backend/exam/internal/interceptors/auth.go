@@ -173,12 +173,28 @@ func fetchExamPermission(examID types.ExamID, userID types.UserID) (*models.Exam
 func getExamIdFromRequest(ctx context.Context, req any) (*types.ExamID, error) {
 	var examID int64
 
-	// First check if exam ID exists in context from hash interceptor
-	if typedExamID, ok := GetExamIDFromContext(ctx); ok {
-		return &typedExamID, nil
-	}
-
 	switch r := req.(type) {
+	case *proto.ExamRequest,
+		*proto.UpdateExamRequest,
+		*proto.StartExamRequest,
+		*proto.EndExamRequest,
+		*proto.AddParticipantRequest,
+		*proto.RemoveParticipantRequest,
+		*proto.UpsertAnswersRequest,
+		*proto.CheckParticipantRequest,
+		*proto.GetExamParticipantRequest,
+		*proto.GetAnswerRequest:
+		examHash := r.(interface{ GetExamHash() string }).GetExamHash()
+		if err := db.DB.Model(&models.Exam{}).
+			Select("id").
+			Where("hash = ?", examHash).
+			Take(&examID).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return nil, status.Error(codes.NotFound, "exam not found")
+			}
+			return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
+		}
+
 	case *proto.UpdateAnswerRequest:
 		// Find exam ID using joins, selecting only exam_id
 		err := db.DB.Model(&models.ExamParticipant{}).

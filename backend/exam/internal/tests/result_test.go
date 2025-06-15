@@ -93,7 +93,7 @@ func TestGetExamResults(t *testing.T) {
 			})
 
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.ExamRequest{ExamHash: exam.ExamHash.Hash},
+				&proto.ExamRequest{ExamHash: exam.Hash},
 				client.GetExamResults,
 				tt.validate,
 			)

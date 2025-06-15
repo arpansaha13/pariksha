@@ -38,13 +38,9 @@ func createTestPaper(t *testing.T, userID types.UserID) models.Paper {
 	err := db.DB.Create(&paper).Error
 	require.NoError(t, err)
 
-	// Create paper hash
-	paperHash := models.PaperHash{
-		ID:   paper.ID,
-		Hash: generate.HMACHash(int64(paper.ID)),
-	}
-	err = db.DB.Create(&paperHash).Error
-	paper.PaperHash = paperHash
+	// Generate and update paper hash
+	paper.Hash = generate.HMACHash(int64(paper.ID))
+	err = db.DB.Model(&paper).Update("hash", paper.Hash).Error
 	require.NoError(t, err)
 
 	// Create permissions entry with write access
@@ -80,9 +76,8 @@ func verifyMCQContent(t *testing.T, question models.Question, expectedStatement 
 
 // verifyPaperPermissions validates the permissions of a user for a paper
 func verifyPaperPermissions(t *testing.T, paperHash string, userID types.UserID, expectedRead, expectedWrite bool) {
-	// First get paper ID from hash
 	var paper models.Paper
-	err := db.DB.Joins("INNER JOIN paper_hashes ON paper_hashes.id = papers.id").Where("paper_hashes.hash = ?", paperHash).Take(&paper).Error
+	err := db.DB.Where("hash = ?", paperHash).Take(&paper).Error
 	require.NoError(t, err)
 
 	var permissions models.PaperPermission
@@ -150,6 +145,8 @@ func createTestQuestions(t *testing.T, questions []models.Question) []models.Que
 	// Map to track order counter per category
 	categoryOrders := make(map[types.CategoryID]int16)
 
+	// Create each question separately to handle hash generation properly
+	result := make([]models.Question, len(questions))
 	for i := range questions {
 		// Set default MaxScore if not provided
 		if questions[i].MaxScore == 0 {
@@ -160,24 +157,20 @@ func createTestQuestions(t *testing.T, questions []models.Question) []models.Que
 		currentOrder := categoryOrders[questions[i].CategoryID] + 1
 		questions[i].Order = currentOrder
 		categoryOrders[questions[i].CategoryID] = currentOrder
+
+		// Create question individually
+		err := db.DB.Create(&questions[i]).Error
+		require.NoError(t, err)
+
+		// Generate and store hash immediately after creation
+		questions[i].Hash = generate.HMACHash(int64(questions[i].ID))
+		err = db.DB.Model(&questions[i]).Update("hash", questions[i].Hash).Error
+		require.NoError(t, err)
+
+		result[i] = questions[i]
 	}
 
-	err := db.DB.Create(&questions).Error
-	require.NoError(t, err)
-
-	// Create question hashes
-	questionHashes := make([]models.QuestionHash, len(questions))
-	for i, q := range questions {
-		questionHashes[i] = models.QuestionHash{
-			ID:   q.ID,
-			Hash: generate.HMACHash(int64(q.ID)),
-		}
-		questions[i].QuestionHash = questionHashes[i]
-	}
-	err = db.DB.Create(&questionHashes).Error
-	require.NoError(t, err)
-
-	return questions
+	return result
 }
 
 // compareJSONByteArrays checks if two JSON byte arrays contain equivalent data, ignoring key order

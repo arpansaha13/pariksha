@@ -102,7 +102,7 @@ func TestCreateExam(t *testing.T) {
 				StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
-				PaperId:            1,
+				PaperHash:          paperHash,
 				DurationMinutes:    120,
 			},
 			validate: func(t *testing.T, resp *proto.ExamResponse) {
@@ -114,7 +114,7 @@ func TestCreateExam(t *testing.T) {
 				assert.EqualValues(t, 120, resp.DurationMinutes)
 
 				var exam models.Exam
-				require.NoError(t, db.DB.Joins("INNER JOIN exam_hashes ON exam_hashes.id = exams.id").Where("exam_hashes.hash = ?", resp.ExamHash).Take(&exam).Error)
+				require.NoError(t, db.DB.Where("hash = ?", resp.ExamHash).Take(&exam).Error)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
 				assert.EqualValues(t, 120, exam.DurationMinutes)
 			},
@@ -131,7 +131,7 @@ func TestCreateExam(t *testing.T) {
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
 				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_LINK),
-				PaperId:            1,
+				PaperHash:          paperHash,
 				DurationMinutes:    90,
 			},
 			validate: func(t *testing.T, resp *proto.ExamResponse) {
@@ -139,7 +139,7 @@ func TestCreateExam(t *testing.T) {
 				assert.EqualValues(t, 90, resp.DurationMinutes)
 
 				var exam models.Exam
-				require.NoError(t, db.DB.Joins("INNER JOIN exam_hashes ON exam_hashes.id = exams.id").Where("exam_hashes.hash = ?", resp.ExamHash).Take(&exam).Error)
+				require.NoError(t, db.DB.Where("hash = ?", resp.ExamHash).Take(&exam).Error)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
 				assert.EqualValues(t, 90, exam.DurationMinutes)
 			},
@@ -156,7 +156,7 @@ func TestCreateExam(t *testing.T) {
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
 				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_INVITE),
-				PaperId:            1,
+				PaperHash:          paperHash,
 				DurationMinutes:    60,
 			},
 			validate: func(t *testing.T, resp *proto.ExamResponse) {
@@ -164,7 +164,7 @@ func TestCreateExam(t *testing.T) {
 				assert.EqualValues(t, 60, resp.DurationMinutes)
 
 				var exam models.Exam
-				require.NoError(t, db.DB.Joins("INNER JOIN exam_hashes ON exam_hashes.id = exams.id").Where("exam_hashes.hash = ?", resp.ExamHash).Take(&exam).Error)
+				require.NoError(t, db.DB.Where("hash = ?", resp.ExamHash).Take(&exam).Error)
 				assert.Equal(t, constants.EXAM_ACCESS_TYPE_INVITE, exam.Type)
 				assert.EqualValues(t, 60, exam.DurationMinutes)
 			},
@@ -181,7 +181,7 @@ func TestCreateExam(t *testing.T) {
 				EndsAt:             timestamppb.New(time.Now().Add(24 * time.Hour)),
 				MaxCandidatesCount: 50,
 				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_INVITE),
-				PaperId:            1,
+				PaperHash:          paperHash,
 				DurationMinutes:    60,
 			},
 		},
@@ -197,7 +197,7 @@ func TestCreateExam(t *testing.T) {
 				EndsAt:             timestamppb.New(time.Now().Add(24 * time.Hour)),
 				MaxCandidatesCount: 50,
 				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_INVITE),
-				PaperId:            1,
+				PaperHash:          paperHash,
 				DurationMinutes:    60,
 			},
 		},
@@ -213,7 +213,7 @@ func TestCreateExam(t *testing.T) {
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 0,
 				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_INVITE),
-				PaperId:            1,
+				PaperHash:          paperHash,
 				DurationMinutes:    60,
 			},
 		},
@@ -229,7 +229,7 @@ func TestCreateExam(t *testing.T) {
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
 				Type:               ptr.String("UNKNOWN"),
-				PaperId:            1,
+				PaperHash:          paperHash,
 				DurationMinutes:    60,
 			},
 		},
@@ -245,7 +245,7 @@ func TestCreateExam(t *testing.T) {
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
 				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_LINK),
-				PaperId:            1,
+				PaperHash:          paperHash,
 				DurationMinutes:    0,
 			},
 		},
@@ -261,7 +261,7 @@ func TestCreateExam(t *testing.T) {
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
 				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_LINK),
-				PaperId:            1,
+				PaperHash:          paperHash,
 			},
 		},
 		{
@@ -276,7 +276,7 @@ func TestCreateExam(t *testing.T) {
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
 				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_LINK),
-				PaperId:            1,
+				PaperHash:          paperHash,
 				DurationMinutes:    -30,
 			},
 		},
@@ -292,7 +292,7 @@ func TestCreateExam(t *testing.T) {
 				EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 				MaxCandidatesCount: 50,
 				Type:               ptr.String(constants.EXAM_ACCESS_TYPE_LINK),
-				PaperId:            1,
+				PaperHash:          paperHash,
 				DurationMinutes:    int32(constants.MAX_EXAM_DURATION_MINUTES + 1),
 			},
 		},
@@ -401,10 +401,8 @@ func TestUpdateExam(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Exam {
 				return &models.Exam{
-					ID: 9999,
-					ExamHash: models.ExamHash{
-						Hash: generate.HMACHash(9999),
-					},
+					ID:   9999,
+					Hash: generate.HMACHash(9999),
 				}
 			},
 			request: &proto.UpdateExamRequest{
@@ -574,7 +572,7 @@ func TestUpdateExam(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			exam := tt.setup(t)
-			tt.request.ExamHash = exam.ExamHash.Hash
+			tt.request.ExamHash = exam.Hash
 
 			ctx := createContextWithUserID(tt.userID)
 			resp, err := client.UpdateExam(ctx, tt.request)
@@ -682,7 +680,7 @@ func TestEndExam(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			_, err := client.EndExam(ctx, &proto.EndExamRequest{
-				ExamHash: exam.ExamHash.Hash,
+				ExamHash: exam.Hash,
 			})
 
 			if tt.expectedCode != codes.OK {
@@ -884,7 +882,7 @@ func TestStartExam(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			_, err := client.StartExam(ctx, &proto.StartExamRequest{
-				ExamHash: exam.ExamHash.Hash,
+				ExamHash: exam.Hash,
 			})
 
 			if tt.expectedCode != codes.OK {
@@ -1025,7 +1023,7 @@ func TestGetExamQuestions(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.ExamRequest{ExamHash: exam.ExamHash.Hash},
+				&proto.ExamRequest{ExamHash: exam.Hash},
 				client.GetExamQuestions,
 				tt.validate,
 			)
@@ -1130,7 +1128,7 @@ func TestGetExamCategories(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.ExamRequest{ExamHash: exam.ExamHash.Hash},
+				&proto.ExamRequest{ExamHash: exam.Hash},
 				client.GetExamCategories,
 				tt.validate,
 			)
@@ -1265,7 +1263,7 @@ func TestGetExamPermission(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			resp, err := client.GetExamPermission(ctx, &proto.ExamRequest{
-				ExamHash: exam.ExamHash.Hash,
+				ExamHash: exam.Hash,
 			})
 
 			if tt.expectedCode != codes.OK {
@@ -1373,7 +1371,7 @@ func TestGetExam(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.ExamRequest{ExamHash: exam.ExamHash.Hash},
+				&proto.ExamRequest{ExamHash: exam.Hash},
 				client.GetExam,
 				tt.validate,
 			)
@@ -1390,14 +1388,13 @@ func TestDeleteExams(t *testing.T) {
 				expectedCode: codes.OK,
 			},
 			setup: func(t *testing.T) []models.Exam {
-				exam1 := createDefaultTestExam(t, typedUserID)
-				exam2 := createDefaultTestExam(t, typedUserID)
-				return []models.Exam{exam1, exam2}
+				exams := createDefaultTestExams(t, typedUserID, 2)
+				return exams
 			},
 			validate: func(t *testing.T, exams []models.Exam) {
 				examIDs := make([]int64, len(exams))
 				for i, e := range exams {
-					examIDs[i] = int64(e.ExamHash.ID)
+					examIDs[i] = int64(e.ID)
 				}
 
 				// Verify exams are deleted
@@ -1405,12 +1402,6 @@ func TestDeleteExams(t *testing.T) {
 				err := db.DB.Model(&models.Exam{}).Where("id IN ?", examIDs).Count(&examCount).Error
 				require.NoError(t, err)
 				assert.Equal(t, int64(0), examCount, "Exams should be deleted")
-
-				// Verify exam hashes are deleted
-				var hashCount int64
-				err = db.DB.Model(&models.ExamHash{}).Where("id IN ?", examIDs).Count(&hashCount).Error
-				require.NoError(t, err)
-				assert.Equal(t, int64(0), hashCount, "Exam hashes should be deleted")
 			},
 		},
 		{
@@ -1442,10 +1433,8 @@ func TestDeleteExams(t *testing.T) {
 			setup: func(t *testing.T) []models.Exam {
 				return []models.Exam{
 					{
-						ID: 999, // Non-existent exam ID
-						ExamHash: models.ExamHash{
-							Hash: generate.HMACHash(999),
-						},
+						ID:   999, // Non-existent exam ID
+						Hash: generate.HMACHash(999),
 					},
 				}
 			},
@@ -1469,7 +1458,7 @@ func TestDeleteExams(t *testing.T) {
 
 			hashes := make([]string, len(exams))
 			for i, e := range exams {
-				hashes[i] = e.ExamHash.Hash
+				hashes[i] = e.Hash
 			}
 
 			ctx := createContextWithUserID(tt.userID)

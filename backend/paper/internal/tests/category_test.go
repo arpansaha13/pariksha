@@ -58,7 +58,7 @@ func TestGetPaperCategories(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.PaperRequest{PaperHash: paper.PaperHash.Hash},
+				&proto.PaperRequest{PaperHash: paper.Hash},
 				client.GetPaperCategories,
 				func(t *testing.T, resp *proto.CategoryList) {
 					if tt.validate != nil {
@@ -107,11 +107,8 @@ func TestCreateCategory(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Paper {
 				return &models.Paper{
-					ID: 999,
-					PaperHash: models.PaperHash{
-						Hash: generate.HMACHash(999),
-						ID:   999,
-					},
+					ID:   999,
+					Hash: generate.HMACHash(999),
 				}
 			},
 		},
@@ -124,7 +121,7 @@ func TestCreateCategory(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.CreateCategoryRequest{PaperHash: paper.PaperHash.Hash},
+				&proto.CreateCategoryRequest{PaperHash: paper.Hash},
 				client.CreateCategory,
 				func(t *testing.T, resp *proto.CategoryResponse) {
 					if tt.validate != nil {
@@ -347,7 +344,7 @@ func TestReorderCategories(t *testing.T) {
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				&proto.ReorderCategoriesRequest{
-					PaperHash:   paper.PaperHash.Hash,
+					PaperHash:   paper.Hash,
 					CategoryIds: []int64{int64(categories[1].ID), int64(categories[0].ID)}, // Reverse order
 				},
 				client.ReorderCategories,
@@ -478,7 +475,7 @@ func TestDeleteCategory(t *testing.T) {
 				category := categories[1]
 
 				// Add locked and unlocked questions
-				questions := []models.Question{
+				createTestQuestions(t, []models.Question{
 					{
 						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 						CategoryID: category.ID,
@@ -495,8 +492,7 @@ func TestDeleteCategory(t *testing.T) {
 						MaxScore:   5,
 						Locked:     false,
 					},
-				}
-				require.NoError(t, db.DB.Create(&questions).Error)
+				})
 
 				return &category
 			},

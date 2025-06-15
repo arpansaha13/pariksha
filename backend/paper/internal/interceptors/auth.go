@@ -12,6 +12,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
+	"pariksha/common/pkg/utils/grpcerror"
 	"pariksha/paper/internal/config/db"
 )
 
@@ -45,22 +46,33 @@ var requiresWrite = map[string]bool{
 
 func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		// Check if the method needs to be intercepted
 		methodName := info.FullMethod
 		if !requiresRead[methodName] && !requiresWrite[methodName] {
 			return handler(ctx, req)
 		}
 
-		// First check if paper ID exists in context from hash interceptor
-		if paperID, ok := GetPaperIDFromContext(ctx); ok {
-			return handlePaperAuth(ctx, methodName, paperID, handler, req)
+		// Try to get paper ID from paper hash in request
+		if paperHash := getPaperHashFromRequest(req); paperHash != "" {
+			var paperID int64
+			if err := db.DB.Model(&models.Paper{}).
+				Where("hash = ?", paperHash).
+				Pluck("id", &paperID).Error; err != nil {
+				if err == gorm.ErrRecordNotFound {
+					return nil, status.Error(codes.NotFound, "paper not found")
+				}
+				return nil, grpcerror.Internal(err, "failed to fetch paper")
+			}
+			return handlePaperAuth(ctx, methodName, types.PaperID(paperID), handler, req)
 		}
 
-		// Else check if question ID exists in context from hash interceptor
-		if questionID, ok := GetQuestionIDFromContext(ctx); ok {
-			question, err := fetchQuestionData(questionID)
-			if err != nil {
-				return nil, err
+		// Try to get question from question hash in request
+		if questionHash := getQuestionHashFromRequest(req); questionHash != "" {
+			var question models.Question
+			if err := db.DB.Where("hash = ?", questionHash).Take(&question).Error; err != nil {
+				if err == gorm.ErrRecordNotFound {
+					return nil, status.Error(codes.NotFound, "question not found")
+				}
+				return nil, grpcerror.Internal(err, "failed to fetch question")
 			}
 			ctx = context.WithValue(ctx, questionContextKey, question)
 			return handlePaperAuth(ctx, methodName, types.PaperID(question.PaperID.Int64), handler, req)
@@ -191,4 +203,38 @@ func GetPermissionFromContext(ctx context.Context) (*models.PaperPermission, err
 		return nil, status.Error(codes.Internal, "paper permission data not found in context")
 	}
 	return &permission, nil
+}
+
+// getPaperHashFromRequest extracts paper_hash from supported request types
+func getPaperHashFromRequest(req any) string {
+	switch r := req.(type) {
+	case *proto.PaperRequest:
+		return r.PaperHash
+	case *proto.UpdatePaperRequest:
+		return r.PaperHash
+	case *proto.CreateQuestionRequest:
+		return r.PaperHash
+	case *proto.CreateCategoryRequest:
+		return r.PaperHash
+	case *proto.ReorderCategoriesRequest:
+		return r.PaperHash
+	default:
+		return ""
+	}
+}
+
+// getQuestionHashFromRequest extracts question_hash from supported request types
+func getQuestionHashFromRequest(req any) string {
+	switch r := req.(type) {
+	case *proto.QuestionRequest:
+		return r.QuestionHash
+	case *proto.UpdateQuestionRequest:
+		return r.QuestionHash
+	case *proto.UpsertTestCasesRequest:
+		return r.QuestionHash
+	case *proto.GetBoilerplateRequest:
+		return r.QuestionHash
+	default:
+		return ""
+	}
 }

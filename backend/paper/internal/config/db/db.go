@@ -50,8 +50,6 @@ func autoMigrateDB() error {
 		&models.Boilerplate{},
 		&models.Language{},
 		&models.TestCase{},
-		&models.PaperHash{},
-		&models.QuestionHash{},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to auto-migrate database: %v", err)

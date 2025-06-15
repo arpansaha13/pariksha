@@ -11,6 +11,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/generate"
 	"pariksha/paper/internal/config/db"
@@ -30,8 +31,7 @@ func (s *PaperServer) GetUserPapers(ctx context.Context, _ *proto.Empty) (*proto
 
 	var papers []models.Paper
 	err = db.DB.
-		Select("papers.id, papers.title, papers.max_score, papers.duration_minutes, papers.question_counts, papers.created_by").
-		Preload("PaperHash").
+		Select("papers.id, papers.hash, papers.title, papers.max_score, papers.duration_minutes, papers.question_counts, papers.created_by").
 		Joins("INNER JOIN permissions ON permissions.paper_id = papers.id").
 		Where("permissions.user_id = ?", userID).
 		Find(&papers).Error
@@ -63,15 +63,11 @@ func (s *PaperServer) CreatePaper(ctx context.Context, _ *proto.Empty) (*proto.P
 			return status.Error(codes.Internal, constants.ErrInternalServer)
 		}
 
-		// Create paper hash
-		paperHash := models.PaperHash{
-			ID:   paper.ID,
-			Hash: generate.HMACHash(int64(paper.ID)),
+		// Generate and store hash
+		paper.Hash = generate.HMACHash(int64(paper.ID))
+		if err := tx.Model(&paper).Update("hash", paper.Hash).Error; err != nil {
+			return status.Error(codes.Internal, "failed to store paper hash")
 		}
-		if err := tx.Create(&paperHash).Error; err != nil {
-			return status.Error(codes.Internal, "failed to create paper hash")
-		}
-		paper.PaperHash = paperHash
 
 		// Create default category
 		defaultCategory := models.QuestionCategory{
@@ -105,13 +101,8 @@ func (s *PaperServer) CreatePaper(ctx context.Context, _ *proto.Empty) (*proto.P
 }
 
 func (s *PaperServer) GetPaper(ctx context.Context, req *proto.PaperRequest) (*proto.PaperResponse, error) {
-	paperID, ok := interceptors.GetPaperIDFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "paper ID not found in context")
-	}
-
 	var paper models.Paper
-	if err := db.DB.Preload("PaperHash").First(&paper, paperID).Error; err != nil {
+	if err := db.DB.Where("hash = ?", req.PaperHash).First(&paper).Error; err != nil {
 		return nil, utils.HandleDBError(err, "paper not found")
 	}
 
@@ -119,14 +110,9 @@ func (s *PaperServer) GetPaper(ctx context.Context, req *proto.PaperRequest) (*p
 }
 
 func (s *PaperServer) UpdatePaper(ctx context.Context, req *proto.UpdatePaperRequest) (*proto.Empty, error) {
-	paperID, ok := interceptors.GetPaperIDFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "paper ID not found in context")
-	}
-
 	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		var paper models.Paper
-		if err := tx.Preload("PaperHash").First(&paper, paperID).Error; err != nil {
+		if err := tx.Where("hash = ?", req.PaperHash).First(&paper).Error; err != nil {
 			return utils.HandleDBError(err, "paper not found")
 		}
 
@@ -176,42 +162,34 @@ func (s *PaperServer) GetPaperPermissions(ctx context.Context, req *proto.PaperR
 }
 
 func (s *PaperServer) DeletePapers(ctx context.Context, req *proto.DeletePapersRequest) (*proto.Empty, error) {
-	paperIDs, ok := interceptors.GetPaperIDsFromContext(ctx)
-	if !ok || len(paperIDs) == 0 {
-		return &proto.Empty{}, nil
-	}
-
 	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		// Convert []types.PaperID to []int64
-		ids := make([]int64, len(paperIDs))
-		for i, id := range paperIDs {
-			ids[i] = int64(id)
-		}
-
-		// Delete paper hashes first due to foreign key constraint
-		if err := tx.Where("id IN ?", ids).Delete(&models.PaperHash{}).Error; err != nil {
-			return status.Error(codes.Internal, "failed to delete paper hashes")
+		// Get paper IDs from hashes
+		var paperIDs []types.PaperID
+		if err := tx.Model(&models.Paper{}).
+			Where("hash IN ?", req.PaperHashes).
+			Pluck("id", &paperIDs).Error; err != nil {
+			return status.Error(codes.Internal, "failed to fetch paper IDs")
 		}
 
 		// Delete all specified papers
-		if err := tx.Where("id IN ?", ids).Delete(&models.Paper{}).Error; err != nil {
+		if err := tx.Where("id IN ?", paperIDs).Delete(&models.Paper{}).Error; err != nil {
 			return status.Error(codes.Internal, err.Error())
 		}
 
 		// Delete all non-locked questions for these papers
-		if err := tx.Where("paper_id IN ? AND locked = ?", ids, false).
+		if err := tx.Where("paper_id IN ? AND locked = ?", paperIDs, false).
 			Delete(&models.Question{}).Error; err != nil {
 			return status.Error(codes.Internal, err.Error())
 		}
 
 		// Delete all non-locked categories for these papers
-		if err := tx.Where("paper_id IN ? AND locked = ?", ids, false).
+		if err := tx.Where("paper_id IN ? AND locked = ?", paperIDs, false).
 			Delete(&models.QuestionCategory{}).Error; err != nil {
 			return status.Error(codes.Internal, err.Error())
 		}
 
 		// Delete all permissions for these papers
-		if err := tx.Where("paper_id IN ?", ids).
+		if err := tx.Where("paper_id IN ?", paperIDs).
 			Delete(&models.PaperPermission{}).Error; err != nil {
 			return status.Error(codes.Internal, err.Error())
 		}
@@ -231,39 +209,56 @@ func (s *PaperServer) GetQuestionHashes(ctx context.Context, req *proto.GetQuest
 		return &proto.GetQuestionHashesResponse{}, nil
 	}
 
-	var questionHashes []models.QuestionHash
-	if err := db.DB.Where("id IN ?", req.QuestionIds).Find(&questionHashes).Error; err != nil {
+	var questions []models.Question
+	if err := db.DB.Select("id", "hash").
+		Where("id IN ?", req.QuestionIds).
+		Find(&questions).Error; err != nil {
 		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
 	}
 
-	// Create a map for quick lookup
-	hashMap := make(map[int64]string)
-	for _, qh := range questionHashes {
-		hashMap[int64(qh.ID)] = qh.Hash
+	// Create a map for quick hash lookups
+	hashMap := make(map[int64]string, len(questions))
+	for _, q := range questions {
+		hashMap[int64(q.ID)] = q.Hash
 	}
 
-	// Create response maintaining input order
-	response := make([]string, len(req.QuestionIds))
+	// Create response maintaining same sequence as request
+	hashes := make([]string, len(req.QuestionIds))
 	for i, id := range req.QuestionIds {
-		if hash, exists := hashMap[id]; exists {
-			response[i] = hash
+		if hash, ok := hashMap[id]; ok {
+			hashes[i] = hash
 		}
 	}
 
 	return &proto.GetQuestionHashesResponse{
-		QuestionHashes: response,
+		QuestionHashes: hashes,
 	}, nil
 }
 
 func (s *PaperServer) GetQuestionIds(ctx context.Context, req *proto.GetQuestionIdsRequest) (*proto.GetQuestionIdsResponse, error) {
-	questionIDs, ok := interceptors.GetQuestionIDsFromContext(ctx)
-	if !ok {
+	if len(req.QuestionHashes) == 0 {
 		return &proto.GetQuestionIdsResponse{}, nil
 	}
 
-	ids := make([]int64, len(questionIDs))
-	for i, id := range questionIDs {
-		ids[i] = int64(id)
+	var questions []models.Question
+	if err := db.DB.Select("id", "hash").
+		Where("hash IN ?", req.QuestionHashes).
+		Find(&questions).Error; err != nil {
+		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
+	}
+
+	// Create a map for quick ID lookups
+	idMap := make(map[string]int64, len(questions))
+	for _, q := range questions {
+		idMap[q.Hash] = int64(q.ID)
+	}
+
+	// Create response maintaining same sequence as request
+	ids := make([]int64, len(req.QuestionHashes))
+	for i, hash := range req.QuestionHashes {
+		if id, ok := idMap[hash]; ok {
+			ids[i] = id
+		}
 	}
 
 	return &proto.GetQuestionIdsResponse{

@@ -79,7 +79,7 @@ func TestGetExamParticipants(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.ExamRequest{ExamHash: exam.ExamHash.Hash},
+				&proto.ExamRequest{ExamHash: exam.Hash},
 				client.GetExamParticipants,
 				tt.validate,
 			)
@@ -170,7 +170,7 @@ func TestGetExamParticipant(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.GetExamParticipantRequest{ExamHash: exam.ExamHash.Hash},
+				&proto.GetExamParticipantRequest{ExamHash: exam.Hash},
 				client.GetExamParticipant,
 				tt.validate,
 			)
@@ -267,7 +267,7 @@ func TestAddExamParticipant(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			exam := tt.setup(t)
-			tt.request.ExamHash = exam.ExamHash.Hash
+			tt.request.ExamHash = exam.Hash
 
 			ctx := createContextWithUserID(tt.userID)
 			resp, err := client.AddExamParticipant(ctx, tt.request)
@@ -360,7 +360,7 @@ func TestRemoveExamParticipant(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			_, err := client.RemoveExamParticipant(ctx, &proto.RemoveParticipantRequest{
-				ExamHash:      exam.ExamHash.Hash,
+				ExamHash:      exam.Hash,
 				ParticipantId: int64(participant.ID),
 			})
 

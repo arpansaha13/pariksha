@@ -87,15 +87,12 @@ func createCodingQuestion(t *testing.T, inputDefs []structs.InputDefinition, out
 	err = db.Papers.Create(&question).Error
 	require.NoError(t, err)
 
-	// Create question hashes
-	questionHash := models.QuestionHash{
-		ID:   question.ID,
-		Hash: generate.HMACHash(int64(question.ID)),
-	}
-	err = db.Papers.Create(&questionHash).Error
+	// Generate and store hash directly in questions table
+	question.Hash = generate.HMACHash(int64(question.ID))
+	err = db.Papers.Model(&question).Update("hash", question.Hash).Error
 	require.NoError(t, err)
 
-	return question.QuestionHash.Hash
+	return question.Hash
 }
 
 // getAbsPath returns the absolute path by joining the given path with test tmp directory

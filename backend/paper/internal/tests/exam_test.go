@@ -9,13 +9,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
+	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/utils/generate"
 	"pariksha/common/pkg/utils/testrunner"
+	"pariksha/paper/internal/config/env"
 )
 
 func TestGetQuestionsByIds(t *testing.T) {
@@ -69,14 +72,14 @@ func TestGetQuestionsByIds(t *testing.T) {
 
 				// Validate MCQ question
 				mcqResp := resp.Questions[0]
-				assert.EqualValues(t, questions[0].QuestionHash.Hash, mcqResp.QuestionHash)
+				assert.EqualValues(t, questions[0].Hash, mcqResp.QuestionHash)
 				assert.EqualValues(t, questions[0].Type, mcqResp.Type)
 				assert.EqualValues(t, questions[0].MaxScore, mcqResp.MaxScore)
 				assert.True(t, compareJSONByteArrays(questions[0].Question, mcqResp.RawQuestion))
 
 				// Validate Subjective question
 				subjectiveResp := resp.Questions[1]
-				assert.EqualValues(t, questions[1].QuestionHash.Hash, subjectiveResp.QuestionHash)
+				assert.EqualValues(t, questions[1].Hash, subjectiveResp.QuestionHash)
 				assert.EqualValues(t, questions[1].Type, subjectiveResp.Type)
 				assert.EqualValues(t, questions[1].MaxScore, subjectiveResp.MaxScore)
 				assert.True(t, compareJSONByteArrays(questions[1].Question, subjectiveResp.RawQuestion))
@@ -101,6 +104,7 @@ func TestGetQuestionsByIds(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			clearTables(t)
 			questions := tt.setup(t)
+
 			if len(questions) > 0 {
 				tt.request.QuestionIds = make([]int64, len(questions))
 				for i, q := range questions {
@@ -108,14 +112,20 @@ func TestGetQuestionsByIds(t *testing.T) {
 				}
 			}
 
-			testrunner.Runner(t, context.Background(), tt.expectedCode,
+			// Create context with exam API token
+			ctx := metadata.NewOutgoingContext(context.Background(), metadata.New(map[string]string{
+				constants.X_EXAM_API_TOKEN: env.EXAM_API_TOKEN,
+			}))
+
+			testrunner.Runner(t, ctx, tt.expectedCode,
 				tt.request,
 				client.GetQuestionsByIds,
 				func(t *testing.T, resp *proto.GetQuestionsByIdsResponse) {
 					if tt.validate != nil {
 						tt.validate(t, resp, questions)
 					}
-				})
+				},
+			)
 		})
 	}
 }
@@ -277,11 +287,8 @@ func TestGetExamQuestion(t *testing.T) {
 			name: "Question not found",
 			setup: func(t *testing.T) *models.Question {
 				return &models.Question{
-					ID: 999,
-					QuestionHash: models.QuestionHash{
-						Hash: generate.HMACHash(999),
-						ID:   999,
-					},
+					ID:   999,
+					Hash: generate.HMACHash(999),
 				}
 			},
 			expectedCode: codes.NotFound,
@@ -294,7 +301,7 @@ func TestGetExamQuestion(t *testing.T) {
 			question := tt.setup(t)
 
 			testrunner.Runner(t, context.Background(), tt.expectedCode,
-				&proto.QuestionRequest{QuestionHash: question.QuestionHash.Hash},
+				&proto.QuestionRequest{QuestionHash: question.Hash},
 				client.GetExamQuestion,
 				func(t *testing.T, resp *proto.QuestionResponse) {
 					if tt.validate != nil {
@@ -348,7 +355,7 @@ func TestGetQuestionHashes(t *testing.T) {
 				require.Len(t, resp.QuestionHashes, len(questions))
 				// Verify hashes are in same order as requested IDs
 				for i, question := range questions {
-					assert.Equal(t, question.QuestionHash.Hash, resp.QuestionHashes[i])
+					assert.Equal(t, question.Hash, resp.QuestionHashes[i])
 				}
 			},
 		},
@@ -375,7 +382,7 @@ func TestGetQuestionHashes(t *testing.T) {
 			expectedCode: codes.OK,
 			validate: func(t *testing.T, resp *proto.GetQuestionHashesResponse, questions []models.Question) {
 				require.Len(t, resp.QuestionHashes, 2)
-				assert.Equal(t, questions[0].QuestionHash.Hash, resp.QuestionHashes[0])
+				assert.Equal(t, questions[0].Hash, resp.QuestionHashes[0])
 				assert.Empty(t, resp.QuestionHashes[1]) // Non-existent question should return empty hash
 			},
 		},
@@ -404,7 +411,12 @@ func TestGetQuestionHashes(t *testing.T) {
 				}
 			}
 
-			testrunner.Runner(t, context.Background(), tt.expectedCode,
+			// Create context with exam API token
+			ctx := metadata.NewOutgoingContext(context.Background(), metadata.New(map[string]string{
+				constants.X_EXAM_API_TOKEN: env.EXAM_API_TOKEN,
+			}))
+
+			testrunner.Runner(t, ctx, tt.expectedCode,
 				request,
 				client.GetQuestionHashes,
 				func(t *testing.T, resp *proto.GetQuestionHashesResponse) {
@@ -506,11 +518,16 @@ func TestGetQuestionIds(t *testing.T) {
 			if len(questions) > 0 {
 				request.QuestionHashes = make([]string, 0, len(questions))
 				for _, q := range questions {
-					request.QuestionHashes = append(request.QuestionHashes, q.QuestionHash.Hash)
+					request.QuestionHashes = append(request.QuestionHashes, q.Hash)
 				}
 			}
 
-			testrunner.Runner(t, context.Background(), tt.expectedCode,
+			// Create context with exam API token
+			ctx := metadata.NewOutgoingContext(context.Background(), metadata.New(map[string]string{
+				constants.X_EXAM_API_TOKEN: env.EXAM_API_TOKEN,
+			}))
+
+			testrunner.Runner(t, ctx, tt.expectedCode,
 				request,
 				client.GetQuestionIds,
 				func(t *testing.T, resp *proto.GetQuestionIdsResponse) {

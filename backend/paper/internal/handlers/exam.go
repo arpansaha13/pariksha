@@ -9,14 +9,14 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/utils/grpcerror"
 	"pariksha/paper/internal/config/db"
-	"pariksha/paper/internal/interceptors"
 )
 
 func (s *PaperServer) GetQuestionsByIds(ctx context.Context, req *proto.GetQuestionsByIdsRequest) (*proto.GetQuestionsByIdsResponse, error) {
 	var questions []models.Question
-	if err := db.DB.Joins("QuestionHash").Where("questions.id IN ?", req.QuestionIds).Find(&questions).Error; err != nil {
-		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
+	if err := db.DB.Where("questions.id IN ?", req.QuestionIds).Find(&questions).Error; err != nil {
+		return nil, grpcerror.Internal(err, "failed to fetch questions")
 	}
 
 	response := &proto.GetQuestionsByIdsResponse{
@@ -26,7 +26,7 @@ func (s *PaperServer) GetQuestionsByIds(ctx context.Context, req *proto.GetQuest
 	for i, question := range questions {
 		response.Questions[i] = &proto.QuestionBatchItem{
 			QuestionId:   int64(question.ID),
-			QuestionHash: question.QuestionHash.Hash,
+			QuestionHash: question.Hash,
 			MaxScore:     int32(question.MaxScore),
 			Type:         question.Type,
 			RawQuestion:  question.Question,
@@ -59,14 +59,10 @@ func (s *PaperServer) GetCategoriesByIds(ctx context.Context, req *proto.GetCate
 
 // GetExamQuestion retrieves minimal question data needed for exam taking
 func (s *PaperServer) GetExamQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.QuestionResponse, error) {
-	questionID, ok := interceptors.GetQuestionIDFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "question ID not found in context")
-	}
-
 	var question models.Question
-	if err := db.DB.Preload("QuestionHash").Select("id, question, type").
-		Take(&question, questionID).Error; err != nil {
+	if err := db.DB.Select("id, question, type, hash").
+		Where("hash = ?", req.QuestionHash).
+		Take(&question).Error; err != nil {
 		return nil, status.Error(codes.NotFound, constants.ErrNotFound)
 	}
 

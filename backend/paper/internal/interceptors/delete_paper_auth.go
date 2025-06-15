@@ -30,25 +30,21 @@ func DeletePaperAuthInterceptor() grpc.UnaryServerInterceptor {
 			return nil, err
 		}
 
-		// Get paper IDs from request
+		// Get paper Hashes from request
 		deleteReq, ok := req.(*proto.DeletePapersRequest)
 		if !ok {
 			return nil, status.Error(codes.Internal, "invalid request type")
 		}
 
 		if len(deleteReq.PaperHashes) == 0 {
-			return nil, status.Error(codes.InvalidArgument, "paper_ids cannot be empty")
+			return nil, status.Error(codes.InvalidArgument, "paper_hashes cannot be empty")
 		}
 
-		// Take paperIDs from context added by hash interceptor
-		paperIDs, ok := GetPaperIDsFromContext(ctx)
-		if !ok {
-			return nil, status.Error(codes.Internal, "paper_ids not found in context")
-		}
-
-		// Get permissions for all papers
+		// Get permissions for all papers using JOIN with papers table
 		var permissions []models.PaperPermission
-		if err := db.DB.Where("paper_id IN ? AND user_id = ?", paperIDs, userID).Find(&permissions).Error; err != nil {
+		if err := db.DB.Joins("INNER JOIN papers ON papers.id = permissions.paper_id").
+			Where("papers.hash IN ? AND permissions.user_id = ?", deleteReq.PaperHashes, userID).
+			Find(&permissions).Error; err != nil {
 			return nil, status.Error(codes.Internal, "failed to fetch permissions")
 		}
 

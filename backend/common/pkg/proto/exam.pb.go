@@ -120,7 +120,7 @@ type CreateExamRequest struct {
 	EndsAt             *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=ends_at,json=endsAt,proto3" json:"ends_at,omitempty"`
 	MaxCandidatesCount int32                  `protobuf:"varint,4,opt,name=max_candidates_count,json=maxCandidatesCount,proto3" json:"max_candidates_count,omitempty"`
 	Type               *string                `protobuf:"bytes,5,opt,name=type,proto3,oneof" json:"type,omitempty"`
-	PaperId            int64                  `protobuf:"varint,6,opt,name=paper_id,json=paperId,proto3" json:"paper_id,omitempty"`
+	PaperHash          string                 `protobuf:"bytes,6,opt,name=paper_hash,json=paperHash,proto3" json:"paper_hash,omitempty"`
 	DurationMinutes    int32                  `protobuf:"varint,7,opt,name=duration_minutes,json=durationMinutes,proto3" json:"duration_minutes,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
@@ -191,11 +191,11 @@ func (x *CreateExamRequest) GetType() string {
 	return ""
 }
 
-func (x *CreateExamRequest) GetPaperId() int64 {
+func (x *CreateExamRequest) GetPaperHash() string {
 	if x != nil {
-		return x.PaperId
+		return x.PaperHash
 	}
-	return 0
+	return ""
 }
 
 func (x *CreateExamRequest) GetDurationMinutes() int32 {
@@ -2164,14 +2164,15 @@ const file_exam_proto_rawDesc = "" +
 	"\n" +
 	"exam.proto\x12\x05proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\fcommon.proto\"*\n" +
 	"\vExamRequest\x12\x1b\n" +
-	"\texam_hash\x18\x01 \x01(\tR\bexamHash\"\xb1\x02\n" +
+	"\texam_hash\x18\x01 \x01(\tR\bexamHash\"\xb5\x02\n" +
 	"\x11CreateExamRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x127\n" +
 	"\tstarts_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\bstartsAt\x123\n" +
 	"\aends_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x06endsAt\x120\n" +
 	"\x14max_candidates_count\x18\x04 \x01(\x05R\x12maxCandidatesCount\x12\x17\n" +
-	"\x04type\x18\x05 \x01(\tH\x00R\x04type\x88\x01\x01\x12\x19\n" +
-	"\bpaper_id\x18\x06 \x01(\x03R\apaperId\x12)\n" +
+	"\x04type\x18\x05 \x01(\tH\x00R\x04type\x88\x01\x01\x12\x1d\n" +
+	"\n" +
+	"paper_hash\x18\x06 \x01(\tR\tpaperHash\x12)\n" +
 	"\x10duration_minutes\x18\a \x01(\x05R\x0fdurationMinutesB\a\n" +
 	"\x05_type\"\xce\x02\n" +
 	"\x11UpdateExamRequest\x12\x1b\n" +

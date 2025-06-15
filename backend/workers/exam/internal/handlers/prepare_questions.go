@@ -26,9 +26,19 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 		return papersTx.Error
 	}
 
+	// First get the paper using hash
+	var paper models.Paper
+	if err := papersTx.Where("hash = ?", payload.PaperHash).Take(&paper).Error; err != nil {
+		papersTx.Rollback()
+		log.Default().Printf("Failed to fetch paper with hash %s: %v", payload.PaperHash, err)
+		return err
+	}
+
 	// Get all questions for the paper
 	var questions []models.Question
-	err := papersTx.Select("id", "category_id", "type", "order", "max_score").Where("paper_id = ?", payload.PaperID).Find(&questions).Error
+	err := papersTx.Select("id", "category_id", "type", "order", "max_score").
+		Where("paper_id = ?", paper.ID).
+		Find(&questions).Error
 	if err != nil {
 		papersTx.Rollback()
 		log.Default().Printf("Failed to fetch questions: %v", err)
@@ -37,7 +47,9 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 
 	// Get all categories for the paper
 	var categories []models.QuestionCategory
-	err = papersTx.Select("id", "order").Where("paper_id = ?", payload.PaperID).Find(&categories).Error
+	err = papersTx.Select("id", "order").
+		Where("paper_id = ?", paper.ID).
+		Find(&categories).Error
 	if err != nil {
 		papersTx.Rollback()
 		log.Default().Printf("Failed to fetch categories: %v", err)
@@ -45,7 +57,9 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 	}
 
 	// Lock all questions
-	err = papersTx.Model(&models.Question{}).Where("paper_id = ?", payload.PaperID).Update("locked", true).Error
+	err = papersTx.Model(&models.Question{}).
+		Where("paper_id = ?", paper.ID).
+		Update("locked", true).Error
 	if err != nil {
 		papersTx.Rollback()
 		log.Default().Printf("Failed to lock questions: %v", err)
@@ -53,7 +67,9 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 	}
 
 	// Lock all categories
-	err = papersTx.Model(&models.QuestionCategory{}).Where("paper_id = ?", payload.PaperID).Update("locked", true).Error
+	err = papersTx.Model(&models.QuestionCategory{}).
+		Where("paper_id = ?", paper.ID).
+		Update("locked", true).Error
 	if err != nil {
 		papersTx.Rollback()
 		log.Default().Printf("Failed to lock categories: %v", err)
@@ -125,6 +141,6 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 		return err
 	}
 
-	log.Default().Printf("Successfully prepared exam questions for exam %d from paper %d", payload.ExamID, payload.PaperID)
+	log.Default().Printf("Successfully prepared exam questions for exam %d from paper %d", payload.ExamID, paper.ID)
 	return nil
 }

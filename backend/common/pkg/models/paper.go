@@ -26,11 +26,11 @@ type Paper struct {
 	DurationMinutes int16           `gorm:"type:smallint;not null;check:duration_minutes >= 0 AND duration_minutes <= 1440"`
 	QuestionCounts  json.RawMessage `gorm:"type:jsonb;default:'{\"mcq\":0,\"subjective\":0,\"coding\":0}'"`
 	CreatedBy       types.UserID    `gorm:"type:bigint;not null"`
+	Hash            string          `gorm:"type:varchar(64);uniqueIndex;not null"`
 	DeletedAt       gorm.DeletedAt  `gorm:"index"`
 
 	Questions  []Question         `gorm:"foreignKey:PaperID"`
 	Categories []QuestionCategory `gorm:"foreignKey:PaperID"`
-	PaperHash  PaperHash          `gorm:"foreignKey:ID;references:ID"`
 }
 
 func (p *Paper) GetQuestionCounts() (QuestionCount, error) {

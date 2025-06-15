@@ -16,6 +16,7 @@ import (
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/generate"
+	"pariksha/common/pkg/utils/grpcerror"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/interceptors"
@@ -41,13 +42,13 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 		var questionForUpdate models.Question
 		if err := tx.Set("gorm:query_option", "FOR UPDATE").
 			Take(&questionForUpdate, question.ID).Error; err != nil {
-			return status.Error(codes.Internal, "failed to lock question")
+			return grpcerror.Internal(err, "failed to lock question")
 		}
 
 		var paper models.Paper
 		if err := tx.Set("gorm:query_option", "FOR UPDATE").
 			Take(&paper, question.PaperID.Int64).Error; err != nil {
-			return status.Error(codes.Internal, "failed to lock paper")
+			return grpcerror.Internal(err, "failed to lock paper")
 		}
 
 		oldType := question.Type
@@ -76,33 +77,33 @@ func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper mod
 	newQuestion.ID = 0
 	newQuestion.Locked = false
 
+	// Clear the hash to prevent unique constraint error
+	newQuestion.Hash = ""
+
 	updatedQuestion, err := applyQuestionUpdates(newQuestion, req)
 	if err != nil {
 		return nil, err
 	}
 
 	if err := tx.Create(&updatedQuestion).Error; err != nil {
-		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
+		return nil, grpcerror.Internal(err, "failed to create updated question")
 	}
 
-	// Create HMAC hash for the new question
-	questionHash := models.QuestionHash{
-		ID:   updatedQuestion.ID,
-		Hash: generate.HMACHash(int64(updatedQuestion.ID)),
-	}
-	if err := tx.Create(&questionHash).Error; err != nil {
-		return nil, status.Error(codes.Internal, "failed to create question hash")
+	// Generate and store hash directly in questions table
+	updatedQuestion.Hash = generate.HMACHash(int64(updatedQuestion.ID))
+	if err := tx.Model(&updatedQuestion).Update("hash", updatedQuestion.Hash).Error; err != nil {
+		return nil, grpcerror.Internal(err, "failed to store question hash")
 	}
 
 	// Create new boilerplate entry if it's a coding question
 	if updatedQuestion.Type == proto.QuestionType_CODING && req.RawQuestion != nil {
 		var coding structs.CodingQuestion
 		if err := json.Unmarshal(req.RawQuestion, &coding); err != nil {
-			return nil, status.Error(codes.Internal, "invalid coding question format")
+			return nil, grpcerror.Internal(err, "invalid coding question format")
 		}
 
 		if err := upsertBoilerplates(tx, updatedQuestion.ID, coding.InputDefinitions, coding.OutputDefinition); err != nil {
-			return nil, status.Error(codes.Internal, "failed to create boilerplates")
+			return nil, grpcerror.Internal(err, "failed to create boilerplates")
 		}
 	}
 
@@ -118,7 +119,7 @@ func handleLockedQuestionUpdate(tx *gorm.DB, question models.Question, paper mod
 		return nil, err
 	}
 
-	return &questionHash.Hash, nil
+	return &updatedQuestion.Hash, nil
 }
 
 // handleUnlockedQuestionUpdate handles updates to an unlocked (column) question

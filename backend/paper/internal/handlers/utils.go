@@ -34,7 +34,7 @@ func paperToProto(paper models.Paper) *proto.PaperResponse {
 	json.Unmarshal(paper.QuestionCounts, &questionCounts)
 
 	return &proto.PaperResponse{
-		PaperHash:       paper.PaperHash.Hash,
+		PaperHash:       paper.Hash,
 		Title:           paper.Title,
 		MaxScore:        int32(paper.MaxScore),
 		DurationMinutes: int32(paper.DurationMinutes),
@@ -52,11 +52,11 @@ func questionToProto(question models.Question, testCases []models.TestCase) (*pr
 	}
 
 	response := &proto.QuestionResponse{
-		QuestionHash:  question.QuestionHash.Hash,
+		QuestionHash:  question.Hash,
 		CategoryId:    int64(question.CategoryID),
 		Type:          question.Type,
 		Tags:          tags,
-		PaperHash:     question.Paper.PaperHash.Hash,
+		PaperHash:     question.Paper.Hash,
 		MaxScore:      int32(question.MaxScore),
 		CorrectAnswer: &question.CorrectAnswer.String,
 		RawQuestion:   question.Question,
@@ -86,9 +86,9 @@ func questionToProto(question models.Question, testCases []models.TestCase) (*pr
 
 func questionToMinimalProto(question models.Question) (*proto.QuestionMinimal, error) {
 	response := &proto.QuestionMinimal{
-		QuestionHash: question.QuestionHash.Hash,
+		QuestionHash: question.Hash,
 		CategoryId:   int64(question.CategoryID),
-		PaperHash:    question.Paper.PaperHash.Hash,
+		PaperHash:    question.Paper.Hash,
 		Order:        int32(question.Order),
 		RawQuestion:  question.Question,
 	}

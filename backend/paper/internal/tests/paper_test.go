@@ -95,7 +95,7 @@ func TestCreatePaper(t *testing.T) {
 
 				// First get paper ID from hash
 				var paper models.Paper
-				err := db.DB.Joins("INNER JOIN paper_hashes ON paper_hashes.id = papers.id").Where("paper_hashes.hash = ?", resp.PaperHash).Take(&paper).Error
+				err := db.DB.Where("hash = ?", resp.PaperHash).Take(&paper).Error
 				require.NoError(t, err)
 
 				// Verify default category was created
@@ -209,11 +209,8 @@ func TestUpdatePaper(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Paper {
 				return &models.Paper{
-					ID: 999,
-					PaperHash: models.PaperHash{
-						Hash: generate.HMACHash(999),
-						ID:   999,
-					},
+					ID:   999,
+					Hash: generate.HMACHash(999),
 				}
 			},
 			request: &proto.UpdatePaperRequest{
@@ -310,7 +307,7 @@ func TestUpdatePaper(t *testing.T) {
 			paper := tt.setup(t)
 
 			ctx := createContextWithUserID(tt.userID)
-			tt.request.PaperHash = paper.PaperHash.Hash
+			tt.request.PaperHash = paper.Hash
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				tt.request,
 				client.UpdatePaper,
@@ -343,7 +340,7 @@ func TestGetPaper(t *testing.T) {
 
 				// First get paper ID from hash
 				var paper models.Paper
-				err := db.DB.Joins("INNER JOIN paper_hashes ON paper_hashes.id = papers.id").Where("paper_hashes.hash = ?", resp.PaperHash).Take(&paper).Error
+				err := db.DB.Where("hash = ?", resp.PaperHash).Take(&paper).Error
 				require.NoError(t, err)
 
 				// Validate question counts
@@ -390,11 +387,8 @@ func TestGetPaper(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Paper {
 				return &models.Paper{
-					ID: 999,
-					PaperHash: models.PaperHash{
-						Hash: generate.HMACHash(999),
-						ID:   999,
-					},
+					ID:   999,
+					Hash: generate.HMACHash(999),
 				}
 			},
 		},
@@ -430,7 +424,7 @@ func TestGetPaper(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.PaperRequest{PaperHash: paper.PaperHash.Hash},
+				&proto.PaperRequest{PaperHash: paper.Hash},
 				client.GetPaper,
 				tt.validate)
 		})
@@ -487,11 +481,8 @@ func TestGetPaperPermissions(t *testing.T) {
 			},
 			setup: func(t *testing.T) *models.Paper {
 				return &models.Paper{
-					ID: 999,
-					PaperHash: models.PaperHash{
-						Hash: generate.HMACHash(999),
-						ID:   999,
-					},
+					ID:   999,
+					Hash: generate.HMACHash(999),
 				}
 			},
 		},
@@ -526,7 +517,7 @@ func TestGetPaperPermissions(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.PaperRequest{PaperHash: paper.PaperHash.Hash},
+				&proto.PaperRequest{PaperHash: paper.Hash},
 				client.GetPaperPermissions,
 				tt.validate)
 		})
@@ -550,7 +541,7 @@ func TestDeletePapers(t *testing.T) {
 				paper1 := createTestPaper(t, userID)
 				paper2 := createTestPaper(t, userID)
 				paper3 := createTestPaper(t, userID)
-				return []string{paper1.PaperHash.Hash, paper2.PaperHash.Hash, paper3.PaperHash.Hash}
+				return []string{paper1.Hash, paper2.Hash, paper3.Hash}
 			},
 			validate: func(t *testing.T) {
 				// Verify papers are soft deleted
@@ -558,12 +549,6 @@ func TestDeletePapers(t *testing.T) {
 				err := db.DB.Model(&models.Paper{}).Where("deleted_at IS NULL").Count(&count).Error
 				require.NoError(t, err)
 				assert.Equal(t, int64(0), count)
-
-				// Verify paper hashes are deleted
-				var hashCount int64
-				err = db.DB.Model(&models.PaperHash{}).Count(&hashCount).Error
-				require.NoError(t, err)
-				assert.Equal(t, int64(0), hashCount, "Paper hashes should be deleted")
 			},
 		},
 		{
@@ -586,7 +571,7 @@ func TestDeletePapers(t *testing.T) {
 				err := db.DB.Create(&permissions).Error
 				require.NoError(t, err)
 
-				return []string{paper1.PaperHash.Hash, paper2.PaperHash.Hash}
+				return []string{paper1.Hash, paper2.Hash}
 			},
 		},
 		{

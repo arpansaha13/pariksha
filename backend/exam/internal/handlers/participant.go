@@ -19,13 +19,10 @@ import (
 )
 
 func (s *ExamServer) GetExamParticipants(ctx context.Context, req *proto.ExamRequest) (*proto.ParticipantList, error) {
-	examID, ok := interceptors.GetExamIDFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "exam ID not found in context")
-	}
-
 	var participants []models.ExamParticipant
-	if err := db.DB.Where("exam_id = ?", examID).Find(&participants).Error; err != nil {
+	if err := db.DB.Joins("JOIN exams ON exams.id = exam_participants.exam_id").
+		Where("exams.hash = ?", req.ExamHash).
+		Find(&participants).Error; err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch participants")
 	}
 
@@ -178,13 +175,10 @@ func (s *ExamServer) GetExamParticipant(ctx context.Context, req *proto.GetExamP
 		return nil, err
 	}
 
-	examID, ok := interceptors.GetExamIDFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "exam ID not found in context")
-	}
-
 	var participant models.ExamParticipant
-	if err := db.DB.Where("exam_id = ? AND user_id = ?", examID, userID).Take(&participant).Error; err != nil {
+	if err := db.DB.Joins("JOIN exams ON exams.id = exam_participants.exam_id").
+		Where("exams.hash = ? AND exam_participants.user_id = ?", req.ExamHash, userID).
+		Take(&participant).Error; err != nil {
 		return nil, utils.HandleDBError(err, "participant not found")
 	}
 

@@ -35,7 +35,7 @@ func (s *ExamServer) GetUserExams(ctx context.Context, _ *proto.Empty) (*proto.E
 	}
 
 	var exams []models.Exam
-	if err := db.DB.Preload("ExamHash").Where("created_by = ?", userID).
+	if err := db.DB.Where("created_by = ?", userID).
 		Or("id IN (?)", db.DB.Model(&models.ExamParticipant{}).
 			Select("exam_id").
 			Where("user_id = ?", userID)).
@@ -91,7 +91,7 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 			EndsAt:             endsAt,
 			CreatedBy:          userID,
 			MaxCandidatesCount: req.MaxCandidatesCount,
-			PaperID:            types.PaperID(req.PaperId),
+			PaperHash:          req.PaperHash,
 			DurationMinutes:    int16(req.DurationMinutes),
 		}
 
@@ -102,19 +102,16 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 			}
 			exam.Type = req.GetType()
 		}
+
 		if err := tx.Create(&exam).Error; err != nil {
 			return status.Error(codes.Internal, "failed to create exam")
 		}
 
-		// Create exam hash
-		examHash := models.ExamHash{
-			ID:   exam.ID,
-			Hash: generate.HMACHash(int64(exam.ID)),
+		// Generate and store hash
+		exam.Hash = generate.HMACHash(int64(exam.ID))
+		if err := tx.Model(&exam).Update("hash", exam.Hash).Error; err != nil {
+			return status.Error(codes.Internal, "failed to store exam hash")
 		}
-		if err := tx.Create(&examHash).Error; err != nil {
-			return status.Error(codes.Internal, "failed to create exam hash")
-		}
-		exam.ExamHash = examHash
 
 		// Create owner permission entry
 		permission := models.ExamPermission{
@@ -136,8 +133,8 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 	}
 
 	services.EnqueuePrepareQuestions(structs.PrepareQuestionsPayload{
-		ExamID:  exam.ID,
-		PaperID: exam.PaperID,
+		ExamID:    exam.ID,
+		PaperHash: exam.PaperHash,
 	})
 
 	return examToProto(&exam)
@@ -322,15 +319,11 @@ func (s *ExamServer) GetExam(ctx context.Context, req *proto.ExamRequest) (*prot
 
 // GetExamQuestions retrieves all questions associated with an exam
 func (s *ExamServer) GetExamQuestions(ctx context.Context, req *proto.ExamRequest) (*proto.ExamQuestionsResponse, error) {
-	examID, ok := interceptors.GetExamIDFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "exam ID not found in context")
-	}
-
 	var examQuestions []models.ExamQuestion
 	if err := db.DB.Model(&models.ExamQuestion{}).
-		Select("question_id", "category_id", "type", "order", "max_score").
-		Where("exam_id = ?", examID).
+		Select("exam_questions.question_id", "exam_questions.category_id", "exam_questions.type", "exam_questions.order", "exam_questions.max_score").
+		Joins("JOIN exams ON exams.id = exam_questions.exam_id").
+		Where("exams.hash = ?", req.ExamHash).
 		Find(&examQuestions).Error; err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch questions")
 	}
@@ -365,15 +358,11 @@ func (s *ExamServer) GetExamQuestions(ctx context.Context, req *proto.ExamReques
 
 // GetExamCategories retrieves all category IDs associated with an exam
 func (s *ExamServer) GetExamCategories(ctx context.Context, req *proto.ExamRequest) (*proto.ExamCategoriesResponse, error) {
-	examID, ok := interceptors.GetExamIDFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "exam ID not found in context")
-	}
-
 	var examCategories []models.ExamCategory
 	if err := db.DB.Model(&models.ExamCategory{}).
-		Select("category_id", "order").
-		Where("exam_id = ?", examID).
+		Select("exam_categories.category_id", "exam_categories.order").
+		Joins("JOIN exams ON exams.id = exam_categories.exam_id").
+		Where("exams.hash = ?", req.ExamHash).
 		Find(&examCategories).Error; err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch categories")
 	}
@@ -438,15 +427,13 @@ func (s *ExamServer) GetExamPermission(ctx context.Context, req *proto.ExamReque
 
 // DeleteExams handles the batch deletion of exams and their associated permissions
 func (s *ExamServer) DeleteExams(ctx context.Context, req *proto.DeleteExamsRequest) (*proto.Empty, error) {
-	examIDs, ok := interceptors.GetExamIDsFromContext(ctx)
-	if !ok || len(examIDs) == 0 {
-		return &proto.Empty{}, nil
-	}
-
 	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		// Delete exam hashes first due to foreign key constraint
-		if err := tx.Where("id IN ?", examIDs).Delete(&models.ExamHash{}).Error; err != nil {
-			return status.Error(codes.Internal, "failed to delete exam hashes")
+		// Get exam IDs from hashes
+		var examIDs []types.ExamID
+		if err := tx.Model(&models.Exam{}).
+			Where("hash IN ?", req.ExamHashes).
+			Pluck("id", &examIDs).Error; err != nil {
+			return status.Error(codes.Internal, "failed to fetch exam IDs")
 		}
 
 		// Delete exams and permissions
@@ -458,11 +445,7 @@ func (s *ExamServer) DeleteExams(ctx context.Context, req *proto.DeleteExamsRequ
 			return status.Error(codes.Internal, "failed to delete exam permissions")
 		}
 
-		var typedExamIDs []types.ExamID
-		for _, id := range examIDs {
-			typedExamIDs = append(typedExamIDs, types.ExamID(id))
-		}
-		if err := services.EnqueuePostDeleteExamsCleanup(typedExamIDs); err != nil {
+		if err := services.EnqueuePostDeleteExamsCleanup(examIDs); err != nil {
 			return status.Error(codes.Internal, "failed to enqueue post-delete-exam cleanup task")
 		}
 

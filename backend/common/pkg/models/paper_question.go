@@ -24,11 +24,11 @@ type Question struct {
 	MaxScore      int16              `gorm:"type:smallint;not null;check:max_score >= 0 AND max_score <= 1000"`
 	CorrectAnswer sql.NullString     `gorm:"type:text"`
 	Locked        bool               `gorm:"not null;default:false"`
+	Hash          string             `gorm:"type:varchar(64);uniqueIndex;not null"`
 	DeletedAt     gorm.DeletedAt     `gorm:"index"`
 
-	Paper        Paper            `gorm:"foreignKey:PaperID"`
-	Category     QuestionCategory `gorm:"foreignKey:CategoryID"`
-	QuestionHash QuestionHash     `gorm:"foreignKey:ID;references:ID"`
+	Paper    Paper            `gorm:"foreignKey:PaperID"`
+	Category QuestionCategory `gorm:"foreignKey:CategoryID"`
 }
 
 // Unmarshal the raw JSON data into the appropriate struct based on the Type field

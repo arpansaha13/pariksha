@@ -85,12 +85,9 @@ func clearTables(t *testing.T) {
 		constants.TABLE_BOILERPLATES,
 		constants.TABLE_LANGUAGES,
 		constants.TABLE_TEST_CASES,
-		constants.TABLE_QUESTION_HASHES,
 		constants.TABLE_QUESTIONS,
 		constants.TABLE_CATEGORIES,
 		constants.TABLE_PAPER_PERMISSIONS,
-		constants.TABLE_PAPERS,
-		constants.TABLE_PAPER_HASHES,
 		constants.TABLE_PAPERS,
 	}
 
@@ -109,10 +106,6 @@ func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 	srv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			interceptors.ExamServiceAuthInterceptor(),
-			interceptors.SinglePaperHashInterceptor(),
-			interceptors.SingleQuestionHashInterceptor(),
-			interceptors.BatchPaperHashInterceptor(),
-			interceptors.BatchQuestionHashInterceptor(),
 			interceptors.PaperAuthInterceptor(),
 			interceptors.DeletePaperAuthInterceptor(),
 		),

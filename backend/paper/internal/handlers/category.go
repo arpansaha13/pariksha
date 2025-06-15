@@ -13,41 +13,39 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
+	"pariksha/common/pkg/utils/grpcerror"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/interceptors"
 )
 
 func (s *PaperServer) GetPaperCategories(ctx context.Context, req *proto.PaperRequest) (*proto.CategoryList, error) {
-	paperID, ok := interceptors.GetPaperIDFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "paper ID not found in context")
-	}
-
 	var categories []models.QuestionCategory
-	err := db.DB.Select("id, name, \"order\"").
-		Where("paper_id = ?", paperID).
+	err := db.DB.Select("categories.id, categories.name, categories.order").
+		Joins("INNER JOIN papers ON papers.id = categories.paper_id").
+		Where("papers.hash = ?", req.PaperHash).
 		Order("\"order\" ASC").
 		Find(&categories).Error
 
 	if err != nil {
-		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
+		return nil, grpcerror.Internal(err, "failed to fetch categories")
 	}
 
 	return categoriesToProto(categories), nil
 }
 
 func (s *PaperServer) CreateCategory(ctx context.Context, req *proto.CreateCategoryRequest) (*proto.CategoryResponse, error) {
-	paperID, ok := interceptors.GetPaperIDFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "paper ID not found in context")
-	}
-
 	var category models.QuestionCategory
 	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+		// First get paper using hash
+		var paper models.Paper
+		if err := tx.Where("hash = ?", req.PaperHash).Take(&paper).Error; err != nil {
+			return status.Error(codes.NotFound, "paper not found")
+		}
+
 		// Count existing categories
 		var count int64
 		if err := tx.Model(&models.QuestionCategory{}).
-			Where("paper_id = ?", paperID).
+			Where("paper_id = ?", paper.ID).
 			Count(&count).Error; err != nil {
 			return status.Error(codes.Internal, constants.ErrInternalServer)
 		}
@@ -55,7 +53,7 @@ func (s *PaperServer) CreateCategory(ctx context.Context, req *proto.CreateCateg
 		// Get max order
 		var maxOrder struct{ MaxOrder int16 }
 		if err := tx.Model(&models.QuestionCategory{}).
-			Where("paper_id = ?", paperID).
+			Where("paper_id = ?", paper.ID).
 			Select("COALESCE(MAX(\"order\"), 0) as max_order").
 			Scan(&maxOrder).Error; err != nil {
 			return status.Error(codes.Internal, constants.ErrInternalServer)
@@ -63,7 +61,7 @@ func (s *PaperServer) CreateCategory(ctx context.Context, req *proto.CreateCateg
 
 		// Create new category
 		category = models.QuestionCategory{
-			PaperID: sql.NullInt64{Int64: int64(paperID), Valid: true},
+			PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 			Name:    fmt.Sprintf("Category %d", count+1),
 			Order:   maxOrder.MaxOrder + 1,
 		}
@@ -212,13 +210,13 @@ func handleCategoryDeletion(tx *gorm.DB, category models.QuestionCategory, categ
 }
 
 func (s *PaperServer) ReorderCategories(ctx context.Context, req *proto.ReorderCategoriesRequest) (*proto.Empty, error) {
-	// Use paper ID from context for additional validation if needed
-	paperID, ok := interceptors.GetPaperIDFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "paper ID not found in context")
-	}
-
 	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+		// First get paper using hash
+		var paper models.Paper
+		if err := tx.Where("hash = ?", req.PaperHash).Take(&paper).Error; err != nil {
+			return utils.HandleDBError(err, "paper not found")
+		}
+
 		if err := validateEntityIDs(tx, constants.TABLE_CATEGORIES, req.CategoryIds); err != nil {
 			return err
 		}
@@ -226,7 +224,7 @@ func (s *PaperServer) ReorderCategories(ctx context.Context, req *proto.ReorderC
 		// Additional validation to ensure categories belong to the paper
 		var count int64
 		if err := tx.Model(&models.QuestionCategory{}).
-			Where("paper_id = ? AND id IN ?", paperID, req.CategoryIds).
+			Where("paper_id = ? AND id IN ?", paper.ID, req.CategoryIds).
 			Count(&count).Error; err != nil {
 			return status.Error(codes.Internal, constants.ErrInternalServer)
 		}
@@ -235,6 +233,7 @@ func (s *PaperServer) ReorderCategories(ctx context.Context, req *proto.ReorderC
 			return status.Error(codes.InvalidArgument, "some categories do not belong to this paper")
 		}
 
+		// Update orders
 		for i, categoryID := range req.CategoryIds {
 			if err := tx.Model(&models.QuestionCategory{}).
 				Where("id = ?", categoryID).

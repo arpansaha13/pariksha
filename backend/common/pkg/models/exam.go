@@ -28,12 +28,12 @@ type Exam struct {
 	MaxCandidatesCount int32           `gorm:"not null"`
 	MaxScore           int32           `gorm:"type:integer;default:0"`
 	DurationMinutes    int16           `gorm:"type:smallint;not null;check:duration_minutes >= 0 AND duration_minutes <= 1440"`
-	PaperID            types.PaperID   `gorm:"type:bigint"`
+	PaperHash          string          `gorm:"type:varchar(64)"`
 	ParticipantCounts  json.RawMessage `gorm:"type:jsonb;default:'{\"unattended\":0,\"invited\":0,\"started\":0,\"ended\":0}'"`
+	Hash               string          `gorm:"type:varchar(64);uniqueIndex;not null"`
 	DeletedAt          gorm.DeletedAt  `gorm:"index"`
 
 	Participants []ExamParticipant `gorm:"foreignKey:ExamID"`
-	ExamHash     ExamHash          `gorm:"foreignKey:ID;references:ID"`
 }
 
 func (Exam) TableName() string {

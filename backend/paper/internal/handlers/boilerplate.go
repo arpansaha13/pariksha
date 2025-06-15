@@ -9,17 +9,13 @@ import (
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/db"
-	"pariksha/paper/internal/interceptors"
 )
 
 func (s *PaperServer) GetBoilerplate(ctx context.Context, req *proto.GetBoilerplateRequest) (*proto.GetBoilerplateResponse, error) {
-	questionID, ok := interceptors.GetQuestionIDFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "question ID not found in context")
-	}
-
 	var boilerplate models.Boilerplate
-	err := db.DB.Where("question_id = ? AND language_id = ?", questionID, req.LanguageId).Take(&boilerplate).Error
+	err := db.DB.Joins("INNER JOIN questions ON questions.id = boilerplates.question_id").
+		Where("questions.hash = ? AND boilerplates.language_id = ?", req.QuestionHash, req.LanguageId).
+		Take(&boilerplate).Error
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "boilerplate not found")
 	}

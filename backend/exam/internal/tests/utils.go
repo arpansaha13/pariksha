@@ -22,6 +22,7 @@ import (
 const (
 	typedUserID types.UserID = 1 // Creator/admin user ID
 	userID      int64        = 1 // Creator/admin user ID
+	paperHash   string       = "some-string-for-now"
 )
 
 func createContextWithUserID(userID types.UserID) context.Context {
@@ -54,8 +55,8 @@ func createTestExams(t *testing.T, exams []models.Exam) []models.Exam {
 		if exam.MaxCandidatesCount == 0 {
 			exam.MaxCandidatesCount = 10
 		}
-		if exam.PaperID == 0 {
-			exam.PaperID = 1
+		if exam.PaperHash == "" {
+			exam.PaperHash = paperHash
 		}
 		if exam.DurationMinutes == 0 {
 			exam.DurationMinutes = 60
@@ -67,13 +68,9 @@ func createTestExams(t *testing.T, exams []models.Exam) []models.Exam {
 		// Create exam
 		require.NoError(t, db.DB.Create(&exam).Error)
 
-		// Create exam hash
-		examHash := models.ExamHash{
-			ID:   exam.ID,
-			Hash: generate.HMACHash(int64(exam.ID)),
-		}
-		require.NoError(t, db.DB.Create(&examHash).Error)
-		exam.ExamHash = examHash
+		// Generate and store hash
+		exam.Hash = generate.HMACHash(int64(exam.ID))
+		require.NoError(t, db.DB.Model(&exam).Update("hash", exam.Hash).Error)
 
 		// Create permission
 		permission := models.ExamPermission{

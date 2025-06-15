@@ -107,11 +107,8 @@ func TestGetPaperQuestions(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, []models.Question) {
 				return &models.Paper{
-					ID: 999,
-					PaperHash: models.PaperHash{
-						Hash: generate.HMACHash(999),
-						ID:   999,
-					},
+					ID:   999,
+					Hash: generate.HMACHash(999),
 				}, nil
 			},
 		},
@@ -135,7 +132,7 @@ func TestGetPaperQuestions(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.PaperRequest{PaperHash: paper.PaperHash.Hash},
+				&proto.PaperRequest{PaperHash: paper.Hash},
 				client.GetPaperQuestions,
 				tt.validate,
 			)
@@ -174,12 +171,6 @@ func TestDeleteQuestion(t *testing.T) {
 				var question models.Question
 				err := db.DB.First(&question, questionID).Error
 				assert.Error(t, err) // Question should not exist
-
-				// Verify question hash was deleted
-				var hashCount int64
-				err = db.DB.Model(&models.QuestionHash{}).Where("id = ?", questionID).Count(&hashCount).Error
-				require.NoError(t, err)
-				assert.Equal(t, int64(0), hashCount, "Question hash should be deleted")
 
 				// Verify question counts were updated
 				var updatedPaper models.Paper
@@ -241,7 +232,7 @@ func TestDeleteQuestion(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.QuestionRequest{QuestionHash: question.QuestionHash.Hash},
+				&proto.QuestionRequest{QuestionHash: question.Hash},
 				client.DeleteQuestion,
 				func(t *testing.T, resp *proto.Empty) {
 					if tt.validate != nil {
@@ -296,7 +287,7 @@ func TestReorderQuestions(t *testing.T) {
 			_, category, questions := tt.setup(t)
 
 			tt.request.CategoryId = int64(category.ID)
-			tt.request.QuestionHashes = []string{questions[1].QuestionHash.Hash, questions[0].QuestionHash.Hash} // Reverse order
+			tt.request.QuestionHashes = []string{questions[1].Hash, questions[0].Hash} // Reverse order
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
@@ -419,11 +410,8 @@ func TestGetPaperQuestion(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*models.Paper, *models.Question) {
 				return nil, &models.Question{
-					ID: 999,
-					QuestionHash: models.QuestionHash{
-						Hash: generate.HMACHash(999),
-						ID:   999,
-					},
+					ID:   999,
+					Hash: generate.HMACHash(999),
 				}
 			},
 		},
@@ -457,7 +445,7 @@ func TestGetPaperQuestion(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.QuestionRequest{QuestionHash: question.QuestionHash.Hash},
+				&proto.QuestionRequest{QuestionHash: question.Hash},
 				client.GetPaperQuestion,
 				tt.validate,
 			)

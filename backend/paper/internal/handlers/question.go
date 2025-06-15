@@ -17,6 +17,7 @@ import (
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/generate"
+	"pariksha/common/pkg/utils/grpcerror"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/interceptors"
@@ -24,19 +25,13 @@ import (
 )
 
 func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperRequest) (*proto.QuestionList, error) {
-	paperID, ok := interceptors.GetPaperIDFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "paper ID not found in context")
-	}
-
 	var questions []models.Question
-	if err := db.DB.Select("id, question, category_id, paper_id, \"order\"").
-		Preload("QuestionHash").
-		Preload("Paper.PaperHash").
-		Where("paper_id = ?", paperID).
+	if err := db.DB.Select("questions.id, question, category_id, paper_id, \"order\", questions.hash").
+		Joins("INNER JOIN papers ON papers.id = questions.paper_id").
+		Where("papers.hash = ?", req.PaperHash).
 		Order("\"order\" ASC").
 		Find(&questions).Error; err != nil {
-		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
+		return nil, grpcerror.Internal(err, "failed to fetch paper questions")
 	}
 
 	response := &proto.QuestionList{
@@ -45,6 +40,7 @@ func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperReq
 
 	for i, question := range questions {
 		var err error
+		question.Paper.Hash = req.PaperHash
 		response.Questions[i], err = questionToMinimalProto(question)
 		if err != nil {
 			return nil, err
@@ -60,29 +56,13 @@ func (s *PaperServer) GetPaperQuestion(ctx context.Context, req *proto.QuestionR
 		return nil, err
 	}
 
-	// Define struct to hold the query result
-	type QueryResult struct {
-		QuestionHash string
-		PaperHash    string
+	// Get associated paper
+	if err := db.DB.
+		Select("papers.id, papers.hash").
+		Where("id = ?", question.PaperID).
+		Take(&question.Paper).Error; err != nil {
+		return nil, utils.HandleDBError(err, "failed to fetch paper details")
 	}
-
-	var result QueryResult
-	// Join with both hash tables to get question and paper hashes
-	err = db.DB.
-		Model(&models.Question{}).
-		Select("qh.hash as question_hash, ph.hash as paper_hash").
-		Joins("INNER JOIN question_hashes qh ON qh.id = questions.id").
-		Joins("INNER JOIN paper_hashes ph ON ph.id = questions.paper_id").
-		Where("questions.id = ?", question.ID).
-		Scan(&result).Error
-
-	if err != nil {
-		return nil, utils.HandleDBError(err, "failed to fetch question details")
-	}
-
-	// Update question with fetched hashes
-	question.QuestionHash.Hash = result.QuestionHash
-	question.Paper.PaperHash.Hash = result.PaperHash
 
 	var testCases []models.TestCase
 	if question.Type == proto.QuestionType_CODING {
@@ -96,11 +76,6 @@ func (s *PaperServer) GetPaperQuestion(ctx context.Context, req *proto.QuestionR
 }
 
 func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuestionRequest) (*proto.CreateQuestionResponse, error) {
-	paperID, ok := interceptors.GetPaperIDFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "paper ID not found in context")
-	}
-
 	if err := validate.MaxScore(req.MaxScore); err != nil {
 		return nil, err
 	}
@@ -137,11 +112,11 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 
 	tags, _ := json.Marshal(req.Tags)
 	var question models.Question
-	var questionHash models.QuestionHash
-	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 
+	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+		// Get paper by hash
 		var paper models.Paper
-		if err := db.DB.Take(&paper, paperID).Error; err != nil {
+		if err := tx.Where("hash = ?", req.PaperHash).Take(&paper).Error; err != nil {
 			return utils.HandleDBError(err, "paper not found")
 		}
 
@@ -151,11 +126,11 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 			Where("category_id = ?", req.CategoryId).
 			Select("COALESCE(MAX(\"order\"), 0) as max_order").
 			Scan(&maxOrder).Error; err != nil {
-			return status.Error(codes.Internal, constants.ErrInternalServer)
+			return grpcerror.Internal(err, "failed to get max order forcategory")
 		}
 
 		question = models.Question{
-			PaperID:    sql.NullInt64{Int64: int64(paperID), Valid: true},
+			PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
 			CategoryID: types.CategoryID(req.CategoryId),
 			Order:      maxOrder.MaxOrder + 1,
 			Question:   json.RawMessage(req.RawQuestion),
@@ -172,13 +147,10 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 			return err
 		}
 
-		// Create HMAC hash for the new question
-		questionHash = models.QuestionHash{
-			ID:   question.ID,
-			Hash: generate.HMACHash(int64(question.ID)),
-		}
-		if err := tx.Create(&questionHash).Error; err != nil {
-			return status.Error(codes.Internal, "failed to create question hash")
+		// Generate and store hash
+		question.Hash = generate.HMACHash(int64(question.ID))
+		if err := tx.Model(&question).Update("hash", question.Hash).Error; err != nil {
+			return status.Error(codes.Internal, "failed to store question hash")
 		}
 
 		// Create boilerplates for coding questions
@@ -201,14 +173,15 @@ func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuest
 	}
 
 	return &proto.CreateQuestionResponse{
-		QuestionHash: questionHash.Hash,
+		QuestionHash: question.Hash,
 	}, nil
 }
 
 func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.Empty, error) {
-	question, err := interceptors.GetQuestionFromContext(ctx)
-	if err != nil {
-		return nil, err
+	// Get question by hash
+	var question models.Question
+	if err := db.DB.Where("hash = ?", req.QuestionHash).Take(&question).Error; err != nil {
+		return nil, utils.HandleDBError(err, "question not found")
 	}
 
 	// Preload paper with required fields
@@ -219,7 +192,7 @@ func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionReq
 		return nil, utils.HandleDBError(err, "failed to fetch question details")
 	}
 
-	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		// Update paper max score and question counts
 		if err := tx.Model(&question.Paper).
 			UpdateColumn("max_score", gorm.Expr("max_score - ?", question.MaxScore)).
@@ -244,12 +217,7 @@ func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionReq
 				return err
 			}
 		} else {
-			// Delete question hash first due to foreign key constraint
-			if err := tx.Where("id = ?", question.ID).Delete(&models.QuestionHash{}).Error; err != nil {
-				return err
-			}
-
-			// Then delete the question
+			// Delete the question
 			if err := tx.Delete(&question).Error; err != nil {
 				return err
 			}
@@ -266,29 +234,24 @@ func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionReq
 }
 
 func (s *PaperServer) ReorderQuestions(ctx context.Context, req *proto.ReorderQuestionsRequest) (*proto.Empty, error) {
-	questionIDs, ok := interceptors.GetQuestionIDsFromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "question ID list not found in context")
-	}
-
 	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		// Verify all questions belong to the category
 		var categoryQuestionsCount int64
 		err := tx.Model(&models.Question{}).
-			Where("category_id = ? AND id IN ?", req.CategoryId, questionIDs).
+			Where("category_id = ? AND hash IN ?", req.CategoryId, req.QuestionHashes).
 			Count(&categoryQuestionsCount).Error
 		if err != nil {
 			return err
 		}
 
-		if int(categoryQuestionsCount) != len(questionIDs) {
-			return status.Error(codes.InvalidArgument, "invalid question ids")
+		if int(categoryQuestionsCount) != len(req.QuestionHashes) {
+			return status.Error(codes.InvalidArgument, "invalid question hashes")
 		}
 
 		// Update orders
-		for i, questionID := range questionIDs {
+		for i, questionHash := range req.QuestionHashes {
 			if err := tx.Model(&models.Question{}).
-				Where("id = ?", questionID).
+				Where("hash = ?", questionHash).
 				Update("order", i+1).Error; err != nil {
 				return err
 			}
@@ -298,7 +261,7 @@ func (s *PaperServer) ReorderQuestions(ctx context.Context, req *proto.ReorderQu
 	})
 
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to reorder questions")
+		return nil, grpcerror.Internal(err, "failed to reorder questions")
 	}
 
 	return &proto.Empty{}, nil
