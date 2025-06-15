@@ -16,6 +16,12 @@ import (
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/generate"
 	"pariksha/exam/internal/config/db"
+	"pariksha/exam/internal/services/paper"
+)
+
+const (
+	typedUserID types.UserID = 1 // Creator/admin user ID
+	userID      int64        = 1 // Creator/admin user ID
 )
 
 func createContextWithUserID(userID types.UserID) context.Context {
@@ -208,4 +214,17 @@ func createTestExamQuestions(t *testing.T, exam *models.Exam, questions []models
 	}
 
 	return result
+}
+
+func getQuestionIdForHash(questionHash string) int64 {
+	hashesList := []string{questionHash}
+	questionIDs, _ := paper.FetchQuestionIdsForHashes(hashesList)
+	return questionIDs[0]
+}
+
+func getQuestionHashForId(questionID types.QuestionID) string {
+	idsList := make([]int64, 1)
+	idsList[0] = int64(questionID)
+	questionHashes, _ := paper.FetchQuestionHashesForIds(idsList)
+	return questionHashes[0]
 }

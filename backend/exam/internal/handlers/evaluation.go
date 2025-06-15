@@ -15,10 +15,17 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
+	"pariksha/exam/internal/interceptors"
+	"pariksha/exam/internal/services/paper"
 )
 
 // GetAnswerForEvaluation retrieves an answer for evaluation purposes
 func (s *ExamServer) GetAnswerForEvaluation(ctx context.Context, req *proto.ParticipantQuestionRequest) (*proto.AnswerMinimalResponse, error) {
+	questionID, ok := interceptors.GetQuestionIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "question ID not found in context")
+	}
+
 	var answer struct {
 		ID         int64
 		QuestionID int64
@@ -27,15 +34,13 @@ func (s *ExamServer) GetAnswerForEvaluation(ctx context.Context, req *proto.Part
 
 	err := db.DB.Model(&models.Answer{}).
 		Select("id", "question_id", "answer").
-		Where("exam_participant_id = ? AND question_id = ?",
-			req.ParticipantId,
-			req.QuestionId,
-		).Take(&answer).Error
+		Where("exam_participant_id = ? AND question_id = ?", req.ParticipantId, questionID).
+		Take(&answer).Error
 
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &proto.AnswerMinimalResponse{
-				QuestionId: req.QuestionId,
+				QuestionHash: req.QuestionHash,
 			}, nil
 		}
 		return nil, status.Error(codes.Internal, "failed to fetch answer")
@@ -47,13 +52,18 @@ func (s *ExamServer) GetAnswerForEvaluation(ctx context.Context, req *proto.Part
 	}
 
 	return &proto.AnswerMinimalResponse{
-		AnswerId:   answer.ID,
-		Answer:     answerBytes,
-		QuestionId: answer.QuestionID,
+		AnswerId:     answer.ID,
+		Answer:       answerBytes,
+		QuestionHash: req.QuestionHash,
 	}, nil
 }
 
 func (s *ExamServer) GetAnswerEvaluationData(ctx context.Context, req *proto.ParticipantQuestionRequest) (*proto.GetAnswerEvaluationDataResponse, error) {
+	questionID, ok := interceptors.GetQuestionIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "question ID not found in context")
+	}
+
 	// First check if participant exists and has ended the exam
 	participant, err := utils.FindRecord[models.ExamParticipant](db.DB, req.ParticipantId, "participant not found")
 	if err != nil {
@@ -77,10 +87,10 @@ func (s *ExamServer) GetAnswerEvaluationData(ctx context.Context, req *proto.Par
 	if err := db.DB.Model(&models.Answer{}).
 		Select("id", "question_id", "score_awarded", "comments").
 		Where("exam_participant_id = ? AND question_id = ? AND answer IS NOT NULL",
-			req.ParticipantId, req.QuestionId).Take(&answer).Error; err != nil {
+			req.ParticipantId, questionID).Take(&answer).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &proto.GetAnswerEvaluationDataResponse{
-				QuestionId: req.QuestionId,
+				QuestionHash: req.QuestionHash,
 			}, nil
 		}
 		return nil, utils.HandleDBError(err, "answer not found")
@@ -88,7 +98,7 @@ func (s *ExamServer) GetAnswerEvaluationData(ctx context.Context, req *proto.Par
 
 	return &proto.GetAnswerEvaluationDataResponse{
 		AnswerId:     answer.ID,
-		QuestionId:   answer.QuestionID,
+		QuestionHash: req.QuestionHash,
 		ScoreAwarded: int32(answer.ScoreAwarded),
 		Comments:     answer.Comments.String,
 	}, nil
@@ -155,9 +165,15 @@ func (s *ExamServer) UpdateAnswerForEvaluation(ctx context.Context, req *proto.U
 		return nil, err
 	}
 
+	// Fetch question hash from paper service
+	questionHashes, err := paper.FetchQuestionHashesForIds([]int64{int64(answer.QuestionID)})
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to fetch question hash")
+	}
+
 	return &proto.GetAnswerEvaluationDataResponse{
 		AnswerId:     int64(answer.ID),
-		QuestionId:   int64(answer.QuestionID),
+		QuestionHash: questionHashes[0],
 		ScoreAwarded: int32(answer.ScoreAwarded),
 		Comments:     answer.Comments.String,
 	}, nil

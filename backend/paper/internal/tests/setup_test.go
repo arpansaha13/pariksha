@@ -108,6 +108,7 @@ func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 	lis = bufconn.Listen(bufSize)
 	srv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
+			interceptors.ExamServiceAuthInterceptor(),
 			interceptors.SinglePaperHashInterceptor(),
 			interceptors.SingleQuestionHashInterceptor(),
 			interceptors.BatchPaperHashInterceptor(),

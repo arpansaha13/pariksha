@@ -11,7 +11,7 @@ services:
       - backend
     restart: unless-stopped
     networks:
-      - frontend-network
+      - nginx-network
     logging:
       driver: "json-file"
       options:
@@ -20,7 +20,7 @@ services:
 
   frontend:
     networks:
-      - frontend-network
+      - nginx-network
     logging:
       driver: "json-file"
       options:
@@ -38,7 +38,7 @@ services:
       engine:
         condition: service_started
     networks:
-      - frontend-network
+      - nginx-network
       - backend-network
 
   auth:
@@ -57,7 +57,8 @@ services:
         condition: service_healthy
     networks:
       - backend-network
-      - papers-network
+      - paper-network
+      - exam-paper-network
 
   exam:
     depends_on:
@@ -67,7 +68,8 @@ services:
         condition: service_healthy
     networks:
       - backend-network
-      - exams-network
+      - exam-network
+      - exam-paper-network
 
   engine:
     depends_on:
@@ -121,7 +123,7 @@ services:
       - ./docker/conf/examQueue/redis.conf:/usr/local/etc/redis/redis.conf
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     networks:
-      - exams-network
+      - exam-network
     logging:
       driver: "json-file"
       options:
@@ -149,7 +151,7 @@ services:
     volumes:
       - ./docker/data/papersDb:/var/lib/postgresql/data
     networks:
-      - papers-network
+      - paper-network
       - engine-network
     logging:
       driver: "json-file"
@@ -164,7 +166,7 @@ services:
     volumes:
       - ./docker/data/examsDb:/var/lib/postgresql/data
     networks:
-      - exams-network
+      - exam-network
     logging:
       driver: "json-file"
       options:
@@ -180,21 +182,23 @@ services:
       papersDb:
         condition: service_healthy
     networks:
-      - exams-network
-      - papers-network
+      - exam-network
+      - paper-network
 
 networks:
-  frontend-network:
-    name: frontend-network
+  nginx-network:
+    name: nginx-network
   backend-network:
     name: backend-network
   auth-network:
     name: auth-network
   mail-network:
     name: mail-network
-  papers-network:
-    name: papers-network
-  exams-network:
-    name: exams-network
+  paper-network:
+    name: paper-network
+  exam-network:
+    name: exam-network
   engine-network:
     name: engine-network
+  exam-paper-network:
+    name: exam-paper-network

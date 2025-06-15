@@ -28,7 +28,7 @@ func (s *PaperServer) GetQuestionsByIds(ctx context.Context, req *proto.GetQuest
 			QuestionId:   int64(question.ID),
 			QuestionHash: question.QuestionHash.Hash,
 			MaxScore:     int32(question.MaxScore),
-			Type:         int32(question.Type),
+			Type:         question.Type,
 			RawQuestion:  question.Question,
 		}
 	}

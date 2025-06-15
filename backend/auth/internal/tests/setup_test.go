@@ -21,6 +21,7 @@ import (
 
 	"pariksha/auth/internal/config/db"
 	"pariksha/auth/internal/config/env"
+	"pariksha/auth/internal/handlers"
 	"pariksha/auth/internal/services"
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
@@ -132,7 +133,7 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 	lis = bufconn.Listen(bufSize)
 	srv := grpc.NewServer()
-	proto.RegisterAuthServer(srv, &AuthServer{})
+	proto.RegisterAuthServer(srv, &handlers.AuthServer{})
 
 	go func() {
 		if err := srv.Serve(lis); err != nil {

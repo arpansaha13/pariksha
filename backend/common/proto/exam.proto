@@ -120,7 +120,6 @@ message RemoveParticipantRequest {
 
 message StartExamRequest {
   string exam_hash = 1;
-  int32 duration_minutes = 2;
 }
 
 message EndExamRequest {
@@ -135,7 +134,7 @@ message EvaluationStatusResponse {
 message Answer {
   optional bytes answer = 1;  // JSON encoded answer, can be nil
   google.protobuf.Timestamp submitted_at = 2;
-  int64 question_id = 3;
+  string question_hash = 3;
 }
 
 message UpsertAnswersRequest {
@@ -145,14 +144,14 @@ message UpsertAnswersRequest {
 
 message UpsertAnswersResponse {
   int64 answer_id = 1;
-  int64 question_id = 2;
+  string question_hash = 2;
   optional bytes answer = 3;  // JSON encoded answer, can be nil
 }
 
 message AnswerResponse {
   int64 answer_id = 1;
   int64 exam_participant_id = 2;
-  int64 question_id = 3;
+  string question_hash = 3;
   bytes answer = 4;  // JSON encoded answer
   
   // question fields
@@ -160,6 +159,7 @@ message AnswerResponse {
   int64 category_id = 6;
   int32 question_type = 7;
   int32 max_score = 8;
+  bytes question = 9;  // JSON encoded question
 }
 
 message AnswerList {
@@ -175,13 +175,13 @@ message UpdateAnswerRequest {
 
 message GetAnswerRequest {
   string exam_hash = 1;
-  int64 question_id = 2;
+  string question_hash = 2;
 }
 
 message AnswerMinimalResponse {
   int64 answer_id = 1;
   bytes answer = 2;  // JSON encoded answer
-  int64 question_id = 3;
+  string question_hash = 3;
 }
 
 message CheckParticipantRequest {
@@ -200,7 +200,7 @@ message GetExamParticipantResponse {
 }
 
 message ExamQuestion {
-  int64 question_id = 1;
+  string question_hash = 1;
   int64 category_id = 2;
   int32 order = 3;
   QuestionType type = 4;
@@ -235,12 +235,12 @@ message ExamPermissionResponse {
 
 message ParticipantQuestionRequest {
   int64 participant_id = 1;
-  int64 question_id = 2;
+  string question_hash = 2;
 }
 
 message GetAnswerEvaluationDataResponse {
   int64 answer_id = 1;
-  int64 question_id = 2;
+  string question_hash = 2;
   int32 score_awarded = 3;
   string comments = 4;
 }

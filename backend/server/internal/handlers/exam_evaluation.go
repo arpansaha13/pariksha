@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/utils/ptr"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
@@ -28,30 +29,12 @@ func GetAnswerEvaluationData(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
-	// Get question ID from paper service
-	paperService := services.GetPaperService()
-	paperCtx := paperService.CreateMetadata(userID)
-
-	questionIDResp, err := paperService.Client().GetQuestionIds(paperCtx, &proto.GetQuestionIdsRequest{
-		QuestionHashes: []string{questionHash},
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	if len(questionIDResp.QuestionIds) == 0 {
-		http.Error(w, "Question not found", http.StatusNotFound)
-		return
-	}
-
-	// Call exam service with question ID
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	resp, err := examService.Client().GetAnswerEvaluationData(ctx, &proto.ParticipantQuestionRequest{
 		ParticipantId: participantID,
-		QuestionId:    questionIDResp.QuestionIds[0],
+		QuestionHash:  questionHash,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -92,18 +75,10 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 	ctx := examService.CreateMetadata(userID)
 
 	req := &proto.UpdateAnswerRequest{
-		AnswerId: answerId,
-	}
-
-	if updateDTO.NewScore != nil {
-		score := int32(*updateDTO.NewScore)
-		req.NewScore = &score
-	}
-	if updateDTO.Evaluated != nil {
-		req.Evaluated = updateDTO.Evaluated
-	}
-	if updateDTO.Comments != nil {
-		req.Comments = updateDTO.Comments
+		AnswerId:  answerId,
+		Evaluated: updateDTO.Evaluated,
+		Comments:  updateDTO.Comments,
+		NewScore:  ptr.Int32(*updateDTO.NewScore),
 	}
 
 	// Send update request to exam service
@@ -113,21 +88,9 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get question hashes from paper service
-	paperService := services.GetPaperService()
-	paperCtx := paperService.CreateMetadata(userID)
-
-	hashes, err := paperService.Client().GetQuestionHashes(paperCtx, &proto.GetQuestionHashesRequest{
-		QuestionIds: []int64{resp.QuestionId},
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
 	updatedEvaluationData := dtos.GetAnswerEvaluationDataResponseDto{
 		ID:           resp.AnswerId,
-		QuestionID:   hashes.QuestionHashes[0],
+		QuestionID:   resp.QuestionHash,
 		ScoreAwarded: resp.ScoreAwarded,
 		Comments:     resp.Comments,
 	}
@@ -177,30 +140,12 @@ func GetAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
-	// Get question ID from paper service
-	paperService := services.GetPaperService()
-	paperCtx := paperService.CreateMetadata(userID)
-
-	questionIDResp, err := paperService.Client().GetQuestionIds(paperCtx, &proto.GetQuestionIdsRequest{
-		QuestionHashes: []string{questionHash},
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	if len(questionIDResp.QuestionIds) == 0 {
-		http.Error(w, "Question not found", http.StatusNotFound)
-		return
-	}
-
-	// Call exam service with question ID
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	answer, err := examService.Client().GetAnswerForEvaluation(ctx, &proto.ParticipantQuestionRequest{
 		ParticipantId: participantID,
-		QuestionId:    questionIDResp.QuestionIds[0],
+		QuestionHash:  questionHash,
 	})
 	if err != nil {
 		handleGRPCError(w, err)

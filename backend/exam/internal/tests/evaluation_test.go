@@ -114,7 +114,7 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 			validate: func(t *testing.T, resp *proto.AnswerMinimalResponse) {
 				assert.Zero(t, resp.AnswerId)
 				assert.Nil(t, resp.Answer)
-				assert.EqualValues(t, 999, resp.QuestionId)
+				assert.EqualValues(t, 999, getQuestionIdForHash(resp.QuestionHash))
 			},
 		},
 	}
@@ -128,7 +128,7 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				&proto.ParticipantQuestionRequest{
 					ParticipantId: int64(participant.ID),
-					QuestionId:    int64(questionId),
+					QuestionHash:  getQuestionHashForId(questionId),
 				},
 				client.GetAnswerForEvaluation,
 				tt.validate,
@@ -234,7 +234,7 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				&proto.ParticipantQuestionRequest{
 					ParticipantId: int64(participant.ID),
-					QuestionId:    int64(questionId),
+					QuestionHash:  getQuestionHashForId(questionId),
 				},
 				client.GetAnswerEvaluationData,
 				tt.validate,

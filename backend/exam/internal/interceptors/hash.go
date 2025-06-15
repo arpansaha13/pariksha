@@ -12,38 +12,38 @@ import (
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
+	"pariksha/exam/internal/services/paper"
 )
 
 type hashContextKey string
 
 const (
-	examIDContextKey  hashContextKey = "examID"
-	examIDsContextKey hashContextKey = "examIDs"
+	examIDContextKey     hashContextKey = "examID"
+	examIDsContextKey    hashContextKey = "examIDs"
+	questionIDContextKey hashContextKey = "questionID"
 )
 
 // getExamHashFromRequest extracts ExamHash field from requests
 func getExamHashFromRequest(req any) (string, bool) {
+	type examHashGetter interface {
+		GetExamHash() string
+	}
+
+	if r, ok := req.(examHashGetter); ok {
+		return r.GetExamHash(), true
+	}
+	return "", false
+}
+
+// getQuestionHashFromRequest extracts QuestionHash field from requests
+func getQuestionHashFromRequest(req any) (string, bool) {
 	switch r := req.(type) {
-	case *proto.ExamRequest:
-		return r.ExamHash, true
-	case *proto.UpdateExamRequest:
-		return r.ExamHash, true
-	case *proto.StartExamRequest:
-		return r.ExamHash, true
-	case *proto.EndExamRequest:
-		return r.ExamHash, true
-	case *proto.AddParticipantRequest:
-		return r.ExamHash, true
-	case *proto.RemoveParticipantRequest:
-		return r.ExamHash, true
-	case *proto.UpsertAnswersRequest:
-		return r.ExamHash, true
 	case *proto.GetAnswerRequest:
-		return r.ExamHash, true
-	case *proto.CheckParticipantRequest:
-		return r.ExamHash, true
-	case *proto.GetExamParticipantRequest:
-		return r.ExamHash, true
+		return r.QuestionHash, true
+	case *proto.ParticipantQuestionRequest:
+		return r.QuestionHash, true
+	case *proto.UpsertAnswersRequest:
+		return r.Answer.QuestionHash, true
 	default:
 		return "", false
 	}
@@ -103,6 +103,26 @@ func BatchExamHashInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
+// SingleQuestionHashInterceptor converts question hash to ID
+func SingleQuestionHashInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		hash, ok := getQuestionHashFromRequest(req)
+		if !ok {
+			return handler(ctx, req)
+		}
+
+		// Get question ID using utility function
+		questionIDs, err := paper.FetchQuestionIdsForHashes([]string{hash})
+		if err != nil {
+			return nil, status.Error(codes.Internal, "failed to fetch question ID")
+		}
+
+		// Store question ID in context
+		ctx = context.WithValue(ctx, questionIDContextKey, types.QuestionID(questionIDs[0]))
+		return handler(ctx, req)
+	}
+}
+
 // GetExamIDFromContext retrieves the exam ID from context
 func GetExamIDFromContext(ctx context.Context) (types.ExamID, bool) {
 	id, ok := ctx.Value(examIDContextKey).(types.ExamID)
@@ -113,4 +133,16 @@ func GetExamIDFromContext(ctx context.Context) (types.ExamID, bool) {
 func GetExamIDsFromContext(ctx context.Context) ([]types.ExamID, bool) {
 	ids, ok := ctx.Value(examIDsContextKey).([]types.ExamID)
 	return ids, ok
+}
+
+// GetQuestionHashFromContext retrieves the question hash from context
+func GetQuestionHashFromContext(ctx context.Context) (string, bool) {
+	hash, ok := ctx.Value(questionIDContextKey).(string)
+	return hash, ok
+}
+
+// GetQuestionIDFromContext retrieves the question ID from context
+func GetQuestionIDFromContext(ctx context.Context) (types.QuestionID, bool) {
+	id, ok := ctx.Value(questionIDContextKey).(types.QuestionID)
+	return id, ok
 }

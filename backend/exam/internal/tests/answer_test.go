@@ -285,10 +285,10 @@ func TestGetAnswerForExam(t *testing.T) {
 				createTestExamParticipants(t, &exam, []models.ExamParticipant{
 					{Status: constants.PARTICIPANT_STATUS_STARTED},
 				})
-				return &exam, 9999 // Non-existent question ID
+				return &exam, 999 // Non-existent question ID
 			},
 			validate: func(t *testing.T, resp *proto.AnswerMinimalResponse) {
-				assert.EqualValues(t, 9999, resp.QuestionId)
+				assert.EqualValues(t, 999, getQuestionIdForHash(resp.QuestionHash))
 				assert.Zero(t, resp.AnswerId)
 				assert.Nil(t, resp.Answer)
 			},
@@ -303,8 +303,8 @@ func TestGetAnswerForExam(t *testing.T) {
 			ctx := createContextWithMetadata(tt.metadata)
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				&proto.GetAnswerRequest{
-					ExamHash:   exam.ExamHash.Hash,
-					QuestionId: int64(questionId),
+					ExamHash:     exam.ExamHash.Hash,
+					QuestionHash: getQuestionHashForId(questionId),
 				},
 				client.GetAnswerForExam,
 				tt.validate,
@@ -344,9 +344,9 @@ func TestUpsertAnswer(t *testing.T) {
 				return &participants[0], &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
-						QuestionId:  int64(questions[0].QuestionID),
-						Answer:      []byte(`{"text": "Test answer content"}`),
-						SubmittedAt: timestamppb.Now(),
+						QuestionHash: getQuestionHashForId(questions[0].QuestionID),
+						Answer:       []byte(`{"text": "Test answer content"}`),
+						SubmittedAt:  timestamppb.Now(),
 					},
 				}
 			},
@@ -396,9 +396,9 @@ func TestUpsertAnswer(t *testing.T) {
 				return &participants[0], &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
-						QuestionId:  int64(answer.QuestionID),
-						Answer:      []byte(`{"text": "Updated answer content"}`),
-						SubmittedAt: timestamppb.Now(),
+						QuestionHash: getQuestionHashForId(answer.QuestionID),
+						Answer:       []byte(`{"text": "Updated answer content"}`),
+						SubmittedAt:  timestamppb.Now(),
 					},
 				}
 			},
@@ -429,9 +429,9 @@ func TestUpsertAnswer(t *testing.T) {
 				return nil, &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
-						QuestionId:  1,
-						Answer:      []byte(`{"text": "Test answer"}`),
-						SubmittedAt: timestamppb.Now(),
+						QuestionHash: getQuestionHashForId(1),
+						Answer:       []byte(`{"text": "Test answer"}`),
+						SubmittedAt:  timestamppb.Now(),
 					},
 				}
 			},
@@ -454,9 +454,9 @@ func TestUpsertAnswer(t *testing.T) {
 				return nil, &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
-						QuestionId:  1,
-						Answer:      []byte(`{"text": "Test answer"}`),
-						SubmittedAt: timestamppb.Now(),
+						QuestionHash: getQuestionHashForId(1),
+						Answer:       []byte(`{"text": "Test answer"}`),
+						SubmittedAt:  timestamppb.Now(),
 					},
 				}
 			},
@@ -482,9 +482,9 @@ func TestUpsertAnswer(t *testing.T) {
 				return &participant, &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
-						QuestionId:  1,
-						Answer:      []byte(`{"text": "Test answer after exam ended"}`),
-						SubmittedAt: timestamppb.Now(),
+						QuestionHash: getQuestionHashForId(1),
+						Answer:       []byte(`{"text": "Test answer after exam ended"}`),
+						SubmittedAt:  timestamppb.Now(),
 					},
 				}
 			},
@@ -518,9 +518,9 @@ func TestUpsertAnswer(t *testing.T) {
 				return &participants[0], &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
-						QuestionId:  int64(questions[0].QuestionID),
-						Answer:      []byte(`{"text": ""}`),
-						SubmittedAt: timestamppb.Now(),
+						QuestionHash: getQuestionHashForId(questions[0].QuestionID),
+						Answer:       []byte(`{"text": ""}`),
+						SubmittedAt:  timestamppb.Now(),
 					},
 				}
 			},
@@ -568,9 +568,9 @@ func TestUpsertAnswer(t *testing.T) {
 				return &participants[0], &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
-						QuestionId:  int64(answer.QuestionID),
-						Answer:      nil, // Explicit nil answer
-						SubmittedAt: timestamppb.Now(),
+						QuestionHash: getQuestionHashForId(answer.QuestionID),
+						Answer:       nil, // Explicit nil answer
+						SubmittedAt:  timestamppb.Now(),
 					},
 				}
 			},
@@ -613,9 +613,9 @@ func TestUpsertAnswer(t *testing.T) {
 				return &participants[0], &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
-						QuestionId:  int64(answer.QuestionID),
-						Answer:      []byte(`{}`), // Empty answer object
-						SubmittedAt: timestamppb.Now(),
+						QuestionHash: getQuestionHashForId(answer.QuestionID),
+						Answer:       []byte(`{}`), // Empty answer object
+						SubmittedAt:  timestamppb.Now(),
 					},
 				}
 			},
@@ -649,9 +649,9 @@ func TestUpsertAnswer(t *testing.T) {
 				return &participants[0], &proto.UpsertAnswersRequest{
 					ExamHash: exam.ExamHash.Hash,
 					Answer: &proto.Answer{
-						QuestionId:  int64(answer.QuestionID),
-						Answer:      []byte(`{"optionIndex": null}`), // explicit null for optionIndex
-						SubmittedAt: timestamppb.Now(),
+						QuestionHash: getQuestionHashForId(answer.QuestionID),
+						Answer:       []byte(`{"optionIndex": null}`), // explicit null for optionIndex
+						SubmittedAt:  timestamppb.Now(),
 					},
 				}
 			},

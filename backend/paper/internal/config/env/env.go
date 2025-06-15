@@ -12,6 +12,7 @@ import (
 var (
 	GO_ENV            string
 	PAPER_SERVER_PORT string
+	EXAM_API_TOKEN    string
 )
 
 var (
@@ -41,6 +42,7 @@ func init() {
 	GO_ENV = os.Getenv("GO_ENV")
 
 	PAPER_SERVER_PORT = os.Getenv("PAPER_SERVER_PORT")
+	EXAM_API_TOKEN = os.Getenv("EXAM_API_TOKEN")
 
 	DB_USER = os.Getenv("DB_USER")
 	DB_PASS = os.Getenv("DB_PASS")
@@ -60,6 +62,7 @@ func getRequiredEnvVars() []string {
 		"DB_USER",
 		"DB_PASS",
 		"DB_NAME",
+		"EXAM_API_TOKEN",
 	}
 
 	if os.Getenv("GO_ENV") != constants.GO_ENV_TEST {

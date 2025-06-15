@@ -12,6 +12,7 @@ import (
 var (
 	GO_ENV           string
 	EXAM_SERVER_PORT string
+	EXAM_API_TOKEN   string
 )
 
 var (
@@ -26,6 +27,11 @@ var (
 var (
 	EXAM_QUEUE_HOST string
 	EXAM_QUEUE_PORT string
+)
+
+var (
+	PAPER_SERVER_HOST string
+	PAPER_SERVER_PORT string
 )
 
 func init() {
@@ -44,6 +50,7 @@ func init() {
 	}
 
 	GO_ENV = os.Getenv("GO_ENV")
+	EXAM_API_TOKEN = os.Getenv("EXAM_API_TOKEN")
 
 	EXAM_SERVER_PORT = os.Getenv("EXAM_SERVER_PORT")
 
@@ -53,6 +60,9 @@ func init() {
 
 	EXAM_QUEUE_HOST = os.Getenv("EXAM_QUEUE_HOST")
 	EXAM_QUEUE_PORT = os.Getenv("EXAM_QUEUE_PORT")
+
+	PAPER_SERVER_HOST = os.Getenv("PAPER_SERVER_HOST")
+	PAPER_SERVER_PORT = os.Getenv("PAPER_SERVER_PORT")
 
 	if GO_ENV != constants.GO_ENV_TEST {
 		DB_HOST = os.Getenv("DB_HOST")
@@ -68,6 +78,9 @@ func getRequiredEnvVars() []string {
 		"DB_USER",
 		"DB_PASS",
 		"DB_NAME",
+		"PAPER_SERVER_HOST",
+		"PAPER_SERVER_PORT",
+		"EXAM_API_TOKEN",
 	}
 
 	if os.Getenv("GO_ENV") != constants.GO_ENV_TEST {

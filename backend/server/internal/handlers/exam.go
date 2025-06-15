@@ -64,14 +64,8 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	paperCtx := paperService.CreateMetadata(userID)
 
-	paperHash, err := getPaperIdFromVars(mux.Vars(r))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	_, err = paperService.Client().GetPaper(paperCtx, &proto.PaperRequest{
-		PaperHash: paperHash,
+	_, err := paperService.Client().GetPaper(paperCtx, &proto.PaperRequest{
+		PaperHash: examDto.PaperID,
 	})
 	if err != nil {
 		http.Error(w, "Paper not found", http.StatusNotFound)

@@ -20,6 +20,7 @@ import (
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/interceptors"
 	"pariksha/exam/internal/services"
+	"pariksha/exam/internal/services/paper"
 )
 
 type ExamServer struct {
@@ -34,7 +35,7 @@ func (s *ExamServer) GetUserExams(ctx context.Context, _ *proto.Empty) (*proto.E
 	}
 
 	var exams []models.Exam
-	if err := db.DB.Where("created_by = ?", userID).
+	if err := db.DB.Preload("ExamHash").Where("created_by = ?", userID).
 		Or("id IN (?)", db.DB.Model(&models.ExamParticipant{}).
 			Select("exam_id").
 			Where("user_id = ?", userID)).
@@ -177,7 +178,7 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 }
 
 // StartExam initiates an exam for a participant and updates participation statistics
-func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest) (*proto.Empty, error) {
+func (s *ExamServer) StartExam(ctx context.Context, _ *proto.StartExamRequest) (*proto.Empty, error) {
 	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
@@ -334,14 +335,26 @@ func (s *ExamServer) GetExamQuestions(ctx context.Context, req *proto.ExamReques
 		return nil, status.Error(codes.Internal, "failed to fetch questions")
 	}
 
+	// Get question IDs for hash lookup
+	questionIDs := make([]int64, len(examQuestions))
+	for i, eq := range examQuestions {
+		questionIDs[i] = int64(eq.QuestionID)
+	}
+
+	// Fetch question hashes from paper service
+	questionHashes, err := paper.FetchQuestionHashesForIds(questionIDs)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to fetch question hashes")
+	}
+
 	questions := make([]*proto.ExamQuestion, len(examQuestions))
 	for i, eq := range examQuestions {
 		questions[i] = &proto.ExamQuestion{
-			QuestionId: int64(eq.QuestionID),
-			CategoryId: int64(eq.CategoryID),
-			Order:      int32(eq.Order),
-			MaxScore:   int32(eq.MaxScore),
-			Type:       eq.Type,
+			QuestionHash: questionHashes[i],
+			CategoryId:   int64(eq.CategoryID),
+			Order:        int32(eq.Order),
+			MaxScore:     int32(eq.MaxScore),
+			Type:         eq.Type,
 		}
 	}
 

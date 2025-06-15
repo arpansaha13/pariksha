@@ -33,27 +33,10 @@ func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get question hashes from paper service
-	paperService := services.GetPaperService()
-	paperCtx := paperService.CreateMetadata(userID)
-
-	questionIDs := make([]int64, len(questions.Questions))
-	for i, q := range questions.Questions {
-		questionIDs[i] = q.QuestionId
-	}
-
-	hashes, err := paperService.Client().GetQuestionHashes(paperCtx, &proto.GetQuestionHashesRequest{
-		QuestionIds: questionIDs,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
 	response := make([]dtos.ExamQuestionMinimalResponseDto, len(questions.Questions))
 	for i, q := range questions.Questions {
 		response[i] = dtos.ExamQuestionMinimalResponseDto{
-			QuestionID: hashes.QuestionHashes[i],
+			QuestionID: q.QuestionHash,
 			CategoryID: q.CategoryId,
 			Type:       q.Type,
 			Order:      q.Order,

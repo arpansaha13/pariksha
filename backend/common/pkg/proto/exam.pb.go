@@ -804,11 +804,10 @@ func (x *RemoveParticipantRequest) GetParticipantId() int64 {
 }
 
 type StartExamRequest struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	ExamHash        string                 `protobuf:"bytes,1,opt,name=exam_hash,json=examHash,proto3" json:"exam_hash,omitempty"`
-	DurationMinutes int32                  `protobuf:"varint,2,opt,name=duration_minutes,json=durationMinutes,proto3" json:"duration_minutes,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ExamHash      string                 `protobuf:"bytes,1,opt,name=exam_hash,json=examHash,proto3" json:"exam_hash,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *StartExamRequest) Reset() {
@@ -846,13 +845,6 @@ func (x *StartExamRequest) GetExamHash() string {
 		return x.ExamHash
 	}
 	return ""
-}
-
-func (x *StartExamRequest) GetDurationMinutes() int32 {
-	if x != nil {
-		return x.DurationMinutes
-	}
-	return 0
 }
 
 type EndExamRequest struct {
@@ -948,7 +940,7 @@ type Answer struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Answer        []byte                 `protobuf:"bytes,1,opt,name=answer,proto3,oneof" json:"answer,omitempty"` // JSON encoded answer, can be nil
 	SubmittedAt   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=submitted_at,json=submittedAt,proto3" json:"submitted_at,omitempty"`
-	QuestionId    int64                  `protobuf:"varint,3,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	QuestionHash  string                 `protobuf:"bytes,3,opt,name=question_hash,json=questionHash,proto3" json:"question_hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -997,11 +989,11 @@ func (x *Answer) GetSubmittedAt() *timestamppb.Timestamp {
 	return nil
 }
 
-func (x *Answer) GetQuestionId() int64 {
+func (x *Answer) GetQuestionHash() string {
 	if x != nil {
-		return x.QuestionId
+		return x.QuestionHash
 	}
-	return 0
+	return ""
 }
 
 type UpsertAnswersRequest struct {
@@ -1059,7 +1051,7 @@ func (x *UpsertAnswersRequest) GetAnswer() *Answer {
 type UpsertAnswersResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AnswerId      int64                  `protobuf:"varint,1,opt,name=answer_id,json=answerId,proto3" json:"answer_id,omitempty"`
-	QuestionId    int64                  `protobuf:"varint,2,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	QuestionHash  string                 `protobuf:"bytes,2,opt,name=question_hash,json=questionHash,proto3" json:"question_hash,omitempty"`
 	Answer        []byte                 `protobuf:"bytes,3,opt,name=answer,proto3,oneof" json:"answer,omitempty"` // JSON encoded answer, can be nil
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1102,11 +1094,11 @@ func (x *UpsertAnswersResponse) GetAnswerId() int64 {
 	return 0
 }
 
-func (x *UpsertAnswersResponse) GetQuestionId() int64 {
+func (x *UpsertAnswersResponse) GetQuestionHash() string {
 	if x != nil {
-		return x.QuestionId
+		return x.QuestionHash
 	}
-	return 0
+	return ""
 }
 
 func (x *UpsertAnswersResponse) GetAnswer() []byte {
@@ -1120,13 +1112,14 @@ type AnswerResponse struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	AnswerId          int64                  `protobuf:"varint,1,opt,name=answer_id,json=answerId,proto3" json:"answer_id,omitempty"`
 	ExamParticipantId int64                  `protobuf:"varint,2,opt,name=exam_participant_id,json=examParticipantId,proto3" json:"exam_participant_id,omitempty"`
-	QuestionId        int64                  `protobuf:"varint,3,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	QuestionHash      string                 `protobuf:"bytes,3,opt,name=question_hash,json=questionHash,proto3" json:"question_hash,omitempty"`
 	Answer            []byte                 `protobuf:"bytes,4,opt,name=answer,proto3" json:"answer,omitempty"` // JSON encoded answer
 	// question fields
-	Order         int32 `protobuf:"varint,5,opt,name=order,proto3" json:"order,omitempty"`
-	CategoryId    int64 `protobuf:"varint,6,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	QuestionType  int32 `protobuf:"varint,7,opt,name=question_type,json=questionType,proto3" json:"question_type,omitempty"`
-	MaxScore      int32 `protobuf:"varint,8,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
+	Order         int32  `protobuf:"varint,5,opt,name=order,proto3" json:"order,omitempty"`
+	CategoryId    int64  `protobuf:"varint,6,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	QuestionType  int32  `protobuf:"varint,7,opt,name=question_type,json=questionType,proto3" json:"question_type,omitempty"`
+	MaxScore      int32  `protobuf:"varint,8,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
+	Question      []byte `protobuf:"bytes,9,opt,name=question,proto3" json:"question,omitempty"` // JSON encoded question
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1175,11 +1168,11 @@ func (x *AnswerResponse) GetExamParticipantId() int64 {
 	return 0
 }
 
-func (x *AnswerResponse) GetQuestionId() int64 {
+func (x *AnswerResponse) GetQuestionHash() string {
 	if x != nil {
-		return x.QuestionId
+		return x.QuestionHash
 	}
-	return 0
+	return ""
 }
 
 func (x *AnswerResponse) GetAnswer() []byte {
@@ -1215,6 +1208,13 @@ func (x *AnswerResponse) GetMaxScore() int32 {
 		return x.MaxScore
 	}
 	return 0
+}
+
+func (x *AnswerResponse) GetQuestion() []byte {
+	if x != nil {
+		return x.Question
+	}
+	return nil
 }
 
 type AnswerList struct {
@@ -1332,7 +1332,7 @@ func (x *UpdateAnswerRequest) GetComments() string {
 type GetAnswerRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ExamHash      string                 `protobuf:"bytes,1,opt,name=exam_hash,json=examHash,proto3" json:"exam_hash,omitempty"`
-	QuestionId    int64                  `protobuf:"varint,2,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	QuestionHash  string                 `protobuf:"bytes,2,opt,name=question_hash,json=questionHash,proto3" json:"question_hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1374,18 +1374,18 @@ func (x *GetAnswerRequest) GetExamHash() string {
 	return ""
 }
 
-func (x *GetAnswerRequest) GetQuestionId() int64 {
+func (x *GetAnswerRequest) GetQuestionHash() string {
 	if x != nil {
-		return x.QuestionId
+		return x.QuestionHash
 	}
-	return 0
+	return ""
 }
 
 type AnswerMinimalResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AnswerId      int64                  `protobuf:"varint,1,opt,name=answer_id,json=answerId,proto3" json:"answer_id,omitempty"`
 	Answer        []byte                 `protobuf:"bytes,2,opt,name=answer,proto3" json:"answer,omitempty"` // JSON encoded answer
-	QuestionId    int64                  `protobuf:"varint,3,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	QuestionHash  string                 `protobuf:"bytes,3,opt,name=question_hash,json=questionHash,proto3" json:"question_hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1434,11 +1434,11 @@ func (x *AnswerMinimalResponse) GetAnswer() []byte {
 	return nil
 }
 
-func (x *AnswerMinimalResponse) GetQuestionId() int64 {
+func (x *AnswerMinimalResponse) GetQuestionHash() string {
 	if x != nil {
-		return x.QuestionId
+		return x.QuestionHash
 	}
-	return 0
+	return ""
 }
 
 type CheckParticipantRequest struct {
@@ -1599,7 +1599,7 @@ func (x *GetExamParticipantResponse) GetScheduledEndTime() *timestamppb.Timestam
 
 type ExamQuestion struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QuestionId    int64                  `protobuf:"varint,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	QuestionHash  string                 `protobuf:"bytes,1,opt,name=question_hash,json=questionHash,proto3" json:"question_hash,omitempty"`
 	CategoryId    int64                  `protobuf:"varint,2,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	Order         int32                  `protobuf:"varint,3,opt,name=order,proto3" json:"order,omitempty"`
 	Type          QuestionType           `protobuf:"varint,4,opt,name=type,proto3,enum=proto.QuestionType" json:"type,omitempty"`
@@ -1638,11 +1638,11 @@ func (*ExamQuestion) Descriptor() ([]byte, []int) {
 	return file_exam_proto_rawDescGZIP(), []int{25}
 }
 
-func (x *ExamQuestion) GetQuestionId() int64 {
+func (x *ExamQuestion) GetQuestionHash() string {
 	if x != nil {
-		return x.QuestionId
+		return x.QuestionHash
 	}
-	return 0
+	return ""
 }
 
 func (x *ExamQuestion) GetCategoryId() int64 {
@@ -1892,7 +1892,7 @@ func (x *ExamPermissionResponse) GetParticipantStatus() int32 {
 type ParticipantQuestionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ParticipantId int64                  `protobuf:"varint,1,opt,name=participant_id,json=participantId,proto3" json:"participant_id,omitempty"`
-	QuestionId    int64                  `protobuf:"varint,2,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	QuestionHash  string                 `protobuf:"bytes,2,opt,name=question_hash,json=questionHash,proto3" json:"question_hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1934,17 +1934,17 @@ func (x *ParticipantQuestionRequest) GetParticipantId() int64 {
 	return 0
 }
 
-func (x *ParticipantQuestionRequest) GetQuestionId() int64 {
+func (x *ParticipantQuestionRequest) GetQuestionHash() string {
 	if x != nil {
-		return x.QuestionId
+		return x.QuestionHash
 	}
-	return 0
+	return ""
 }
 
 type GetAnswerEvaluationDataResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AnswerId      int64                  `protobuf:"varint,1,opt,name=answer_id,json=answerId,proto3" json:"answer_id,omitempty"`
-	QuestionId    int64                  `protobuf:"varint,2,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	QuestionHash  string                 `protobuf:"bytes,2,opt,name=question_hash,json=questionHash,proto3" json:"question_hash,omitempty"`
 	ScoreAwarded  int32                  `protobuf:"varint,3,opt,name=score_awarded,json=scoreAwarded,proto3" json:"score_awarded,omitempty"`
 	Comments      string                 `protobuf:"bytes,4,opt,name=comments,proto3" json:"comments,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1988,11 +1988,11 @@ func (x *GetAnswerEvaluationDataResponse) GetAnswerId() int64 {
 	return 0
 }
 
-func (x *GetAnswerEvaluationDataResponse) GetQuestionId() int64 {
+func (x *GetAnswerEvaluationDataResponse) GetQuestionHash() string {
 	if x != nil {
-		return x.QuestionId
+		return x.QuestionHash
 	}
-	return 0
+	return ""
 }
 
 func (x *GetAnswerEvaluationDataResponse) GetScoreAwarded() int32 {
@@ -2231,40 +2231,37 @@ const file_exam_proto_rawDesc = "" +
 	"\auser_id\x18\x02 \x01(\x03R\x06userId\"^\n" +
 	"\x18RemoveParticipantRequest\x12\x1b\n" +
 	"\texam_hash\x18\x01 \x01(\tR\bexamHash\x12%\n" +
-	"\x0eparticipant_id\x18\x02 \x01(\x03R\rparticipantId\"Z\n" +
+	"\x0eparticipant_id\x18\x02 \x01(\x03R\rparticipantId\"/\n" +
 	"\x10StartExamRequest\x12\x1b\n" +
-	"\texam_hash\x18\x01 \x01(\tR\bexamHash\x12)\n" +
-	"\x10duration_minutes\x18\x02 \x01(\x05R\x0fdurationMinutes\"-\n" +
+	"\texam_hash\x18\x01 \x01(\tR\bexamHash\"-\n" +
 	"\x0eEndExamRequest\x12\x1b\n" +
 	"\texam_hash\x18\x01 \x01(\tR\bexamHash\"G\n" +
 	"\x18EvaluationStatusResponse\x12+\n" +
-	"\x11unevaluated_count\x18\x01 \x01(\x05R\x10unevaluatedCount\"\x90\x01\n" +
+	"\x11unevaluated_count\x18\x01 \x01(\x05R\x10unevaluatedCount\"\x94\x01\n" +
 	"\x06Answer\x12\x1b\n" +
 	"\x06answer\x18\x01 \x01(\fH\x00R\x06answer\x88\x01\x01\x12=\n" +
-	"\fsubmitted_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\vsubmittedAt\x12\x1f\n" +
-	"\vquestion_id\x18\x03 \x01(\x03R\n" +
-	"questionIdB\t\n" +
+	"\fsubmitted_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\vsubmittedAt\x12#\n" +
+	"\rquestion_hash\x18\x03 \x01(\tR\fquestionHashB\t\n" +
 	"\a_answer\"Z\n" +
 	"\x14UpsertAnswersRequest\x12\x1b\n" +
 	"\texam_hash\x18\x01 \x01(\tR\bexamHash\x12%\n" +
-	"\x06answer\x18\x02 \x01(\v2\r.proto.AnswerR\x06answer\"}\n" +
+	"\x06answer\x18\x02 \x01(\v2\r.proto.AnswerR\x06answer\"\x81\x01\n" +
 	"\x15UpsertAnswersResponse\x12\x1b\n" +
-	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12\x1f\n" +
-	"\vquestion_id\x18\x02 \x01(\x03R\n" +
-	"questionId\x12\x1b\n" +
+	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12#\n" +
+	"\rquestion_hash\x18\x02 \x01(\tR\fquestionHash\x12\x1b\n" +
 	"\x06answer\x18\x03 \x01(\fH\x00R\x06answer\x88\x01\x01B\t\n" +
-	"\a_answer\"\x8f\x02\n" +
+	"\a_answer\"\xaf\x02\n" +
 	"\x0eAnswerResponse\x12\x1b\n" +
 	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12.\n" +
-	"\x13exam_participant_id\x18\x02 \x01(\x03R\x11examParticipantId\x12\x1f\n" +
-	"\vquestion_id\x18\x03 \x01(\x03R\n" +
-	"questionId\x12\x16\n" +
+	"\x13exam_participant_id\x18\x02 \x01(\x03R\x11examParticipantId\x12#\n" +
+	"\rquestion_hash\x18\x03 \x01(\tR\fquestionHash\x12\x16\n" +
 	"\x06answer\x18\x04 \x01(\fR\x06answer\x12\x14\n" +
 	"\x05order\x18\x05 \x01(\x05R\x05order\x12\x1f\n" +
 	"\vcategory_id\x18\x06 \x01(\x03R\n" +
 	"categoryId\x12#\n" +
 	"\rquestion_type\x18\a \x01(\x05R\fquestionType\x12\x1b\n" +
-	"\tmax_score\x18\b \x01(\x05R\bmaxScore\"=\n" +
+	"\tmax_score\x18\b \x01(\x05R\bmaxScore\x12\x1a\n" +
+	"\bquestion\x18\t \x01(\fR\bquestion\"=\n" +
 	"\n" +
 	"AnswerList\x12/\n" +
 	"\aanswers\x18\x01 \x03(\v2\x15.proto.AnswerResponseR\aanswers\"\xc1\x01\n" +
@@ -2277,16 +2274,14 @@ const file_exam_proto_rawDesc = "" +
 	"_new_scoreB\f\n" +
 	"\n" +
 	"_evaluatedB\v\n" +
-	"\t_comments\"P\n" +
+	"\t_comments\"T\n" +
 	"\x10GetAnswerRequest\x12\x1b\n" +
-	"\texam_hash\x18\x01 \x01(\tR\bexamHash\x12\x1f\n" +
-	"\vquestion_id\x18\x02 \x01(\x03R\n" +
-	"questionId\"m\n" +
+	"\texam_hash\x18\x01 \x01(\tR\bexamHash\x12#\n" +
+	"\rquestion_hash\x18\x02 \x01(\tR\fquestionHash\"q\n" +
 	"\x15AnswerMinimalResponse\x12\x1b\n" +
 	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12\x16\n" +
-	"\x06answer\x18\x02 \x01(\fR\x06answer\x12\x1f\n" +
-	"\vquestion_id\x18\x03 \x01(\x03R\n" +
-	"questionId\"6\n" +
+	"\x06answer\x18\x02 \x01(\fR\x06answer\x12#\n" +
+	"\rquestion_hash\x18\x03 \x01(\tR\fquestionHash\"6\n" +
 	"\x17CheckParticipantRequest\x12\x1b\n" +
 	"\texam_hash\x18\x01 \x01(\tR\bexamHash\"8\n" +
 	"\x19GetExamParticipantRequest\x12\x1b\n" +
@@ -2298,10 +2293,9 @@ const file_exam_proto_rawDesc = "" +
 	"started_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\tstartedAt\x88\x01\x01\x12M\n" +
 	"\x12scheduled_end_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\x10scheduledEndTime\x88\x01\x01B\r\n" +
 	"\v_started_atB\x15\n" +
-	"\x13_scheduled_end_time\"\xac\x01\n" +
-	"\fExamQuestion\x12\x1f\n" +
-	"\vquestion_id\x18\x01 \x01(\x03R\n" +
-	"questionId\x12\x1f\n" +
+	"\x13_scheduled_end_time\"\xb0\x01\n" +
+	"\fExamQuestion\x12#\n" +
+	"\rquestion_hash\x18\x01 \x01(\tR\fquestionHash\x12\x1f\n" +
 	"\vcategory_id\x18\x02 \x01(\x03R\n" +
 	"categoryId\x12\x14\n" +
 	"\x05order\x18\x03 \x01(\x05R\x05order\x12'\n" +
@@ -2323,15 +2317,13 @@ const file_exam_proto_rawDesc = "" +
 	"\x0fcan_participate\x18\x03 \x01(\bR\x0ecanParticipate\x12!\n" +
 	"\fcan_evaluate\x18\x04 \x01(\bR\vcanEvaluate\x122\n" +
 	"\x12participant_status\x18\x05 \x01(\x05H\x00R\x11participantStatus\x88\x01\x01B\x15\n" +
-	"\x13_participant_status\"d\n" +
+	"\x13_participant_status\"h\n" +
 	"\x1aParticipantQuestionRequest\x12%\n" +
-	"\x0eparticipant_id\x18\x01 \x01(\x03R\rparticipantId\x12\x1f\n" +
-	"\vquestion_id\x18\x02 \x01(\x03R\n" +
-	"questionId\"\xa0\x01\n" +
+	"\x0eparticipant_id\x18\x01 \x01(\x03R\rparticipantId\x12#\n" +
+	"\rquestion_hash\x18\x02 \x01(\tR\fquestionHash\"\xa4\x01\n" +
 	"\x1fGetAnswerEvaluationDataResponse\x12\x1b\n" +
-	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12\x1f\n" +
-	"\vquestion_id\x18\x02 \x01(\x03R\n" +
-	"questionId\x12#\n" +
+	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12#\n" +
+	"\rquestion_hash\x18\x02 \x01(\tR\fquestionHash\x12#\n" +
 	"\rscore_awarded\x18\x03 \x01(\x05R\fscoreAwarded\x12\x1a\n" +
 	"\bcomments\x18\x04 \x01(\tR\bcomments\"5\n" +
 	"\x12DeleteExamsRequest\x12\x1f\n" +

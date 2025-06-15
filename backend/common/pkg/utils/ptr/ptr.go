@@ -2,9 +2,10 @@ package ptr
 
 import "encoding/json"
 
-// Int32 returns a pointer to the given int32 value
-func Int32(v int32) *int32 {
-	return &v
+// Int32 returns a pointer to the given int or int32 value.
+func Int32[T int32 | int](v T) *int32 {
+	val := int32(v) // Convert int to int32 if necessary
+	return &val
 }
 
 // Int64 returns a pointer to the given int64 value

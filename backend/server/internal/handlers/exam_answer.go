@@ -33,44 +33,15 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get question details from paper service
-	questionIDs := make([]int64, len(resp.Answers))
-	for i, result := range resp.Answers {
-		questionIDs[i] = result.QuestionId
-	}
-
-	paperService := services.GetPaperService()
-	paperCtx := paperService.CreateMetadata(userID)
-
-	questionDetails, err := paperService.Client().GetQuestionsByIds(paperCtx, &proto.GetQuestionsByIdsRequest{
-		QuestionIds: questionIDs,
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	// Create a map for quick lookup of question details
-	questionDetailsMap := make(map[int64]*proto.QuestionBatchItem)
-	for _, q := range questionDetails.Questions {
-		questionDetailsMap[q.QuestionId] = q
-	}
-
 	response := make([]dtos.AnswerListItemDto, len(resp.Answers))
 	for i, result := range resp.Answers {
-		questionDetail := questionDetailsMap[result.QuestionId]
-		var questionBytes []byte
-		if questionDetail != nil {
-			questionBytes = questionDetail.RawQuestion
-		}
-
 		response[i] = dtos.AnswerListItemDto{
 			Type: result.QuestionType,
 			Question: dtos.AnswerListQuestionDto{
-				ID:         questionDetail.QuestionHash,
+				ID:         result.QuestionHash,
 				Order:      result.Order,
 				CategoryID: result.CategoryId,
-				Content:    questionBytes,
+				Content:    result.Question,
 				MaxScore:   result.MaxScore,
 			},
 			Answer: nil,
@@ -106,30 +77,12 @@ func GetAnswerForExam(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
-	// Get question ID from paper service
-	paperService := services.GetPaperService()
-	paperCtx := paperService.CreateMetadata(userID)
-
-	questionIDResp, err := paperService.Client().GetQuestionIds(paperCtx, &proto.GetQuestionIdsRequest{
-		QuestionHashes: []string{questionHash},
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	if len(questionIDResp.QuestionIds) == 0 {
-		http.Error(w, "Question not found", http.StatusNotFound)
-		return
-	}
-
-	// Call exam service with question ID
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
 	resp, err := examService.Client().GetAnswerForExam(ctx, &proto.GetAnswerRequest{
-		ExamHash:   examHash,
-		QuestionId: questionIDResp.QuestionIds[0],
+		ExamHash:     examHash,
+		QuestionHash: questionHash,
 	})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -166,31 +119,14 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
-	// Get question ID from paper service
-	paperService := services.GetPaperService()
-	paperCtx := paperService.CreateMetadata(userID)
 	questionHash := answerDTO.QuestionID
 
-	questionIDResp, err := paperService.Client().GetQuestionIds(paperCtx, &proto.GetQuestionIdsRequest{
-		QuestionHashes: []string{questionHash},
-	})
-	if err != nil {
-		handleGRPCError(w, err)
-		return
-	}
-
-	if len(questionIDResp.QuestionIds) == 0 {
-		http.Error(w, "Question not found", http.StatusNotFound)
-		return
-	}
-
-	// Call exam service with question ID
 	upsertAnswerRequest := &proto.UpsertAnswersRequest{
 		ExamHash: examHash,
 		Answer: &proto.Answer{
-			Answer:      nil,
-			SubmittedAt: timestamppb.Now(),
-			QuestionId:  questionIDResp.QuestionIds[0],
+			Answer:       nil,
+			SubmittedAt:  timestamppb.Now(),
+			QuestionHash: questionHash,
 		},
 	}
 

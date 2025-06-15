@@ -884,8 +884,7 @@ func TestStartExam(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			_, err := client.StartExam(ctx, &proto.StartExamRequest{
-				ExamHash:        exam.ExamHash.Hash,
-				DurationMinutes: tt.duration,
+				ExamHash: exam.ExamHash.Hash,
 			})
 
 			if tt.expectedCode != codes.OK {
@@ -939,7 +938,7 @@ func TestGetExamQuestions(t *testing.T) {
 				}
 				for i, q := range resp.Questions {
 					expected := expectedQuestions[i]
-					assert.Equal(t, expected.questionId, q.QuestionId)
+					assert.Equal(t, expected.questionId, getQuestionIdForHash(q.QuestionHash))
 					assert.Equal(t, expected.categoryId, q.CategoryId)
 					assert.Equal(t, expected.order, q.Order)
 					assert.Equal(t, expected.maxScore, q.MaxScore)
@@ -1010,7 +1009,7 @@ func TestGetExamQuestions(t *testing.T) {
 				}
 				for i, q := range resp.Questions {
 					expected := expectedQuestions[i]
-					assert.Equal(t, expected.questionId, q.QuestionId)
+					assert.Equal(t, expected.questionId, getQuestionIdForHash(q.QuestionHash))
 					assert.Equal(t, expected.categoryId, q.CategoryId)
 					assert.Equal(t, expected.order, q.Order)
 					assert.Equal(t, expected.maxScore, q.MaxScore)

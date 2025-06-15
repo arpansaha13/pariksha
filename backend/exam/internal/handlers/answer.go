@@ -12,10 +12,10 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/interceptors"
+	"pariksha/exam/internal/services/paper"
 )
 
 func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.ParticipantRequest) (*proto.AnswerList, error) {
@@ -51,19 +51,32 @@ func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.Parti
 		return nil, status.Error(codes.NotFound, "no questions found")
 	}
 
+	// Collect all question IDs
+	questionIDs := make([]int64, len(results))
+	for i, result := range results {
+		questionIDs[i] = result.QuestionID
+	}
+
+	// Fetch question content from paper service
+	questions, err := paper.FetchQuestionsByIds(questionIDs)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to fetch questions")
+	}
+
 	response := &proto.AnswerList{
 		Answers: make([]*proto.AnswerResponse, len(results)),
 	}
 
 	for i, result := range results {
 		response.Answers[i] = &proto.AnswerResponse{
-			AnswerId:          result.ID, // Will be 0 if question is unanswered
+			AnswerId:          result.ID,
 			ExamParticipantId: result.ExamParticipantID,
-			QuestionId:        result.QuestionID,
 			Order:             int32(result.Order),
 			CategoryId:        result.CategoryID,
 			QuestionType:      result.Type,
 			MaxScore:          int32(result.MaxScore),
+			QuestionHash:      questions[i].QuestionHash,
+			Question:          questions[i].RawQuestion,
 		}
 		if result.Answer != nil {
 			response.Answers[i].Answer = *result.Answer
@@ -78,6 +91,11 @@ func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerR
 	examID, ok := interceptors.GetExamIDFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "exam ID not found in context")
+	}
+
+	questionID, ok := interceptors.GetQuestionIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "question ID not found in context")
 	}
 
 	userID, err := utils.GetUserIDFromMetadata(ctx)
@@ -95,20 +113,20 @@ func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerR
 
 	var answer models.Answer
 	err = db.DB.Where("exam_participant_id = ? AND question_id = ? AND answer IS NOT NULL",
-		participant.ID, req.QuestionId).Take(&answer).Error
+		participant.ID, questionID).Take(&answer).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &proto.AnswerMinimalResponse{
-				QuestionId: req.QuestionId,
+				QuestionHash: req.QuestionHash,
 			}, nil
 		}
 		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
 	}
 
 	return &proto.AnswerMinimalResponse{
-		AnswerId:   int64(answer.ID),
-		Answer:     *answer.Answer,
-		QuestionId: int64(answer.QuestionID),
+		AnswerId:     int64(answer.ID),
+		Answer:       *answer.Answer,
+		QuestionHash: req.QuestionHash,
 	}, nil
 }
 
@@ -116,6 +134,11 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 	examID, ok := interceptors.GetExamIDFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "exam ID not found in context")
+	}
+
+	questionID, ok := interceptors.GetQuestionIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Internal, "question ID not found in context")
 	}
 
 	// Should be added to context by EndExamInterceptor
@@ -137,12 +160,10 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 		return nil, status.Error(codes.FailedPrecondition, "participant must be in STARTED state")
 	}
 
-	typedQuestionId := types.QuestionID(req.Answer.QuestionId)
-
 	var examQuestion models.ExamQuestion
 	if err := db.DB.Model(&models.ExamQuestion{}).
 		Select("type").
-		Where("exam_id = ? AND question_id = ?", examID, typedQuestionId).
+		Where("exam_id = ? AND question_id = ?", examID, questionID).
 		Find(&examQuestion).Error; err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question")
 	}
@@ -161,14 +182,14 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 	var answer models.Answer
 	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		err := tx.Where("exam_participant_id = ? AND question_id = ?",
-			participant.ID, typedQuestionId).Take(&answer).Error
+			participant.ID, questionID).Take(&answer).Error
 
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				// Create new answer
 				answer = models.Answer{
 					ExamParticipantID: participant.ID,
-					QuestionID:        typedQuestionId,
+					QuestionID:        questionID,
 					Answer:            answerContent,
 				}
 				return tx.Create(&answer).Error
@@ -185,10 +206,16 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 		return nil, status.Error(codes.Internal, "failed to upsert answer")
 	}
 
+	// Convert question ID to hash
+	questionHashes, err := paper.FetchQuestionHashesForIds([]int64{int64(answer.QuestionID)})
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to fetch question hash")
+	}
+
 	response := &proto.UpsertAnswersResponse{
-		AnswerId:   int64(answer.ID),
-		QuestionId: req.Answer.QuestionId,
-		Answer:     nil,
+		AnswerId:     int64(answer.ID),
+		QuestionHash: questionHashes[0],
+		Answer:       nil,
 	}
 
 	if answer.Answer != nil {
