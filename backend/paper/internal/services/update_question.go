@@ -1,4 +1,4 @@
-package handlers
+package services
 
 import (
 	"context"
@@ -24,7 +24,7 @@ import (
 )
 
 // UpdateQuestion handles question updates with proper locking to prevent race conditions
-func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuestionRequest) (*proto.UpdateQuestionResponse, error) {
+func UpdateQuestion(ctx context.Context, req *proto.UpdateQuestionRequest) (*proto.UpdateQuestionResponse, error) {
 	question, err := interceptors.GetQuestionFromContext(ctx)
 	if err != nil {
 		return nil, err

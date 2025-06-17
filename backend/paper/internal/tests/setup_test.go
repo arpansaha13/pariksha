@@ -19,7 +19,7 @@ import (
 	"pariksha/common/pkg/types"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/config/env"
-	"pariksha/paper/internal/handlers"
+	"pariksha/paper/internal/controllers"
 	"pariksha/paper/internal/interceptors"
 )
 
@@ -110,7 +110,10 @@ func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 			interceptors.DeletePaperAuthInterceptor(),
 		),
 	)
-	proto.RegisterPaperServer(srv, &handlers.PaperServer{})
+
+	// Initialize all controllers before registering server
+	controllers.InitializeHandlers()
+	proto.RegisterPaperServer(srv, &controllers.PaperServer{})
 
 	go func() {
 		if err := srv.Serve(lis); err != nil {

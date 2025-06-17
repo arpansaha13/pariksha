@@ -1,4 +1,4 @@
-package handlers
+package services
 
 import (
 	"encoding/json"
@@ -28,6 +28,63 @@ func validateEntityIDs(tx *gorm.DB, tableName string, ids []int64) error {
 	return nil
 }
 
+// Helper function to convert QuestionCategory model to proto response
+func categoryToProto(category models.QuestionCategory) *proto.CategoryResponse {
+	return &proto.CategoryResponse{
+		CategoryId: int64(category.ID),
+		Name:       category.Name,
+		Order:      int32(category.Order),
+	}
+}
+
+// Helper function to convert slice of models to proto responses
+func categoriesToProto(categories []models.QuestionCategory) *proto.CategoryList {
+	response := &proto.CategoryList{
+		Categories: make([]*proto.CategoryResponse, len(categories)),
+	}
+
+	for i, category := range categories {
+		response.Categories[i] = categoryToProto(category)
+	}
+
+	return response
+}
+
+// updateQuestionCounts updates the question counts for a paper
+func updateQuestionCounts(rawCounts json.RawMessage, questionType proto.QuestionType, delta int16) (json.RawMessage, error) {
+	var counts models.QuestionCount
+	if err := json.Unmarshal(rawCounts, &counts); err != nil {
+		return nil, err
+	}
+
+	switch questionType {
+	case proto.QuestionType_MCQ:
+		counts.MCQ += delta
+	case proto.QuestionType_SUBJECTIVE:
+		counts.Subjective += delta
+	case proto.QuestionType_CODING:
+		counts.Coding += delta
+	default:
+		return nil, status.Error(codes.InvalidArgument, "invalid question type")
+	}
+
+	newCounts, err := json.Marshal(counts)
+	if err != nil {
+		return nil, err
+	}
+
+	return newCounts, nil
+}
+
+// updatePaperStats updates paper's max score and question counts
+func updatePaperStats(tx *gorm.DB, paper models.Paper, scoreDiff int32, newQuestionCounts json.RawMessage) error {
+	return tx.Model(&paper).
+		Updates(map[string]any{
+			"max_score":       gorm.Expr("max_score + ?", scoreDiff),
+			"question_counts": newQuestionCounts,
+		}).Error
+}
+
 // Helper function to convert Paper model to proto response
 func paperToProto(paper models.Paper) *proto.PaperResponse {
 	var questionCounts proto.QuestionCount
@@ -43,6 +100,7 @@ func paperToProto(paper models.Paper) *proto.PaperResponse {
 	}
 }
 
+// QuestionToProto converts a Question model to proto response
 func questionToProto(question models.Question, testCases []models.TestCase) (*proto.QuestionResponse, error) {
 	var tags []string
 	if question.Tags != nil {
@@ -84,6 +142,7 @@ func questionToProto(question models.Question, testCases []models.TestCase) (*pr
 	return response, nil
 }
 
+// QuestionToMinimalProto converts a Question model to minimal proto response
 func questionToMinimalProto(question models.Question) (*proto.QuestionMinimal, error) {
 	response := &proto.QuestionMinimal{
 		QuestionHash: question.Hash,
@@ -94,63 +153,6 @@ func questionToMinimalProto(question models.Question) (*proto.QuestionMinimal, e
 	}
 
 	return response, nil
-}
-
-// Helper function to convert QuestionCategory model to proto response
-func categoryToProto(category models.QuestionCategory) *proto.CategoryResponse {
-	return &proto.CategoryResponse{
-		CategoryId: int64(category.ID),
-		Name:       category.Name,
-		Order:      int32(category.Order),
-	}
-}
-
-// Helper function to convert slice of models to proto responses
-func categoriesToProto(categories []models.QuestionCategory) *proto.CategoryList {
-	response := &proto.CategoryList{
-		Categories: make([]*proto.CategoryResponse, len(categories)),
-	}
-
-	for i, category := range categories {
-		response.Categories[i] = categoryToProto(category)
-	}
-
-	return response
-}
-
-// Helper function to update question counts
-func updateQuestionCounts(rawCounts json.RawMessage, questionType proto.QuestionType, delta int16) (json.RawMessage, error) {
-	var counts models.QuestionCount
-	if err := json.Unmarshal(rawCounts, &counts); err != nil {
-		return nil, err
-	}
-
-	switch questionType {
-	case proto.QuestionType_MCQ:
-		counts.MCQ += delta
-	case proto.QuestionType_SUBJECTIVE:
-		counts.Subjective += delta
-	case proto.QuestionType_CODING:
-		counts.Coding += delta
-	default:
-		return nil, status.Error(codes.InvalidArgument, "invalid question type")
-	}
-
-	newCounts, err := json.Marshal(counts)
-	if err != nil {
-		return nil, err
-	}
-
-	return newCounts, nil
-}
-
-// Helper function to update paper stats (max score and question counts)
-func updatePaperStats(tx *gorm.DB, paper models.Paper, scoreDiff int32, newQuestionCounts json.RawMessage) error {
-	return tx.Model(&paper).
-		Updates(map[string]any{
-			"max_score":       gorm.Expr("max_score + ?", scoreDiff),
-			"question_counts": newQuestionCounts,
-		}).Error
 }
 
 // updateQuestionStats updates the paper's statistics after a question update

@@ -1,22 +1,22 @@
 package utils
 
 import (
+	"database/sql"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
-
-	"pariksha/common/pkg/constants"
 )
 
 // TransactionHandler wraps a database transaction with common error handling
-func TransactionHandler(db *gorm.DB, tx func(*gorm.DB) error) error {
-	err := db.Transaction(tx)
+func TransactionHandler(db *gorm.DB, fc func(*gorm.DB) error, opts ...*sql.TxOptions) error {
+	err := db.Transaction(fc, opts...)
 	if err != nil {
 		// Check if it's already a gRPC status error
 		if _, ok := status.FromError(err); ok {
 			return err
 		}
-		return status.Error(codes.Internal, constants.ErrInternalServer)
+		return status.Error(codes.Internal, err.Error())
 	}
 	return nil
 }

@@ -10,7 +10,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/config/env"
-	"pariksha/paper/internal/handlers"
+	"pariksha/paper/internal/controllers"
 	"pariksha/paper/internal/interceptors"
 )
 
@@ -28,7 +28,7 @@ func main() {
 			interceptors.DeletePaperAuthInterceptor(),
 		),
 	)
-	proto.RegisterPaperServer(grpcServer, &handlers.PaperServer{})
+	proto.RegisterPaperServer(grpcServer, &controllers.PaperServer{})
 
 	log.Printf("Paper gRPC server is running on port %s\n", port)
 	if err := grpcServer.Serve(lis); err != nil {

@@ -1,4 +1,4 @@
-package handlers
+package services
 
 import (
 	"context"
@@ -9,21 +9,33 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
-	"pariksha/common/pkg/utils"
-	"pariksha/paper/internal/config/db"
+	"pariksha/common/pkg/utils/grpcerror"
 	"pariksha/paper/internal/interceptors"
+	"pariksha/paper/internal/repositories"
 	paperUtils "pariksha/paper/internal/utils"
 	"pariksha/paper/internal/utils/validate"
 )
 
-// UpsertPaperTestCases handles bulk creation and updates of test cases
-func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.UpsertTestCasesRequest) (*proto.Empty, error) {
+type TestCase struct {
+	questionRepo *repositories.Question
+	testCaseRepo *repositories.TestCase
+}
+
+// NewTestCase creates a new test case service instance
+func NewTestCase(questionRepo *repositories.Question, testCaseRepo *repositories.TestCase) *TestCase {
+	return &TestCase{
+		testCaseRepo: testCaseRepo,
+		questionRepo: questionRepo,
+	}
+}
+
+// UpsertTestCases handles bulk creation and updates of test cases
+func (s *TestCase) UpsertTestCases(ctx context.Context, req *proto.UpsertTestCasesRequest) (*proto.Empty, error) {
 	question, err := interceptors.GetQuestionFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -34,26 +46,21 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 	}
 
 	if len(req.TestCases) > int(constants.MAX_CODING_TEST_CASES_COUNT) {
-		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("Number of test cases cannot be more than %d", constants.MAX_CODING_TEST_CASES_COUNT))
+		return nil, status.Error(codes.InvalidArgument,
+			fmt.Sprintf("Number of test cases cannot be more than %d", constants.MAX_CODING_TEST_CASES_COUNT))
 	}
 
-	inputDefinitionsLength, err := getInputDefinitionsLength(db.DB, question.ID)
-	if err != nil {
-		return nil, status.Error(codes.Internal, "could not get input_definitions length")
-	}
-
-	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		// Get existing test cases including soft-deleted ones with row-level locking
-		var existingTestCases []models.TestCase
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Unscoped(). // Include soft-deleted records
-			Where("question_id = ?", question.ID).
-			Order("\"order\"").
-			Find(&existingTestCases).Error; err != nil {
-			return status.Error(codes.Internal, "failed to fetch existing test cases")
+	err = s.testCaseRepo.Transaction(func(tx *gorm.DB) error {
+		inputDefinitionsLength, err := s.questionRepo.GetInputDefinitionsLength(tx, question.ID)
+		if err != nil {
+			return grpcerror.Internal(err, "could not get input_definitions length")
 		}
 
-		// Process each test case from the request
+		existingTestCases, err := s.testCaseRepo.GetUnscopedTestCasesByQuestionId(tx, question.ID)
+		if err != nil {
+			return grpcerror.Internal(err, "could not get unscoped test cases")
+		}
+
 		var toCreate, toUpdate []models.TestCase
 		for idx, tc := range req.TestCases {
 			content := models.TestCaseContent{
@@ -61,7 +68,6 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 				Output: tc.Output,
 			}
 
-			// Include explanation if it exists
 			if tc.Explanation != nil && strings.TrimSpace(*tc.Explanation) != "" {
 				content.Explanation = tc.Explanation
 			}
@@ -99,7 +105,7 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 					Content:    contentBytes,
 					DataHash:   dataHash,
 					Hidden:     tc.Hidden,
-					DeletedAt:  gorm.DeletedAt{}, // Revive if soft-deleted
+					DeletedAt:  gorm.DeletedAt{},
 				})
 			} else {
 				toCreate = append(toCreate, models.TestCase{
@@ -114,14 +120,14 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 
 		// Delete extra test cases if request list is shorter
 		if len(req.TestCases) < len(existingTestCases) {
-			idsToDelete := make([]types.TestCaseID, 0)
+			var idsToDelete []types.TestCaseID
 			for _, tc := range existingTestCases[len(req.TestCases):] {
 				if !tc.DeletedAt.Valid { // Only delete if not already soft-deleted
 					idsToDelete = append(idsToDelete, tc.ID)
 				}
 			}
 			if len(idsToDelete) > 0 {
-				if err := tx.Delete(&models.TestCase{}, idsToDelete).Error; err != nil {
+				if err := s.testCaseRepo.DeleteByIds(tx, idsToDelete); err != nil {
 					return status.Error(codes.Internal, "failed to delete extra test cases")
 				}
 			}
@@ -129,24 +135,15 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 
 		// Bulk create new test cases
 		if len(toCreate) > 0 {
-			if err := tx.Create(&toCreate).Error; err != nil {
-				return status.Error(codes.Internal, "failed to create test cases")
+			if err := s.testCaseRepo.Create(tx, &toCreate); err != nil {
+				return err
 			}
 		}
 
 		// Bulk update existing test cases (includes reviving soft-deleted ones)
-		if len(toUpdate) > 0 {
-			for _, tc := range toUpdate {
-				if err := tx.Unscoped().Model(&models.TestCase{}).
-					Where("id = ?", tc.ID).
-					Updates(map[string]any{
-						"content":    tc.Content,
-						"data_hash":  tc.DataHash,
-						"hidden":     tc.Hidden,
-						"deleted_at": nil, // Revive soft-deleted record
-					}).Error; err != nil {
-					return status.Error(codes.Internal, "failed to update test cases")
-				}
+		for _, tc := range toUpdate {
+			if err := s.testCaseRepo.UpdateUnscopedTestCase(tx, tc); err != nil {
+				return err
 			}
 		}
 
@@ -158,16 +155,4 @@ func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.Upser
 	}
 
 	return &proto.Empty{}, nil
-}
-
-// getInputDefinitionsLength retrieves the length of the InputDefinitions array
-// from the JSONB Question field for a given question ID.
-func getInputDefinitionsLength(db *gorm.DB, questionID types.QuestionID) (int, error) {
-	var length int
-	err := db.Raw(`
-        SELECT jsonb_array_length(
-            (Question->>'input_definitions')::jsonb
-        ) FROM questions WHERE id = ?
-    `, questionID).Scan(&length).Error
-	return length, err
 }
