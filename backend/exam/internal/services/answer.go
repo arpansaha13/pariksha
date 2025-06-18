@@ -1,4 +1,4 @@
-package handlers
+package services
 
 import (
 	"context"
@@ -12,47 +12,45 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
-	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/interceptors"
-	"pariksha/exam/internal/services/paper"
+	"pariksha/exam/internal/interservice/paper"
+	"pariksha/exam/internal/repositories"
 )
 
-func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.ParticipantRequest) (*proto.AnswerList, error) {
+type Answer struct {
+	answerRepo      *repositories.Answer
+	questionRepo    *repositories.Question
+	participantRepo *repositories.Participant
+}
+
+func NewAnswer(answerRepo *repositories.Answer, questionRepo *repositories.Question, participantRepo *repositories.Participant) *Answer {
+	return &Answer{
+		answerRepo:      answerRepo,
+		questionRepo:    questionRepo,
+		participantRepo: participantRepo,
+	}
+}
+
+// GetParticipantAnswers retrieves all answers for a participant in an exam.
+func (s *Answer) GetParticipantAnswers(ctx context.Context, req *proto.ParticipantRequest) (*proto.AnswerList, error) {
 	exam, ok := interceptors.GetExamFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
 
-	type QueryResult struct {
-		ID                int64            `gorm:"primaryKey;type:bigint"`
-		ExamParticipantID int64            `gorm:"type:bigint"`
-		Answer            *json.RawMessage `gorm:"type:json"`
-
-		QuestionID int64 `gorm:"type:bigint"`
-		Order      int16 `gorm:"column:order"`
-		CategoryID int64 `gorm:"column:category_id"`
-		Type       int32 `gorm:"column:type"`
-		MaxScore   int16 `gorm:"column:max_score"`
-	}
-
-	var results []QueryResult
-	err := db.DB.Table("exam_questions").
-		Select("exam_questions.question_id, exam_questions.order, exam_questions.category_id, exam_questions.type, exam_questions.max_score", "answers.id, answers.answer, answers.exam_participant_id").
-		Joins("LEFT JOIN answers ON exam_questions.question_id = answers.question_id AND answers.exam_participant_id = ?", req.ParticipantId).
-		Where("exam_questions.exam_id = ?", exam.ID).
-		Find(&results).Error
-
+	// Fetch answers and question info
+	results, err := s.answerRepo.GetParticipantAnswers(nil, types.ExamID(exam.ID), types.ParticipantID(req.ParticipantId))
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch answers")
 	}
-
 	if len(results) == 0 {
 		return nil, status.Error(codes.NotFound, "no questions found")
 	}
 
 	// Collect all question IDs
-	questionIDs := make([]int64, len(results))
+	questionIDs := make([]types.QuestionID, len(results))
 	for i, result := range results {
 		questionIDs[i] = result.QuestionID
 	}
@@ -69,10 +67,10 @@ func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.Parti
 
 	for i, result := range results {
 		response.Answers[i] = &proto.AnswerResponse{
-			AnswerId:          result.ID,
-			ExamParticipantId: result.ExamParticipantID,
+			AnswerId:          int64(result.ID),
+			ExamParticipantId: int64(result.ExamParticipantID),
 			Order:             int32(result.Order),
-			CategoryId:        result.CategoryID,
+			CategoryId:        int64(result.CategoryID),
 			QuestionType:      result.Type,
 			MaxScore:          int32(result.MaxScore),
 			QuestionHash:      questions[i].QuestionHash,
@@ -86,8 +84,8 @@ func (s *ExamServer) GetParticipantAnswers(ctx context.Context, req *proto.Parti
 	return response, nil
 }
 
-// GetAnswerForExam finds an answer using participant ID and question ID and returns minimal info
-func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerRequest) (*proto.AnswerMinimalResponse, error) {
+// GetAnswerForExam finds an answer using participant ID and question ID and returns minimal info.
+func (s *Answer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerRequest) (*proto.AnswerMinimalResponse, error) {
 	questionID, ok := interceptors.GetQuestionIDFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "question ID not found in context")
@@ -98,19 +96,17 @@ func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerR
 		return nil, err
 	}
 
-	var participant models.ExamParticipant
-	if err := db.DB.Joins("INNER JOIN exams ON exams.id = exam_participants.exam_id").
-		Where("exams.hash = ? AND exam_participants.user_id = ?", req.ExamHash, userID).
-		Take(&participant).Error; err != nil {
+	// Use repository to fetch participant
+	participant, err := s.participantRepo.GetByExamHashAndUserID(nil, req.ExamHash, types.UserID(userID))
+	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, status.Error(codes.NotFound, "participant not found")
 		}
 		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
 	}
 
-	var answer models.Answer
-	err = db.DB.Where("exam_participant_id = ? AND question_id = ? AND answer IS NOT NULL",
-		participant.ID, questionID).Take(&answer).Error
+	// Use repository to fetch answer
+	answer, err := s.answerRepo.GetAnswerByParticipantAndQuestion(nil, participant.ID, questionID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &proto.AnswerMinimalResponse{
@@ -127,13 +123,13 @@ func (s *ExamServer) GetAnswerForExam(ctx context.Context, req *proto.GetAnswerR
 	}, nil
 }
 
-func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersRequest) (*proto.UpsertAnswersResponse, error) {
+// UpsertAnswer creates or updates an answer for a participant and question.
+func (s *Answer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersRequest) (*proto.UpsertAnswersResponse, error) {
 	questionID, ok := interceptors.GetQuestionIDFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "question ID not found in context")
 	}
 
-	// Should be added to context by EndExamInterceptor
 	participant, ok := interceptors.GetParticipantFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "participant not found in context")
@@ -152,50 +148,35 @@ func (s *ExamServer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersR
 		return nil, status.Error(codes.FailedPrecondition, "participant must be in STARTED state")
 	}
 
-	var examQuestion models.ExamQuestion
-	if err := db.DB.Model(&models.ExamQuestion{}).
-		Select("exam_questions.type").
-		Joins("INNER JOIN exams ON exams.id = exam_questions.exam_id").
-		Where("exams.hash = ? AND exam_questions.question_id = ?", req.ExamHash, questionID).
-		Find(&examQuestion).Error; err != nil {
+	// Use repository to fetch question type
+	questionType, err := s.questionRepo.GetExamQuestionType(nil, req.ExamHash, questionID)
+	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question")
 	}
 
-	if err := validateAnswerJSON(req.Answer.Answer, examQuestion.Type); err != nil {
+	if err := validateAnswerJSON(req.Answer.Answer, questionType); err != nil {
 		return nil, err
 	}
 
 	// Convert answer bytes to *json.RawMessage
-	// go-staticcheck: Should omit nil check; len() for []byte is defined as zero (S1009)
 	var answerContent *json.RawMessage
 	if len(req.Answer.Answer) > 0 {
 		raw := json.RawMessage(req.Answer.Answer)
 		answerContent = &raw
 	}
 
-	var answer models.Answer
-	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		err := tx.Where("exam_participant_id = ? AND question_id = ?",
-			participant.ID, questionID).Take(&answer).Error
-
+	var answer *models.Answer
+	// Use repository transaction and upsert method
+	err = s.answerRepo.Transaction(func(tx *gorm.DB) error {
+		var txAnswer *models.Answer
+		var err error
+		txAnswer, err = s.answerRepo.UpsertAnswer(tx, participant.ID, questionID, answerContent)
 		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				// Create new answer
-				answer = models.Answer{
-					ExamParticipantID: participant.ID,
-					QuestionID:        questionID,
-					Answer:            answerContent,
-				}
-				return tx.Create(&answer).Error
-			}
 			return err
 		}
-
-		// Update existing answer
-		answer.Answer = answerContent
-		return tx.Save(&answer).Error
+		answer = txAnswer
+		return nil
 	})
-
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to upsert answer")
 	}

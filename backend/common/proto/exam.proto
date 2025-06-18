@@ -157,7 +157,7 @@ message AnswerResponse {
   // question fields
   int32 order = 5;
   int64 category_id = 6;
-  int32 question_type = 7;
+  QuestionType question_type = 7;
   int32 max_score = 8;
   bytes question = 9;  // JSON encoded question
 }

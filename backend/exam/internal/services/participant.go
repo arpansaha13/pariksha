@@ -1,4 +1,4 @@
-package handlers
+package services
 
 import (
 	"context"
@@ -14,15 +14,25 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
-	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/interceptors"
+	"pariksha/exam/internal/repositories"
 )
 
-func (s *ExamServer) GetExamParticipants(ctx context.Context, req *proto.ExamRequest) (*proto.ParticipantList, error) {
-	var participants []models.ExamParticipant
-	if err := db.DB.Joins("JOIN exams ON exams.id = exam_participants.exam_id").
-		Where("exams.hash = ?", req.ExamHash).
-		Find(&participants).Error; err != nil {
+type Participant struct {
+	participantRepo *repositories.Participant
+	permissionRepo  *repositories.Permission
+}
+
+func NewParticipant(participantRepo *repositories.Participant, permissionRepo *repositories.Permission) *Participant {
+	return &Participant{
+		participantRepo: participantRepo,
+		permissionRepo:  permissionRepo,
+	}
+}
+
+func (s *Participant) GetExamParticipants(ctx context.Context, req *proto.ExamRequest) (*proto.ParticipantList, error) {
+	participants, err := s.participantRepo.GetAllByExamHash(nil, req.ExamHash)
+	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch participants")
 	}
 
@@ -51,7 +61,7 @@ func (s *ExamServer) GetExamParticipants(ctx context.Context, req *proto.ExamReq
 	return response, nil
 }
 
-func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParticipantRequest) (*proto.ParticipantResponse, error) {
+func (s *Participant) AddExamParticipant(ctx context.Context, req *proto.AddParticipantRequest) (*proto.ParticipantResponse, error) {
 	exam, ok := interceptors.GetExamFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "exam not found in context")
@@ -79,18 +89,13 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 		UserID: typedUserId,
 	}
 
-	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		if err := tx.Create(&participant).Error; err != nil {
+	err = s.participantRepo.Transaction(func(tx *gorm.DB) error {
+		if err := s.participantRepo.Create(tx, &participant); err != nil {
 			return status.Error(codes.Internal, "failed to add participant")
 		}
 
-		permission := models.ExamPermission{
-			ExamID: typedExamId,
-			UserID: typedUserId,
-		}
-		permission.SetParticipate()
-
-		if err := tx.Create(&permission).Error; err != nil {
+		participatePerm := repositories.PermissionFlags{Participate: true}
+		if err := s.permissionRepo.Create(tx, typedExamId, typedUserId, &participatePerm); err != nil {
 			return status.Error(codes.Internal, "failed to create participant permissions")
 		}
 
@@ -114,7 +119,7 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 	}, nil
 }
 
-func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.RemoveParticipantRequest) (*proto.Empty, error) {
+func (s *Participant) RemoveExamParticipant(ctx context.Context, req *proto.RemoveParticipantRequest) (*proto.Empty, error) {
 	exam, ok := interceptors.GetExamFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "exam not found in context")
@@ -125,16 +130,15 @@ func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.Remov
 	}
 
 	var transactionErr error
-	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+	err := s.participantRepo.Transaction(func(tx *gorm.DB) error {
+		participant, err := s.participantRepo.GetByID(tx, types.ParticipantID(req.ParticipantId))
+		if err != nil {
+			return status.Error(codes.NotFound, "participant not found")
+		}
+
 		counts, err := exam.GetParticipantCounts()
 		if err != nil {
 			return status.Error(codes.Internal, "failed to get participant counts")
-		}
-
-		var participant models.ExamParticipant
-		if err := tx.Take(&participant, req.ParticipantId).Error; err != nil {
-			transactionErr = status.Error(codes.NotFound, "participant not found")
-			return err
 		}
 
 		// Update counts based on participant's status
@@ -169,16 +173,14 @@ func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.Remov
 }
 
 // GetExamParticipant returns participant data for the current user
-func (s *ExamServer) GetExamParticipant(ctx context.Context, req *proto.GetExamParticipantRequest) (*proto.GetExamParticipantResponse, error) {
+func (s *Participant) GetExamParticipant(ctx context.Context, req *proto.GetExamParticipantRequest) (*proto.GetExamParticipantResponse, error) {
 	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var participant models.ExamParticipant
-	if err := db.DB.Joins("JOIN exams ON exams.id = exam_participants.exam_id").
-		Where("exams.hash = ? AND exam_participants.user_id = ?", req.ExamHash, userID).
-		Take(&participant).Error; err != nil {
+	participant, err := s.participantRepo.GetByExamHashAndUserID(nil, req.ExamHash, userID)
+	if err != nil {
 		return nil, utils.HandleDBError(err, "participant not found")
 	}
 
@@ -198,9 +200,9 @@ func (s *ExamServer) GetExamParticipant(ctx context.Context, req *proto.GetExamP
 	return response, nil
 }
 
-func (s *ExamServer) GetParticipantById(ctx context.Context, req *proto.ParticipantRequest) (*proto.ParticipantResponse, error) {
-	var participant models.ExamParticipant
-	if err := db.DB.Take(&participant, req.ParticipantId).Error; err != nil {
+func (s *Participant) GetParticipantById(ctx context.Context, req *proto.ParticipantRequest) (*proto.ParticipantResponse, error) {
+	participant, err := s.participantRepo.GetByID(nil, types.ParticipantID(req.ParticipantId))
+	if err != nil {
 		return nil, utils.HandleDBError(err, "participant not found")
 	}
 

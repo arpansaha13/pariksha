@@ -2,6 +2,7 @@ package dtos
 
 import (
 	"encoding/json"
+	"pariksha/common/pkg/proto"
 )
 
 type AnswerListQuestionDto struct {
@@ -18,7 +19,7 @@ type AnswerListAnswerDto struct {
 }
 
 type AnswerListItemDto struct {
-	Type     int32                 `json:"type"`
+	Type     proto.QuestionType    `json:"type"`
 	Question AnswerListQuestionDto `json:"question"`
 	Answer   *AnswerListAnswerDto  `json:"answer"`
 }

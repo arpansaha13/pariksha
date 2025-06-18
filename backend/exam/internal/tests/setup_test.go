@@ -17,13 +17,14 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/generate"
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/config/env"
-	"pariksha/exam/internal/handlers"
+	"pariksha/exam/internal/controllers"
 	"pariksha/exam/internal/interceptors"
-	"pariksha/exam/internal/services"
-	"pariksha/exam/internal/services/paper"
+	"pariksha/exam/internal/interservice"
+	"pariksha/exam/internal/interservice/paper"
 )
 
 const (
@@ -93,13 +94,13 @@ func setupContainer() func() {
 	}
 
 	// Initialize Redis connection
-	err = services.InitExamQueue(redisHost, redisPort.Port())
+	err = interservice.InitExamQueue(redisHost, redisPort.Port())
 	if err != nil {
 		log.Fatalf("Failed to initialize Redis: %v", err)
 	}
 
 	return func() {
-		services.CloseExamQueue()
+		interservice.CloseExamQueue()
 		pgContainer.Terminate(ctx)
 		redisContainer.Terminate(ctx)
 	}
@@ -137,7 +138,10 @@ func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 			interceptors.EndExamInterceptor(),
 		),
 	)
-	proto.RegisterExamServer(srv, &handlers.ExamServer{})
+
+	// Initialize all controllers before registering server
+	controllers.InitializeHandlers()
+	proto.RegisterExamServer(srv, &controllers.ExamServer{})
 
 	go func() {
 		if err := srv.Serve(lis); err != nil {
@@ -211,9 +215,10 @@ func mockPaperService() func() {
 	}
 
 	// Mock FetchQuestionsByIds
-	paper.FetchQuestionsByIds = func(questionIDs []int64) ([]*proto.QuestionBatchItem, error) {
-		questions := make([]*proto.QuestionBatchItem, len(questionIDs))
-		for i, id := range questionIDs {
+	paper.FetchQuestionsByIds = func(typedQuestionIDs []types.QuestionID) ([]*proto.QuestionBatchItem, error) {
+		questions := make([]*proto.QuestionBatchItem, len(typedQuestionIDs))
+		for i, typedID := range typedQuestionIDs {
+			id := int64(typedID)
 			hash, exists := idToHash[id]
 			if !exists {
 				return nil, fmt.Errorf("question ID %d not found", id)

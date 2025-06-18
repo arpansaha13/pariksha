@@ -10,9 +10,9 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/config/env"
-	"pariksha/exam/internal/handlers"
+	"pariksha/exam/internal/controllers"
 	"pariksha/exam/internal/interceptors"
-	"pariksha/exam/internal/services"
+	"pariksha/exam/internal/interservice"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
 			interceptors.EndExamInterceptor(),
 		),
 	)
-	proto.RegisterExamServer(grpcServer, &handlers.ExamServer{})
+	proto.RegisterExamServer(grpcServer, &controllers.ExamServer{})
 
 	log.Printf("Exam gRPC server is running on port %s\n", port)
 	if err := grpcServer.Serve(lis); err != nil {
@@ -44,5 +44,5 @@ func closeConnections() {
 	sqlDb, _ := db.DB.DB()
 	sqlDb.Close()
 
-	services.CloseExamQueue()
+	interservice.CloseExamQueue()
 }

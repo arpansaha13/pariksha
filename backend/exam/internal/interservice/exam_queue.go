@@ -1,4 +1,4 @@
-package services
+package interservice
 
 import (
 	"encoding/json"

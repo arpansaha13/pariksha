@@ -8,6 +8,7 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/exam/internal/config/env"
 )
 
@@ -15,8 +16,13 @@ import (
 // Returns error if any of the question IDs don't have corresponding questions.
 var FetchQuestionsByIds = fetchQuestionsByIds
 
-func fetchQuestionsByIds(questionIDs []int64) ([]*proto.QuestionBatchItem, error) {
+func fetchQuestionsByIds(typedQuestionIDs []types.QuestionID) ([]*proto.QuestionBatchItem, error) {
 	ensurePaperService()
+
+	questionIDs := make([]int64, len(typedQuestionIDs))
+	for i, id := range typedQuestionIDs {
+		questionIDs[i] = int64(id)
+	}
 
 	// Create metadata with exam token
 	md := metadata.New(map[string]string{

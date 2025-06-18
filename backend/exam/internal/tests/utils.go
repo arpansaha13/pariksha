@@ -16,7 +16,7 @@ import (
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/generate"
 	"pariksha/exam/internal/config/db"
-	"pariksha/exam/internal/services/paper"
+	"pariksha/exam/internal/interservice/paper"
 )
 
 const (

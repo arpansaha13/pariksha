@@ -9,7 +9,7 @@ import (
 
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
-	"pariksha/exam/internal/services/paper"
+	"pariksha/exam/internal/interservice/paper"
 )
 
 type hashContextKey string

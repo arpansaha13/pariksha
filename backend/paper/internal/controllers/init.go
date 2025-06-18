@@ -26,7 +26,7 @@ var (
 	categoryCtrl    *Category
 	questionCtrl    *Question
 	boilerplateCtrl *Boilerplate
-	testCaseCtrl    *TestCase // Add new controller var
+	testCaseCtrl    *TestCase
 )
 
 // InitializeHandlers sets up all handler dependencies.

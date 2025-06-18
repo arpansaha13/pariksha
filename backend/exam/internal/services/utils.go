@@ -1,4 +1,4 @@
-package handlers
+package services
 
 import (
 	"encoding/json"
@@ -125,20 +125,6 @@ func validateAnswerJSON(answerJSON []byte, questionType proto.QuestionType) erro
 		return status.Error(codes.InvalidArgument, "invalid question type")
 	}
 	return nil
-}
-
-// getAnswerForParticipant finds an answer for a participant and question
-func getAnswerForParticipant(db *gorm.DB, participantID int64, questionID int64) (*models.Answer, error) {
-	var answer models.Answer
-	err := db.Where("exam_participant_id = ? AND question_id = ? AND answer IS NOT NULL",
-		participantID, questionID).Take(&answer).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
-	}
-	return &answer, nil
 }
 
 // validateExamState checks common exam state constraints

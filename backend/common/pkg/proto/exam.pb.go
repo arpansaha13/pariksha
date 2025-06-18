@@ -1115,11 +1115,11 @@ type AnswerResponse struct {
 	QuestionHash      string                 `protobuf:"bytes,3,opt,name=question_hash,json=questionHash,proto3" json:"question_hash,omitempty"`
 	Answer            []byte                 `protobuf:"bytes,4,opt,name=answer,proto3" json:"answer,omitempty"` // JSON encoded answer
 	// question fields
-	Order         int32  `protobuf:"varint,5,opt,name=order,proto3" json:"order,omitempty"`
-	CategoryId    int64  `protobuf:"varint,6,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	QuestionType  int32  `protobuf:"varint,7,opt,name=question_type,json=questionType,proto3" json:"question_type,omitempty"`
-	MaxScore      int32  `protobuf:"varint,8,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
-	Question      []byte `protobuf:"bytes,9,opt,name=question,proto3" json:"question,omitempty"` // JSON encoded question
+	Order         int32        `protobuf:"varint,5,opt,name=order,proto3" json:"order,omitempty"`
+	CategoryId    int64        `protobuf:"varint,6,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	QuestionType  QuestionType `protobuf:"varint,7,opt,name=question_type,json=questionType,proto3,enum=proto.QuestionType" json:"question_type,omitempty"`
+	MaxScore      int32        `protobuf:"varint,8,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
+	Question      []byte       `protobuf:"bytes,9,opt,name=question,proto3" json:"question,omitempty"` // JSON encoded question
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1196,11 +1196,11 @@ func (x *AnswerResponse) GetCategoryId() int64 {
 	return 0
 }
 
-func (x *AnswerResponse) GetQuestionType() int32 {
+func (x *AnswerResponse) GetQuestionType() QuestionType {
 	if x != nil {
 		return x.QuestionType
 	}
-	return 0
+	return QuestionType_UNSPECIFIED
 }
 
 func (x *AnswerResponse) GetMaxScore() int32 {
@@ -2251,7 +2251,7 @@ const file_exam_proto_rawDesc = "" +
 	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12#\n" +
 	"\rquestion_hash\x18\x02 \x01(\tR\fquestionHash\x12\x1b\n" +
 	"\x06answer\x18\x03 \x01(\fH\x00R\x06answer\x88\x01\x01B\t\n" +
-	"\a_answer\"\xaf\x02\n" +
+	"\a_answer\"\xc4\x02\n" +
 	"\x0eAnswerResponse\x12\x1b\n" +
 	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12.\n" +
 	"\x13exam_participant_id\x18\x02 \x01(\x03R\x11examParticipantId\x12#\n" +
@@ -2259,8 +2259,8 @@ const file_exam_proto_rawDesc = "" +
 	"\x06answer\x18\x04 \x01(\fR\x06answer\x12\x14\n" +
 	"\x05order\x18\x05 \x01(\x05R\x05order\x12\x1f\n" +
 	"\vcategory_id\x18\x06 \x01(\x03R\n" +
-	"categoryId\x12#\n" +
-	"\rquestion_type\x18\a \x01(\x05R\fquestionType\x12\x1b\n" +
+	"categoryId\x128\n" +
+	"\rquestion_type\x18\a \x01(\x0e2\x13.proto.QuestionTypeR\fquestionType\x12\x1b\n" +
 	"\tmax_score\x18\b \x01(\x05R\bmaxScore\x12\x1a\n" +
 	"\bquestion\x18\t \x01(\fR\bquestion\"=\n" +
 	"\n" +
@@ -2436,64 +2436,65 @@ var file_exam_proto_depIdxs = []int32{
 	8,  // 11: proto.ParticipantList.participants:type_name -> proto.ParticipantResponse
 	36, // 12: proto.Answer.submitted_at:type_name -> google.protobuf.Timestamp
 	15, // 13: proto.UpsertAnswersRequest.answer:type_name -> proto.Answer
-	18, // 14: proto.AnswerList.answers:type_name -> proto.AnswerResponse
-	36, // 15: proto.GetExamParticipantResponse.started_at:type_name -> google.protobuf.Timestamp
-	36, // 16: proto.GetExamParticipantResponse.scheduled_end_time:type_name -> google.protobuf.Timestamp
-	37, // 17: proto.ExamQuestion.type:type_name -> proto.QuestionType
-	26, // 18: proto.ExamQuestionsResponse.questions:type_name -> proto.ExamQuestion
-	28, // 19: proto.ExamCategoriesResponse.categories:type_name -> proto.ExamCategory
-	34, // 20: proto.ExamResultsResponse.results:type_name -> proto.ExamResultItem
-	38, // 21: proto.Exam.GetUserExams:input_type -> proto.Empty
-	2,  // 22: proto.Exam.CreateExam:input_type -> proto.CreateExamRequest
-	3,  // 23: proto.Exam.UpdateExam:input_type -> proto.UpdateExamRequest
-	1,  // 24: proto.Exam.GetExam:input_type -> proto.ExamRequest
-	1,  // 25: proto.Exam.GetExamQuestions:input_type -> proto.ExamRequest
-	1,  // 26: proto.Exam.GetExamCategories:input_type -> proto.ExamRequest
-	1,  // 27: proto.Exam.GetExamPermission:input_type -> proto.ExamRequest
-	33, // 28: proto.Exam.DeleteExams:input_type -> proto.DeleteExamsRequest
-	1,  // 29: proto.Exam.GetExamResults:input_type -> proto.ExamRequest
-	1,  // 30: proto.Exam.GetExamParticipants:input_type -> proto.ExamRequest
-	10, // 31: proto.Exam.AddExamParticipant:input_type -> proto.AddParticipantRequest
-	11, // 32: proto.Exam.RemoveExamParticipant:input_type -> proto.RemoveParticipantRequest
-	12, // 33: proto.Exam.StartExam:input_type -> proto.StartExamRequest
-	13, // 34: proto.Exam.EndExam:input_type -> proto.EndExamRequest
-	24, // 35: proto.Exam.GetExamParticipant:input_type -> proto.GetExamParticipantRequest
-	7,  // 36: proto.Exam.GetParticipantById:input_type -> proto.ParticipantRequest
-	7,  // 37: proto.Exam.GetParticipantAnswers:input_type -> proto.ParticipantRequest
-	21, // 38: proto.Exam.GetAnswerForExam:input_type -> proto.GetAnswerRequest
-	16, // 39: proto.Exam.UpsertAnswer:input_type -> proto.UpsertAnswersRequest
-	31, // 40: proto.Exam.GetAnswerEvaluationData:input_type -> proto.ParticipantQuestionRequest
-	20, // 41: proto.Exam.UpdateAnswerForEvaluation:input_type -> proto.UpdateAnswerRequest
-	7,  // 42: proto.Exam.MarkParticipantAsEvaluated:input_type -> proto.ParticipantRequest
-	31, // 43: proto.Exam.GetAnswerForEvaluation:input_type -> proto.ParticipantQuestionRequest
-	5,  // 44: proto.Exam.GetUserExams:output_type -> proto.ExamList
-	4,  // 45: proto.Exam.CreateExam:output_type -> proto.ExamResponse
-	4,  // 46: proto.Exam.UpdateExam:output_type -> proto.ExamResponse
-	4,  // 47: proto.Exam.GetExam:output_type -> proto.ExamResponse
-	27, // 48: proto.Exam.GetExamQuestions:output_type -> proto.ExamQuestionsResponse
-	29, // 49: proto.Exam.GetExamCategories:output_type -> proto.ExamCategoriesResponse
-	30, // 50: proto.Exam.GetExamPermission:output_type -> proto.ExamPermissionResponse
-	38, // 51: proto.Exam.DeleteExams:output_type -> proto.Empty
-	35, // 52: proto.Exam.GetExamResults:output_type -> proto.ExamResultsResponse
-	9,  // 53: proto.Exam.GetExamParticipants:output_type -> proto.ParticipantList
-	8,  // 54: proto.Exam.AddExamParticipant:output_type -> proto.ParticipantResponse
-	38, // 55: proto.Exam.RemoveExamParticipant:output_type -> proto.Empty
-	38, // 56: proto.Exam.StartExam:output_type -> proto.Empty
-	38, // 57: proto.Exam.EndExam:output_type -> proto.Empty
-	25, // 58: proto.Exam.GetExamParticipant:output_type -> proto.GetExamParticipantResponse
-	8,  // 59: proto.Exam.GetParticipantById:output_type -> proto.ParticipantResponse
-	19, // 60: proto.Exam.GetParticipantAnswers:output_type -> proto.AnswerList
-	22, // 61: proto.Exam.GetAnswerForExam:output_type -> proto.AnswerMinimalResponse
-	17, // 62: proto.Exam.UpsertAnswer:output_type -> proto.UpsertAnswersResponse
-	32, // 63: proto.Exam.GetAnswerEvaluationData:output_type -> proto.GetAnswerEvaluationDataResponse
-	32, // 64: proto.Exam.UpdateAnswerForEvaluation:output_type -> proto.GetAnswerEvaluationDataResponse
-	14, // 65: proto.Exam.MarkParticipantAsEvaluated:output_type -> proto.EvaluationStatusResponse
-	22, // 66: proto.Exam.GetAnswerForEvaluation:output_type -> proto.AnswerMinimalResponse
-	44, // [44:67] is the sub-list for method output_type
-	21, // [21:44] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	37, // 14: proto.AnswerResponse.question_type:type_name -> proto.QuestionType
+	18, // 15: proto.AnswerList.answers:type_name -> proto.AnswerResponse
+	36, // 16: proto.GetExamParticipantResponse.started_at:type_name -> google.protobuf.Timestamp
+	36, // 17: proto.GetExamParticipantResponse.scheduled_end_time:type_name -> google.protobuf.Timestamp
+	37, // 18: proto.ExamQuestion.type:type_name -> proto.QuestionType
+	26, // 19: proto.ExamQuestionsResponse.questions:type_name -> proto.ExamQuestion
+	28, // 20: proto.ExamCategoriesResponse.categories:type_name -> proto.ExamCategory
+	34, // 21: proto.ExamResultsResponse.results:type_name -> proto.ExamResultItem
+	38, // 22: proto.Exam.GetUserExams:input_type -> proto.Empty
+	2,  // 23: proto.Exam.CreateExam:input_type -> proto.CreateExamRequest
+	3,  // 24: proto.Exam.UpdateExam:input_type -> proto.UpdateExamRequest
+	1,  // 25: proto.Exam.GetExam:input_type -> proto.ExamRequest
+	1,  // 26: proto.Exam.GetExamQuestions:input_type -> proto.ExamRequest
+	1,  // 27: proto.Exam.GetExamCategories:input_type -> proto.ExamRequest
+	1,  // 28: proto.Exam.GetExamPermission:input_type -> proto.ExamRequest
+	33, // 29: proto.Exam.DeleteExams:input_type -> proto.DeleteExamsRequest
+	1,  // 30: proto.Exam.GetExamResults:input_type -> proto.ExamRequest
+	1,  // 31: proto.Exam.GetExamParticipants:input_type -> proto.ExamRequest
+	10, // 32: proto.Exam.AddExamParticipant:input_type -> proto.AddParticipantRequest
+	11, // 33: proto.Exam.RemoveExamParticipant:input_type -> proto.RemoveParticipantRequest
+	12, // 34: proto.Exam.StartExam:input_type -> proto.StartExamRequest
+	13, // 35: proto.Exam.EndExam:input_type -> proto.EndExamRequest
+	24, // 36: proto.Exam.GetExamParticipant:input_type -> proto.GetExamParticipantRequest
+	7,  // 37: proto.Exam.GetParticipantById:input_type -> proto.ParticipantRequest
+	7,  // 38: proto.Exam.GetParticipantAnswers:input_type -> proto.ParticipantRequest
+	21, // 39: proto.Exam.GetAnswerForExam:input_type -> proto.GetAnswerRequest
+	16, // 40: proto.Exam.UpsertAnswer:input_type -> proto.UpsertAnswersRequest
+	31, // 41: proto.Exam.GetAnswerEvaluationData:input_type -> proto.ParticipantQuestionRequest
+	20, // 42: proto.Exam.UpdateAnswerForEvaluation:input_type -> proto.UpdateAnswerRequest
+	7,  // 43: proto.Exam.MarkParticipantAsEvaluated:input_type -> proto.ParticipantRequest
+	31, // 44: proto.Exam.GetAnswerForEvaluation:input_type -> proto.ParticipantQuestionRequest
+	5,  // 45: proto.Exam.GetUserExams:output_type -> proto.ExamList
+	4,  // 46: proto.Exam.CreateExam:output_type -> proto.ExamResponse
+	4,  // 47: proto.Exam.UpdateExam:output_type -> proto.ExamResponse
+	4,  // 48: proto.Exam.GetExam:output_type -> proto.ExamResponse
+	27, // 49: proto.Exam.GetExamQuestions:output_type -> proto.ExamQuestionsResponse
+	29, // 50: proto.Exam.GetExamCategories:output_type -> proto.ExamCategoriesResponse
+	30, // 51: proto.Exam.GetExamPermission:output_type -> proto.ExamPermissionResponse
+	38, // 52: proto.Exam.DeleteExams:output_type -> proto.Empty
+	35, // 53: proto.Exam.GetExamResults:output_type -> proto.ExamResultsResponse
+	9,  // 54: proto.Exam.GetExamParticipants:output_type -> proto.ParticipantList
+	8,  // 55: proto.Exam.AddExamParticipant:output_type -> proto.ParticipantResponse
+	38, // 56: proto.Exam.RemoveExamParticipant:output_type -> proto.Empty
+	38, // 57: proto.Exam.StartExam:output_type -> proto.Empty
+	38, // 58: proto.Exam.EndExam:output_type -> proto.Empty
+	25, // 59: proto.Exam.GetExamParticipant:output_type -> proto.GetExamParticipantResponse
+	8,  // 60: proto.Exam.GetParticipantById:output_type -> proto.ParticipantResponse
+	19, // 61: proto.Exam.GetParticipantAnswers:output_type -> proto.AnswerList
+	22, // 62: proto.Exam.GetAnswerForExam:output_type -> proto.AnswerMinimalResponse
+	17, // 63: proto.Exam.UpsertAnswer:output_type -> proto.UpsertAnswersResponse
+	32, // 64: proto.Exam.GetAnswerEvaluationData:output_type -> proto.GetAnswerEvaluationDataResponse
+	32, // 65: proto.Exam.UpdateAnswerForEvaluation:output_type -> proto.GetAnswerEvaluationDataResponse
+	14, // 66: proto.Exam.MarkParticipantAsEvaluated:output_type -> proto.EvaluationStatusResponse
+	22, // 67: proto.Exam.GetAnswerForEvaluation:output_type -> proto.AnswerMinimalResponse
+	45, // [45:68] is the sub-list for method output_type
+	22, // [22:45] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_exam_proto_init() }

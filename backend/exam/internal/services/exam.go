@@ -1,4 +1,4 @@
-package handlers
+package services
 
 import (
 	"context"
@@ -19,27 +19,33 @@ import (
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/interceptors"
-	"pariksha/exam/internal/services"
-	"pariksha/exam/internal/services/paper"
+	"pariksha/exam/internal/interservice"
+	"pariksha/exam/internal/repositories"
 )
 
-type ExamServer struct {
-	proto.UnimplementedExamServer
+type Exam struct {
+	examRepo        *repositories.Exam
+	participantRepo *repositories.Participant
+	permissionRepo  *repositories.Permission
+}
+
+func NewExam(examRepo *repositories.Exam, participantRepo *repositories.Participant, permissionRepo *repositories.Permission) *Exam {
+	return &Exam{
+		examRepo:        examRepo,
+		participantRepo: participantRepo,
+		permissionRepo:  permissionRepo,
+	}
 }
 
 // GetUserExams retrieves all exams created by or participated in by the authenticated user
-func (s *ExamServer) GetUserExams(ctx context.Context, _ *proto.Empty) (*proto.ExamList, error) {
+func (s *Exam) GetUserExams(ctx context.Context) (*proto.ExamList, error) {
 	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var exams []models.Exam
-	if err := db.DB.Where("created_by = ?", userID).
-		Or("id IN (?)", db.DB.Model(&models.ExamParticipant{}).
-			Select("exam_id").
-			Where("user_id = ?", userID)).
-		Find(&exams).Error; err != nil {
+	exams, err := s.examRepo.GetByUserID(nil, userID)
+	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to retrieve exams")
 	}
 
@@ -58,7 +64,7 @@ func (s *ExamServer) GetUserExams(ctx context.Context, _ *proto.Empty) (*proto.E
 }
 
 // CreateExam creates a new exam with the specified configuration and validates time constraints
-func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamRequest) (*proto.ExamResponse, error) {
+func (s *Exam) CreateExam(ctx context.Context, req *proto.CreateExamRequest) (*proto.ExamResponse, error) {
 	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
@@ -84,7 +90,7 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 	}
 
 	var exam models.Exam
-	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+	err = s.examRepo.Transaction(func(tx *gorm.DB) error {
 		exam = models.Exam{
 			Title:              req.Title,
 			StartsAt:           startsAt,
@@ -103,25 +109,21 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 			exam.Type = req.GetType()
 		}
 
-		if err := tx.Create(&exam).Error; err != nil {
+		if err := s.examRepo.Create(tx, &exam); err != nil {
 			return status.Error(codes.Internal, "failed to create exam")
 		}
 
 		// Generate and store hash
 		exam.Hash = generate.HMACHash(int64(exam.ID))
-		if err := tx.Model(&exam).Update("hash", exam.Hash).Error; err != nil {
+		if err := s.examRepo.UpdateHash(tx, &exam); err != nil {
 			return status.Error(codes.Internal, "failed to store exam hash")
 		}
 
-		// Create owner permission entry
-		permission := models.ExamPermission{
-			ExamID: exam.ID,
-			UserID: userID,
+		ownerPerm := repositories.PermissionFlags{
+			Write:    true,
+			Evaluate: true,
 		}
-		permission.SetWrite()
-		permission.SetEvaluate()
-
-		if err := tx.Create(&permission).Error; err != nil {
+		if err := s.permissionRepo.Create(tx, exam.ID, userID, &ownerPerm); err != nil {
 			return status.Error(codes.Internal, "failed to create exam permissions")
 		}
 
@@ -132,7 +134,7 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 		return nil, err
 	}
 
-	services.EnqueuePrepareQuestions(structs.PrepareQuestionsPayload{
+	interservice.EnqueuePrepareQuestions(structs.PrepareQuestionsPayload{
 		ExamID:    exam.ID,
 		PaperHash: exam.PaperHash,
 	})
@@ -141,7 +143,7 @@ func (s *ExamServer) CreateExam(ctx context.Context, req *proto.CreateExamReques
 }
 
 // UpdateExam modifies an existing exam's details while enforcing time-based restrictions
-func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamRequest) (*proto.ExamResponse, error) {
+func (s *Exam) UpdateExam(ctx context.Context, req *proto.UpdateExamRequest) (*proto.ExamResponse, error) {
 	exam, ok := interceptors.GetExamFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "exam not found in context")
@@ -166,7 +168,7 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 
 	// Save if any fields were updated
 	if updateCtx.isUpdated {
-		if err := db.DB.Save(exam).Error; err != nil {
+		if err := s.examRepo.Save(nil, exam); err != nil {
 			return nil, status.Error(codes.Internal, "failed to update exam")
 		}
 	}
@@ -175,7 +177,7 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 }
 
 // StartExam initiates an exam for a participant and updates participation statistics
-func (s *ExamServer) StartExam(ctx context.Context, _ *proto.StartExamRequest) (*proto.Empty, error) {
+func (s *Exam) StartExam(ctx context.Context, _ *proto.StartExamRequest) (*proto.Empty, error) {
 	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
@@ -192,9 +194,9 @@ func (s *ExamServer) StartExam(ctx context.Context, _ *proto.StartExamRequest) (
 	}
 
 	typedExamId := types.ExamID(exam.ID)
-	participant := &models.ExamParticipant{}
-	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		err := tx.Where("exam_id = ? AND user_id = ?", exam.ID, userID).Take(participant).Error
+	var participant *models.ExamParticipant
+	err = s.examRepo.Transaction(func(tx *gorm.DB) error {
+		participant, err = s.participantRepo.GetByExamAndUser(tx, typedExamId, userID)
 		participantExists := err == nil
 
 		if !participantExists {
@@ -210,17 +212,13 @@ func (s *ExamServer) StartExam(ctx context.Context, _ *proto.StartExamRequest) (
 				StartedAt:        sql.NullTime{Time: now, Valid: true},
 				ScheduledEndTime: sql.NullTime{Time: scheduledEndTime, Valid: true},
 			}
-			if err := tx.Create(&participant).Error; err != nil {
+			if err := s.participantRepo.Create(tx, participant); err != nil {
 				return status.Error(codes.Internal, "failed to create participant")
 			}
 
 			// Create permissions for the new participant
-			permission := models.ExamPermission{
-				ExamID: typedExamId,
-				UserID: userID,
-			}
-			permission.SetParticipate()
-			if err := tx.Create(&permission).Error; err != nil {
+			participantPerm := repositories.PermissionFlags{Participate: true}
+			if err := s.permissionRepo.Create(tx, typedExamId, userID, &participantPerm); err != nil {
 				return status.Error(codes.Internal, "failed to create participant permissions")
 			}
 		} else if participant.Status != constants.PARTICIPANT_STATUS_INVITED {
@@ -231,7 +229,7 @@ func (s *ExamServer) StartExam(ctx context.Context, _ *proto.StartExamRequest) (
 			participant.Status = constants.PARTICIPANT_STATUS_STARTED
 			participant.StartedAt = sql.NullTime{Time: now, Valid: true}
 			participant.ScheduledEndTime = sql.NullTime{Time: scheduledEndTime, Valid: true}
-			if err := tx.Save(&participant).Error; err != nil {
+			if err := s.participantRepo.Save(tx, participant); err != nil {
 				return status.Error(codes.Internal, "failed to update participant")
 			}
 		}
@@ -250,7 +248,7 @@ func (s *ExamServer) StartExam(ctx context.Context, _ *proto.StartExamRequest) (
 			return err
 		}
 
-		if err := tx.Save(&exam).Error; err != nil {
+		if err := s.examRepo.Save(tx, exam); err != nil {
 			return status.Error(codes.Internal, "failed to update exam")
 		}
 
@@ -260,7 +258,7 @@ func (s *ExamServer) StartExam(ctx context.Context, _ *proto.StartExamRequest) (
 			ExamID:        typedExamId,
 			ParticipantID: participant.ID,
 		}
-		services.EnqueueAutoEndExam(autoEndPayload, participant.ScheduledEndTime.Time)
+		interservice.EnqueueAutoEndExam(autoEndPayload, participant.ScheduledEndTime.Time)
 
 		return nil
 	})
@@ -273,7 +271,7 @@ func (s *ExamServer) StartExam(ctx context.Context, _ *proto.StartExamRequest) (
 }
 
 // EndExam marks a participant's exam as complete and updates participation statistics
-func (s *ExamServer) EndExam(ctx context.Context, req *proto.EndExamRequest) (*proto.Empty, error) {
+func (s *Exam) EndExam(ctx context.Context, req *proto.EndExamRequest) (*proto.Empty, error) {
 	exam, ok := interceptors.GetExamFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "exam not found in context")
@@ -290,7 +288,7 @@ func (s *ExamServer) EndExam(ctx context.Context, req *proto.EndExamRequest) (*p
 		return &proto.Empty{}, nil
 	}
 
-	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+	err := s.examRepo.Transaction(func(tx *gorm.DB) error {
 		if time.Now().Before(exam.StartsAt) {
 			return status.Error(codes.FailedPrecondition, "exam has not started yet")
 		}
@@ -308,7 +306,7 @@ func (s *ExamServer) EndExam(ctx context.Context, req *proto.EndExamRequest) (*p
 }
 
 // GetExam retrieves detailed information about a specific exam
-func (s *ExamServer) GetExam(ctx context.Context, req *proto.ExamRequest) (*proto.ExamResponse, error) {
+func (s *Exam) GetExam(ctx context.Context, req *proto.ExamRequest) (*proto.ExamResponse, error) {
 	exam, ok := interceptors.GetExamFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "exam not found in context")
@@ -317,70 +315,7 @@ func (s *ExamServer) GetExam(ctx context.Context, req *proto.ExamRequest) (*prot
 	return examToProto(exam)
 }
 
-// GetExamQuestions retrieves all questions associated with an exam
-func (s *ExamServer) GetExamQuestions(ctx context.Context, req *proto.ExamRequest) (*proto.ExamQuestionsResponse, error) {
-	var examQuestions []models.ExamQuestion
-	if err := db.DB.Model(&models.ExamQuestion{}).
-		Select("exam_questions.question_id", "exam_questions.category_id", "exam_questions.type", "exam_questions.order", "exam_questions.max_score").
-		Joins("JOIN exams ON exams.id = exam_questions.exam_id").
-		Where("exams.hash = ?", req.ExamHash).
-		Find(&examQuestions).Error; err != nil {
-		return nil, status.Error(codes.Internal, "failed to fetch questions")
-	}
-
-	// Get question IDs for hash lookup
-	questionIDs := make([]int64, len(examQuestions))
-	for i, eq := range examQuestions {
-		questionIDs[i] = int64(eq.QuestionID)
-	}
-
-	// Fetch question hashes from paper service
-	questionHashes, err := paper.FetchQuestionHashesForIds(questionIDs)
-	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to fetch question hashes")
-	}
-
-	questions := make([]*proto.ExamQuestion, len(examQuestions))
-	for i, eq := range examQuestions {
-		questions[i] = &proto.ExamQuestion{
-			QuestionHash: questionHashes[i],
-			CategoryId:   int64(eq.CategoryID),
-			Order:        int32(eq.Order),
-			MaxScore:     int32(eq.MaxScore),
-			Type:         eq.Type,
-		}
-	}
-
-	return &proto.ExamQuestionsResponse{
-		Questions: questions,
-	}, nil
-}
-
-// GetExamCategories retrieves all category IDs associated with an exam
-func (s *ExamServer) GetExamCategories(ctx context.Context, req *proto.ExamRequest) (*proto.ExamCategoriesResponse, error) {
-	var examCategories []models.ExamCategory
-	if err := db.DB.Model(&models.ExamCategory{}).
-		Select("exam_categories.category_id", "exam_categories.order").
-		Joins("JOIN exams ON exams.id = exam_categories.exam_id").
-		Where("exams.hash = ?", req.ExamHash).
-		Find(&examCategories).Error; err != nil {
-		return nil, status.Error(codes.Internal, "failed to fetch categories")
-	}
-
-	categories := make([]*proto.ExamCategory, len(examCategories))
-	for i, ec := range examCategories {
-		categories[i] = &proto.ExamCategory{
-			CategoryId: int64(ec.CategoryID),
-			Order:      int32(ec.Order),
-		}
-	}
-
-	return &proto.ExamCategoriesResponse{
-		Categories: categories,
-	}, nil
-}
-
-func (s *ExamServer) GetExamPermission(ctx context.Context, req *proto.ExamRequest) (*proto.ExamPermissionResponse, error) {
+func (s *Exam) GetExamPermission(ctx context.Context, req *proto.ExamRequest) (*proto.ExamPermissionResponse, error) {
 	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
@@ -426,26 +361,18 @@ func (s *ExamServer) GetExamPermission(ctx context.Context, req *proto.ExamReque
 }
 
 // DeleteExams handles the batch deletion of exams and their associated permissions
-func (s *ExamServer) DeleteExams(ctx context.Context, req *proto.DeleteExamsRequest) (*proto.Empty, error) {
-	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		// Get exam IDs from hashes
-		var examIDs []types.ExamID
-		if err := tx.Model(&models.Exam{}).
-			Where("hash IN ?", req.ExamHashes).
-			Pluck("id", &examIDs).Error; err != nil {
-			return status.Error(codes.Internal, "failed to fetch exam IDs")
+func (s *Exam) DeleteExams(ctx context.Context, req *proto.DeleteExamsRequest) (*proto.Empty, error) {
+	err := s.examRepo.Transaction(func(tx *gorm.DB) error {
+		examIDs, err := s.examRepo.DeleteByHashes(tx, req.ExamHashes)
+		if err != nil {
+			return status.Error(codes.Internal, "failed to fetch/delete exam IDs")
 		}
 
-		// Delete exams and permissions
-		if err := tx.Where("id IN ?", examIDs).Delete(&models.Exam{}).Error; err != nil {
-			return status.Error(codes.Internal, "failed to delete exams")
-		}
-
-		if err := tx.Where("exam_id IN ?", examIDs).Delete(&models.ExamPermission{}).Error; err != nil {
+		if err := s.permissionRepo.DeleteByExamIDs(tx, examIDs); err != nil {
 			return status.Error(codes.Internal, "failed to delete exam permissions")
 		}
 
-		if err := services.EnqueuePostDeleteExamsCleanup(examIDs); err != nil {
+		if err := interservice.EnqueuePostDeleteExamsCleanup(examIDs); err != nil {
 			return status.Error(codes.Internal, "failed to enqueue post-delete-exam cleanup task")
 		}
 
