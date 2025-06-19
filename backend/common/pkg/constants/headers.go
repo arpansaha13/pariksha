@@ -9,4 +9,7 @@ const (
 const (
 	// API Token for communication between exam service and paper service
 	X_EXAM_API_TOKEN string = "x-exam-api-token"
+
+	// API Token for communication between engine service and paper service
+	X_ENGINE_API_TOKEN string = "x-engine-api-token"
 )

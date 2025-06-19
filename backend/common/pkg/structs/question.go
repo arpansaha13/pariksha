@@ -1,6 +1,8 @@
 package structs
 
-import "pariksha/common/pkg/constants"
+import (
+	"pariksha/common/pkg/proto"
+)
 
 type MCQQuestion struct {
 	Statement string   `json:"statement"`
@@ -11,20 +13,15 @@ type SubjectiveQuestion struct {
 	Statement string `json:"statement"`
 }
 
-type ParameterItem struct {
-	PropertyName *string                 `json:"property_name,omitempty"`
-	Type         constants.ParameterType `json:"type"`
-}
-
 type InputDefinition struct {
-	VariableName string                  `json:"variable_name"`
-	Type         constants.ParameterType `json:"type"`
-	Items        *[]ParameterItem        `json:"items,omitempty"`
+	VariableName string                 `json:"variable_name"`
+	Type         proto.ParameterType    `json:"type"`
+	Items        []*proto.ParameterItem `json:"items,omitempty"`
 }
 
 type OutputDefinition struct {
-	Type  constants.ParameterType `json:"type"`
-	Items *[]ParameterItem        `json:"items,omitempty"`
+	Type  proto.ParameterType    `json:"type"`
+	Items []*proto.ParameterItem `json:"items,omitempty"`
 }
 
 type CodingQuestion struct {

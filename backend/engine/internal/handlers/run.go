@@ -18,15 +18,12 @@ import (
 	"github.com/docker/docker/client"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/structs"
-	"pariksha/engine/internal/config/db"
 	"pariksha/engine/internal/config/env"
 	engineConstants "pariksha/engine/internal/constants"
+	"pariksha/engine/internal/interservice"
 	"pariksha/engine/internal/templates"
 )
 
@@ -87,7 +84,7 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 
 	// Fetch input definitions
 	// Will be used for parsing inputs
-	inputDefinitions, err := fetchInputDefinitions(db.Papers, req.QuestionHash)
+	inputDefinitions, err := interservice.FetchInputDefinitions(req.QuestionHash)
 	if err != nil {
 		return nil, err
 	}
@@ -241,37 +238,8 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 	}, nil
 }
 
-// fetchInputDefinitions retrieves the InputDefinitions array
-// from the JSONB Question field for a given question ID.
-func fetchInputDefinitions(db *gorm.DB, questionHash string) ([]structs.InputDefinition, error) {
-	type QuestionFields struct {
-		Type      proto.QuestionType `gorm:"column:type"`
-		InputDefs []byte             `gorm:"column:input_defs"`
-	}
-
-	var fields QuestionFields
-	if err := db.Model(&models.Question{}).
-		Select("type, question->>'input_definitions' as input_defs").
-		Joins("INNER JOIN question_hashes qh ON qh.id = questions.id").
-		Where("qh.hash = ?", questionHash).
-		Take(&fields).Error; err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to fetch question: %v", err)
-	}
-
-	if fields.Type != proto.QuestionType_CODING {
-		return nil, status.Errorf(codes.InvalidArgument, "question type must be coding, got type: %d", fields.Type)
-	}
-
-	var inputDefinitions []structs.InputDefinition
-	if err := json.Unmarshal(fields.InputDefs, &inputDefinitions); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal input definitions: %v", err)
-	}
-
-	return inputDefinitions, nil
-}
-
 // parseTestCase parses all inputs in a test case according to their input definitions
-func parseTestCase(testCaseInputs []string, inputDefs []structs.InputDefinition) ([]any, error) {
+func parseTestCase(testCaseInputs []string, inputDefs []proto.InputDefinition) ([]any, error) {
 	if len(testCaseInputs) != len(inputDefs) {
 		return nil, status.Errorf(codes.InvalidArgument, "input count mismatch: expected %d, got %d", len(inputDefs), len(testCaseInputs))
 	}
@@ -288,15 +256,15 @@ func parseTestCase(testCaseInputs []string, inputDefs []structs.InputDefinition)
 }
 
 // parseValue converts a string input to its appropriate type based on the parameter type
-func parseValue(input string, paramType constants.ParameterType, items *[]structs.ParameterItem) (any, error) {
+func parseValue(input string, paramType proto.ParameterType, items []*proto.ParameterItem) (any, error) {
 	switch paramType {
-	case constants.PARAMETER_TYPE_NUMBER:
+	case proto.ParameterType_NUMBER:
 		return strconv.ParseFloat(input, 64)
-	case constants.PARAMETER_TYPE_STRING:
+	case proto.ParameterType_STRING:
 		return input, nil
-	case constants.PARAMETER_TYPE_BOOLEAN:
+	case proto.ParameterType_BOOLEAN:
 		return strconv.ParseBool(input)
-	case constants.PARAMETER_TYPE_ARRAY:
+	case proto.ParameterType_ARRAY:
 		if items == nil {
 			return nil, status.Errorf(codes.InvalidArgument, "items definition missing for array type")
 		}
@@ -306,7 +274,7 @@ func parseValue(input string, paramType constants.ParameterType, items *[]struct
 		}
 
 		// Parse each array element based on the item type
-		itemType := (*items)[0].Type // Assuming first item defines the array element type
+		itemType := items[0].Type // Assuming first item defines the array element type
 		parsedArray := make([]any, len(rawArray))
 		for i, item := range rawArray {
 			// Convert item to string since all inputs are strings

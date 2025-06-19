@@ -1200,7 +1200,7 @@ func (x *AnswerResponse) GetQuestionType() QuestionType {
 	if x != nil {
 		return x.QuestionType
 	}
-	return QuestionType_UNSPECIFIED
+	return QuestionType_UNKNOWN_QUESTION_TYPE
 }
 
 func (x *AnswerResponse) GetMaxScore() int32 {
@@ -1663,7 +1663,7 @@ func (x *ExamQuestion) GetType() QuestionType {
 	if x != nil {
 		return x.Type
 	}
-	return QuestionType_UNSPECIFIED
+	return QuestionType_UNKNOWN_QUESTION_TYPE
 }
 
 func (x *ExamQuestion) GetMaxScore() int32 {

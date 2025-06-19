@@ -128,6 +128,18 @@ func (s *PaperServer) ReorderCategories(ctx context.Context, req *proto.ReorderC
 	return categoryCtrl.HandleReorderCategories(ctx, req)
 }
 
+// ______________________BOILERPLATE HANDLERS_______________________
+
+func (s *PaperServer) GetBoilerplate(ctx context.Context, req *proto.GetBoilerplateRequest) (*proto.GetBoilerplateResponse, error) {
+	return boilerplateCtrl.HandleGetBoilerplate(ctx, req)
+}
+
+// ________________________TESTCASE HANDLERS________________________
+
+func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.UpsertTestCasesRequest) (*proto.Empty, error) {
+	return testCaseCtrl.HandleUpsertTestCases(ctx, req)
+}
+
 // __________________________EXAM HANDLERS__________________________
 // These handlers are only meant for the Exam Service
 
@@ -152,14 +164,9 @@ func (s *PaperServer) GetCategoriesByIds(ctx context.Context, req *proto.GetCate
 	return categoryCtrl.HandleGetCategoriesByIds(ctx, req)
 }
 
-// ______________________BOILERPLATE HANDLERS_______________________
+// _________________________ENGINE HANDLERS_________________________
+// These handlers are only meant for the Engine Service
 
-func (s *PaperServer) GetBoilerplate(ctx context.Context, req *proto.GetBoilerplateRequest) (*proto.GetBoilerplateResponse, error) {
-	return boilerplateCtrl.HandleGetBoilerplate(ctx, req)
-}
-
-// ________________________TESTCASE HANDLERS________________________
-
-func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.UpsertTestCasesRequest) (*proto.Empty, error) {
-	return testCaseCtrl.HandleUpsertTestCases(ctx, req)
+func (s *PaperServer) GetCodingQuestionInputDefinitions(ctx context.Context, req *proto.GetCodingQuestionInputDefinitionsRequest) (*proto.GetCodingQuestionInputDefinitionsResponse, error) {
+	return questionCtrl.HandleGetCodingQuestionInputDefinitions(ctx, req)
 }

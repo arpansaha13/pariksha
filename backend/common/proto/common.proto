@@ -8,8 +8,21 @@ message Empty {}
 
 // Question Type enum
 enum QuestionType {
-  UNSPECIFIED = 0;
+  UNKNOWN_QUESTION_TYPE = 0;
   MCQ = 1;
   SUBJECTIVE = 2;
   CODING = 3;
+}
+
+// Parameter Type enum for coding-question input-definitions
+enum ParameterType {
+  UNKNOWN_PARAMETER_TYPE = 0;
+
+	// Primitive
+  NUMBER = 1;
+  STRING = 2;
+  BOOLEAN = 3;
+
+	// Composite
+  ARRAY = 4;
 }

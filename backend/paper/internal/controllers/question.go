@@ -72,3 +72,8 @@ func (c *Question) HandleGetQuestionHashes(ctx context.Context, req *proto.GetQu
 func (c *Question) HandleGetQuestionIds(ctx context.Context, req *proto.GetQuestionIdsRequest) (*proto.GetQuestionIdsResponse, error) {
 	return c.questionSvc.GetQuestionIds(ctx, req.QuestionHashes)
 }
+
+// HandleGetCodingQuestionInputDefinitions handles fetching input definitions for a coding question.
+func (c *Question) HandleGetCodingQuestionInputDefinitions(ctx context.Context, req *proto.GetCodingQuestionInputDefinitionsRequest) (*proto.GetCodingQuestionInputDefinitionsResponse, error) {
+	return c.questionSvc.GetCodingQuestionInputDefinitions(ctx, req.QuestionHash)
+}

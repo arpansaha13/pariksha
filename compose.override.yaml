@@ -66,6 +66,8 @@ services:
         condition: service_healthy
       examQueue:
         condition: service_healthy
+      paper:
+        condition: service_started
     networks:
       - backend-network
       - exam-network
@@ -73,14 +75,14 @@ services:
 
   engine:
     depends_on:
-      papersDb:
-        condition: service_healthy
+      paper:
+        condition: service_started
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./docker/data/engineTmp/tmp:/tmp
     networks:
       - backend-network
-      - engine-network
+      - engine-paper-network
 
   mailWorker:
     depends_on:
@@ -152,7 +154,6 @@ services:
       - ./docker/data/papersDb:/var/lib/postgresql/data
     networks:
       - paper-network
-      - engine-network
     logging:
       driver: "json-file"
       options:
@@ -198,7 +199,7 @@ networks:
     name: paper-network
   exam-network:
     name: exam-network
-  engine-network:
-    name: engine-network
   exam-paper-network:
     name: exam-paper-network
+  engine-paper-network:
+    name: engine-paper-network

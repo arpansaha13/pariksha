@@ -25,25 +25,25 @@ const (
 type QuestionType int32
 
 const (
-	QuestionType_UNSPECIFIED QuestionType = 0
-	QuestionType_MCQ         QuestionType = 1
-	QuestionType_SUBJECTIVE  QuestionType = 2
-	QuestionType_CODING      QuestionType = 3
+	QuestionType_UNKNOWN_QUESTION_TYPE QuestionType = 0
+	QuestionType_MCQ                   QuestionType = 1
+	QuestionType_SUBJECTIVE            QuestionType = 2
+	QuestionType_CODING                QuestionType = 3
 )
 
 // Enum value maps for QuestionType.
 var (
 	QuestionType_name = map[int32]string{
-		0: "UNSPECIFIED",
+		0: "UNKNOWN_QUESTION_TYPE",
 		1: "MCQ",
 		2: "SUBJECTIVE",
 		3: "CODING",
 	}
 	QuestionType_value = map[string]int32{
-		"UNSPECIFIED": 0,
-		"MCQ":         1,
-		"SUBJECTIVE":  2,
-		"CODING":      3,
+		"UNKNOWN_QUESTION_TYPE": 0,
+		"MCQ":                   1,
+		"SUBJECTIVE":            2,
+		"CODING":                3,
 	}
 )
 
@@ -72,6 +72,64 @@ func (x QuestionType) Number() protoreflect.EnumNumber {
 // Deprecated: Use QuestionType.Descriptor instead.
 func (QuestionType) EnumDescriptor() ([]byte, []int) {
 	return file_common_proto_rawDescGZIP(), []int{0}
+}
+
+// Parameter Type enum for coding-question input-definitions
+type ParameterType int32
+
+const (
+	ParameterType_UNKNOWN_PARAMETER_TYPE ParameterType = 0
+	// Primitive
+	ParameterType_NUMBER  ParameterType = 1
+	ParameterType_STRING  ParameterType = 2
+	ParameterType_BOOLEAN ParameterType = 3
+	// Composite
+	ParameterType_ARRAY ParameterType = 4
+)
+
+// Enum value maps for ParameterType.
+var (
+	ParameterType_name = map[int32]string{
+		0: "UNKNOWN_PARAMETER_TYPE",
+		1: "NUMBER",
+		2: "STRING",
+		3: "BOOLEAN",
+		4: "ARRAY",
+	}
+	ParameterType_value = map[string]int32{
+		"UNKNOWN_PARAMETER_TYPE": 0,
+		"NUMBER":                 1,
+		"STRING":                 2,
+		"BOOLEAN":                3,
+		"ARRAY":                  4,
+	}
+)
+
+func (x ParameterType) Enum() *ParameterType {
+	p := new(ParameterType)
+	*p = x
+	return p
+}
+
+func (x ParameterType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ParameterType) Descriptor() protoreflect.EnumDescriptor {
+	return file_common_proto_enumTypes[1].Descriptor()
+}
+
+func (ParameterType) Type() protoreflect.EnumType {
+	return &file_common_proto_enumTypes[1]
+}
+
+func (x ParameterType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ParameterType.Descriptor instead.
+func (ParameterType) EnumDescriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{1}
 }
 
 type Empty struct {
@@ -115,14 +173,22 @@ var File_common_proto protoreflect.FileDescriptor
 const file_common_proto_rawDesc = "" +
 	"\n" +
 	"\fcommon.proto\x12\x05proto\"\a\n" +
-	"\x05Empty*D\n" +
-	"\fQuestionType\x12\x0f\n" +
-	"\vUNSPECIFIED\x10\x00\x12\a\n" +
+	"\x05Empty*N\n" +
+	"\fQuestionType\x12\x19\n" +
+	"\x15UNKNOWN_QUESTION_TYPE\x10\x00\x12\a\n" +
 	"\x03MCQ\x10\x01\x12\x0e\n" +
 	"\n" +
 	"SUBJECTIVE\x10\x02\x12\n" +
 	"\n" +
-	"\x06CODING\x10\x03B\bZ\x06/protob\x06proto3"
+	"\x06CODING\x10\x03*[\n" +
+	"\rParameterType\x12\x1a\n" +
+	"\x16UNKNOWN_PARAMETER_TYPE\x10\x00\x12\n" +
+	"\n" +
+	"\x06NUMBER\x10\x01\x12\n" +
+	"\n" +
+	"\x06STRING\x10\x02\x12\v\n" +
+	"\aBOOLEAN\x10\x03\x12\t\n" +
+	"\x05ARRAY\x10\x04B\bZ\x06/protob\x06proto3"
 
 var (
 	file_common_proto_rawDescOnce sync.Once
@@ -136,11 +202,12 @@ func file_common_proto_rawDescGZIP() []byte {
 	return file_common_proto_rawDescData
 }
 
-var file_common_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_common_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_common_proto_goTypes = []any{
-	(QuestionType)(0), // 0: proto.QuestionType
-	(*Empty)(nil),     // 1: proto.Empty
+	(QuestionType)(0),  // 0: proto.QuestionType
+	(ParameterType)(0), // 1: proto.ParameterType
+	(*Empty)(nil),      // 2: proto.Empty
 }
 var file_common_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -160,7 +227,7 @@ func file_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_proto_rawDesc), len(file_common_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,

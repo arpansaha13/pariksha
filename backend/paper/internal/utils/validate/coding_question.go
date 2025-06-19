@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
 )
 
@@ -45,21 +46,21 @@ func validateInputDefinition(def structs.InputDefinition) error {
 	}
 
 	switch def.Type {
-	case constants.PARAMETER_TYPE_ARRAY:
-		if def.Items == nil || len(*def.Items) != 1 {
+	case proto.ParameterType_ARRAY:
+		if def.Items == nil || len(def.Items) != 1 {
 			return status.Error(codes.InvalidArgument, "array input definition must have exactly one item")
 		}
-		if (*def.Items)[0].PropertyName != nil {
+		if def.Items[0].PropertyName != nil {
 			return status.Error(codes.InvalidArgument, "array input definition cannot have a property name")
 		}
 		// Validate item type is primitive
-		switch (*def.Items)[0].Type {
-		case constants.PARAMETER_TYPE_NUMBER, constants.PARAMETER_TYPE_STRING, constants.PARAMETER_TYPE_BOOLEAN:
+		switch def.Items[0].Type {
+		case proto.ParameterType_NUMBER, proto.ParameterType_STRING, proto.ParameterType_BOOLEAN:
 			// Valid primitive type
 		default:
 			return status.Error(codes.InvalidArgument, "array items must have primitive types")
 		}
-	case constants.PARAMETER_TYPE_NUMBER, constants.PARAMETER_TYPE_STRING, constants.PARAMETER_TYPE_BOOLEAN:
+	case proto.ParameterType_NUMBER, proto.ParameterType_STRING, proto.ParameterType_BOOLEAN:
 		if def.Items != nil {
 			return status.Error(codes.InvalidArgument, "primitive input definition cannot have items")
 		}
@@ -72,18 +73,18 @@ func validateInputDefinition(def structs.InputDefinition) error {
 
 func validateOutputDefinition(def structs.OutputDefinition) error {
 	switch def.Type {
-	case constants.PARAMETER_TYPE_ARRAY:
-		if def.Items == nil || len(*def.Items) != 1 {
+	case proto.ParameterType_ARRAY:
+		if def.Items == nil || len(def.Items) != 1 {
 			return status.Error(codes.InvalidArgument, "array output definition must have exactly one item")
 		}
 		// Validate item type is primitive
-		switch (*def.Items)[0].Type {
-		case constants.PARAMETER_TYPE_NUMBER, constants.PARAMETER_TYPE_STRING, constants.PARAMETER_TYPE_BOOLEAN:
+		switch def.Items[0].Type {
+		case proto.ParameterType_NUMBER, proto.ParameterType_STRING, proto.ParameterType_BOOLEAN:
 			// Valid primitive type
 		default:
 			return status.Error(codes.InvalidArgument, "array output items must have primitive types")
 		}
-	case constants.PARAMETER_TYPE_NUMBER, constants.PARAMETER_TYPE_STRING, constants.PARAMETER_TYPE_BOOLEAN:
+	case proto.ParameterType_NUMBER, proto.ParameterType_STRING, proto.ParameterType_BOOLEAN:
 		if def.Items != nil {
 			return status.Error(codes.InvalidArgument, "primitive output definition cannot have items")
 		}

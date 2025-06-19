@@ -2,10 +2,13 @@ package repositories
 
 import (
 	"database/sql"
+	"encoding/json"
 
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/models"
+	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/types"
 )
 
@@ -208,4 +211,32 @@ func (r *Question) GetInputDefinitionsLength(tx *gorm.DB, questionID types.Quest
 			) FROM questions WHERE id = ?
     `, questionID).Scan(&length).Error
 	return length, err
+}
+
+// GetInputDefinitionsByHash fetches input definitions for a coding question by hash.
+func (r *Question) GetInputDefinitionsByHash(tx *gorm.DB, questionHash string) ([]structs.InputDefinition, error) {
+	tx = r.getTx(tx)
+
+	type QueryResult struct {
+		InputDefs []byte             `gorm:"column:input_defs"`
+		Type      proto.QuestionType `gorm:"column:type"`
+	}
+	var queryRes QueryResult
+	if err := tx.Model(&models.Question{}).
+		Select("type, question->>'input_definitions' as input_defs").
+		Where("hash = ?", questionHash).
+		Take(&queryRes).Error; err != nil {
+		return nil, err
+	}
+
+	// Only allow coding questions
+	if queryRes.Type != proto.QuestionType_CODING {
+		return nil, sql.ErrNoRows
+	}
+
+	var inputDefs []structs.InputDefinition
+	if err := json.Unmarshal(queryRes.InputDefs, &inputDefs); err != nil {
+		return nil, err
+	}
+	return inputDefs, nil
 }

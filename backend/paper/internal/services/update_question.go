@@ -181,23 +181,23 @@ func shouldUpdateBoilerplates(old, new structs.CodingQuestion) bool {
 }
 
 // itemsEqual safely compares two optional item slices
-func itemsEqual(a, b *[]structs.ParameterItem) bool {
-	if a == nil || b == nil {
-		return a == b // true if both nil
+func itemsEqual(a, b []*proto.ParameterItem) bool {
+	if a == nil && b == nil {
+		return true
 	}
-	if len(*a) != len(*b) {
+	if len(a) != len(b) {
 		return false
 	}
-	for i := range *a {
-		if (*a)[i].Type != (*b)[i].Type {
+	for i := range a {
+		if (a)[i].Type != (b)[i].Type {
 			return false
 		}
 		// Compare PropertyName pointers safely
-		if ((*a)[i].PropertyName == nil) != ((*b)[i].PropertyName == nil) {
+		if (a[i].PropertyName == nil) != ((b)[i].PropertyName == nil) {
 			return false
 		}
-		if (*a)[i].PropertyName != nil && (*b)[i].PropertyName != nil &&
-			*(*a)[i].PropertyName != *(*b)[i].PropertyName {
+		if a[i].PropertyName != nil && b[i].PropertyName != nil &&
+			*a[i].PropertyName != *b[i].PropertyName {
 			return false
 		}
 	}

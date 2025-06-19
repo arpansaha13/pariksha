@@ -19,30 +19,31 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Paper_GetUserPapers_FullMethodName        = "/proto.Paper/GetUserPapers"
-	Paper_GetPaper_FullMethodName             = "/proto.Paper/GetPaper"
-	Paper_CreatePaper_FullMethodName          = "/proto.Paper/CreatePaper"
-	Paper_UpdatePaper_FullMethodName          = "/proto.Paper/UpdatePaper"
-	Paper_DeletePapers_FullMethodName         = "/proto.Paper/DeletePapers"
-	Paper_GetPaperPermissions_FullMethodName  = "/proto.Paper/GetPaperPermissions"
-	Paper_GetPaperQuestions_FullMethodName    = "/proto.Paper/GetPaperQuestions"
-	Paper_GetPaperQuestion_FullMethodName     = "/proto.Paper/GetPaperQuestion"
-	Paper_CreateQuestion_FullMethodName       = "/proto.Paper/CreateQuestion"
-	Paper_UpdateQuestion_FullMethodName       = "/proto.Paper/UpdateQuestion"
-	Paper_DeleteQuestion_FullMethodName       = "/proto.Paper/DeleteQuestion"
-	Paper_ReorderQuestions_FullMethodName     = "/proto.Paper/ReorderQuestions"
-	Paper_GetPaperCategories_FullMethodName   = "/proto.Paper/GetPaperCategories"
-	Paper_CreateCategory_FullMethodName       = "/proto.Paper/CreateCategory"
-	Paper_UpdateCategory_FullMethodName       = "/proto.Paper/UpdateCategory"
-	Paper_DeleteCategory_FullMethodName       = "/proto.Paper/DeleteCategory"
-	Paper_ReorderCategories_FullMethodName    = "/proto.Paper/ReorderCategories"
-	Paper_GetQuestionsByIds_FullMethodName    = "/proto.Paper/GetQuestionsByIds"
-	Paper_GetCategoriesByIds_FullMethodName   = "/proto.Paper/GetCategoriesByIds"
-	Paper_GetExamQuestion_FullMethodName      = "/proto.Paper/GetExamQuestion"
-	Paper_GetQuestionHashes_FullMethodName    = "/proto.Paper/GetQuestionHashes"
-	Paper_GetQuestionIds_FullMethodName       = "/proto.Paper/GetQuestionIds"
-	Paper_GetBoilerplate_FullMethodName       = "/proto.Paper/GetBoilerplate"
-	Paper_UpsertPaperTestCases_FullMethodName = "/proto.Paper/UpsertPaperTestCases"
+	Paper_GetUserPapers_FullMethodName                     = "/proto.Paper/GetUserPapers"
+	Paper_GetPaper_FullMethodName                          = "/proto.Paper/GetPaper"
+	Paper_CreatePaper_FullMethodName                       = "/proto.Paper/CreatePaper"
+	Paper_UpdatePaper_FullMethodName                       = "/proto.Paper/UpdatePaper"
+	Paper_DeletePapers_FullMethodName                      = "/proto.Paper/DeletePapers"
+	Paper_GetPaperPermissions_FullMethodName               = "/proto.Paper/GetPaperPermissions"
+	Paper_GetPaperQuestions_FullMethodName                 = "/proto.Paper/GetPaperQuestions"
+	Paper_GetPaperQuestion_FullMethodName                  = "/proto.Paper/GetPaperQuestion"
+	Paper_CreateQuestion_FullMethodName                    = "/proto.Paper/CreateQuestion"
+	Paper_UpdateQuestion_FullMethodName                    = "/proto.Paper/UpdateQuestion"
+	Paper_DeleteQuestion_FullMethodName                    = "/proto.Paper/DeleteQuestion"
+	Paper_ReorderQuestions_FullMethodName                  = "/proto.Paper/ReorderQuestions"
+	Paper_GetPaperCategories_FullMethodName                = "/proto.Paper/GetPaperCategories"
+	Paper_CreateCategory_FullMethodName                    = "/proto.Paper/CreateCategory"
+	Paper_UpdateCategory_FullMethodName                    = "/proto.Paper/UpdateCategory"
+	Paper_DeleteCategory_FullMethodName                    = "/proto.Paper/DeleteCategory"
+	Paper_ReorderCategories_FullMethodName                 = "/proto.Paper/ReorderCategories"
+	Paper_GetQuestionsByIds_FullMethodName                 = "/proto.Paper/GetQuestionsByIds"
+	Paper_GetCategoriesByIds_FullMethodName                = "/proto.Paper/GetCategoriesByIds"
+	Paper_GetExamQuestion_FullMethodName                   = "/proto.Paper/GetExamQuestion"
+	Paper_GetQuestionHashes_FullMethodName                 = "/proto.Paper/GetQuestionHashes"
+	Paper_GetQuestionIds_FullMethodName                    = "/proto.Paper/GetQuestionIds"
+	Paper_GetBoilerplate_FullMethodName                    = "/proto.Paper/GetBoilerplate"
+	Paper_UpsertPaperTestCases_FullMethodName              = "/proto.Paper/UpsertPaperTestCases"
+	Paper_GetCodingQuestionInputDefinitions_FullMethodName = "/proto.Paper/GetCodingQuestionInputDefinitions"
 )
 
 // PaperClient is the client API for Paper service.
@@ -79,6 +80,8 @@ type PaperClient interface {
 	GetBoilerplate(ctx context.Context, in *GetBoilerplateRequest, opts ...grpc.CallOption) (*GetBoilerplateResponse, error)
 	// Test Case operations
 	UpsertPaperTestCases(ctx context.Context, in *UpsertTestCasesRequest, opts ...grpc.CallOption) (*Empty, error)
+	// Coding Question Input Definitions
+	GetCodingQuestionInputDefinitions(ctx context.Context, in *GetCodingQuestionInputDefinitionsRequest, opts ...grpc.CallOption) (*GetCodingQuestionInputDefinitionsResponse, error)
 }
 
 type paperClient struct {
@@ -329,6 +332,16 @@ func (c *paperClient) UpsertPaperTestCases(ctx context.Context, in *UpsertTestCa
 	return out, nil
 }
 
+func (c *paperClient) GetCodingQuestionInputDefinitions(ctx context.Context, in *GetCodingQuestionInputDefinitionsRequest, opts ...grpc.CallOption) (*GetCodingQuestionInputDefinitionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCodingQuestionInputDefinitionsResponse)
+	err := c.cc.Invoke(ctx, Paper_GetCodingQuestionInputDefinitions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PaperServer is the server API for Paper service.
 // All implementations must embed UnimplementedPaperServer
 // for forward compatibility.
@@ -363,6 +376,8 @@ type PaperServer interface {
 	GetBoilerplate(context.Context, *GetBoilerplateRequest) (*GetBoilerplateResponse, error)
 	// Test Case operations
 	UpsertPaperTestCases(context.Context, *UpsertTestCasesRequest) (*Empty, error)
+	// Coding Question Input Definitions
+	GetCodingQuestionInputDefinitions(context.Context, *GetCodingQuestionInputDefinitionsRequest) (*GetCodingQuestionInputDefinitionsResponse, error)
 	mustEmbedUnimplementedPaperServer()
 }
 
@@ -444,6 +459,9 @@ func (UnimplementedPaperServer) GetBoilerplate(context.Context, *GetBoilerplateR
 }
 func (UnimplementedPaperServer) UpsertPaperTestCases(context.Context, *UpsertTestCasesRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpsertPaperTestCases not implemented")
+}
+func (UnimplementedPaperServer) GetCodingQuestionInputDefinitions(context.Context, *GetCodingQuestionInputDefinitionsRequest) (*GetCodingQuestionInputDefinitionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCodingQuestionInputDefinitions not implemented")
 }
 func (UnimplementedPaperServer) mustEmbedUnimplementedPaperServer() {}
 func (UnimplementedPaperServer) testEmbeddedByValue()               {}
@@ -898,6 +916,24 @@ func _Paper_UpsertPaperTestCases_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Paper_GetCodingQuestionInputDefinitions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCodingQuestionInputDefinitionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaperServer).GetCodingQuestionInputDefinitions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Paper_GetCodingQuestionInputDefinitions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaperServer).GetCodingQuestionInputDefinitions(ctx, req.(*GetCodingQuestionInputDefinitionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Paper_ServiceDesc is the grpc.ServiceDesc for Paper service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1000,6 +1036,10 @@ var Paper_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpsertPaperTestCases",
 			Handler:    _Paper_UpsertPaperTestCases_Handler,
+		},
+		{
+			MethodName: "GetCodingQuestionInputDefinitions",
+			Handler:    _Paper_GetCodingQuestionInputDefinitions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -347,3 +347,22 @@ func (s *Question) GetQuestionIds(ctx context.Context, questionHashes []string) 
 		QuestionIds: ids,
 	}, nil
 }
+
+// GetCodingQuestionInputDefinitions fetches input definitions for a coding question by hash.
+func (s *Question) GetCodingQuestionInputDefinitions(ctx context.Context, questionHash string) (*proto.GetCodingQuestionInputDefinitionsResponse, error) {
+	inputDefs, err := s.questionRepo.GetInputDefinitionsByHash(nil, questionHash)
+	if err != nil {
+		return nil, grpcerror.Internal(err, "failed to fetch input definitions")
+	}
+	resp := &proto.GetCodingQuestionInputDefinitionsResponse{
+		InputDefinitions: make([]*proto.InputDefinition, len(inputDefs)),
+	}
+	for i, def := range inputDefs {
+		resp.InputDefinitions[i] = &proto.InputDefinition{
+			VariableName: def.VariableName,
+			Type:         def.Type,
+			Items:        def.Items,
+		}
+	}
+	return resp, nil
+}

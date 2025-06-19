@@ -18,7 +18,7 @@ func TestRunCode(t *testing.T) {
 	tests := []struct {
 		name         string
 		code         string
-		inputDefs    []structs.InputDefinition
+		inputDefs    []proto.InputDefinition
 		outputDef    structs.OutputDefinition
 		testCases    []*proto.TestCase
 		expectedCode codes.Code
@@ -27,12 +27,12 @@ func TestRunCode(t *testing.T) {
 		{
 			name: "Success - Add two numbers",
 			code: `function solve(a, b) { return a + b; }`,
-			inputDefs: []structs.InputDefinition{
-				{VariableName: "a", Type: constants.PARAMETER_TYPE_NUMBER},
-				{VariableName: "b", Type: constants.PARAMETER_TYPE_NUMBER},
+			inputDefs: []proto.InputDefinition{
+				{VariableName: "a", Type: proto.ParameterType_NUMBER},
+				{VariableName: "b", Type: proto.ParameterType_NUMBER},
 			},
 			outputDef: structs.OutputDefinition{
-				Type: constants.PARAMETER_TYPE_NUMBER,
+				Type: proto.ParameterType_NUMBER,
 			},
 			testCases: []*proto.TestCase{
 				{
@@ -57,12 +57,12 @@ func TestRunCode(t *testing.T) {
 		{
 			name: "Compilation Error - Invalid syntax",
 			code: `function solve(a, b {`, // Missing closing parenthesis
-			inputDefs: []structs.InputDefinition{
-				{VariableName: "a", Type: constants.PARAMETER_TYPE_NUMBER},
-				{VariableName: "b", Type: constants.PARAMETER_TYPE_NUMBER},
+			inputDefs: []proto.InputDefinition{
+				{VariableName: "a", Type: proto.ParameterType_NUMBER},
+				{VariableName: "b", Type: proto.ParameterType_NUMBER},
 			},
 			outputDef: structs.OutputDefinition{
-				Type: constants.PARAMETER_TYPE_NUMBER,
+				Type: proto.ParameterType_NUMBER,
 			},
 			testCases: []*proto.TestCase{
 				{
@@ -80,12 +80,12 @@ func TestRunCode(t *testing.T) {
 		{
 			name: "Runtime Error - Undeclared variable",
 			code: `function solve(a, b) { return a / x; }`, // x is undeclared
-			inputDefs: []structs.InputDefinition{
-				{VariableName: "a", Type: constants.PARAMETER_TYPE_NUMBER},
-				{VariableName: "b", Type: constants.PARAMETER_TYPE_NUMBER},
+			inputDefs: []proto.InputDefinition{
+				{VariableName: "a", Type: proto.ParameterType_NUMBER},
+				{VariableName: "b", Type: proto.ParameterType_NUMBER},
 			},
 			outputDef: structs.OutputDefinition{
-				Type: constants.PARAMETER_TYPE_NUMBER,
+				Type: proto.ParameterType_NUMBER,
 			},
 			testCases: []*proto.TestCase{
 				{
@@ -103,12 +103,12 @@ func TestRunCode(t *testing.T) {
 		{
 			name: "Success - String concatenation",
 			code: `function solve(first, last) { return first + " " + last; }`,
-			inputDefs: []structs.InputDefinition{
-				{VariableName: "first", Type: constants.PARAMETER_TYPE_STRING},
-				{VariableName: "last", Type: constants.PARAMETER_TYPE_STRING},
+			inputDefs: []proto.InputDefinition{
+				{VariableName: "first", Type: proto.ParameterType_STRING},
+				{VariableName: "last", Type: proto.ParameterType_STRING},
 			},
 			outputDef: structs.OutputDefinition{
-				Type: constants.PARAMETER_TYPE_STRING,
+				Type: proto.ParameterType_STRING,
 			},
 			testCases: []*proto.TestCase{
 				{
@@ -132,12 +132,12 @@ func TestRunCode(t *testing.T) {
 		{
 			name: "Success - Boolean operations",
 			code: `function solve(a, b) { return a && b; }`,
-			inputDefs: []structs.InputDefinition{
-				{VariableName: "a", Type: constants.PARAMETER_TYPE_BOOLEAN},
-				{VariableName: "b", Type: constants.PARAMETER_TYPE_BOOLEAN},
+			inputDefs: []proto.InputDefinition{
+				{VariableName: "a", Type: proto.ParameterType_BOOLEAN},
+				{VariableName: "b", Type: proto.ParameterType_BOOLEAN},
 			},
 			outputDef: structs.OutputDefinition{
-				Type: constants.PARAMETER_TYPE_BOOLEAN,
+				Type: proto.ParameterType_BOOLEAN,
 			},
 			testCases: []*proto.TestCase{
 				{
@@ -161,17 +161,17 @@ func TestRunCode(t *testing.T) {
 		{
 			name: "Success - Array operations",
 			code: `function solve(arr) { return arr.reduce((sum, n) => sum + n, 0); }`,
-			inputDefs: []structs.InputDefinition{
+			inputDefs: []proto.InputDefinition{
 				{
 					VariableName: "arr",
-					Type:         constants.PARAMETER_TYPE_ARRAY,
-					Items: &[]structs.ParameterItem{
-						{Type: constants.PARAMETER_TYPE_NUMBER},
+					Type:         proto.ParameterType_ARRAY,
+					Items: []*proto.ParameterItem{
+						{Type: proto.ParameterType_NUMBER},
 					},
 				},
 			},
 			outputDef: structs.OutputDefinition{
-				Type: constants.PARAMETER_TYPE_NUMBER,
+				Type: proto.ParameterType_NUMBER,
 			},
 			testCases: []*proto.TestCase{
 				{
@@ -195,17 +195,17 @@ func TestRunCode(t *testing.T) {
 		{
 			name: "Success - Mixed types array",
 			code: `function solve(arr) { return arr.join(""); }`,
-			inputDefs: []structs.InputDefinition{
+			inputDefs: []proto.InputDefinition{
 				{
 					VariableName: "arr",
-					Type:         constants.PARAMETER_TYPE_ARRAY,
-					Items: &[]structs.ParameterItem{
-						{Type: constants.PARAMETER_TYPE_STRING},
+					Type:         proto.ParameterType_ARRAY,
+					Items: []*proto.ParameterItem{
+						{Type: proto.ParameterType_STRING},
 					},
 				},
 			},
 			outputDef: structs.OutputDefinition{
-				Type: constants.PARAMETER_TYPE_STRING,
+				Type: proto.ParameterType_STRING,
 			},
 			testCases: []*proto.TestCase{
 				{
@@ -232,12 +232,12 @@ func TestRunCode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			server := setupTest(t)
 
-			// Create question with input/output definitions
-			questionHash := createCodingQuestion(t, tt.inputDefs, tt.outputDef)
+			// Mock input/output definitions
+			mockInputDefinitions = tt.inputDefs
 
 			// Run code
 			req := &proto.RunCodeRequest{
-				QuestionHash: questionHash,
+				QuestionHash: mockQuestionHash,
 				Code:         tt.code,
 				TestCases:    tt.testCases,
 				Environment:  constants.LangNode,
