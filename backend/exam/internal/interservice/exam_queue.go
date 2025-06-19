@@ -15,20 +15,20 @@ import (
 	"pariksha/exam/internal/config/env"
 )
 
-var asynqClient *asynq.Client
+var examQueueClient *asynq.Client
 
 // InitExamQueue initializes Redis connection for Asynq with given host and port
 func InitExamQueue(host, port string) error {
 	redisAddr := fmt.Sprintf("%s:%s", host, port)
-	asynqClient = asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
+	examQueueClient = asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
 
 	// Test connection
-	if err := asynqClient.Close(); err != nil {
+	if err := examQueueClient.Close(); err != nil {
 		return fmt.Errorf("failed to connect to Redis: %v", err)
 	}
 
 	// Recreate client for actual use
-	asynqClient = asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
+	examQueueClient = asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
 	return nil
 }
 
@@ -44,73 +44,45 @@ func init() {
 }
 
 func CloseExamQueue() {
-	if asynqClient != nil {
-		asynqClient.Close()
+	if examQueueClient != nil {
+		examQueueClient.Close()
 	}
 }
 
+// EnqueuePrepareQuestions enqueues a prepare questions task.
 func EnqueuePrepareQuestions(payload structs.PrepareQuestionsPayload) {
-	taskBytes, err := json.Marshal(payload)
-	if err != nil {
-		log.Default().Printf("Failed to marshal payload: %v", err)
-		return
-	}
-
-	task := asynq.NewTask(constants.EXAM_QUEUE_TASK_PREPARE_QUESTIONS, taskBytes)
-
-	info, err := asynqClient.Enqueue(task)
-	if err != nil {
-		log.Default().Printf("Failed to enqueue task: %v", err)
-		return
-	}
-
-	if env.GO_ENV != constants.GO_ENV_TEST {
-		log.Default().Printf("Enqueued task: id=%s queue=%s", info.ID, info.Queue)
-	}
+	pushToExamQueue(constants.EXAM_QUEUE_TASK_PREPARE_QUESTIONS, payload)
 }
 
+// EnqueueAutoEndExam enqueues an auto-end exam task at the scheduled end time.
 func EnqueueAutoEndExam(payload structs.AutoEndExamPayload, scheduledEndTime time.Time) {
-	taskBytes, err := json.Marshal(payload)
-	if err != nil {
-		log.Default().Printf("Failed to marshal auto-end payload: %v", err)
-		return
-	}
-
-	task := asynq.NewTask(constants.EXAM_QUEUE_TASK_AUTO_END, taskBytes)
-
-	// Schedule the task at the exact scheduledEndTime
-	info, err := asynqClient.Enqueue(task, asynq.ProcessAt(scheduledEndTime))
-	if err != nil {
-		log.Default().Printf("Failed to enqueue auto-end task: %v", err)
-		return
-	}
-
-	if env.GO_ENV != constants.GO_ENV_TEST {
-		log.Default().Printf("Enqueued auto-end task: id=%s queue=%s at=%v", info.ID, info.Queue, scheduledEndTime)
-	}
+	pushToExamQueue(constants.EXAM_QUEUE_TASK_AUTO_END, payload, asynq.ProcessAt(scheduledEndTime))
 }
 
+// EnqueuePostDeleteExamsCleanup enqueues a delete exams cleanup task.
 func EnqueuePostDeleteExamsCleanup(examIds []types.ExamID) error {
 	payload := structs.DeleteExamsPayload{
 		ExamIDs: examIds,
 	}
+	pushToExamQueue(constants.EXAM_QUEUE_TASK_DELETE_EXAMS, payload)
+	return nil
+}
 
+// pushToExamQueue marshals the payload and enqueues it as an Asynq task to the exam queue.
+func pushToExamQueue(taskType string, payload any, opts ...asynq.Option) {
 	taskBytes, err := json.Marshal(payload)
 	if err != nil {
-		log.Default().Printf("Failed to marshal delete payload: %v", err)
-		return fmt.Errorf("failed to marshal delete payload: %v", err)
+		log.Default().Printf("Failed to marshal exam queue payload: %v", err)
+		return
 	}
-
-	task := asynq.NewTask(constants.EXAM_QUEUE_TASK_DELETE_EXAMS, taskBytes)
-	info, err := asynqClient.Enqueue(task)
+	options := append([]asynq.Option{asynq.Queue(constants.EXAM_QUEUE_NAME)}, opts...)
+	task := asynq.NewTask(taskType, taskBytes)
+	info, err := examQueueClient.Enqueue(task, options...)
 	if err != nil {
-		log.Default().Printf("Failed to enqueue delete task: %v", err)
-		return fmt.Errorf("failed to enqueue delete task: %v", err)
+		log.Default().Printf("Failed to enqueue exam queue task: %v", err)
+		return
 	}
-
 	if env.GO_ENV != constants.GO_ENV_TEST {
-		log.Default().Printf("Enqueued delete cleanup task: id=%s queue=%s", info.ID, info.Queue)
+		log.Default().Printf("Enqueued exam queue task: id=%s queue=%s", info.ID, info.Queue)
 	}
-
-	return nil
 }

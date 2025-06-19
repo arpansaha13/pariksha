@@ -16,7 +16,11 @@ func main() {
 	redisAddr := fmt.Sprintf("%s:%s", env.EXAM_QUEUE_HOST, env.EXAM_QUEUE_PORT)
 	srv := asynq.NewServer(
 		asynq.RedisClientOpt{Addr: redisAddr},
-		asynq.Config{Concurrency: 10},
+		asynq.Config{
+			Concurrency: 10,
+			Queues: map[string]int{
+				constants.EXAM_QUEUE_NAME: 3,
+			}},
 	)
 
 	mux := asynq.NewServeMux()

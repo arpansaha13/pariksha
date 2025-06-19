@@ -32,8 +32,8 @@ var (
 )
 
 var (
-	RABBIT_SERVER_HOST string
-	RABBIT_SERVER_PORT string
+	MAIL_QUEUE_HOST string
+	MAIL_QUEUE_PORT string
 )
 
 func init() {
@@ -70,8 +70,8 @@ func init() {
 		USERS_DB_PORT = os.Getenv("USERS_DB_PORT")
 		USERS_DB_SSLMODE = os.Getenv("USERS_DB_SSLMODE")
 
-		RABBIT_SERVER_HOST = os.Getenv("RABBIT_SERVER_HOST")
-		RABBIT_SERVER_PORT = os.Getenv("RABBIT_SERVER_PORT")
+		MAIL_QUEUE_HOST = os.Getenv("MAIL_QUEUE_HOST")
+		MAIL_QUEUE_PORT = os.Getenv("MAIL_QUEUE_PORT")
 	}
 }
 
@@ -91,8 +91,8 @@ func getRequiredEnvVars() []string {
 			"USERS_DB_HOST",
 			"USERS_DB_PORT",
 			"USERS_DB_SSLMODE",
-			"RABBIT_SERVER_HOST",
-			"RABBIT_SERVER_PORT",
+			"MAIL_QUEUE_HOST",
+			"MAIL_QUEUE_PORT",
 		}
 		baseEnvVars = append(baseEnvVars, additionalEnvVars...)
 	}

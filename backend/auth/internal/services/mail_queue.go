@@ -1,13 +1,11 @@
 package services
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
-	"time"
 
-	rabbit "github.com/rabbitmq/amqp091-go"
+	"github.com/hibiken/asynq"
 
 	"pariksha/auth/internal/config/env"
 	"pariksha/common/pkg/constants"
@@ -15,39 +13,20 @@ import (
 	"pariksha/common/pkg/utils"
 )
 
-var (
-	rabbitConn *rabbit.Connection
-	rabbitCh   *rabbit.Channel
-	mailQueue  rabbit.Queue
-)
+var mailQueueClient *asynq.Client
 
-// InitRabbitMQ initializes RabbitMQ connection with given host and port
-func InitRabbitMQ(host, port string) error {
-	var err error
-	var rabbitAddr = host + ":" + port
+// InitMailQueue initializes Redis connection for Asynq with given host and port
+func InitMailQueue(host, port string) error {
+	redisAddr := fmt.Sprintf("%s:%s", host, port)
+	mailQueueClient = asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
 
-	rabbitConn, err = rabbit.Dial(fmt.Sprintf("amqp://guest:guest@%s/", rabbitAddr))
-	if err != nil {
-		return fmt.Errorf("failed to connect to RabbitMQ: %v", err)
+	// Test connection
+	if err := mailQueueClient.Close(); err != nil {
+		return fmt.Errorf("failed to connect to Redis: %v", err)
 	}
 
-	rabbitCh, err = rabbitConn.Channel()
-	if err != nil {
-		return fmt.Errorf("failed to open a channel: %v", err)
-	}
-
-	mailQueue, err = rabbitCh.QueueDeclare(
-		constants.RABBIT_MAIL_QUEUE_NAME,
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to declare a queue: %v", err)
-	}
-
+	// Recreate client for actual use
+	mailQueueClient = asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
 	return nil
 }
 
@@ -58,16 +37,13 @@ func init() {
 	}
 
 	// Initialize with environment variables for non-test environments
-	err := InitRabbitMQ(env.RABBIT_SERVER_HOST, env.RABBIT_SERVER_PORT)
-	utils.FailOnError(err, "Failed to initialize RabbitMQ")
+	err := InitMailQueue(env.MAIL_QUEUE_HOST, env.MAIL_QUEUE_PORT)
+	utils.FailOnError(err, "Failed to initialize Mail Queue")
 }
 
-func CloseRabbit() {
-	if rabbitConn != nil {
-		rabbitConn.Close()
-	}
-	if rabbitCh != nil {
-		rabbitCh.Close()
+func CloseMailQueue() {
+	if mailQueueClient != nil {
+		mailQueueClient.Close()
 	}
 }
 
@@ -75,46 +51,42 @@ type mailService struct{}
 
 var MailService mailService
 
+// SendVerificationMail enqueues a verification mail task.
 func (*mailService) SendVerificationMail(payload *structs.MailRequestVerification) {
-	pushToMailQueue(constants.MAIL_TYPE_VERIFICATION, payload)
+	pushToMailQueue(constants.MAIL_QUEUE_TASK_SEND_VERIFICATION, payload)
 }
 
+// SendLoginOtpMail enqueues a login OTP mail task.
 func (*mailService) SendLoginOtpMail(payload *structs.MailRequestLoginOtp) {
-	pushToMailQueue(constants.MAIL_TYPE_LOGIN_OTP, payload)
+	pushToMailQueue(constants.MAIL_QUEUE_TASK_SEND_LOGIN_OTP, payload)
 }
 
+// SendForgotPasswordMail enqueues a forgot password mail task.
 func (*mailService) SendForgotPasswordMail(payload *structs.MailRequestForgotPassword) {
-	pushToMailQueue(constants.MAIL_TYPE_FORGOT_PASSWORD, payload)
+	pushToMailQueue(constants.MAIL_QUEUE_TASK_SEND_FORGOT_PASSWORD, payload)
 }
 
+// SendResetPasswordMail enqueues a reset password mail task.
 func (*mailService) SendResetPasswordMail(payload *structs.MailRequestResetPassword) {
-	pushToMailQueue(constants.MAIL_TYPE_RESET_PASSWORD, payload)
+	pushToMailQueue(constants.MAIL_QUEUE_TASK_SEND_RESET_PASSWORD, payload)
 }
 
-func pushToMailQueue(mailType string, payload any) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	byteArray, err := json.Marshal(payload)
-
+// pushToMailQueue marshals the payload and enqueues it as an Asynq task.
+func pushToMailQueue(taskType string, payload any) {
+	taskBytes, err := json.Marshal(payload)
 	if err != nil {
-		log.Default().Println("Failed to marshal message: ", err)
+		log.Default().Printf("Failed to marshal mail payload: %v", err)
+		return
 	}
 
-	err = rabbitCh.PublishWithContext(
-		ctx,
-		"",
-		mailQueue.Name,
-		false,
-		false,
-		rabbit.Publishing{
-			ContentType: "text/plain",
-			Body:        byteArray,
-			Type:        mailType,
-		},
-	)
-
+	task := asynq.NewTask(taskType, taskBytes)
+	info, err := mailQueueClient.Enqueue(task, asynq.Queue(constants.MAIL_QUEUE_NAME))
 	if err != nil {
-		log.Default().Println("Failed to publish a message: ", err)
+		log.Default().Printf("Failed to enqueue mail task: %v", err)
+		return
+	}
+
+	if env.GO_ENV != constants.GO_ENV_TEST {
+		log.Default().Printf("Enqueued mail task: id=%s queue=%s", info.ID, info.Queue)
 	}
 }

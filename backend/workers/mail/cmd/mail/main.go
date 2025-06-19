@@ -4,55 +4,34 @@ import (
 	"fmt"
 	"log"
 
-	rabbit "github.com/rabbitmq/amqp091-go"
+	"github.com/hibiken/asynq"
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/utils"
-	"pariksha/mail/internal/config/env"
-	"pariksha/mail/internal/router"
+	"pariksha/workers/mail/internal/config/env"
+	"pariksha/workers/mail/internal/handlers"
 )
 
 func main() {
-	var rabbitAddr = env.RABBIT_SERVER_HOST + ":" + env.RABBIT_SERVER_PORT
-
-	conn, err := rabbit.Dial(fmt.Sprintf("amqp://guest:guest@%s/", rabbitAddr))
-	utils.FailOnError(err, "Failed to connect to RabbitMQ")
-	defer conn.Close()
-
-	ch, err := conn.Channel()
-	utils.FailOnError(err, "Failed to open a channel")
-	defer ch.Close()
-
-	q, err := ch.QueueDeclare(
-		constants.RABBIT_MAIL_QUEUE_NAME,
-		false,
-		false,
-		false,
-		false,
-		nil,
+	redisAddr := fmt.Sprintf("%s:%s", env.MAIL_QUEUE_HOST, env.MAIL_QUEUE_PORT)
+	srv := asynq.NewServer(
+		asynq.RedisClientOpt{Addr: redisAddr},
+		asynq.Config{
+			Concurrency: 10,
+			Queues: map[string]int{
+				constants.MAIL_QUEUE_NAME: 3,
+			}},
 	)
-	utils.FailOnError(err, "Failed to declare a queue")
 
-	msgs, err := ch.Consume(
-		q.Name,
-		"",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-	utils.FailOnError(err, "Failed to register a consumer")
+	mux := asynq.NewServeMux()
+	mux.HandleFunc(constants.MAIL_QUEUE_TASK_SEND_LOGIN_OTP, handlers.SendLoginOtpMail)
+	mux.HandleFunc(constants.MAIL_QUEUE_TASK_SEND_FORGOT_PASSWORD, handlers.SendForgotPasswordMail)
+	mux.HandleFunc(constants.MAIL_QUEUE_TASK_SEND_RESET_PASSWORD, handlers.SendResetPasswordMail)
+	mux.HandleFunc(constants.MAIL_QUEUE_TASK_SEND_VERIFICATION, handlers.SendVerificationMail)
 
-	var forever chan struct{}
+	if err := srv.Run(mux); err != nil {
+		utils.FailOnError(err, "Failed to run asynq server")
+	}
 
-	go func() {
-		for d := range msgs {
-			router.RouteMailRequest(d)
-		}
-	}()
-
-	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
-
-	<-forever
+	log.Printf(" [*] Running exam questions worker. To exit press CTRL+C")
 }

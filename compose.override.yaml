@@ -45,11 +45,12 @@ services:
     depends_on:
       usersDb:
         condition: service_healthy
-      mailQueue:
+      commonQueue:
         condition: service_healthy
     networks:
       - backend-network
       - auth-network
+      - common-queue-network
 
   paper:
     depends_on:
@@ -64,7 +65,7 @@ services:
     depends_on:
       examsDb:
         condition: service_healthy
-      examQueue:
+      commonQueue:
         condition: service_healthy
       paper:
         condition: service_started
@@ -72,6 +73,7 @@ services:
       - backend-network
       - exam-network
       - exam-paper-network
+      - common-queue-network
 
   engine:
     depends_on:
@@ -86,10 +88,10 @@ services:
 
   mailWorker:
     depends_on:
-      mailQueue:
+      commonQueue:
         condition: service_healthy
     networks:
-      - mail-network
+      - common-queue-network
 
   sessionsCron:
     depends_on:
@@ -98,34 +100,24 @@ services:
     networks:
       - auth-network
 
-  mailQueue:
-    image: rabbitmq:3-management-alpine
-    container_name: mail_queue
-    healthcheck:
-      test: rabbitmq-diagnostics -q status
-      interval: 15s
-      timeout: 70s
-      retries: 3
-    volumes:
-     - ./docker/data/mailQueue/:/var/lib/rabbitmq/mnesia/
-     - ./docker/conf/mailQueue/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
-    restart: always
-    networks:
-      - auth-network
-      - mail-network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "1"
-
-  examQueue:
-    volumes:
-      - ./docker/data/examQueue/:/data
-      - ./docker/conf/examQueue/redis.conf:/usr/local/etc/redis/redis.conf
+  # A common message queue for all services
+  commonQueue:
+    image: redis:7-alpine
+    container_name: common_queue
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: always
+    expose:
+      - "6379"
+    volumes:
+      - ./docker/data/commonQueue/:/data
+      - ./docker/conf/commonQueue/redis.conf:/usr/local/etc/redis/redis.conf
     networks:
-      - exam-network
+      - common-queue-network
     logging:
       driver: "json-file"
       options:
@@ -176,7 +168,7 @@ services:
 
   examWorker:
     depends_on:
-      examQueue:
+      commonQueue:
         condition: service_healthy
       examsDb:
         condition: service_healthy
@@ -185,6 +177,7 @@ services:
     networks:
       - exam-network
       - paper-network
+      - common-queue-network
 
 networks:
   nginx-network:
@@ -193,8 +186,8 @@ networks:
     name: backend-network
   auth-network:
     name: auth-network
-  mail-network:
-    name: mail-network
+  common-queue-network:
+    name: common-queue-network
   paper-network:
     name: paper-network
   exam-network:

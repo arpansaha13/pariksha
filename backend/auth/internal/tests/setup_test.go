@@ -100,13 +100,13 @@ func setupContainers() func() {
 		log.Fatalf("Failed to initialize DB: %v", err)
 	}
 
-	err = services.InitRabbitMQ(rabbitHost, rabbitPort.Port())
+	err = services.InitMailQueue(rabbitHost, rabbitPort.Port())
 	if err != nil {
 		log.Fatalf("Failed to initialize RabbitMQ: %v", err)
 	}
 
 	cleanup := func() {
-		services.CloseRabbit()
+		services.CloseMailQueue()
 		pgContainer.Terminate(ctx)
 		rabbitmq.Terminate(ctx)
 	}

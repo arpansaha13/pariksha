@@ -37,5 +37,5 @@ func closeConnections() {
 	sqlDb, _ := db.DB.DB()
 	sqlDb.Close()
 
-	services.CloseRabbit()
+	services.CloseMailQueue()
 }
