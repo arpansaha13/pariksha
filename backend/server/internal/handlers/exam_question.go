@@ -131,6 +131,7 @@ func GetExamQuestion(w http.ResponseWriter, r *http.Request) {
 
 	response := dtos.ExamQuestionResponseDto{
 		ID:       question.QuestionHash,
+		Type:     question.Type,
 		Question: question.RawQuestion,
 	}
 

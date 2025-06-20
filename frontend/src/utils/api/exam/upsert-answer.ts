@@ -1,7 +1,7 @@
 interface UpsertAnswerBody {
-  question_id: number
+  question_id: QuestionId
   /** `null` answers clears the saved answer */
-  answer: MCQAnswer | SubjectiveAnswer | null
+  answer: MCQAnswer | SubjectiveAnswer | CodingAnswer | null
 }
 
 export async function upsertAnswer(examId: ExamId, body: UpsertAnswerBody) {

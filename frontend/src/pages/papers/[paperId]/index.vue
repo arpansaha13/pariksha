@@ -266,7 +266,7 @@ watchImmediate(route, newRoute => {
   if (isNullOrUndefined(query) || isNullOrUndefined(query.category)) return
   const categoryId = parseInt(query.category as string) as CategoryId
   paperStore.lastVisitedQuestionForCategory[categoryId] =
-    query.question as string
+    query.question as QuestionId
 })
 
 // ________________CREATE/EDIT QUESTION PREREQUISITES_______________

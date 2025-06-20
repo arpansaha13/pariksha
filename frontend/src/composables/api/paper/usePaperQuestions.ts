@@ -6,7 +6,7 @@ export function usePaperQuestions(paperId: PaperId) {
     () => $api<QuestionMinimal[]>(`/api/papers/${paperId}/questions`),
     {
       transform: questions => {
-        const byCategory = {} as Record<number, QuestionMinimal[]>
+        const byCategory = {} as Record<CategoryId, QuestionMinimal[]>
 
         for (const question of questions) {
           const categoryId = question.category_id

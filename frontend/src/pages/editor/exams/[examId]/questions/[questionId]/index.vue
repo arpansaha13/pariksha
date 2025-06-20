@@ -21,6 +21,12 @@
             loading-auto
             @click="runCode(panelIsCollapsed, togglePanel)"
           />
+
+          <UButton
+            label="Save"
+            icon="heroicons:cloud-arrow-up"
+            variant="soft"
+          />
         </div>
       </div>
     </template>
@@ -125,12 +131,22 @@ definePageMeta({
 
 const route = useRoute()
 const questionId = route.params.questionId as QuestionId
+const examId = route.params.examId as ExamId
+
+const examStore = useExamStore()
+
+// If the examId doesn't match, reset the store for the new exam
+if (examStore.examId && examStore.examId !== examId) {
+  examStore.$reset()
+}
+
+examStore.examId = examId
 
 const {
   data: questionData,
   error: questionError,
   status: questionStatus,
-} = await usePaperQuestion(questionId)
+} = await useExamQuestion(questionId)
 
 await callOnce(
   () => {
@@ -222,4 +238,52 @@ async function runCode(panelIsCollapsed: boolean, togglePanel: () => void) {
 
   panelTabActive.value = PanelTabItemValue.RUN_RESULTS
 }
+
+// _______________________AUTO SAVE ANSWER________________________
+// function useSaveUpdatedAnswers() {
+//   /** Save answer for a coding question */
+//   function saveCodingAnswer(
+//     questionId: QuestionId,
+//     savedAnswer: CodingAnswer,
+//     newAnswer: CodingAnswer
+//   ) {
+//     const upsertAnswerBody = {
+//       question_id: questionId,
+//       answer: null as CodingAnswer | null,
+//     }
+
+//     const savedCode = savedAnswer ? savedAnswer.code : ''
+//     const answerCode = newAnswer.code ?? ''
+
+//     if (savedAnswer && !answerCode) {
+//       return upsertAnswer(examId, upsertAnswerBody)
+//     }
+
+//     if (!savedCode && !answerCode) {
+//       return Promise.resolve(null)
+//     }
+
+//     if (savedCode === answerCode) {
+//       return Promise.resolve(null)
+//     }
+
+//     upsertAnswerBody.answer = { code: answerCode }
+//     return upsertAnswer(examId, upsertAnswerBody)
+//   }
+
+//   async function saveUpdatedAnswers() {
+//     const res = await saveCodingAnswer(questionId, savedState, mcqAnswer)
+//     if (isNullOrUndefined(res)) return
+//     savedState.optionIndex = (res.answer as MCQAnswer).optionIndex
+//   }
+
+//   useIntervalFn(
+//     saveUpdatedAnswers,
+//     AUTO_SAVE_EXAM_ANSWER_INTERVAL_SECONDS * 1000
+//   )
+
+//   return saveUpdatedAnswers
+// }
+
+// const {} = useSaveUpdatedAnswers()
 </script>

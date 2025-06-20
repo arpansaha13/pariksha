@@ -3,7 +3,7 @@ import { isNullOrUndefined } from '@arpansaha13/utils'
 
 interface PaperStore {
   unsavedCount: Record<CategoryId, number>
-  lastVisitedQuestionForCategory: Record<CategoryId, string>
+  lastVisitedQuestionForCategory: Record<CategoryId, QuestionId>
 }
 
 export const usePaperStore = defineStore(paperStoreId, {
@@ -13,14 +13,14 @@ export const usePaperStore = defineStore(paperStoreId, {
   }),
   getters: {
     getQuestionIdForCategoryId() {
-      const route = useRoute()
-      const paperId = route.params.paperId as PaperId
-
-      const { data: groupedQuestions } = useNuxtData<
-        Record<number, QuestionMinimal[]>
-      >(UseAsyncDataKeys.paper_questions(paperId))
-
       return (categoryId: CategoryId) => {
+        const route = useRoute()
+        const paperId = route.params.paperId as PaperId
+
+        const { data: groupedQuestions } = useNuxtData<
+          Record<CategoryId, QuestionMinimal[]>
+        >(UseAsyncDataKeys.paper_questions(paperId))
+
         const categoryQuestions = groupedQuestions.value?.[categoryId]
         if (isNullOrUndefined(categoryQuestions)) return QUESTION_ID_ADD
         const questionId =

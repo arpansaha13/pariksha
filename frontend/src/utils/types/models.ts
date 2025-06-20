@@ -202,7 +202,7 @@ export type QuestionMinimal = Pick<
 // __________________________EVALUATION___________________________
 export interface EvaluationAnswer {
   id: AnswerId
-  question_id: Answer['question_id']
+  question_id: QuestionId
   score_awarded: Answer['score_awarded']
   comments: Answer['comments']
 }
@@ -214,6 +214,10 @@ export interface MCQAnswer {
 
 export interface SubjectiveAnswer {
   text: string
+}
+
+export interface CodingAnswer {
+  code: string
 }
 
 export interface Answer {

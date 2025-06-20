@@ -1,15 +1,17 @@
 import { isNullOrUndefined } from '@arpansaha13/utils'
 
-export function useExamQuestion(questionId: ComputedRef<QuestionId | null>) {
+export function useExamQuestion(
+  questionId: QuestionId | ComputedRef<QuestionId | null>
+) {
   const { $api } = useNuxtApp()
 
   return useAsyncData(
-    () => UseAsyncDataKeys.exam_question(questionId.value),
+    () => UseAsyncDataKeys.exam_question(unref(questionId)),
     async () => {
-      if (isNullOrUndefined(questionId.value)) return Promise.resolve(null)
+      if (isNullOrUndefined(unref(questionId))) return Promise.resolve(null)
 
       const data = await $api<Question>(
-        `/api/exams/questions/${questionId.value}`
+        `/api/exams/questions/${unref(questionId)}`
       )
 
       // If there are no tags, backend returns null

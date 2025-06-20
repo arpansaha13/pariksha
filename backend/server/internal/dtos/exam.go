@@ -80,6 +80,7 @@ type ExamCategoriesResponseDto struct {
 
 type ExamQuestionResponseDto struct {
 	ID        string              `json:"id"`
+	Type      proto.QuestionType  `json:"type"`
 	Question  json.RawMessage     `json:"question"`
 	TestCases *[]PaperTestCaseDto `json:"test_cases"`
 }

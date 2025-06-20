@@ -94,7 +94,7 @@
 
         <UCard :ui="{ root: 'grow' }">
           <URadioGroup
-            v-model="mcqAnswerStates[question.id].optionIndex"
+            v-model="examStore.mcqAnswerStates[question.id]!.optionIndex"
             :items="mcqOptions"
             variant="card"
             :ui="{
@@ -106,12 +106,14 @@
           <UButton
             variant="ghost"
             :disabled="
-              isNullOrUndefined(mcqAnswerStates[question.id].optionIndex)
+              isNullOrUndefined(
+                examStore.mcqAnswerStates[question.id]!.optionIndex
+              )
             "
             :ui="{
               base: 'mt-5',
             }"
-            @click="clearMcqSelection"
+            @click="examStore.clearMcqSelection"
           >
             Clear selection
           </UButton>
@@ -125,8 +127,9 @@
 
         <UCard :ui="{ root: 'grow' }">
           <UTextarea
-            v-model="subjectiveAnswerStates[question.id].text"
+            v-model="examStore.subjectiveAnswerStates[question.id]!.text"
             autoresize
+            rows="4"
             placeholder="Write your answer here..."
             :ui="{ root: 'flex' }"
           />
@@ -134,11 +137,20 @@
       </template>
 
       <template v-else="currentQuestionType === QuestionType.CODING">
-        <UCard :ui="{ root: 'grow' }">
+        <UCard :ui="{ root: 'grow', footer: 'flex justify-end' }">
           <DisplayCodingQuestion
             :content="question.question"
             :test-cases="question.test_cases ?? []"
+            :editor-link="`/editor/exams/${exam.id}/questions/${question.id}`"
           />
+
+          <template #footer>
+            <UButton
+              label="Open in editor"
+              variant="subtle"
+              :to="`/editor/exams/${exam.id}/questions/${question.id}`"
+            />
+          </template>
         </UCard>
       </template>
     </div>
@@ -178,6 +190,15 @@ definePageMeta({
 
 const route = useRoute()
 const examId = route.params.examId as ExamId
+
+const examStore = useExamStore()
+
+// If the examId doesn't match, reset the store for the new exam
+if (examStore.examId && examStore.examId !== examId) {
+  examStore.$reset()
+}
+
+examStore.examId = examId
 
 const [
   { data: exam },
@@ -251,35 +272,23 @@ const mcqOptions = computed(() => {
   )
 })
 
-function clearMcqSelection() {
-  if (isNullOrUndefined(currentQuestionId.value)) return
-  const qid = currentQuestionId.value
-  mcqAnswerStates[qid].optionIndex = undefined
-}
-
 //__________________________LOAD ANSWER___________________________
-const answerFetched = ref<Record<string, boolean>>({})
-const savedMcqAnswerStates = shallowRef<Record<string, MCQAnswer>>({})
-const savedSubjectiveAnswerStates = shallowRef<
-  Record<string, SubjectiveAnswer>
->({})
-const mcqAnswerStates = reactive<Record<string, MCQAnswer>>({})
-const subjectiveAnswerStates = reactive<Record<string, SubjectiveAnswer>>({})
-
 for (const questionMinimals of Object.values(groupedQuestions.value!)) {
   for (const questionMinimal of questionMinimals) {
     const qid = questionMinimal.id
     if (questionMinimal.type === QuestionType.MCQ) {
-      mcqAnswerStates[qid] = {
+      examStore.mcqAnswerStates[qid] = {
         optionIndex: undefined,
       }
-      savedMcqAnswerStates.value[qid] = { ...mcqAnswerStates[qid] }
+      examStore.savedMcqAnswerStates[qid] = {
+        ...examStore.mcqAnswerStates[qid],
+      }
     } else {
-      subjectiveAnswerStates[qid] = {
+      examStore.subjectiveAnswerStates[qid] = {
         text: '',
       }
-      savedSubjectiveAnswerStates.value[qid] = {
-        ...subjectiveAnswerStates[qid],
+      examStore.savedSubjectiveAnswerStates[qid] = {
+        ...examStore.subjectiveAnswerStates[qid],
       }
     }
   }
@@ -290,8 +299,8 @@ const { $api } = useNuxtApp()
 watchImmediate(currentQuestionId, async qid => {
   if (isNullOrUndefined(qid)) return
 
-  if (answerFetched.value[qid]) return
-  answerFetched.value[qid] = true
+  if (examStore.answerFetched[qid]) return
+  examStore.answerFetched[qid] = true
 
   const data = await $api<AnswerMinimal>(
     `/api/exams/${examId}/questions/${qid}/answer`
@@ -299,7 +308,7 @@ watchImmediate(currentQuestionId, async qid => {
 
   if (isNullOrUndefined(data.answer)) return
   if (data.question_id !== qid) {
-    answerFetched.value[qid] = false
+    examStore.answerFetched[qid] = false
     return
   }
 
@@ -311,124 +320,24 @@ function storeAnswerFromResponse(
   answerResponse: AnswerMinimal
 ) {
   if (isNullOrUndefined(currentCategoryQuestions.value)) {
-    console.warn('currentCategoryQuestions is null or undefined')
+    logWarning('currentCategoryQuestions is null or undefined')
     return
   }
 
   const qIdx = currentQuestionIdx.value
   if (qIdx === -1) {
-    console.warn('currentQuestionIdx is -1')
+    logWarning('currentQuestionIdx is -1')
     return
   }
 
-  if (currentCategoryQuestions.value[qIdx].type === QuestionType.MCQ) {
-    mcqAnswerStates[qid] = {
-      optionIndex: (answerResponse.answer as MCQAnswer).optionIndex,
-    }
-    savedMcqAnswerStates.value[qid] = { ...mcqAnswerStates[qid] }
-  } else {
-    subjectiveAnswerStates[qid] = {
-      text: (answerResponse.answer as SubjectiveAnswer).text,
-    }
-    savedSubjectiveAnswerStates.value[qid] = { ...subjectiveAnswerStates[qid] }
-  }
+  const qType = currentCategoryQuestions.value[qIdx].type
+  examStore.setAnswer(qid, qType, answerResponse.answer)
 }
 
-function saveUpdatedAnswers() {
-  const promises = []
-
-  for (const [qid, mcqAnswer] of Object.entries(mcqAnswerStates)) {
-    const savedState = savedMcqAnswerStates.value[qid]
-    if (savedState.optionIndex !== mcqAnswer.optionIndex) {
-      promises.push(
-        saveMcqAnswer(parseInt(qid), savedState, mcqAnswer).then(res => {
-          if (isNullOrUndefined(res)) return
-          savedState.optionIndex = (res.answer as MCQAnswer).optionIndex
-        })
-      )
-    }
-  }
-  for (const [qid, subjectiveAnswer] of Object.entries(
-    subjectiveAnswerStates
-  )) {
-    const savedState = savedSubjectiveAnswerStates.value[qid]
-    if (savedState.text !== subjectiveAnswer.text) {
-      promises.push(
-        saveSubjectiveAnswer(parseInt(qid), savedState, subjectiveAnswer).then(
-          res => {
-            if (isNullOrUndefined(res)) return
-            savedState.text = (res.answer as SubjectiveAnswer).text
-          }
-        )
-      )
-    }
-  }
-
-  return promises
-}
-useIntervalFn(saveUpdatedAnswers, AUTO_SAVE_EXAM_ANSWER_INTERVAL_SECONDS * 1000)
-
-/** Save answer for a MCQ question */
-function saveMcqAnswer(
-  questionId: number,
-  savedAnswer: MCQAnswer,
-  newAnswer: MCQAnswer
-) {
-  const upsertAnswerBody = {
-    question_id: questionId,
-    answer: null as MCQAnswer | null,
-  }
-
-  const currentOptionIndex = savedAnswer ? savedAnswer.optionIndex : undefined
-
-  if (savedAnswer && isNullOrUndefined(newAnswer.optionIndex)) {
-    return upsertAnswer(examId, upsertAnswerBody)
-  }
-
-  if (
-    isNullOrUndefined(newAnswer.optionIndex) &&
-    isNullOrUndefined(currentOptionIndex)
-  ) {
-    return Promise.resolve(null)
-  }
-
-  if (newAnswer.optionIndex === currentOptionIndex) {
-    return Promise.resolve(null)
-  }
-
-  upsertAnswerBody.answer = { optionIndex: newAnswer.optionIndex }
-  return upsertAnswer(examId, upsertAnswerBody)
-}
-
-/** Save answer for a subjective question */
-function saveSubjectiveAnswer(
-  questionId: number,
-  savedAnswer: SubjectiveAnswer,
-  newAnswer: SubjectiveAnswer
-) {
-  const upsertAnswerBody = {
-    question_id: questionId,
-    answer: null as SubjectiveAnswer | null,
-  }
-
-  const currentText = savedAnswer ? savedAnswer.text : ''
-  const answerText = newAnswer.text ?? ''
-
-  if (savedAnswer && !answerText) {
-    return upsertAnswer(examId, upsertAnswerBody)
-  }
-
-  if (!currentText && !answerText) {
-    return Promise.resolve(null)
-  }
-
-  if (currentText === answerText) {
-    return Promise.resolve(null)
-  }
-
-  upsertAnswerBody.answer = { text: answerText }
-  return upsertAnswer(examId, upsertAnswerBody)
-}
+useIntervalFn(
+  examStore.saveUpdatedAnswers,
+  AUTO_SAVE_EXAM_ANSWER_INTERVAL_SECONDS * 1000
+)
 
 // ___________________AUTO-END EXAM ON TIMEOUT____________________
 const isExamEnded = ref(false)
@@ -440,7 +349,7 @@ const { remaining: redirectCountdown, start: startRedirectCountdown } =
   })
 
 async function handleExamSubmit() {
-  await Promise.all(saveUpdatedAnswers()) // Save any remaining unsaved answers
+  await Promise.all(examStore.saveUpdatedAnswers()) // Save any remaining unsaved answers
   await endExam(examId)
   isExamEnded.value = true
   startRedirectCountdown()

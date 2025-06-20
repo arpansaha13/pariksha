@@ -8,9 +8,9 @@ import (
 
 type ExamQuestion struct {
 	ID         types.QuestionID   `gorm:"primaryKey;type:bigint"`
-	ExamID     types.ExamID       `gorm:"type:bigint;not null"`
+	ExamID     types.ExamID       `gorm:"type:bigint;not null;uniqueIndex:uq_exam_question"`
 	Type       proto.QuestionType `gorm:"type:smallint;not null;check:type > 0 AND type <= 3"`
-	QuestionID types.QuestionID   `gorm:"type:bigint;not null"`
+	QuestionID types.QuestionID   `gorm:"type:bigint;not null;uniqueIndex:uq_exam_question"`
 	CategoryID types.CategoryID   `gorm:"type:bigint;not null"`
 	Order      int16              `gorm:"type:smallint;not null"`
 	MaxScore   int16              `gorm:"type:smallint;not null"`
