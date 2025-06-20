@@ -226,7 +226,7 @@ export interface Answer {
   question_id: QuestionId
 
   /** `null` indicates that the question is unanswered */
-  answer: MCQAnswer | SubjectiveAnswer | null
+  answer: MCQAnswer | SubjectiveAnswer | CodingAnswer | null
   score_awarded: number
   comments: string
 }

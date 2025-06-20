@@ -20,10 +20,10 @@
     />
   </div>
 
-  <div class="col-start-3 row-span-2 row-start-2">
+  <div class="col-start-3 row-span-2 row-start-2 flex flex-col">
     <h2 class="mb-4 text-lg font-semibold">Question Pallet</h2>
 
-    <UCard v-if="currentCategoryQuestions">
+    <UCard v-if="currentCategoryQuestions" :ui="{ root: 'grow' }">
       <EvaluationQuestionList
         v-if="!isNullOrUndefined(currentQuestionId)"
         :current-question-id="currentQuestionId"
@@ -122,7 +122,8 @@
     <UButton
       v-if="nextQuestionId"
       :to="{ query: { ...route.query, question: nextQuestionId } }"
-      label="Save and next"
+      label="Next"
+      variant="subtle"
       class="ml-auto"
       replace
     />

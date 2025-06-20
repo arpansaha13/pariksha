@@ -137,7 +137,13 @@
       </template>
 
       <template v-else="currentQuestionType === QuestionType.CODING">
-        <UCard :ui="{ root: 'grow', footer: 'flex justify-end' }">
+        <UCard
+          :ui="{
+            root: 'grow flex flex-col',
+            body: 'grow',
+            footer: 'flex justify-end',
+          }"
+        >
           <DisplayCodingQuestion
             :content="question.question"
             :test-cases="question.test_cases ?? []"
@@ -212,6 +218,8 @@ const [
   useExamCategories(examId),
 ])
 
+examStore.prepare(groupedQuestions.value!)
+
 const overlay = useOverlay()
 const confirmModal = overlay.create(ConfirmModal as Component)
 provide(InjectionKeys.ConfirmModal, confirmModal)
@@ -273,26 +281,6 @@ const mcqOptions = computed(() => {
 })
 
 //__________________________LOAD ANSWER___________________________
-for (const questionMinimals of Object.values(groupedQuestions.value!)) {
-  for (const questionMinimal of questionMinimals) {
-    const qid = questionMinimal.id
-    if (questionMinimal.type === QuestionType.MCQ) {
-      examStore.mcqAnswerStates[qid] = {
-        optionIndex: undefined,
-      }
-      examStore.savedMcqAnswerStates[qid] = {
-        ...examStore.mcqAnswerStates[qid],
-      }
-    } else {
-      examStore.subjectiveAnswerStates[qid] = {
-        text: '',
-      }
-      examStore.savedSubjectiveAnswerStates[qid] = {
-        ...examStore.subjectiveAnswerStates[qid],
-      }
-    }
-  }
-}
 
 const { $api } = useNuxtApp()
 

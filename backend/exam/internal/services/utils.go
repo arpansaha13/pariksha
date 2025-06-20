@@ -117,9 +117,14 @@ func validateAnswerJSON(answerJSON []byte, questionType proto.QuestionType) erro
 			return status.Error(codes.InvalidArgument, "option index cannot be negative")
 		}
 	case proto.QuestionType_SUBJECTIVE:
-		var textAnswer models.SubjectiveAnswer
-		if err := json.Unmarshal(answerJSON, &textAnswer); err != nil {
-			return status.Error(codes.InvalidArgument, "invalid text answer format")
+		var subjectiveAnswer models.SubjectiveAnswer
+		if err := json.Unmarshal(answerJSON, &subjectiveAnswer); err != nil {
+			return status.Error(codes.InvalidArgument, "invalid subjective answer format")
+		}
+	case proto.QuestionType_CODING:
+		var codingAnswer models.CodingAnswer
+		if err := json.Unmarshal(answerJSON, &codingAnswer); err != nil {
+			return status.Error(codes.InvalidArgument, "invalid coding answer format")
 		}
 	default:
 		return status.Error(codes.InvalidArgument, "invalid question type")

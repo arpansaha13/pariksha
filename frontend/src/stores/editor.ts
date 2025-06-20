@@ -22,7 +22,9 @@ export const useEditorStore = defineStore(editorStoreId, {
   actions: {
     async createEditorHighlighter() {
       if (import.meta.server) {
-        console.warn('createHighlighter is not meant to be called on server')
+        logWarning(
+          'createEditorHighlighter is not meant to be called on server'
+        )
         return
       }
 
@@ -39,7 +41,7 @@ export const useEditorStore = defineStore(editorStoreId, {
     },
     async prepareEditor() {
       if (import.meta.server) {
-        console.warn('prepareMonacoEditor is not meant to be called on server')
+        logWarning('prepareEditor is not meant to be called on server')
         return
       }
 

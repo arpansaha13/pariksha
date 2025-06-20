@@ -24,8 +24,10 @@
 
           <UButton
             label="Save"
-            icon="heroicons:cloud-arrow-up"
+            :icon="isSaved ? 'lucide:cloud-check' : 'heroicons:cloud-arrow-up'"
             variant="soft"
+            loading-auto
+            @click="saveAnswer"
           />
         </div>
       </div>
@@ -45,7 +47,7 @@
     <ClientOnly>
       <MonacoEditor
         v-if="editorStore.isEditorPrepared"
-        v-model="editorCode"
+        v-model="examStore.codingAnswerStates[questionId].code"
         :lang="editorLang"
         :options="editorStore.getEditorOptions"
         class="h-full"
@@ -130,8 +132,8 @@ definePageMeta({
 })
 
 const route = useRoute()
-const questionId = route.params.questionId as QuestionId
 const examId = route.params.examId as ExamId
+const questionId = route.params.questionId as QuestionId
 
 const examStore = useExamStore()
 
@@ -174,6 +176,13 @@ const { data: boilerplateData } = await useQuestionCodingBoilerplate(
   1 as LanguageId
 )
 
+if (!examStore.codingAnswerStates[questionId]?.code) {
+  const boilerplateAnswer: CodingAnswer = {
+    code: boilerplateData.value?.code,
+  }
+  examStore.setAnswer(questionId, QuestionType.CODING, boilerplateAnswer)
+}
+
 const editorStore = useEditorStore()
 
 onMounted(async () => {
@@ -185,7 +194,7 @@ const previousPath = useState(UseStateKeys.PreviousPath)
 const backButtonPath = computed(() => {
   if (previousPath.value) return previousPath.value
   if (isNullOrUndefined(questionData.value)) return undefined
-  return `/papers/${questionData.value.paper_id}`
+  return `/exams/${examId}/attempt`
 })
 
 // ______________________PANEL TABS_____________________
@@ -220,14 +229,13 @@ const testCaseTabItems = reactive<TestCase[]>(
 // _________________________EDITOR STATE__________________________
 const isEditorLoaded = ref(false)
 const editorLang = ref(EditorLang.JAVASCRIPT)
-const editorCode = ref(boilerplateData.value?.code ?? '')
 
 const engineRunResult = ref<EngineRunResponse | null>(null)
 async function runCode(panelIsCollapsed: boolean, togglePanel: () => void) {
   if (!isEditorLoaded.value) return
   engineRunResult.value = await engineRun({
     question_id: questionId,
-    code: editorCode.value,
+    code: examStore.codingAnswerStates[questionId].code,
     environment: EngineEnv.NODE,
     test_cases: testCaseTabItems,
   })
@@ -239,51 +247,44 @@ async function runCode(panelIsCollapsed: boolean, togglePanel: () => void) {
   panelTabActive.value = PanelTabItemValue.RUN_RESULTS
 }
 
+// _______________________MANUAL SAVE ANSWER______________________
+const isSaved = ref(false)
+async function saveAnswer() {
+  await Promise.all(examStore.saveUpdatedAnswers())
+  isSaved.value = true
+  const { isPending, start, stop } = useTimeoutFn(() => {
+    isSaved.value = false
+  }, 3000)
+}
+
 // _______________________AUTO SAVE ANSWER________________________
-// function useSaveUpdatedAnswers() {
-//   /** Save answer for a coding question */
-//   function saveCodingAnswer(
-//     questionId: QuestionId,
-//     savedAnswer: CodingAnswer,
-//     newAnswer: CodingAnswer
-//   ) {
-//     const upsertAnswerBody = {
-//       question_id: questionId,
-//       answer: null as CodingAnswer | null,
-//     }
+const { $api } = useNuxtApp()
 
-//     const savedCode = savedAnswer ? savedAnswer.code : ''
-//     const answerCode = newAnswer.code ?? ''
+watchImmediate(
+  () => route.params.questionId,
+  async qid => {
+    if (import.meta.server) return
+    if (isNullOrUndefined(qid)) return
 
-//     if (savedAnswer && !answerCode) {
-//       return upsertAnswer(examId, upsertAnswerBody)
-//     }
+    if (examStore.answerFetched[qid]) return
+    examStore.answerFetched[qid] = true
 
-//     if (!savedCode && !answerCode) {
-//       return Promise.resolve(null)
-//     }
+    const data = await $api<AnswerMinimal>(
+      `/api/exams/${examId}/questions/${qid}/answer`
+    )
 
-//     if (savedCode === answerCode) {
-//       return Promise.resolve(null)
-//     }
+    if (isNullOrUndefined(data.answer)) return
+    if (data.question_id !== qid) {
+      examStore.answerFetched[qid] = false
+      return
+    }
 
-//     upsertAnswerBody.answer = { code: answerCode }
-//     return upsertAnswer(examId, upsertAnswerBody)
-//   }
+    examStore.setAnswer(qid, QuestionType.CODING, data.answer)
+  }
+)
 
-//   async function saveUpdatedAnswers() {
-//     const res = await saveCodingAnswer(questionId, savedState, mcqAnswer)
-//     if (isNullOrUndefined(res)) return
-//     savedState.optionIndex = (res.answer as MCQAnswer).optionIndex
-//   }
-
-//   useIntervalFn(
-//     saveUpdatedAnswers,
-//     AUTO_SAVE_EXAM_ANSWER_INTERVAL_SECONDS * 1000
-//   )
-
-//   return saveUpdatedAnswers
-// }
-
-// const {} = useSaveUpdatedAnswers()
+useIntervalFn(
+  examStore.saveUpdatedAnswers,
+  AUTO_SAVE_EXAM_ANSWER_INTERVAL_SECONDS * 1000
+)
 </script>

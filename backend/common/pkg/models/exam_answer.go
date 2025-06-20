@@ -28,6 +28,10 @@ type SubjectiveAnswer struct {
 	Text string `json:"text"`
 }
 
+type CodingAnswer struct {
+	Code string `json:"code"`
+}
+
 func (a *MCQAnswer) Value() (driver.Value, error) {
 	return json.Marshal(a)
 }
