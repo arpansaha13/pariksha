@@ -34,9 +34,15 @@
 
   <div
     v-if="currentQuestionAnswer && currentQuestionId"
-    class="col-span-2 flex flex-col gap-y-2.5"
+    class="col-span-2 row-span-2 -m-[2px] flex flex-col gap-y-2.5 overflow-auto p-[2px]"
   >
     <UCard>
+      <p
+        v-if="currentQuestionAnswer.type === QuestionType.CODING"
+        class="mb-2 text-lg font-bold"
+      >
+        {{ currentQuestionAnswer.question.content.title }}
+      </p>
       <p class="font-medium">
         {{ currentQuestionAnswer.question.content.statement }}
       </p>
@@ -71,9 +77,14 @@
           v-if="isNullOrUndefined(currentQuestionAnswer.answer?.content)"
         />
 
-        <p v-else>
+        <p v-else-if="currentQuestionAnswer.type === QuestionType.SUBJECTIVE">
           {{ (currentQuestionAnswer.answer.content as SubjectiveAnswer).text }}
         </p>
+
+        <Shiki
+          v-else-if="currentQuestionAnswer.type === QuestionType.CODING"
+          :code="(currentQuestionAnswer.answer.content as CodingAnswer).code"
+        />
       </template>
     </UCard>
 
@@ -109,7 +120,7 @@
 
   <UCard
     v-if="currentCategoryQuestions.length > 1"
-    :ui="{ root: 'col-span-2', body: 'flex' }"
+    :ui="{ root: 'col-start-3', body: 'flex' }"
   >
     <UButton
       v-if="prevQuestionId"
