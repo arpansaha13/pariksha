@@ -72,6 +72,7 @@
               description="This question is unanswered"
             />
           </div>
+
           <URadioGroup
             v-else-if="item.type === QuestionType.MCQ"
             :default-value="item.answer.content?.optionIndex"
@@ -85,13 +86,19 @@
               item: 'opacity-100',
             }"
           />
-          <p v-else>
+
+          <p v-else-if="item.type === QuestionType.SUBJECTIVE">
             {{ item.answer.content?.text }}
           </p>
+
+          <Shiki
+            v-else-if="item.type === QuestionType.CODING"
+            :code="item.answer.content?.code"
+          />
         </template>
 
         <template #trailing="{ item, open }">
-          <div class="ml-auto flex items-center gap-3">
+          <div class="ml-auto flex shrink-0 items-center gap-3">
             <UBadge
               v-if="isNullOrUndefined(item.answer)"
               color="error"
