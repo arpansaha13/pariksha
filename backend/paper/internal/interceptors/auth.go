@@ -24,30 +24,32 @@ const (
 	permissionContextKey paperContextKey = "permission"
 )
 
-var requiresRead = map[string]bool{
-	"/proto.Paper/GetPaper":            true,
-	"/proto.Paper/GetPaperCategories":  true,
-	"/proto.Paper/GetPaperQuestions":   true,
-	"/proto.Paper/GetPaperQuestion":    true,
-	"/proto.Paper/GetPaperPermissions": true,
+var requiresRead = map[string]struct{}{
+	"/proto.Paper/GetPaper":            {},
+	"/proto.Paper/GetPaperCategories":  {},
+	"/proto.Paper/GetPaperQuestions":   {},
+	"/proto.Paper/GetPaperQuestion":    {},
+	"/proto.Paper/GetPaperPermissions": {},
 }
 
-var requiresWrite = map[string]bool{
-	"/proto.Paper/UpdatePaper":          true,
-	"/proto.Paper/CreateCategory":       true,
-	"/proto.Paper/UpdateCategory":       true,
-	"/proto.Paper/DeleteCategory":       true,
-	"/proto.Paper/ReorderCategories":    true,
-	"/proto.Paper/UpdateQuestion":       true,
-	"/proto.Paper/DeleteQuestion":       true,
-	"/proto.Paper/CreateQuestion":       true,
-	"/proto.Paper/UpsertPaperTestCases": true,
+var requiresWrite = map[string]struct{}{
+	"/proto.Paper/UpdatePaper":          {},
+	"/proto.Paper/CreateCategory":       {},
+	"/proto.Paper/UpdateCategory":       {},
+	"/proto.Paper/DeleteCategory":       {},
+	"/proto.Paper/ReorderCategories":    {},
+	"/proto.Paper/UpdateQuestion":       {},
+	"/proto.Paper/DeleteQuestion":       {},
+	"/proto.Paper/CreateQuestion":       {},
+	"/proto.Paper/UpsertPaperTestCases": {},
 }
 
 func PaperAuthInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		methodName := info.FullMethod
-		if !requiresRead[methodName] && !requiresWrite[methodName] {
+		_, needsRead := requiresRead[methodName]
+		_, needsWrite := requiresWrite[methodName]
+		if !needsRead && !needsWrite {
 			return handler(ctx, req)
 		}
 
@@ -129,12 +131,12 @@ func handlePaperAuth(ctx context.Context, methodName string, paperID types.Paper
 	ctx = context.WithValue(ctx, permissionContextKey, permissions)
 
 	// Check if the method requires READ permission
-	if requiresRead[methodName] && !permissions.CanRead() {
+	if _, ok := requiresRead[methodName]; ok && !permissions.CanRead() {
 		return nil, status.Error(codes.PermissionDenied, "READ permission required")
 	}
 
 	// Check if the method requires WRITE permission
-	if requiresWrite[methodName] && !permissions.CanWrite() {
+	if _, ok := requiresWrite[methodName]; ok && !permissions.CanWrite() {
 		return nil, status.Error(codes.PermissionDenied, "WRITE permission required")
 	}
 

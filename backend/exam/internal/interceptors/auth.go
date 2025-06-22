@@ -28,39 +28,39 @@ const (
 )
 
 var (
-	requiresRead = map[string]bool{
-		"/proto.Exam/GetExam":           true,
-		"/proto.Exam/GetExamPermission": true,
+	requiresRead = map[string]struct{}{
+		"/proto.Exam/GetExam":           {},
+		"/proto.Exam/GetExamPermission": {},
 	}
 
 	// In case of LINK exam, allow access to these handlers even without a permission entry in db
-	allowInLinkExam = map[string]bool{
-		"/proto.Exam/GetExam":           true,
-		"/proto.Exam/StartExam":         true,
-		"/proto.Exam/GetExamPermission": true,
+	allowInLinkExam = map[string]struct{}{
+		"/proto.Exam/GetExam":           {},
+		"/proto.Exam/StartExam":         {},
+		"/proto.Exam/GetExamPermission": {},
 	}
 
-	requiresWrite = map[string]bool{
-		"/proto.Exam/UpdateExam":            true,
-		"/proto.Exam/GetExamParticipants":   true,
-		"/proto.Exam/AddExamParticipant":    true,
-		"/proto.Exam/RemoveExamParticipant": true,
+	requiresWrite = map[string]struct{}{
+		"/proto.Exam/UpdateExam":            {},
+		"/proto.Exam/GetExamParticipants":   {},
+		"/proto.Exam/AddExamParticipant":    {},
+		"/proto.Exam/RemoveExamParticipant": {},
 	}
 
-	requiresParticipate = map[string]bool{
-		"/proto.Exam/EndExam":            true,
-		"/proto.Exam/UpsertAnswer":       true,
-		"/proto.Exam/GetExamParticipant": true,
-		"/proto.Exam/GetAnswerForExam":   true,
-		"/proto.Exam/GetExamResults":     true,
+	requiresParticipate = map[string]struct{}{
+		"/proto.Exam/EndExam":            {},
+		"/proto.Exam/UpsertAnswer":       {},
+		"/proto.Exam/GetExamParticipant": {},
+		"/proto.Exam/GetAnswerForExam":   {},
+		"/proto.Exam/GetExamResults":     {},
 	}
 
-	requiresEvaluate = map[string]bool{
-		"/proto.Exam/GetAnswerEvaluationData":    true,
-		"/proto.Exam/UpdateAnswerForEvaluation":  true,
-		"/proto.Exam/MarkParticipantAsEvaluated": true,
-		"/proto.Exam/GetAnswerForEvaluation":     true,
-		"/proto.Exam/GetParticipantById":         true,
+	requiresEvaluate = map[string]struct{}{
+		"/proto.Exam/GetAnswerEvaluationData":    {},
+		"/proto.Exam/UpdateAnswerForEvaluation":  {},
+		"/proto.Exam/MarkParticipantAsEvaluated": {},
+		"/proto.Exam/GetAnswerForEvaluation":     {},
+		"/proto.Exam/GetParticipantById":         {},
 	}
 
 	handlerSpecificPermissionChecks = map[string]func(*models.ExamPermission) bool{
@@ -77,25 +77,27 @@ var (
 )
 
 func shouldIntercept(methodName string) bool {
-	return requiresRead[methodName] ||
-		requiresWrite[methodName] ||
-		requiresEvaluate[methodName] ||
-		requiresParticipate[methodName] ||
-		allowInLinkExam[methodName] ||
-		handlerSpecificPermissionChecks[methodName] != nil
+	_, hasRead := requiresRead[methodName]
+	_, hasWrite := requiresWrite[methodName]
+	_, hasEvaluate := requiresEvaluate[methodName]
+	_, hasParticipate := requiresParticipate[methodName]
+	_, allowsLink := allowInLinkExam[methodName]
+	_, hasSpecificCheck := handlerSpecificPermissionChecks[methodName]
+
+	return hasRead || hasWrite || hasEvaluate || hasParticipate || allowsLink || hasSpecificCheck
 }
 
 func checkPermissions(permission *models.ExamPermission, methodName string) error {
-	if requiresRead[methodName] && !permission.CanRead() {
+	if _, ok := requiresRead[methodName]; ok && !permission.CanRead() {
 		return status.Error(codes.PermissionDenied, PERMISSION_DENIED_MESSAGE)
 	}
-	if requiresWrite[methodName] && !permission.CanWrite() {
+	if _, ok := requiresWrite[methodName]; ok && !permission.CanWrite() {
 		return status.Error(codes.PermissionDenied, PERMISSION_DENIED_MESSAGE)
 	}
-	if requiresParticipate[methodName] && !permission.CanParticipate() {
+	if _, ok := requiresParticipate[methodName]; ok && !permission.CanParticipate() {
 		return status.Error(codes.PermissionDenied, PERMISSION_DENIED_MESSAGE)
 	}
-	if requiresEvaluate[methodName] && !permission.CanEvaluate() {
+	if _, ok := requiresEvaluate[methodName]; ok && !permission.CanEvaluate() {
 		return status.Error(codes.PermissionDenied, PERMISSION_DENIED_MESSAGE)
 	}
 	return nil
@@ -126,7 +128,7 @@ func GeneralExamAuthInterceptor() grpc.UnaryServerInterceptor {
 
 		permission, err := fetchExamPermission(*examID, userID)
 		if err == gorm.ErrRecordNotFound {
-			if exam.Type == constants.EXAM_ACCESS_TYPE_LINK && allowInLinkExam[methodName] {
+			if _, ok := allowInLinkExam[methodName]; ok && exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
 				return handler(ctx, req)
 			}
 			return nil, status.Error(codes.PermissionDenied, "No permission to access this exam")
