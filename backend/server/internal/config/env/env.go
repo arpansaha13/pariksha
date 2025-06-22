@@ -10,7 +10,6 @@ import (
 var (
 	GO_ENV                string
 	API_PORT              string
-	ID_ENCRYPTION_KEY     string
 	SESSION_COOKIE_NAME   string
 	CSRFTOKEN_COOKIE_NAME string
 )
@@ -42,7 +41,6 @@ var (
 func init() {
 	requiredEnvVars := []string{
 		"GO_ENV",
-		"ID_ENCRYPTION_KEY",
 		"CLIENT_URL",
 		"AUTH_SERVER_HOST",
 		"AUTH_SERVER_PORT",
@@ -62,7 +60,6 @@ func init() {
 
 	GO_ENV = os.Getenv("GO_ENV")
 	API_PORT = utils.GetEnvWithDefault("API_PORT", "4000")
-	ID_ENCRYPTION_KEY = os.Getenv("ID_ENCRYPTION_KEY")
 
 	SESSION_COOKIE_NAME = utils.GetEnvWithDefault("SESSION_COOKIE_NAME", "token")
 	CSRFTOKEN_COOKIE_NAME = utils.GetEnvWithDefault("CSRFTOKEN_COOKIE_NAME", "csrftoken")
