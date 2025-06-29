@@ -18,37 +18,45 @@ Table exams {
   created_by bigint [not null]
   type varchar(16) [default: 'LINK', note: 'Values can be "LINK" or "INVITE"']
   max_candidates_count integer [not null, note: 'Maximum number of candidates that can take the exam']
-  duration_minutes integer [not null]
-  paper_id bigint [not null, note: 'Indicates which paper will be used in this exam']
-  participant_counts json [default: '{"unattended":0,"invited":0,"started":0,"ended":0}']
+  max_score integer [default: 0]
+  duration_minutes smallint [not null, note: 'max duration_minutes can be 1440']
+  paper_hash varchar(64)
+  participant_counts jsonb [default: '{"unattended":0,"invited":0,"started":0,"ended":0}']
+  hash varchar(64) [not null, unique]
+  deleted_at timestamp
 }
 
 Table papers {
   id bigint [primary key]
   title varchar(255) [not null, default: 'Untitled Paper']
   max_score integer [default: 0, note: 'Maximum score that can be awarded in this paper - Sum of individual scores of each question']
-  duration_minutes integer [not null, note: 'max duration_minutes can be 1440']
-  question_counts json [default: '{"mcq":0,"subjective":0}', note: 'Count of each question type']
+  duration_minutes smallint [not null, note: 'max duration_minutes can be 1440']
+  question_counts jsonb [default: '{"mcq":0,"subjective":0,"coding":0}', note: 'Count of each question type']
   created_by bigint [not null]
+  hash varchar(64) [not null, unique]
+  deleted_at timestamp
 }
 
-Table permissions {
+Table paper_permissions {
   paper_id bigint [primary key]
   user_id bigint [primary key]
   permissions smallint [not null, note: 'Bit flags for READ and WRITE permissions']
+  deleted_at timestamp
 }
 
 Table questions {
   id bigint [primary key]
   category_id bigint [not null]
-  question json [not null]
+  question jsonb [not null]
   order smallint [not null]
-  type varchar(20) [not null, note: 'MCQ, Subjective, Coding']
-  tags json [default: '[]']
+  type smallint [not null, note: 'MCQ=1, Subjective=2, Coding=3']
+  tags jsonb [default: null]
   paper_id bigint
-  max_score smallint [not null, note: "max_score ranges from 0 to 1000"]
+  max_score smallint [not null, note: 'max_score ranges from 0 to 1000']
   correct_answer text
   locked boolean [not null, default: false, note: 'Indicates if the question is used in an exam and is locked for editing']
+  hash varchar(64) [not null, unique]
+  deleted_at timestamp
 }
 
 Table exam_participants {
@@ -56,18 +64,18 @@ Table exam_participants {
   exam_id bigint [not null]
   user_id bigint [not null]
   score_awarded integer [not null, note: 'Total score obtained in this exam by this candidate - Sum of individual scores of each answer']
-  status smallint [not null, default: 1]
+  status smallint [default: 1, not null]
   started_at timestamp
   ended_at timestamp
-  scheduled_end_time timestamp [note: 'We cannot rely on calculating (starts_at + paper.duration) every time because the paper duration could update during the exam']
+  scheduled_end_time timestamp
 }
 
 Table answers {
   id bigint [primary key]
   exam_participant_id bigint [not null]
   question_id bigint [not null]
-  answer json
-  score_awarded integer [not null, default: 0]
+  answer jsonb
+  score_awarded smallint [not null, default: 0]
   comments text [note: 'Any comments the evaluator might want to add, for e.g. why is the answer wrong']
   evaluated boolean [not null, default: false]
 }
@@ -75,16 +83,23 @@ Table answers {
 Table exam_questions {
   id bigint [primary key]
   exam_id bigint [not null]
+  type smallint [not null, note: 'MCQ=1, Subjective=2, Coding=3']
   question_id bigint [not null]
   category_id bigint [not null]
   order smallint [not null]
   max_score smallint [not null]
+
+  // Composite unique key
+  indexes {
+    (exam_id, question_id) [unique]
+  }
 }
 
 Table exam_categories {
   id bigint [primary key]
   exam_id bigint [not null]
   category_id bigint [not null]
+  order smallint [not null, default: 0]
 }
 
 Table sessions {
@@ -100,6 +115,7 @@ Table question_categories {
   name varchar(255) [not null]
   order smallint [not null]
   locked boolean [not null, default: false, note: 'Indicates if the category is used in an exam and is locked for editing']
+  deleted_at timestamp
 }
 
 Table otps {
@@ -109,16 +125,62 @@ Table otps {
   purpose smallint [not null]
 }
 
-Ref: permissions.paper_id > papers.id // Which paper is accessed
+Table languages {
+  id smallint [primary key]
+  slug varchar(255) [not null, unique]
+  name varchar(255) [not null]
+  extension varchar(16) [not null]
+  version varchar(16) [not null]
+  is_enabled boolean [not null, default: true]
+}
+
+Table test_cases {
+  id bigint [primary key]
+  question_id bigint [not null]
+  order smallint [not null]
+  content jsonb [not null]
+  data_hash varchar(64) [not null]
+  hidden boolean [not null, default: false]
+  deleted_at timestamp
+
+  // Composite unique key
+  indexes {
+    (question_id, order) [unique]
+  }
+}
+
+Table boilerplates {
+  id bigint [primary key]
+  question_id bigint [not null]
+  language_id smallint [not null]
+  code text [not null]
+
+  // Composite unique key
+  indexes {
+    (question_id, language_id) [unique]
+  }
+}
+
+Table exam_permissions {
+  exam_id bigint [primary key]
+  user_id bigint [primary key]
+  permissions smallint [not null, note: 'Bit flags for READ, WRITE, PARTICIPATE and EVALUATE permissions']
+}
+
+Ref: paper_permissions.paper_id > papers.id // Which paper is accessed
 Ref: questions.paper_id > papers.id // One exam can have many questions
 Ref: questions.category_id > question_categories.id // One category can have many questions
 Ref: question_categories.paper_id > papers.id // One paper can have many categories
+Ref: test_cases.question_id > questions.id
+Ref: boilerplates.question_id > questions.id
+Ref: boilerplates.language_id > languages.id
 // Ref: permissions.user_id > users.id // Which user has access to this paper
 
 Ref: exam_participants.exam_id > exams.id // One exam can have many participants
 Ref: answers.exam_participant_id > exam_participants.id // One participant can have many answers
 Ref: exam_questions.exam_id > exams.id // One exam can have many questions
 Ref: exam_categories.exam_id > exams.id // One exam can have many categories
+Ref: exam_permissions.exam_id > exams.id
 // Ref: exams.created_by > users.id // One user can create many exams
 // Ref: exams.paper_id > papers.id // Many exams can be created using a single paper
 // Ref: exam_participants.user_id > users.id // Which users can take this exam
