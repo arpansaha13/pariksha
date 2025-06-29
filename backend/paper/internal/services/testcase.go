@@ -18,7 +18,6 @@ import (
 	"pariksha/paper/internal/interceptors"
 	"pariksha/paper/internal/repositories"
 	paperUtils "pariksha/paper/internal/utils"
-	"pariksha/paper/internal/utils/validate"
 )
 
 type TestCase struct {
@@ -72,7 +71,7 @@ func (s *TestCase) UpsertTestCases(ctx context.Context, req *proto.UpsertTestCas
 				content.Explanation = tc.Explanation
 			}
 
-			err := validate.TestCase(&content, inputDefinitionsLength)
+			err := content.Validate(inputDefinitionsLength)
 			if err != nil {
 				return err
 			}

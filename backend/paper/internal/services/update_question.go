@@ -255,7 +255,7 @@ func applyMcqQuestionUpdates(question models.Question, rawQuestion []byte) (mode
 	if err := utils.StrictUnmarshal(rawQuestion, &mcq); err != nil {
 		return question, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid MCQ question format: %s", err.Error()))
 	}
-	if err := validate.McqQuestionData(&mcq); err != nil {
+	if err := mcq.Validate(); err != nil {
 		return question, err
 	}
 	question.Question = json.RawMessage(rawQuestion)
@@ -268,7 +268,7 @@ func applySubjectiveQuestionUpdates(question models.Question, rawQuestion []byte
 	if err := utils.StrictUnmarshal(rawQuestion, &subjective); err != nil {
 		return question, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid subjective question format: %s", err.Error()))
 	}
-	if err := validate.SubjectiveQuestionData(&subjective); err != nil {
+	if err := subjective.Validate(); err != nil {
 		return question, err
 	}
 	question.Question = json.RawMessage(rawQuestion)
@@ -282,7 +282,7 @@ func applyCodingQuestionUpdates(question models.Question, rawQuestion []byte) (m
 		return question, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid coding question format: %s", err.Error()))
 	}
 
-	if err := validate.CodingQuestionData(&coding); err != nil {
+	if err := coding.Validate(); err != nil {
 		return question, err
 	}
 

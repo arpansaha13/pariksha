@@ -91,7 +91,7 @@ func (s *Question) CreateQuestion(ctx context.Context, req *proto.CreateQuestion
 		if err := utils.StrictUnmarshal(req.RawQuestion, &mcq); err != nil {
 			return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid MCQ question format: %s", err.Error()))
 		}
-		if err := validate.McqQuestionData(&mcq); err != nil {
+		if err := mcq.Validate(); err != nil {
 			return nil, err
 		}
 	case proto.QuestionType_SUBJECTIVE:
@@ -99,14 +99,14 @@ func (s *Question) CreateQuestion(ctx context.Context, req *proto.CreateQuestion
 		if err := utils.StrictUnmarshal(req.RawQuestion, &subjective); err != nil {
 			return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid subjective question format: %s", err.Error()))
 		}
-		if err := validate.SubjectiveQuestionData(&subjective); err != nil {
+		if err := subjective.Validate(); err != nil {
 			return nil, err
 		}
 	case proto.QuestionType_CODING:
 		if err := utils.StrictUnmarshal(req.RawQuestion, &coding); err != nil {
 			return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid coding question format: %s", err.Error()))
 		}
-		if err := validate.CodingQuestionData(&coding); err != nil {
+		if err := coding.Validate(); err != nil {
 			return nil, err
 		}
 	default:
