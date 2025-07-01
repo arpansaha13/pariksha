@@ -68,43 +68,12 @@ func GetExamCategories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract category IDs
-	categoryIDs := make([]int64, len(categories.Categories))
-	for i, c := range categories.Categories {
-		categoryIDs[i] = c.CategoryId
-	}
-
-	// No categories to fetch
-	if len(categoryIDs) == 0 {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]dtos.ExamCategoriesResponseDto{})
-		return
-	}
-
-	// Get category data from paper service
-	paperService := services.GetPaperService()
-	paperCtx := paperService.CreateMetadata(userID)
-
-	categoryData, err := paperService.Client().GetCategoriesByIds(paperCtx, &proto.GetCategoriesByIdsRequest{
-		CategoryIds: categoryIDs,
-	})
-	if err != nil {
-		http.Error(w, "Failed to retrieve category data", http.StatusInternalServerError)
-		return
-	}
-
-	// Create a map of category data
-	categoryMap := make(map[int64]*proto.CategoryBatchItem)
-	for _, c := range categoryData.Categories {
-		categoryMap[c.CategoryId] = c
-	}
-
 	// Convert to response format using order from exam categories
 	response := make([]dtos.ExamCategoriesResponseDto, len(categories.Categories))
 	for i, c := range categories.Categories {
 		response[i] = dtos.ExamCategoriesResponseDto{
 			CategoryID: c.CategoryId,
-			Name:       categoryMap[c.CategoryId].Name,
+			Name:       c.Name,
 			Order:      c.Order,
 		}
 	}

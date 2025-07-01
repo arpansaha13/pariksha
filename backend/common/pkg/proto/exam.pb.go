@@ -1771,7 +1771,8 @@ func (x *ExamQuestionsResponse) GetQuestions() []*ExamQuestion {
 type ExamCategory struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CategoryId    int64                  `protobuf:"varint,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	Order         int32                  `protobuf:"varint,2,opt,name=order,proto3" json:"order,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Order         int32                  `protobuf:"varint,3,opt,name=order,proto3" json:"order,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1811,6 +1812,13 @@ func (x *ExamCategory) GetCategoryId() int64 {
 		return x.CategoryId
 	}
 	return 0
+}
+
+func (x *ExamCategory) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
 }
 
 func (x *ExamCategory) GetOrder() int32 {
@@ -2357,11 +2365,12 @@ const file_exam_proto_rawDesc = "" +
 	"\x04type\x18\x04 \x01(\x0e2\x13.proto.QuestionTypeR\x04type\x12\x1b\n" +
 	"\tmax_score\x18\x05 \x01(\x05R\bmaxScore\"J\n" +
 	"\x15ExamQuestionsResponse\x121\n" +
-	"\tquestions\x18\x01 \x03(\v2\x13.proto.ExamQuestionR\tquestions\"E\n" +
+	"\tquestions\x18\x01 \x03(\v2\x13.proto.ExamQuestionR\tquestions\"Y\n" +
 	"\fExamCategory\x12\x1f\n" +
 	"\vcategory_id\x18\x01 \x01(\x03R\n" +
-	"categoryId\x12\x14\n" +
-	"\x05order\x18\x02 \x01(\x05R\x05order\"M\n" +
+	"categoryId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
+	"\x05order\x18\x03 \x01(\x05R\x05order\"M\n" +
 	"\x16ExamCategoriesResponse\x123\n" +
 	"\n" +
 	"categories\x18\x01 \x03(\v2\x13.proto.ExamCategoryR\n" +

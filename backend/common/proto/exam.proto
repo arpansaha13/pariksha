@@ -201,7 +201,8 @@ message ExamQuestionsResponse { repeated ExamQuestion questions = 1; }
 
 message ExamCategory {
   int64 category_id = 1;
-  int32 order = 2;
+  string name = 2;
+  int32 order = 3;
 }
 
 message ExamCategoriesResponse { repeated ExamCategory categories = 1; }

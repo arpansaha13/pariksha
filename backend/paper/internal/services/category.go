@@ -211,14 +211,23 @@ func (s *Category) GetCategoriesByIds(categoryIDs []int64) (*proto.CategoryBatch
 		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
 	}
 
-	response := &proto.CategoryBatchResponse{
-		Categories: make([]*proto.CategoryBatchItem, len(categories)),
+	// Create a map for O(1) lookup
+	categoryMap := make(map[int64]models.QuestionCategory, len(categories))
+	for _, category := range categories {
+		categoryMap[int64(category.ID)] = category
 	}
 
-	for i, category := range categories {
-		response.Categories[i] = &proto.CategoryBatchItem{
-			CategoryId: int64(category.ID),
-			Name:       category.Name,
+	response := &proto.CategoryBatchResponse{
+		Categories: make([]*proto.CategoryBatchItem, len(categoryIDs)),
+	}
+
+	// Construct response in same order as input categoryIDs
+	for i, id := range categoryIDs {
+		if category, exists := categoryMap[id]; exists {
+			response.Categories[i] = &proto.CategoryBatchItem{
+				CategoryId: int64(category.ID),
+				Name:       category.Name,
+			}
 		}
 	}
 

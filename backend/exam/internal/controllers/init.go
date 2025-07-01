@@ -133,6 +133,10 @@ func (s *ExamServer) GetExamQuestions(ctx context.Context, req *proto.ExamReques
 	return questionCtrl.HandleGetExamQuestions(ctx, req)
 }
 
+func (s *ExamServer) GetExamQuestion(ctx context.Context, req *proto.ExamQuestionRequest) (*proto.ExamQuestionResponse, error) {
+	return questionCtrl.HandleGetExamQuestion(ctx, req)
+}
+
 // ________________________CATEGORY HANDLERS________________________
 func (s *ExamServer) GetExamCategories(ctx context.Context, req *proto.ExamRequest) (*proto.ExamCategoriesResponse, error) {
 	return categoryCtrl.HandleGetExamCategories(ctx, req)

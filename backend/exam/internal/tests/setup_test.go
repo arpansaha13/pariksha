@@ -168,6 +168,7 @@ func mockPaperService() func() {
 	originalFetchIDs := paper.FetchQuestionIdsForHashes
 	originalFetchQuestions := paper.FetchQuestionsByIds
 	originalFetchQuestionByHash := paper.FetchQuestionByHash
+	originalFetchCategoriesByIds := paper.FetchCategoriesByIds
 
 	// List of question IDs to use in tests
 	testQuestionIDs := []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 999}
@@ -258,11 +259,24 @@ func mockPaperService() func() {
 		}, nil
 	}
 
+	// Mock FetchCategoriesByIds
+	paper.FetchCategoriesByIds = func(typedCategoryIDs []types.CategoryID) ([]*proto.CategoryBatchItem, error) {
+		questions := make([]*proto.CategoryBatchItem, len(typedCategoryIDs))
+		for i, typedID := range typedCategoryIDs {
+			questions[i] = &proto.CategoryBatchItem{
+				CategoryId: int64(typedID),
+				Name:       fmt.Sprintf("Category %d", i+1),
+			}
+		}
+		return questions, nil
+	}
+
 	return func() {
 		paper.FetchQuestionHashesForIds = originalFetchHashes
 		paper.FetchQuestionIdsForHashes = originalFetchIDs
 		paper.FetchQuestionsByIds = originalFetchQuestions
 		paper.FetchQuestionByHash = originalFetchQuestionByHash
+		paper.FetchCategoriesByIds = originalFetchCategoriesByIds
 	}
 }
 

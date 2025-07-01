@@ -13,11 +13,11 @@ import (
 )
 
 var examOnlyEndpoints = map[string]bool{
-	"/proto.Paper/GetQuestionsByIds": true,
-	// "/proto.Paper/GetCategoriesByIds": true,
-	"/proto.Paper/GetExamQuestion":   true,
-	"/proto.Paper/GetQuestionHashes": true,
-	"/proto.Paper/GetQuestionIds":    true,
+	"/proto.Paper/GetQuestionsByIds":  true,
+	"/proto.Paper/GetCategoriesByIds": true,
+	"/proto.Paper/GetExamQuestion":    true,
+	"/proto.Paper/GetQuestionHashes":  true,
+	"/proto.Paper/GetQuestionIds":     true,
 }
 
 // ExamServiceAuthInterceptor validates that only the exam service can access certain endpoints
