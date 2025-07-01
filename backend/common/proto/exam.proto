@@ -15,6 +15,7 @@ service Exam {
   rpc GetExam(ExamRequest) returns (ExamResponse) {}
   rpc GetExamQuestions(ExamRequest) returns (ExamQuestionsResponse) {}
   rpc GetExamCategories(ExamRequest) returns (ExamCategoriesResponse) {}
+  rpc GetExamQuestion(ExamQuestionRequest) returns (ExamQuestionResponse) {}
   rpc GetExamPermission(ExamRequest) returns (ExamPermissionResponse) {}
   rpc DeleteExams(DeleteExamsRequest) returns (Empty) {}
   rpc GetExamResults(ExamRequest) returns (ExamResultsResponse) {}
@@ -25,7 +26,8 @@ service Exam {
   rpc RemoveExamParticipant(RemoveParticipantRequest) returns (Empty) {}
   rpc StartExam(StartExamRequest) returns (Empty) {}
   rpc EndExam(EndExamRequest) returns (Empty) {}
-  rpc GetExamParticipant(GetExamParticipantRequest) returns (GetExamParticipantResponse) {}
+  rpc GetExamParticipant(GetExamParticipantRequest)
+      returns (GetExamParticipantResponse) {}
   rpc GetParticipantById(ParticipantRequest) returns (ParticipantResponse) {}
 
   // Answer operations
@@ -34,16 +36,18 @@ service Exam {
   rpc UpsertAnswer(UpsertAnswersRequest) returns (UpsertAnswersResponse) {}
 
   // Evaluation
-  rpc GetAnswerEvaluationData(ParticipantQuestionRequest) returns (GetAnswerEvaluationDataResponse) {}
-  rpc UpdateAnswerForEvaluation(UpdateAnswerRequest) returns (GetAnswerEvaluationDataResponse) {}
-  rpc MarkParticipantAsEvaluated(ParticipantRequest) returns (EvaluationStatusResponse) {}
-  rpc GetAnswerForEvaluation(ParticipantQuestionRequest) returns (AnswerMinimalResponse) {}
+  rpc GetAnswerEvaluationData(ParticipantQuestionRequest)
+      returns (GetAnswerEvaluationDataResponse) {}
+  rpc UpdateAnswerForEvaluation(UpdateAnswerRequest)
+      returns (GetAnswerEvaluationDataResponse) {}
+  rpc MarkParticipantAsEvaluated(ParticipantRequest)
+      returns (EvaluationStatusResponse) {}
+  rpc GetAnswerForEvaluation(ParticipantQuestionRequest)
+      returns (AnswerMinimalResponse) {}
 }
 
 // Exam messages
-message ExamRequest {
-  string exam_hash = 1;
-}
+message ExamRequest { string exam_hash = 1; }
 
 message CreateExamRequest {
   string title = 1;
@@ -77,9 +81,7 @@ message ExamResponse {
   int32 max_score = 11;
 }
 
-message ExamList {
-  repeated ExamResponse exams = 1;
-}
+message ExamList { repeated ExamResponse exams = 1; }
 
 message ParticipantCount {
   int32 unattended = 1;
@@ -88,10 +90,13 @@ message ParticipantCount {
   int32 ended = 4;
 }
 
-// Participant messages
-message ParticipantRequest {
-  int64 participant_id = 1;
+message ExamQuestionRequest {
+  string exam_hash = 1;
+  string question_hash = 2;
 }
+
+// Participant messages
+message ParticipantRequest { int64 participant_id = 1; }
 
 message ParticipantResponse {
   int64 participant_id = 1;
@@ -103,11 +108,8 @@ message ParticipantResponse {
   optional google.protobuf.Timestamp scheduled_end_time = 7;
 }
 
-message ParticipantList {
-  repeated ParticipantResponse participants = 1;
-}
+message ParticipantList { repeated ParticipantResponse participants = 1; }
 
-// Replace AddParticipantsRequest with AddParticipantRequest
 message AddParticipantRequest {
   string exam_hash = 1;
   int64 user_id = 2;
@@ -118,21 +120,15 @@ message RemoveParticipantRequest {
   int64 participant_id = 2;
 }
 
-message StartExamRequest {
-  string exam_hash = 1;
-}
+message StartExamRequest { string exam_hash = 1; }
 
-message EndExamRequest {
-  string exam_hash = 1;
-}
+message EndExamRequest { string exam_hash = 1; }
 
-message EvaluationStatusResponse {
-  int32 unevaluated_count = 1;
-}
+message EvaluationStatusResponse { int32 unevaluated_count = 1; }
 
 // Answer messages
 message Answer {
-  optional bytes answer = 1;  // JSON encoded answer, can be nil
+  optional bytes answer = 1; // JSON encoded answer, can be nil
   google.protobuf.Timestamp submitted_at = 2;
   string question_hash = 3;
 }
@@ -145,26 +141,24 @@ message UpsertAnswersRequest {
 message UpsertAnswersResponse {
   int64 answer_id = 1;
   string question_hash = 2;
-  optional bytes answer = 3;  // JSON encoded answer, can be nil
+  optional bytes answer = 3; // JSON encoded answer, can be nil
 }
 
 message AnswerResponse {
   int64 answer_id = 1;
   int64 exam_participant_id = 2;
   string question_hash = 3;
-  bytes answer = 4;  // JSON encoded answer
-  
+  bytes answer = 4; // JSON encoded answer
+
   // question fields
   int32 order = 5;
   int64 category_id = 6;
   QuestionType question_type = 7;
   int32 max_score = 8;
-  bytes question = 9;  // JSON encoded question
+  bytes question = 9; // JSON encoded question
 }
 
-message AnswerList {
-  repeated AnswerResponse answers = 1;
-}
+message AnswerList { repeated AnswerResponse answers = 1; }
 
 message UpdateAnswerRequest {
   int64 answer_id = 1;
@@ -180,17 +174,13 @@ message GetAnswerRequest {
 
 message AnswerMinimalResponse {
   int64 answer_id = 1;
-  bytes answer = 2;  // JSON encoded answer
+  bytes answer = 2; // JSON encoded answer
   string question_hash = 3;
 }
 
-message CheckParticipantRequest {
-  string exam_hash = 1;
-}
+message CheckParticipantRequest { string exam_hash = 1; }
 
-message GetExamParticipantRequest {
-  string exam_hash = 1;
-}
+message GetExamParticipantRequest { string exam_hash = 1; }
 
 message GetExamParticipantResponse {
   int64 participant_id = 1;
@@ -207,18 +197,14 @@ message ExamQuestion {
   int32 max_score = 5;
 }
 
-message ExamQuestionsResponse {
-  repeated ExamQuestion questions = 1;
-}
+message ExamQuestionsResponse { repeated ExamQuestion questions = 1; }
 
 message ExamCategory {
   int64 category_id = 1;
   int32 order = 2;
 }
 
-message ExamCategoriesResponse {
-  repeated ExamCategory categories = 1;
-}
+message ExamCategoriesResponse { repeated ExamCategory categories = 1; }
 
 enum ExamAccessType {
   OWNER = 0;
@@ -245,9 +231,7 @@ message GetAnswerEvaluationDataResponse {
   string comments = 4;
 }
 
-message DeleteExamsRequest {
-  repeated string exam_hashes = 1;
-}
+message DeleteExamsRequest { repeated string exam_hashes = 1; }
 
 message ExamResultItem {
   int64 answer_id = 1;
@@ -255,6 +239,4 @@ message ExamResultItem {
   string comments = 3;
 }
 
-message ExamResultsResponse {
-  repeated ExamResultItem results = 1;
-}
+message ExamResultsResponse { repeated ExamResultItem results = 1; }

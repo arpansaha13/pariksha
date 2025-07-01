@@ -157,12 +157,12 @@ func (r *Question) GetNonHiddenTestCases(tx *gorm.DB, questionID types.QuestionI
 	return testCases, err
 }
 
-// GetExamQuestion fetches minimal question data for exam taking
-func (r *Question) GetExamQuestion(tx *gorm.DB, hash string) (*models.Question, error) {
+// GetExamQuestionByHash fetches minimal question data for exam taking
+func (r *Question) GetExamQuestionByHash(tx *gorm.DB, hash string) (*models.Question, error) {
 	tx = r.getTx(tx)
 
 	var question models.Question
-	err := tx.Select("id, question, type, hash").
+	err := tx.Select("id, question, type").
 		Where("hash = ?", hash).Take(&question).Error
 	return &question, err
 }

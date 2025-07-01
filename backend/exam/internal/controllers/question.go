@@ -21,3 +21,8 @@ func NewQuestion(s *services.Question) *Question {
 func (c *Question) HandleGetExamQuestions(ctx context.Context, req *proto.ExamRequest) (*proto.ExamQuestionsResponse, error) {
 	return c.questionSvc.GetExamQuestions(req)
 }
+
+// HandleGetExamQuestion handles retrieving a single exam question
+func (c *Question) HandleGetExamQuestion(ctx context.Context, req *proto.ExamQuestionRequest) (*proto.ExamQuestionResponse, error) {
+	return c.questionSvc.GetExamQuestion(req)
+}

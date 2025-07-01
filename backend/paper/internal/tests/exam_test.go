@@ -202,7 +202,7 @@ func TestGetExamQuestion(t *testing.T) {
 		name         string
 		setup        func(t *testing.T) *models.Question
 		expectedCode codes.Code
-		validate     func(t *testing.T, resp *proto.QuestionResponse)
+		validate     func(t *testing.T, resp *proto.ExamQuestionResponse)
 	}{
 		{
 			name: "Success - Get MCQ question",
@@ -221,7 +221,7 @@ func TestGetExamQuestion(t *testing.T) {
 				return &questions[0]
 			},
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, resp *proto.QuestionResponse) {
+			validate: func(t *testing.T, resp *proto.ExamQuestionResponse) {
 				var mcq structs.MCQQuestion
 				require.NoError(t, json.Unmarshal(resp.RawQuestion, &mcq))
 				assert.Equal(t, "MCQ Question", mcq.Statement)
@@ -269,7 +269,7 @@ func TestGetExamQuestion(t *testing.T) {
 				return &questions[0]
 			},
 			expectedCode: codes.OK,
-			validate: func(t *testing.T, resp *proto.QuestionResponse) {
+			validate: func(t *testing.T, resp *proto.ExamQuestionResponse) {
 				// Verify coding question content
 				var coding structs.CodingQuestion
 				require.NoError(t, json.Unmarshal(resp.RawQuestion, &coding))
@@ -302,8 +302,8 @@ func TestGetExamQuestion(t *testing.T) {
 
 			testrunner.Runner(t, context.Background(), tt.expectedCode,
 				&proto.QuestionRequest{QuestionHash: question.Hash},
-				client.GetExamQuestion,
-				func(t *testing.T, resp *proto.QuestionResponse) {
+				client.GetExamQuestionByHash,
+				func(t *testing.T, resp *proto.ExamQuestionResponse) {
 					if tt.validate != nil {
 						tt.validate(t, resp)
 					}

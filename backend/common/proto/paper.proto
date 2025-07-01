@@ -31,10 +31,13 @@ service Paper {
   rpc ReorderCategories(ReorderCategoriesRequest) returns (Empty) {}
 
   // Exam operations
-  rpc GetQuestionsByIds(GetQuestionsByIdsRequest) returns (GetQuestionsByIdsResponse) {}
-  rpc GetCategoriesByIds(GetCategoriesByIdsRequest) returns (CategoryBatchResponse) {}
-  rpc GetExamQuestion(QuestionRequest) returns (QuestionResponse) {}
-  rpc GetQuestionHashes(GetQuestionHashesRequest) returns (GetQuestionHashesResponse) {}
+  rpc GetQuestionsByIds(GetQuestionsByIdsRequest)
+      returns (GetQuestionsByIdsResponse) {}
+  rpc GetCategoriesByIds(GetCategoriesByIdsRequest)
+      returns (CategoryBatchResponse) {}
+  rpc GetExamQuestionByHash(QuestionRequest) returns (ExamQuestionResponse) {}
+  rpc GetQuestionHashes(GetQuestionHashesRequest)
+      returns (GetQuestionHashesResponse) {}
   rpc GetQuestionIds(GetQuestionIdsRequest) returns (GetQuestionIdsResponse) {}
 
   // Boilerplate operations
@@ -44,13 +47,13 @@ service Paper {
   rpc UpsertPaperTestCases(UpsertTestCasesRequest) returns (Empty) {}
 
   // Coding Question Input Definitions
-  rpc GetCodingQuestionInputDefinitions(GetCodingQuestionInputDefinitionsRequest) returns (GetCodingQuestionInputDefinitionsResponse) {}
+  rpc GetCodingQuestionInputDefinitions(
+      GetCodingQuestionInputDefinitionsRequest)
+      returns (GetCodingQuestionInputDefinitionsResponse) {}
 }
 
 // Paper messages
-message PaperRequest {
-  string paper_hash = 1;
-}
+message PaperRequest { string paper_hash = 1; }
 
 message PaperResponse {
   string paper_hash = 1;
@@ -61,9 +64,7 @@ message PaperResponse {
   int64 created_by = 6;
 }
 
-message PaperList {
-  repeated PaperResponse papers = 1;
-}
+message PaperList { repeated PaperResponse papers = 1; }
 
 message UpdatePaperRequest {
   string paper_hash = 1;
@@ -77,14 +78,10 @@ message QuestionCount {
   int32 coding = 3;
 }
 
-message DeletePapersRequest {
-  repeated string paper_hashes = 1;
-}
+message DeletePapersRequest { repeated string paper_hashes = 1; }
 
 // Question messages
-message QuestionRequest {
-  string question_hash = 1;
-}
+message QuestionRequest { string question_hash = 1; }
 
 message QuestionResponse {
   string question_hash = 1;
@@ -95,12 +92,10 @@ message QuestionResponse {
   string paper_hash = 7;
   int32 max_score = 8;
   optional string correct_answer = 9;
-  repeated PaperTestCase test_cases = 10;
+  repeated CodingQuestionTestCase test_cases = 10;
 }
 
-message QuestionList {
-  repeated QuestionMinimal questions = 1;
-}
+message QuestionList { repeated QuestionMinimal questions = 1; }
 
 message QuestionMinimal {
   string question_hash = 1;
@@ -120,9 +115,7 @@ message CreateQuestionRequest {
   optional string correct_answer = 7;
 }
 
-message CreateQuestionResponse {
-  string question_hash = 1;
-}
+message CreateQuestionResponse { string question_hash = 1; }
 
 message UpdateQuestionRequest {
   string question_hash = 1;
@@ -133,9 +126,7 @@ message UpdateQuestionRequest {
   optional string correct_answer = 6;
 }
 
-message UpdateQuestionResponse {
-  string question_hash = 1;
-}
+message UpdateQuestionResponse { string question_hash = 1; }
 
 message ReorderQuestionsRequest {
   int64 category_id = 1;
@@ -147,9 +138,7 @@ message GetQuestionsByIdsRequest {
   repeated int64 question_ids = 1;
 }
 
-message GetQuestionsByIdsResponse {
-  repeated QuestionBatchItem questions = 1;
-}
+message GetQuestionsByIdsResponse { repeated QuestionBatchItem questions = 1; }
 
 message QuestionBatchItem {
   int64 question_id = 1;
@@ -160,22 +149,16 @@ message QuestionBatchItem {
 }
 
 // Category messages
-message GetCategoriesByIdsRequest {
-  repeated int64 category_ids = 1;
-}
+message GetCategoriesByIdsRequest { repeated int64 category_ids = 1; }
 
-message CategoryBatchResponse {
-  repeated CategoryBatchItem categories = 1;
-}
+message CategoryBatchResponse { repeated CategoryBatchItem categories = 1; }
 
 message CategoryBatchItem {
   int64 category_id = 1;
   string name = 2;
 }
 
-message CategoryRequest {
-  int64 category_id = 1;
-}
+message CategoryRequest { int64 category_id = 1; }
 
 message CategoryResponse {
   int64 category_id = 1;
@@ -183,13 +166,9 @@ message CategoryResponse {
   int32 order = 3;
 }
 
-message CategoryList {
-  repeated CategoryResponse categories = 1;
-}
+message CategoryList { repeated CategoryResponse categories = 1; }
 
-message CreateCategoryRequest {
-  string paper_hash = 1;
-}
+message CreateCategoryRequest { string paper_hash = 1; }
 
 message UpdateCategoryRequest {
   int64 category_id = 1;
@@ -212,17 +191,7 @@ message GetBoilerplateRequest {
   int32 language_id = 2;
 }
 
-message GetBoilerplateResponse {
-  string code = 1;
-}
-
-message PaperTestCase {
-  repeated string inputs = 1;
-  string output = 2;
-  optional string explanation = 3;
-  bool hidden = 4;
-  int32 order = 5;
-}
+message GetBoilerplateResponse { string code = 1; }
 
 message UpsertTestCase {
   repeated string inputs = 2;
@@ -236,26 +205,16 @@ message UpsertTestCasesRequest {
   repeated UpsertTestCase test_cases = 2;
 }
 
-message GetQuestionHashesRequest {
-  repeated int64 question_ids = 1;
-}
+message GetQuestionHashesRequest { repeated int64 question_ids = 1; }
 
-message GetQuestionHashesResponse {
-  repeated string question_hashes = 1;
-}
+message GetQuestionHashesResponse { repeated string question_hashes = 1; }
 
-message GetQuestionIdsRequest {
-  repeated string question_hashes = 1;
-}
+message GetQuestionIdsRequest { repeated string question_hashes = 1; }
 
-message GetQuestionIdsResponse {
-  repeated int64 question_ids = 1;
-}
+message GetQuestionIdsResponse { repeated int64 question_ids = 1; }
 
 // Coding Question Input Definitions
-message GetCodingQuestionInputDefinitionsRequest {
-  string question_hash = 1;
-}
+message GetCodingQuestionInputDefinitionsRequest { string question_hash = 1; }
 
 message GetCodingQuestionInputDefinitionsResponse {
   repeated InputDefinition input_definitions = 1;

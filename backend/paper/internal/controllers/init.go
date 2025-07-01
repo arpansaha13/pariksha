@@ -147,8 +147,8 @@ func (s *PaperServer) GetQuestionsByIds(ctx context.Context, req *proto.GetQuest
 	return questionCtrl.HandleGetQuestionsByIds(ctx, req)
 }
 
-func (s *PaperServer) GetExamQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.QuestionResponse, error) {
-	return questionCtrl.HandleGetExamQuestion(ctx, req)
+func (s *PaperServer) GetExamQuestionByHash(ctx context.Context, req *proto.QuestionRequest) (*proto.ExamQuestionResponse, error) {
+	return questionCtrl.HandleGetExamQuestionByHash(ctx, req)
 }
 
 func (s *PaperServer) GetQuestionHashes(ctx context.Context, req *proto.GetQuestionHashesRequest) (*proto.GetQuestionHashesResponse, error) {

@@ -120,8 +120,8 @@ func GetExamQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	paperService := services.GetPaperService()
-	question, err := paperService.Client().GetExamQuestion(context.Background(), &proto.QuestionRequest{
+	examService := services.GetExamService()
+	question, err := examService.Client().GetExamQuestion(context.Background(), &proto.ExamQuestionRequest{
 		QuestionHash: questionHash,
 	})
 	if err != nil {

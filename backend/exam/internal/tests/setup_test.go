@@ -19,6 +19,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/generate"
+	"pariksha/common/pkg/utils/ptr"
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/config/env"
 	"pariksha/exam/internal/controllers"
@@ -166,6 +167,7 @@ func mockPaperService() func() {
 	originalFetchHashes := paper.FetchQuestionHashesForIds
 	originalFetchIDs := paper.FetchQuestionIdsForHashes
 	originalFetchQuestions := paper.FetchQuestionsByIds
+	originalFetchQuestionByHash := paper.FetchQuestionByHash
 
 	// List of question IDs to use in tests
 	testQuestionIDs := []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 999}
@@ -234,10 +236,33 @@ func mockPaperService() func() {
 		return questions, nil
 	}
 
+	// Mock FetchQuestionByHash
+	paper.FetchQuestionByHash = func(questionHash string) (*proto.ExamQuestionResponse, error) {
+		return &proto.ExamQuestionResponse{
+			QuestionHash: questionHash,
+			RawQuestion:  rawQuestion,
+			Type:         proto.QuestionType_MCQ,
+			TestCases: []*proto.CodingQuestionTestCase{
+				{
+					Inputs:      []string{"1", "2"},
+					Output:      "3",
+					Explanation: ptr.String("First test case"),
+					Hidden:      false,
+				},
+				{
+					Inputs: []string{"4", "5"},
+					Output: "9",
+					Hidden: true,
+				},
+			},
+		}, nil
+	}
+
 	return func() {
 		paper.FetchQuestionHashesForIds = originalFetchHashes
 		paper.FetchQuestionIdsForHashes = originalFetchIDs
 		paper.FetchQuestionsByIds = originalFetchQuestions
+		paper.FetchQuestionByHash = originalFetchQuestionByHash
 	}
 }
 

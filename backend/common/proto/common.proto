@@ -18,11 +18,26 @@ enum QuestionType {
 enum ParameterType {
   UNKNOWN_PARAMETER_TYPE = 0;
 
-	// Primitive
+  // Primitive
   NUMBER = 1;
   STRING = 2;
   BOOLEAN = 3;
 
-	// Composite
+  // Composite
   ARRAY = 4;
+}
+
+message CodingQuestionTestCase {
+  repeated string inputs = 1;
+  string output = 2;
+  optional string explanation = 3;
+  bool hidden = 4;
+  int32 order = 5;
+}
+
+message ExamQuestionResponse {
+  string question_hash = 1;
+  bytes raw_question = 2;
+  QuestionType type = 5;
+  repeated CodingQuestionTestCase test_cases = 10;
 }

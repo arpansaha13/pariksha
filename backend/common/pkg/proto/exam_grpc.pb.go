@@ -25,6 +25,7 @@ const (
 	Exam_GetExam_FullMethodName                    = "/proto.Exam/GetExam"
 	Exam_GetExamQuestions_FullMethodName           = "/proto.Exam/GetExamQuestions"
 	Exam_GetExamCategories_FullMethodName          = "/proto.Exam/GetExamCategories"
+	Exam_GetExamQuestion_FullMethodName            = "/proto.Exam/GetExamQuestion"
 	Exam_GetExamPermission_FullMethodName          = "/proto.Exam/GetExamPermission"
 	Exam_DeleteExams_FullMethodName                = "/proto.Exam/DeleteExams"
 	Exam_GetExamResults_FullMethodName             = "/proto.Exam/GetExamResults"
@@ -55,6 +56,7 @@ type ExamClient interface {
 	GetExam(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamResponse, error)
 	GetExamQuestions(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamQuestionsResponse, error)
 	GetExamCategories(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamCategoriesResponse, error)
+	GetExamQuestion(ctx context.Context, in *ExamQuestionRequest, opts ...grpc.CallOption) (*ExamQuestionResponse, error)
 	GetExamPermission(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamPermissionResponse, error)
 	DeleteExams(ctx context.Context, in *DeleteExamsRequest, opts ...grpc.CallOption) (*Empty, error)
 	GetExamResults(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamResultsResponse, error)
@@ -139,6 +141,16 @@ func (c *examClient) GetExamCategories(ctx context.Context, in *ExamRequest, opt
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExamCategoriesResponse)
 	err := c.cc.Invoke(ctx, Exam_GetExamCategories_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *examClient) GetExamQuestion(ctx context.Context, in *ExamQuestionRequest, opts ...grpc.CallOption) (*ExamQuestionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ExamQuestionResponse)
+	err := c.cc.Invoke(ctx, Exam_GetExamQuestion_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -326,6 +338,7 @@ type ExamServer interface {
 	GetExam(context.Context, *ExamRequest) (*ExamResponse, error)
 	GetExamQuestions(context.Context, *ExamRequest) (*ExamQuestionsResponse, error)
 	GetExamCategories(context.Context, *ExamRequest) (*ExamCategoriesResponse, error)
+	GetExamQuestion(context.Context, *ExamQuestionRequest) (*ExamQuestionResponse, error)
 	GetExamPermission(context.Context, *ExamRequest) (*ExamPermissionResponse, error)
 	DeleteExams(context.Context, *DeleteExamsRequest) (*Empty, error)
 	GetExamResults(context.Context, *ExamRequest) (*ExamResultsResponse, error)
@@ -373,6 +386,9 @@ func (UnimplementedExamServer) GetExamQuestions(context.Context, *ExamRequest) (
 }
 func (UnimplementedExamServer) GetExamCategories(context.Context, *ExamRequest) (*ExamCategoriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamCategories not implemented")
+}
+func (UnimplementedExamServer) GetExamQuestion(context.Context, *ExamQuestionRequest) (*ExamQuestionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExamQuestion not implemented")
 }
 func (UnimplementedExamServer) GetExamPermission(context.Context, *ExamRequest) (*ExamPermissionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamPermission not implemented")
@@ -550,6 +566,24 @@ func _Exam_GetExamCategories_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ExamServer).GetExamCategories(ctx, req.(*ExamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Exam_GetExamQuestion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExamQuestionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExamServer).GetExamQuestion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Exam_GetExamQuestion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExamServer).GetExamQuestion(ctx, req.(*ExamQuestionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -890,6 +924,10 @@ var Exam_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetExamCategories",
 			Handler:    _Exam_GetExamCategories_Handler,
+		},
+		{
+			MethodName: "GetExamQuestion",
+			Handler:    _Exam_GetExamQuestion_Handler,
 		},
 		{
 			MethodName: "GetExamPermission",

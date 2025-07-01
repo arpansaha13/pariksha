@@ -61,8 +61,8 @@ func (c *Question) HandleGetQuestionsByIds(ctx context.Context, req *proto.GetQu
 }
 
 // HandleGetExamQuestion handles getting a question for exam taking
-func (c *Question) HandleGetExamQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.QuestionResponse, error) {
-	return c.questionSvc.GetExamQuestion(ctx, req.QuestionHash)
+func (c *Question) HandleGetExamQuestionByHash(ctx context.Context, req *proto.QuestionRequest) (*proto.ExamQuestionResponse, error) {
+	return c.questionSvc.GetExamQuestionByHash(ctx, req.QuestionHash)
 }
 
 func (c *Question) HandleGetQuestionHashes(ctx context.Context, req *proto.GetQuestionHashesRequest) (*proto.GetQuestionHashesResponse, error) {

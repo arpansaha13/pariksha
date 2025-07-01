@@ -270,9 +270,9 @@ func (s *Question) GetQuestionsByIds(ctx context.Context, questionIDs []int64) (
 	return response, nil
 }
 
-// GetExamQuestion handles fetching question data for exam taking
-func (s *Question) GetExamQuestion(ctx context.Context, hash string) (*proto.QuestionResponse, error) {
-	question, err := s.questionRepo.GetExamQuestion(nil, hash)
+// GetExamQuestionByHash handles fetching question data for exam taking
+func (s *Question) GetExamQuestionByHash(ctx context.Context, hash string) (*proto.ExamQuestionResponse, error) {
+	question, err := s.questionRepo.GetExamQuestionByHash(nil, hash)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, constants.ErrNotFound)
 	}
@@ -285,7 +285,17 @@ func (s *Question) GetExamQuestion(ctx context.Context, hash string) (*proto.Que
 		}
 	}
 
-	return questionToProto(*question, testCases)
+	protoTestCases, err := testCasesToProto(testCases)
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.ExamQuestionResponse{
+		QuestionHash: hash,
+		RawQuestion:  question.Question,
+		Type:         question.Type,
+		TestCases:    protoTestCases,
+	}, nil
 }
 
 // GetQuestionHashes handles the business logic for fetching question hashes

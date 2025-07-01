@@ -51,3 +51,19 @@ func (s *Question) GetExamQuestions(req *proto.ExamRequest) (*proto.ExamQuestion
 		Questions: questions,
 	}, nil
 }
+
+// GetExamQuestion retrieves the question specified by the hash
+func (s *Question) GetExamQuestion(req *proto.ExamQuestionRequest) (*proto.ExamQuestionResponse, error) {
+	// Fetch question hashes from paper service
+	question, err := paper.FetchQuestionByHash(req.QuestionHash)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to fetch question hashes")
+	}
+
+	return &proto.ExamQuestionResponse{
+		QuestionHash: question.QuestionHash,
+		Type:         question.Type,
+		RawQuestion:  question.RawQuestion,
+		TestCases:    question.TestCases,
+	}, nil
+}

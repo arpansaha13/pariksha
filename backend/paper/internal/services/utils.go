@@ -120,26 +120,40 @@ func questionToProto(question models.Question, testCases []models.TestCase) (*pr
 		RawQuestion:   question.Question,
 	}
 
-	// Add test cases if this is a coding question
-	if question.Type == proto.QuestionType_CODING && len(testCases) > 0 {
-		protoTestCases := make([]*proto.PaperTestCase, 0, len(testCases))
-		for _, tc := range testCases {
-			var content models.TestCaseContent
-			if err := json.Unmarshal(tc.Content, &content); err != nil {
-				return nil, status.Error(codes.Internal, "invalid test case format")
-			}
-			protoTestCases = append(protoTestCases, &proto.PaperTestCase{
-				Inputs:      content.Inputs,
-				Output:      content.Output,
-				Explanation: content.Explanation,
-				Hidden:      tc.Hidden,
-				Order:       int32(tc.Order),
-			})
-		}
-		response.TestCases = protoTestCases
+	protoTestCases, err := testCasesToProto(testCases)
+	if err != nil {
+		return nil, err
 	}
+	response.TestCases = protoTestCases
 
 	return response, nil
+}
+
+func testCasesToProto(testCases []models.TestCase) ([]*proto.CodingQuestionTestCase, error) {
+	protoTestCases := make([]*proto.CodingQuestionTestCase, 0, len(testCases))
+	for _, tc := range testCases {
+		protoTestCase, err := testCaseToProto(&tc)
+		if err != nil {
+			return nil, err
+		}
+		protoTestCases = append(protoTestCases, protoTestCase)
+	}
+	return protoTestCases, nil
+}
+
+func testCaseToProto(tc *models.TestCase) (*proto.CodingQuestionTestCase, error) {
+	var content models.TestCaseContent
+	if err := json.Unmarshal(tc.Content, &content); err != nil {
+		return nil, status.Error(codes.Internal, "invalid test case format")
+	}
+
+	return &proto.CodingQuestionTestCase{
+		Inputs:      content.Inputs,
+		Output:      content.Output,
+		Explanation: content.Explanation,
+		Hidden:      tc.Hidden,
+		Order:       int32(tc.Order),
+	}, nil
 }
 
 // QuestionToMinimalProto converts a Question model to minimal proto response
