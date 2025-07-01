@@ -24,4 +24,9 @@
     "go": false,
     "vue": false
   },
+  "protoc": {
+    "options": [
+      "--proto_path=backend/common/proto"
+    ]
+  }
 }
