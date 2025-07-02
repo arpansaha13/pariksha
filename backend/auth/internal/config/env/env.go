@@ -3,23 +3,22 @@ package env
 import (
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/joho/godotenv"
 
 	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/utils"
 )
 
 var (
-	GO_ENV                                 string
-	AUTH_SERVER_PORT                       string
-	JWT_SECRET_KEY                         string
-	OTP_EXPIRES_IN_MINUTES                 int
-	SESSION_EXPIRES_IN_HOURS               int
-	SESSION_COOKIE_NAME                    string
-	CSRFTOKEN_COOKIE_NAME                  string
-	OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD int
+	GO_ENV           string
+	AUTH_SERVER_PORT string
+	JWT_SECRET_KEY   string
+)
+
+const (
+	SESSION_EXPIRES_IN_HOURS               int16 = 24
+	OTP_LOGIN_EXPIRES_IN_MINUTES           int16 = 15
+	OTP_FORGOT_PASSWORD_EXPIRES_IN_MINUTES int16 = 15
 )
 
 var (
@@ -54,12 +53,6 @@ func init() {
 	GO_ENV = os.Getenv("GO_ENV")
 	AUTH_SERVER_PORT = os.Getenv("AUTH_SERVER_PORT")
 	JWT_SECRET_KEY = os.Getenv("JWT_SECRET_KEY")
-
-	OTP_EXPIRES_IN_MINUTES, _ = strconv.Atoi(utils.GetEnvWithDefault("OTP_EXPIRES_IN_MINUTES", "15"))
-	SESSION_EXPIRES_IN_HOURS, _ = strconv.Atoi(utils.GetEnvWithDefault("SESSION_EXPIRES_IN_HOURS", "24"))
-	SESSION_COOKIE_NAME = utils.GetEnvWithDefault("SESSION_COOKIE_NAME", "token")
-	CSRFTOKEN_COOKIE_NAME = utils.GetEnvWithDefault("CSRFTOKEN_COOKIE_NAME", "csrftoken")
-	OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD, _ = strconv.Atoi(utils.GetEnvWithDefault("OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD", "30"))
 
 	USERS_DB_USER = os.Getenv("USERS_DB_USER")
 	USERS_DB_PASS = os.Getenv("USERS_DB_PASS")

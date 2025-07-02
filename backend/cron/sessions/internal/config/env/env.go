@@ -3,18 +3,17 @@ package env
 import (
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/joho/godotenv"
 
 	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/utils"
 )
 
 var (
-	GO_ENV              string
-	CRON_INTERVAL_HOURS int
+	GO_ENV string
 )
+
+const CRON_INTERVAL_HOURS int16 = 12
 
 var (
 	USERS_DB_HOST    string
@@ -45,7 +44,6 @@ func init() {
 	USERS_DB_USER = os.Getenv("USERS_DB_USER")
 	USERS_DB_PASS = os.Getenv("USERS_DB_PASS")
 	USERS_DB_NAME = os.Getenv("USERS_DB_NAME")
-	CRON_INTERVAL_HOURS, _ = strconv.Atoi(utils.GetEnvWithDefault("CRON_INTERVAL_HOURS", "1"))
 
 	if GO_ENV != constants.GO_ENV_TEST {
 		USERS_DB_HOST = os.Getenv("USERS_DB_HOST")
@@ -60,7 +58,6 @@ func getRequiredEnvVars() []string {
 		"USERS_DB_USER",
 		"USERS_DB_PASS",
 		"USERS_DB_NAME",
-		"CRON_INTERVAL_HOURS",
 	}
 
 	if os.Getenv("GO_ENV") != constants.GO_ENV_TEST {

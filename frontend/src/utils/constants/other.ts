@@ -3,8 +3,8 @@ export enum HeaderNames {
 }
 
 export enum CookieNames {
-  CSRF_TOKEN = 'csrftoken',
-  TOKEN = 'token',
+  CSRF_TOKEN = 'pariksha-csrftoken',
+  TOKEN = 'pariksha-token',
 }
 
 export enum NuxtErrorStatusMessage {

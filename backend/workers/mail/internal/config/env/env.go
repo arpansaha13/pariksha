@@ -10,12 +10,14 @@ import (
 var (
 	GO_ENV           string
 	MAIL_SERVER_PORT string
-	SMTP_NAME        string
-	SMTP_USER        string
-	SMTP_FROM        string
-	SMTP_PASSWORD    string
-	SMTP_HOST        string
-	SMTP_PORT        string
+)
+var (
+	SMTP_NAME     string
+	SMTP_USER     string
+	SMTP_FROM     string
+	SMTP_PASSWORD string
+	SMTP_HOST     string
+	SMTP_PORT     string
 )
 
 var (
@@ -42,7 +44,8 @@ func init() {
 	}
 
 	GO_ENV = os.Getenv("GO_ENV")
-	MAIL_SERVER_PORT = utils.GetEnvWithDefault("MAIL_SERVER_PORT", "4010")
+	MAIL_SERVER_PORT = utils.GetEnvWithDefault("MAIL_SERVER_PORT", "4000")
+
 	SMTP_NAME = os.Getenv("SMTP_NAME")
 	SMTP_USER = os.Getenv("SMTP_USER")
 	SMTP_FROM = os.Getenv("SMTP_FROM")

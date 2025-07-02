@@ -8,10 +8,13 @@ import (
 )
 
 var (
-	GO_ENV                string
-	API_PORT              string
-	SESSION_COOKIE_NAME   string
-	CSRFTOKEN_COOKIE_NAME string
+	GO_ENV   string
+	API_PORT string
+)
+
+const (
+	SESSION_COOKIE_NAME   string = "pariksha-token"
+	CSRFTOKEN_COOKIE_NAME string = "pariksha-csrftoken"
 )
 
 var (
@@ -60,9 +63,6 @@ func init() {
 
 	GO_ENV = os.Getenv("GO_ENV")
 	API_PORT = utils.GetEnvWithDefault("API_PORT", "4000")
-
-	SESSION_COOKIE_NAME = utils.GetEnvWithDefault("SESSION_COOKIE_NAME", "token")
-	CSRFTOKEN_COOKIE_NAME = utils.GetEnvWithDefault("CSRFTOKEN_COOKIE_NAME", "csrftoken")
 
 	AUTH_SERVER_HOST = os.Getenv("AUTH_SERVER_HOST")
 	AUTH_SERVER_PORT = os.Getenv("AUTH_SERVER_PORT")

@@ -16,7 +16,7 @@ export default defineNuxtPlugin(nuxtApp => {
         const token = useCookie(CookieNames.TOKEN) // Server-side JS can read HttpOnly cookies
         if (token.value) {
           // https://nuxt.com/docs/api/utils/dollarfetch#passing-headers-and-cookies
-          options.headers.set('Cookie', `token=${token.value}`)
+          options.headers.set('Cookie', `${CookieNames.TOKEN}=${token.value}`)
         }
       }
     },

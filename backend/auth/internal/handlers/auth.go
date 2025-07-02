@@ -135,7 +135,7 @@ func (s *AuthServer) InitiateLoginWithOtp(ctx context.Context, req *proto.LoginW
 	}
 
 	otp, _ := utils.GenerateOTP(constants.VERIFICATION_OTP_LENGTH)
-	otpExpiresInMinutes := env.OTP_EXPIRES_IN_MINUTES
+	otpExpiresInMinutes := env.OTP_LOGIN_EXPIRES_IN_MINUTES
 	otpExpiresAt := time.Now().Add(time.Duration(otpExpiresInMinutes) * time.Minute)
 
 	otpEntry := models.Otp{
@@ -202,7 +202,7 @@ func (s *AuthServer) SignUp(ctx context.Context, req *proto.SignUpRequest) (*pro
 		}
 
 		otp, _ := utils.GenerateOTP(constants.VERIFICATION_OTP_LENGTH)
-		otpExpiresAt := time.Now().Add(time.Duration(env.OTP_EXPIRES_IN_MINUTES) * time.Minute)
+		otpExpiresAt := time.Now().Add(time.Duration(env.OTP_LOGIN_EXPIRES_IN_MINUTES) * time.Minute)
 
 		otpEntry := models.Otp{
 			Email:        req.Email,
@@ -217,7 +217,7 @@ func (s *AuthServer) SignUp(ctx context.Context, req *proto.SignUpRequest) (*pro
 		services.MailService.SendVerificationMail(&structs.MailRequestVerification{
 			To:               req.Email,
 			Otp:              otp,
-			ExpiresInMinutes: env.OTP_EXPIRES_IN_MINUTES,
+			ExpiresInMinutes: env.OTP_LOGIN_EXPIRES_IN_MINUTES,
 		})
 
 		return nil
@@ -353,7 +353,7 @@ func (s *AuthServer) ForgotPassword(ctx context.Context, req *proto.ForgotPasswo
 	}
 
 	otp, _ := utils.GenerateOTP(constants.VERIFICATION_OTP_LENGTH)
-	otpExpiresAt := time.Now().Add(time.Duration(env.OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD) * time.Minute)
+	otpExpiresAt := time.Now().Add(time.Duration(env.OTP_FORGOT_PASSWORD_EXPIRES_IN_MINUTES) * time.Minute)
 
 	otpEntry := models.Otp{
 		Email:        req.Email,
@@ -369,7 +369,7 @@ func (s *AuthServer) ForgotPassword(ctx context.Context, req *proto.ForgotPasswo
 	services.MailService.SendForgotPasswordMail(&structs.MailRequestForgotPassword{
 		To:               req.Email,
 		Otp:              otp,
-		ExpiresInMinutes: env.OTP_EXPIRES_IN_MINUTES_FORGOT_PASSWORD,
+		ExpiresInMinutes: env.OTP_FORGOT_PASSWORD_EXPIRES_IN_MINUTES,
 	})
 
 	return &proto.Empty{}, nil
