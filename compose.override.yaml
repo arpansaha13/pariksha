@@ -32,8 +32,6 @@ services:
 
   backend:
     depends_on:
-      auth:
-        condition: service_started
       paper:
         condition: service_started
       exam:
@@ -43,17 +41,7 @@ services:
     networks:
       - nginx-network
       - backend-network
-
-  auth:
-    depends_on:
-      usersDb:
-        condition: service_healthy
-      commonQueue:
-        condition: service_healthy
-    networks:
-      - backend-network
-      - auth-network
-      - common-queue-network
+      - global_auth-network
 
   paper:
     depends_on:
@@ -89,20 +77,6 @@ services:
       - backend-network
       - engine-paper-network
 
-  mailWorker:
-    depends_on:
-      commonQueue:
-        condition: service_healthy
-    networks:
-      - common-queue-network
-
-  sessionsCron:
-    depends_on:
-      usersDb:
-        condition: service_healthy
-    networks:
-      - auth-network
-
   # A common message queue for all services
   commonQueue:
     image: redis:7-alpine
@@ -121,20 +95,6 @@ services:
       - ./docker/conf/commonQueue/redis.conf:/usr/local/etc/redis/redis.conf
     networks:
       - common-queue-network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "1"
-
-  usersDb:
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_DB=${POSTGRES_DB_USERS}
-    volumes:
-      - ./docker/data/usersDb:/var/lib/postgresql/data
-    networks:
-      - auth-network
     logging:
       driver: "json-file"
       options:
@@ -183,12 +143,14 @@ services:
       - common-queue-network
 
 networks:
+  global_auth-network:
+    external: true
+  global_mail-network:
+    external: true
   nginx-network:
     name: nginx-network
   backend-network:
     name: backend-network
-  auth-network:
-    name: auth-network
   common-queue-network:
     name: common-queue-network
   paper-network:

@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/db"
@@ -56,11 +58,11 @@ func InitializeHandlers() {
 
 // _________________________PAPER HANDLERS__________________________
 
-func (s *PaperServer) GetUserPapers(ctx context.Context, req *proto.Empty) (*proto.PaperList, error) {
+func (s *PaperServer) GetUserPapers(ctx context.Context, req *emptypb.Empty) (*proto.PaperList, error) {
 	return paperCtrl.HandleGetUserPapers(ctx, req)
 }
 
-func (s *PaperServer) CreatePaper(ctx context.Context, req *proto.Empty) (*proto.PaperResponse, error) {
+func (s *PaperServer) CreatePaper(ctx context.Context, req *emptypb.Empty) (*proto.PaperResponse, error) {
 	return paperCtrl.HandleCreatePaper(ctx, req)
 }
 
@@ -68,7 +70,7 @@ func (s *PaperServer) GetPaper(ctx context.Context, req *proto.PaperRequest) (*p
 	return paperCtrl.HandleGetPaper(ctx, req)
 }
 
-func (s *PaperServer) UpdatePaper(ctx context.Context, req *proto.UpdatePaperRequest) (*proto.Empty, error) {
+func (s *PaperServer) UpdatePaper(ctx context.Context, req *proto.UpdatePaperRequest) (*emptypb.Empty, error) {
 	return paperCtrl.HandleUpdatePaper(ctx, req)
 }
 
@@ -76,7 +78,7 @@ func (s *PaperServer) GetPaperPermissions(ctx context.Context, req *proto.PaperR
 	return paperCtrl.HandleGetPaperPermissions(ctx, req)
 }
 
-func (s *PaperServer) DeletePapers(ctx context.Context, req *proto.DeletePapersRequest) (*proto.Empty, error) {
+func (s *PaperServer) DeletePapers(ctx context.Context, req *proto.DeletePapersRequest) (*emptypb.Empty, error) {
 	return paperCtrl.HandleDeletePapers(ctx, req)
 }
 
@@ -98,11 +100,11 @@ func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuest
 	return questionCtrl.HandleUpdateQuestion(ctx, req)
 }
 
-func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.Empty, error) {
+func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionRequest) (*emptypb.Empty, error) {
 	return questionCtrl.HandleDeleteQuestion(ctx, req)
 }
 
-func (s *PaperServer) ReorderQuestions(ctx context.Context, req *proto.ReorderQuestionsRequest) (*proto.Empty, error) {
+func (s *PaperServer) ReorderQuestions(ctx context.Context, req *proto.ReorderQuestionsRequest) (*emptypb.Empty, error) {
 	return questionCtrl.HandleReorderQuestions(ctx, req)
 }
 
@@ -116,15 +118,15 @@ func (s *PaperServer) CreateCategory(ctx context.Context, req *proto.CreateCateg
 	return categoryCtrl.HandleCreateCategory(ctx, req)
 }
 
-func (s *PaperServer) UpdateCategory(ctx context.Context, req *proto.UpdateCategoryRequest) (*proto.Empty, error) {
+func (s *PaperServer) UpdateCategory(ctx context.Context, req *proto.UpdateCategoryRequest) (*emptypb.Empty, error) {
 	return categoryCtrl.HandleUpdateCategory(ctx, req)
 }
 
-func (s *PaperServer) DeleteCategory(ctx context.Context, req *proto.CategoryRequest) (*proto.Empty, error) {
+func (s *PaperServer) DeleteCategory(ctx context.Context, req *proto.CategoryRequest) (*emptypb.Empty, error) {
 	return categoryCtrl.HandleDeleteCategory(ctx, req)
 }
 
-func (s *PaperServer) ReorderCategories(ctx context.Context, req *proto.ReorderCategoriesRequest) (*proto.Empty, error) {
+func (s *PaperServer) ReorderCategories(ctx context.Context, req *proto.ReorderCategoriesRequest) (*emptypb.Empty, error) {
 	return categoryCtrl.HandleReorderCategories(ctx, req)
 }
 
@@ -136,7 +138,7 @@ func (s *PaperServer) GetBoilerplate(ctx context.Context, req *proto.GetBoilerpl
 
 // ________________________TESTCASE HANDLERS________________________
 
-func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.UpsertTestCasesRequest) (*proto.Empty, error) {
+func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.UpsertTestCasesRequest) (*emptypb.Empty, error) {
 	return testCaseCtrl.HandleUpsertTestCases(ctx, req)
 }
 

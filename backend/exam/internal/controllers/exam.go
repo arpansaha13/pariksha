@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"pariksha/common/pkg/proto"
 	"pariksha/exam/internal/services"
 )
@@ -18,7 +20,7 @@ func NewExam(s *services.Exam) *Exam {
 }
 
 // HandleGetUserExams handles retrieving all exams for a user
-func (c *Exam) HandleGetUserExams(ctx context.Context, req *proto.Empty) (*proto.ExamList, error) {
+func (c *Exam) HandleGetUserExams(ctx context.Context, req *emptypb.Empty) (*proto.ExamList, error) {
 	return c.examSvc.GetUserExams(ctx)
 }
 
@@ -33,12 +35,12 @@ func (c *Exam) HandleUpdateExam(ctx context.Context, req *proto.UpdateExamReques
 }
 
 // HandleStartExam handles starting an exam for a participant
-func (c *Exam) HandleStartExam(ctx context.Context, req *proto.StartExamRequest) (*proto.Empty, error) {
+func (c *Exam) HandleStartExam(ctx context.Context, req *proto.StartExamRequest) (*emptypb.Empty, error) {
 	return c.examSvc.StartExam(ctx, req)
 }
 
 // HandleEndExam handles ending an exam for a participant
-func (c *Exam) HandleEndExam(ctx context.Context, req *proto.EndExamRequest) (*proto.Empty, error) {
+func (c *Exam) HandleEndExam(ctx context.Context, req *proto.EndExamRequest) (*emptypb.Empty, error) {
 	return c.examSvc.EndExam(ctx, req)
 }
 
@@ -53,6 +55,6 @@ func (c *Exam) HandleGetExamPermission(ctx context.Context, req *proto.ExamReque
 }
 
 // HandleDeleteExams handles deleting exams
-func (c *Exam) HandleDeleteExams(ctx context.Context, req *proto.DeleteExamsRequest) (*proto.Empty, error) {
+func (c *Exam) HandleDeleteExams(ctx context.Context, req *proto.DeleteExamsRequest) (*emptypb.Empty, error) {
 	return c.examSvc.DeleteExams(ctx, req)
 }

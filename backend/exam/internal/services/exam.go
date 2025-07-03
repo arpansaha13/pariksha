@@ -7,6 +7,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
@@ -177,7 +178,7 @@ func (s *Exam) UpdateExam(ctx context.Context, req *proto.UpdateExamRequest) (*p
 }
 
 // StartExam initiates an exam for a participant and updates participation statistics
-func (s *Exam) StartExam(ctx context.Context, _ *proto.StartExamRequest) (*proto.Empty, error) {
+func (s *Exam) StartExam(ctx context.Context, _ *proto.StartExamRequest) (*emptypb.Empty, error) {
 	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
@@ -267,11 +268,11 @@ func (s *Exam) StartExam(ctx context.Context, _ *proto.StartExamRequest) (*proto
 		return nil, err
 	}
 
-	return &proto.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // EndExam marks a participant's exam as complete and updates participation statistics
-func (s *Exam) EndExam(ctx context.Context, req *proto.EndExamRequest) (*proto.Empty, error) {
+func (s *Exam) EndExam(ctx context.Context, req *proto.EndExamRequest) (*emptypb.Empty, error) {
 	exam, ok := interceptors.GetExamFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "exam not found in context")
@@ -285,7 +286,7 @@ func (s *Exam) EndExam(ctx context.Context, req *proto.EndExamRequest) (*proto.E
 
 	// Return success if exam is already ended
 	if participant.Status == constants.PARTICIPANT_STATUS_ENDED {
-		return &proto.Empty{}, nil
+		return &emptypb.Empty{}, nil
 	}
 
 	err := s.examRepo.Transaction(func(tx *gorm.DB) error {
@@ -302,7 +303,7 @@ func (s *Exam) EndExam(ctx context.Context, req *proto.EndExamRequest) (*proto.E
 		return nil, err
 	}
 
-	return &proto.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // GetExam retrieves detailed information about a specific exam
@@ -361,7 +362,7 @@ func (s *Exam) GetExamPermission(ctx context.Context, req *proto.ExamRequest) (*
 }
 
 // DeleteExams handles the batch deletion of exams and their associated permissions
-func (s *Exam) DeleteExams(ctx context.Context, req *proto.DeleteExamsRequest) (*proto.Empty, error) {
+func (s *Exam) DeleteExams(ctx context.Context, req *proto.DeleteExamsRequest) (*emptypb.Empty, error) {
 	err := s.examRepo.Transaction(func(tx *gorm.DB) error {
 		examIDs, err := s.examRepo.DeleteByHashes(tx, req.ExamHashes)
 		if err != nil {
@@ -383,5 +384,5 @@ func (s *Exam) DeleteExams(ctx context.Context, req *proto.DeleteExamsRequest) (
 		return nil, err
 	}
 
-	return &proto.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }

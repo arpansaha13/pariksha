@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
@@ -536,7 +537,7 @@ func TestUpsertPaperTestCases(t *testing.T) {
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				tt.request,
 				client.UpsertPaperTestCases,
-				func(t *testing.T, _ *proto.Empty) {
+				func(t *testing.T, _ *emptypb.Empty) {
 					if tt.validate != nil {
 						tt.validate(t, question.ID)
 					}

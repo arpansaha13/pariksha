@@ -5,11 +5,12 @@ package proto;
 option go_package = "/proto";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 import "common.proto";
 
 service Exam {
   // Exam operations
-  rpc GetUserExams(Empty) returns (ExamList) {}
+  rpc GetUserExams(google.protobuf.Empty) returns (ExamList) {}
   rpc CreateExam(CreateExamRequest) returns (ExamResponse) {}
   rpc UpdateExam(UpdateExamRequest) returns (ExamResponse) {}
   rpc GetExam(ExamRequest) returns (ExamResponse) {}
@@ -17,15 +18,16 @@ service Exam {
   rpc GetExamCategories(ExamRequest) returns (ExamCategoriesResponse) {}
   rpc GetExamQuestion(ExamQuestionRequest) returns (ExamQuestionResponse) {}
   rpc GetExamPermission(ExamRequest) returns (ExamPermissionResponse) {}
-  rpc DeleteExams(DeleteExamsRequest) returns (Empty) {}
+  rpc DeleteExams(DeleteExamsRequest) returns (google.protobuf.Empty) {}
   rpc GetExamResults(ExamRequest) returns (ExamResultsResponse) {}
 
   // Participant operations
   rpc GetExamParticipants(ExamRequest) returns (ParticipantList) {}
   rpc AddExamParticipant(AddParticipantRequest) returns (ParticipantResponse) {}
-  rpc RemoveExamParticipant(RemoveParticipantRequest) returns (Empty) {}
-  rpc StartExam(StartExamRequest) returns (Empty) {}
-  rpc EndExam(EndExamRequest) returns (Empty) {}
+  rpc RemoveExamParticipant(RemoveParticipantRequest)
+      returns (google.protobuf.Empty) {}
+  rpc StartExam(StartExamRequest) returns (google.protobuf.Empty) {}
+  rpc EndExam(EndExamRequest) returns (google.protobuf.Empty) {}
   rpc GetExamParticipant(GetExamParticipantRequest)
       returns (GetExamParticipantResponse) {}
   rpc GetParticipantById(ParticipantRequest) returns (ParticipantResponse) {}

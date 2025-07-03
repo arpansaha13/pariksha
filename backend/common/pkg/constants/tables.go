@@ -20,10 +20,3 @@ const (
 	TABLE_CATEGORIES        = "categories"
 	TABLE_TEST_CASES        = "test_cases"
 )
-
-// authDb
-const (
-	TABLE_USERS    = "users"
-	TABLE_OTPS     = "otps"
-	TABLE_SESSIONS = "sessions"
-)

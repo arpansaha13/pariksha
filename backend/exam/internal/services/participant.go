@@ -6,6 +6,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 
@@ -119,7 +120,7 @@ func (s *Participant) AddExamParticipant(ctx context.Context, req *proto.AddPart
 	}, nil
 }
 
-func (s *Participant) RemoveExamParticipant(ctx context.Context, req *proto.RemoveParticipantRequest) (*proto.Empty, error) {
+func (s *Participant) RemoveExamParticipant(ctx context.Context, req *proto.RemoveParticipantRequest) (*emptypb.Empty, error) {
 	exam, ok := interceptors.GetExamFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "exam not found in context")
@@ -169,7 +170,7 @@ func (s *Participant) RemoveExamParticipant(ctx context.Context, req *proto.Remo
 		return nil, err
 	}
 
-	return &proto.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // GetExamParticipant returns participant data for the current user

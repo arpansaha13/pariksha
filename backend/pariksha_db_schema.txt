@@ -118,13 +118,6 @@ Table question_categories {
   deleted_at timestamp
 }
 
-Table otps {
-  email varchar(255) [primary key]
-  otp varchar(6) [not null]
-  otp_expires_at timestamp [not null]
-  purpose smallint [not null]
-}
-
 Table languages {
   id smallint [primary key]
   slug varchar(255) [not null, unique]

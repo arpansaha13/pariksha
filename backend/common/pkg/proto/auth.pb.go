@@ -9,6 +9,7 @@ package proto
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -606,7 +607,7 @@ var File_auth_proto protoreflect.FileDescriptor
 const file_auth_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"auth.proto\x12\x05proto\x1a\fcommon.proto\x1a\n" +
+	"auth.proto\x12\x05proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\n" +
 	"user.proto\"L\n" +
 	"\x18LoginWithPasswordRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
@@ -649,22 +650,22 @@ const file_auth_proto_rawDesc = "" +
 	"_last_name\"0\n" +
 	"\rLogoutRequest\x12\x1f\n" +
 	"\vsession_key\x18\x01 \x01(\tR\n" +
-	"sessionKey2\x93\x06\n" +
+	"sessionKey2\xc5\x06\n" +
 	"\x04Auth\x12K\n" +
-	"\x11LoginWithPassword\x12\x1f.proto.LoginWithPasswordRequest\x1a\x13.proto.UserResponse\"\x00\x12B\n" +
-	"\x14InitiateLoginWithOtp\x12\x1a.proto.LoginWithOtpRequest\x1a\f.proto.Empty\"\x00\x12C\n" +
-	"\x0eVerifyLoginOtp\x12\x1a.proto.VerificationRequest\x1a\x13.proto.UserResponse\"\x00\x12.\n" +
-	"\x06SignUp\x12\x14.proto.SignUpRequest\x1a\f.proto.Empty\"\x00\x12A\n" +
-	"\fVerifySignup\x12\x1a.proto.VerificationRequest\x1a\x13.proto.UserResponse\"\x00\x12>\n" +
-	"\x0eForgotPassword\x12\x1c.proto.ForgotPasswordRequest\x1a\f.proto.Empty\"\x00\x12<\n" +
-	"\rResetPassword\x12\x1b.proto.ResetPasswordRequest\x1a\f.proto.Empty\"\x00\x12I\n" +
+	"\x11LoginWithPassword\x12\x1f.proto.LoginWithPasswordRequest\x1a\x13.proto.UserResponse\"\x00\x12L\n" +
+	"\x14InitiateLoginWithOtp\x12\x1a.proto.LoginWithOtpRequest\x1a\x16.google.protobuf.Empty\"\x00\x12C\n" +
+	"\x0eVerifyLoginOtp\x12\x1a.proto.VerificationRequest\x1a\x13.proto.UserResponse\"\x00\x128\n" +
+	"\x06SignUp\x12\x14.proto.SignUpRequest\x1a\x16.google.protobuf.Empty\"\x00\x12A\n" +
+	"\fVerifySignUp\x12\x1a.proto.VerificationRequest\x1a\x13.proto.UserResponse\"\x00\x12H\n" +
+	"\x0eForgotPassword\x12\x1c.proto.ForgotPasswordRequest\x1a\x16.google.protobuf.Empty\"\x00\x12F\n" +
+	"\rResetPassword\x12\x1b.proto.ResetPasswordRequest\x1a\x16.google.protobuf.Empty\"\x00\x12I\n" +
 	"\fAuthenticate\x12\x1a.proto.AuthenticateRequest\x1a\x1b.proto.AuthenticateResponse\"\x00\x12>\n" +
 	"\aGetUser\x12\x15.proto.GetUserRequest\x1a\x1a.proto.UserProfileResponse\"\x00\x12C\n" +
 	"\n" +
 	"UpdateUser\x12\x18.proto.UpdateUserRequest\x1a\x19.proto.UpdateUserResponse\"\x00\x12D\n" +
 	"\n" +
-	"UpsertUser\x12\x18.proto.UpsertUserRequest\x1a\x1a.proto.UserProfileResponse\"\x00\x12.\n" +
-	"\x06Logout\x12\x14.proto.LogoutRequest\x1a\f.proto.Empty\"\x00B\bZ\x06/protob\x06proto3"
+	"UpsertUser\x12\x18.proto.UpsertUserRequest\x1a\x1a.proto.UserProfileResponse\"\x00\x128\n" +
+	"\x06Logout\x12\x14.proto.LogoutRequest\x1a\x16.google.protobuf.Empty\"\x00B\bZ\x06/protob\x06proto3"
 
 var (
 	file_auth_proto_rawDescOnce sync.Once
@@ -693,7 +694,7 @@ var file_auth_proto_goTypes = []any{
 	(*LogoutRequest)(nil),            // 10: proto.LogoutRequest
 	(*GetUserRequest)(nil),           // 11: proto.GetUserRequest
 	(*UpdateUserRequest)(nil),        // 12: proto.UpdateUserRequest
-	(*Empty)(nil),                    // 13: proto.Empty
+	(*emptypb.Empty)(nil),            // 13: google.protobuf.Empty
 	(*UserProfileResponse)(nil),      // 14: proto.UserProfileResponse
 	(*UpdateUserResponse)(nil),       // 15: proto.UpdateUserResponse
 }
@@ -702,7 +703,7 @@ var file_auth_proto_depIdxs = []int32{
 	1,  // 1: proto.Auth.InitiateLoginWithOtp:input_type -> proto.LoginWithOtpRequest
 	3,  // 2: proto.Auth.VerifyLoginOtp:input_type -> proto.VerificationRequest
 	2,  // 3: proto.Auth.SignUp:input_type -> proto.SignUpRequest
-	3,  // 4: proto.Auth.VerifySignup:input_type -> proto.VerificationRequest
+	3,  // 4: proto.Auth.VerifySignUp:input_type -> proto.VerificationRequest
 	4,  // 5: proto.Auth.ForgotPassword:input_type -> proto.ForgotPasswordRequest
 	5,  // 6: proto.Auth.ResetPassword:input_type -> proto.ResetPasswordRequest
 	7,  // 7: proto.Auth.Authenticate:input_type -> proto.AuthenticateRequest
@@ -711,17 +712,17 @@ var file_auth_proto_depIdxs = []int32{
 	9,  // 10: proto.Auth.UpsertUser:input_type -> proto.UpsertUserRequest
 	10, // 11: proto.Auth.Logout:input_type -> proto.LogoutRequest
 	6,  // 12: proto.Auth.LoginWithPassword:output_type -> proto.UserResponse
-	13, // 13: proto.Auth.InitiateLoginWithOtp:output_type -> proto.Empty
+	13, // 13: proto.Auth.InitiateLoginWithOtp:output_type -> google.protobuf.Empty
 	6,  // 14: proto.Auth.VerifyLoginOtp:output_type -> proto.UserResponse
-	13, // 15: proto.Auth.SignUp:output_type -> proto.Empty
-	6,  // 16: proto.Auth.VerifySignup:output_type -> proto.UserResponse
-	13, // 17: proto.Auth.ForgotPassword:output_type -> proto.Empty
-	13, // 18: proto.Auth.ResetPassword:output_type -> proto.Empty
+	13, // 15: proto.Auth.SignUp:output_type -> google.protobuf.Empty
+	6,  // 16: proto.Auth.VerifySignUp:output_type -> proto.UserResponse
+	13, // 17: proto.Auth.ForgotPassword:output_type -> google.protobuf.Empty
+	13, // 18: proto.Auth.ResetPassword:output_type -> google.protobuf.Empty
 	8,  // 19: proto.Auth.Authenticate:output_type -> proto.AuthenticateResponse
 	14, // 20: proto.Auth.GetUser:output_type -> proto.UserProfileResponse
 	15, // 21: proto.Auth.UpdateUser:output_type -> proto.UpdateUserResponse
 	14, // 22: proto.Auth.UpsertUser:output_type -> proto.UserProfileResponse
-	13, // 23: proto.Auth.Logout:output_type -> proto.Empty
+	13, // 23: proto.Auth.Logout:output_type -> google.protobuf.Empty
 	12, // [12:24] is the sub-list for method output_type
 	0,  // [0:12] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
@@ -734,7 +735,6 @@ func file_auth_proto_init() {
 	if File_auth_proto != nil {
 		return
 	}
-	file_common_proto_init()
 	file_user_proto_init()
 	file_auth_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}

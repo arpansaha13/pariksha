@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
@@ -22,7 +24,7 @@ func NewPaper(s *services.Paper) *Paper {
 	}
 }
 
-func (c *Paper) HandleGetUserPapers(ctx context.Context, _ *proto.Empty) (*proto.PaperList, error) {
+func (c *Paper) HandleGetUserPapers(ctx context.Context, _ *emptypb.Empty) (*proto.PaperList, error) {
 	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
@@ -30,7 +32,7 @@ func (c *Paper) HandleGetUserPapers(ctx context.Context, _ *proto.Empty) (*proto
 	return c.paperSvc.GetUserPapers(ctx, userID)
 }
 
-func (c *Paper) HandleCreatePaper(ctx context.Context, _ *proto.Empty) (*proto.PaperResponse, error) {
+func (c *Paper) HandleCreatePaper(ctx context.Context, _ *emptypb.Empty) (*proto.PaperResponse, error) {
 	userID, err := utils.GetUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
@@ -47,11 +49,11 @@ func (c *Paper) HandleGetPaper(ctx context.Context, req *proto.PaperRequest) (*p
 	return paperToProto(paper), nil
 }
 
-func (c *Paper) HandleUpdatePaper(ctx context.Context, req *proto.UpdatePaperRequest) (*proto.Empty, error) {
+func (c *Paper) HandleUpdatePaper(ctx context.Context, req *proto.UpdatePaperRequest) (*emptypb.Empty, error) {
 	if err := c.paperSvc.UpdatePaper(ctx, req); err != nil {
 		return nil, err
 	}
-	return &proto.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 func (c *Paper) HandleGetPaperPermissions(ctx context.Context, req *proto.PaperRequest) (*proto.PaperPermissionsResponse, error) {
@@ -66,11 +68,11 @@ func (c *Paper) HandleGetPaperPermissions(ctx context.Context, req *proto.PaperR
 	}, nil
 }
 
-func (c *Paper) HandleDeletePapers(ctx context.Context, req *proto.DeletePapersRequest) (*proto.Empty, error) {
+func (c *Paper) HandleDeletePapers(ctx context.Context, req *proto.DeletePapersRequest) (*emptypb.Empty, error) {
 	if err := c.paperSvc.DeletePapers(ctx, req.PaperHashes); err != nil {
 		return nil, err
 	}
-	return &proto.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // Helper function to convert Paper model to proto response

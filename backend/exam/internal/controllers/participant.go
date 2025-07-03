@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"pariksha/common/pkg/proto"
 	"pariksha/exam/internal/services"
 )
@@ -28,7 +30,7 @@ func (c *Participant) HandleAddExamParticipant(ctx context.Context, req *proto.A
 }
 
 // HandleRemoveExamParticipant handles removing a participant from an exam
-func (c *Participant) HandleRemoveExamParticipant(ctx context.Context, req *proto.RemoveParticipantRequest) (*proto.Empty, error) {
+func (c *Participant) HandleRemoveExamParticipant(ctx context.Context, req *proto.RemoveParticipantRequest) (*emptypb.Empty, error) {
 	return c.participantSvc.RemoveExamParticipant(ctx, req)
 }
 

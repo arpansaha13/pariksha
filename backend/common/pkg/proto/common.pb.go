@@ -132,42 +132,6 @@ func (ParameterType) EnumDescriptor() ([]byte, []int) {
 	return file_common_proto_rawDescGZIP(), []int{1}
 }
 
-type Empty struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Empty) Reset() {
-	*x = Empty{}
-	mi := &file_common_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Empty) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Empty) ProtoMessage() {}
-
-func (x *Empty) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Empty.ProtoReflect.Descriptor instead.
-func (*Empty) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{0}
-}
-
 type CodingQuestionTestCase struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Inputs        []string               `protobuf:"bytes,1,rep,name=inputs,proto3" json:"inputs,omitempty"`
@@ -181,7 +145,7 @@ type CodingQuestionTestCase struct {
 
 func (x *CodingQuestionTestCase) Reset() {
 	*x = CodingQuestionTestCase{}
-	mi := &file_common_proto_msgTypes[1]
+	mi := &file_common_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -193,7 +157,7 @@ func (x *CodingQuestionTestCase) String() string {
 func (*CodingQuestionTestCase) ProtoMessage() {}
 
 func (x *CodingQuestionTestCase) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[1]
+	mi := &file_common_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -206,7 +170,7 @@ func (x *CodingQuestionTestCase) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CodingQuestionTestCase.ProtoReflect.Descriptor instead.
 func (*CodingQuestionTestCase) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{1}
+	return file_common_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CodingQuestionTestCase) GetInputs() []string {
@@ -256,7 +220,7 @@ type ExamQuestionResponse struct {
 
 func (x *ExamQuestionResponse) Reset() {
 	*x = ExamQuestionResponse{}
-	mi := &file_common_proto_msgTypes[2]
+	mi := &file_common_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -268,7 +232,7 @@ func (x *ExamQuestionResponse) String() string {
 func (*ExamQuestionResponse) ProtoMessage() {}
 
 func (x *ExamQuestionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[2]
+	mi := &file_common_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -281,7 +245,7 @@ func (x *ExamQuestionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExamQuestionResponse.ProtoReflect.Descriptor instead.
 func (*ExamQuestionResponse) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{2}
+	return file_common_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ExamQuestionResponse) GetQuestionHash() string {
@@ -316,8 +280,7 @@ var File_common_proto protoreflect.FileDescriptor
 
 const file_common_proto_rawDesc = "" +
 	"\n" +
-	"\fcommon.proto\x12\x05proto\"\a\n" +
-	"\x05Empty\"\xad\x01\n" +
+	"\fcommon.proto\x12\x05proto\"\xad\x01\n" +
 	"\x16CodingQuestionTestCase\x12\x16\n" +
 	"\x06inputs\x18\x01 \x03(\tR\x06inputs\x12\x16\n" +
 	"\x06output\x18\x02 \x01(\tR\x06output\x12%\n" +
@@ -361,17 +324,16 @@ func file_common_proto_rawDescGZIP() []byte {
 }
 
 var file_common_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_common_proto_goTypes = []any{
 	(QuestionType)(0),              // 0: proto.QuestionType
 	(ParameterType)(0),             // 1: proto.ParameterType
-	(*Empty)(nil),                  // 2: proto.Empty
-	(*CodingQuestionTestCase)(nil), // 3: proto.CodingQuestionTestCase
-	(*ExamQuestionResponse)(nil),   // 4: proto.ExamQuestionResponse
+	(*CodingQuestionTestCase)(nil), // 2: proto.CodingQuestionTestCase
+	(*ExamQuestionResponse)(nil),   // 3: proto.ExamQuestionResponse
 }
 var file_common_proto_depIdxs = []int32{
 	0, // 0: proto.ExamQuestionResponse.type:type_name -> proto.QuestionType
-	3, // 1: proto.ExamQuestionResponse.test_cases:type_name -> proto.CodingQuestionTestCase
+	2, // 1: proto.ExamQuestionResponse.test_cases:type_name -> proto.CodingQuestionTestCase
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -384,14 +346,14 @@ func file_common_proto_init() {
 	if File_common_proto != nil {
 		return
 	}
-	file_common_proto_msgTypes[1].OneofWrappers = []any{}
+	file_common_proto_msgTypes[0].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_proto_rawDesc), len(file_common_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   3,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

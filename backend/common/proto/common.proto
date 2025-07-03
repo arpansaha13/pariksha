@@ -4,8 +4,6 @@ package proto;
 
 option go_package = "/proto";
 
-message Empty {}
-
 // Question Type enum
 enum QuestionType {
   UNKNOWN_QUESTION_TYPE = 0;

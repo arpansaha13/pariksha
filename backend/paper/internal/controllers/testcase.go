@@ -2,6 +2,9 @@ package controllers
 
 import (
 	"context"
+
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/services"
 )
@@ -15,6 +18,6 @@ func NewTestCase(service *services.TestCase) *TestCase {
 }
 
 // HandleUpsertTestCases handles bulk creation and updates of test cases
-func (c *TestCase) HandleUpsertTestCases(ctx context.Context, req *proto.UpsertTestCasesRequest) (*proto.Empty, error) {
+func (c *TestCase) HandleUpsertTestCases(ctx context.Context, req *proto.UpsertTestCasesRequest) (*emptypb.Empty, error) {
 	return c.service.UpsertTestCases(ctx, req)
 }

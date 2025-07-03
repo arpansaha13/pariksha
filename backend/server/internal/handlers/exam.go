@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"pariksha/common/pkg/proto"
@@ -20,7 +21,7 @@ func GetUserExams(w http.ResponseWriter, r *http.Request) {
 	examService := services.GetExamService()
 	ctx := examService.CreateMetadata(userID)
 
-	examList, err := examService.Client().GetUserExams(ctx, &proto.Empty{})
+	examList, err := examService.Client().GetUserExams(ctx, &emptypb.Empty{})
 	if err != nil {
 		http.Error(w, "Failed to retrieve exams", http.StatusInternalServerError)
 		return

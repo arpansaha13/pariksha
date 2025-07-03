@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"pariksha/common/pkg/constants"
@@ -81,7 +82,7 @@ func TestGetUserExams(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.Empty{},
+				&emptypb.Empty{},
 				client.GetUserExams,
 				tt.validate,
 			)
@@ -1465,7 +1466,7 @@ func TestDeleteExams(t *testing.T) {
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				&proto.DeleteExamsRequest{ExamHashes: hashes},
 				client.DeleteExams,
-				func(t *testing.T, _ *proto.Empty) {
+				func(t *testing.T, _ *emptypb.Empty) {
 					if tt.validate != nil {
 						tt.validate(t, exams)
 					}

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
@@ -300,7 +301,7 @@ func TestUpdateCategory(t *testing.T) {
 					Name:       tt.newName,
 				},
 				client.UpdateCategory,
-				func(t *testing.T, resp *proto.Empty) {
+				func(t *testing.T, resp *emptypb.Empty) {
 					if tt.validate != nil {
 						tt.validate(t, category)
 					}
@@ -348,7 +349,7 @@ func TestReorderCategories(t *testing.T) {
 					CategoryIds: []int64{int64(categories[1].ID), int64(categories[0].ID)}, // Reverse order
 				},
 				client.ReorderCategories,
-				func(t *testing.T, resp *proto.Empty) {
+				func(t *testing.T, resp *emptypb.Empty) {
 					if tt.validate != nil {
 						tt.validate(t, categories)
 					}
@@ -525,7 +526,7 @@ func TestDeleteCategory(t *testing.T) {
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				&proto.CategoryRequest{CategoryId: int64(category.ID)},
 				client.DeleteCategory,
-				func(t *testing.T, resp *proto.Empty) {
+				func(t *testing.T, resp *emptypb.Empty) {
 					if tt.validate != nil {
 						tt.validate(t, category.ID)
 					}

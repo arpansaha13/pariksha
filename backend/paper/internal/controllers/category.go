@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils/grpcerror"
 	"pariksha/paper/internal/services"
@@ -29,27 +31,27 @@ func (c *Category) HandleCreateCategory(ctx context.Context, req *proto.CreateCa
 }
 
 // HandleUpdateCategory handles updating a category
-func (c *Category) HandleUpdateCategory(ctx context.Context, req *proto.UpdateCategoryRequest) (*proto.Empty, error) {
+func (c *Category) HandleUpdateCategory(ctx context.Context, req *proto.UpdateCategoryRequest) (*emptypb.Empty, error) {
 	if err := c.categorySvc.UpdateCategory(req.CategoryId, req.Name); err != nil {
 		return nil, err
 	}
-	return &proto.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // HandleReorderCategories handles reordering categories in a paper
-func (c *Category) HandleReorderCategories(ctx context.Context, req *proto.ReorderCategoriesRequest) (*proto.Empty, error) {
+func (c *Category) HandleReorderCategories(ctx context.Context, req *proto.ReorderCategoriesRequest) (*emptypb.Empty, error) {
 	if err := c.categorySvc.ReorderCategories(req.PaperHash, req.CategoryIds); err != nil {
 		return nil, grpcerror.Internal(err, "failed to reorder categories")
 	}
-	return &proto.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // HandleDeleteCategory handles deleting a category
-func (c *Category) HandleDeleteCategory(ctx context.Context, req *proto.CategoryRequest) (*proto.Empty, error) {
+func (c *Category) HandleDeleteCategory(ctx context.Context, req *proto.CategoryRequest) (*emptypb.Empty, error) {
 	if err := c.categorySvc.DeleteCategory(req.CategoryId); err != nil {
 		return nil, err
 	}
-	return &proto.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // GetCategoriesByIds retrieves multiple categories by their IDs

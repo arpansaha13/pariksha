@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -50,7 +51,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ExamClient interface {
 	// Exam operations
-	GetUserExams(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ExamList, error)
+	GetUserExams(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ExamList, error)
 	CreateExam(ctx context.Context, in *CreateExamRequest, opts ...grpc.CallOption) (*ExamResponse, error)
 	UpdateExam(ctx context.Context, in *UpdateExamRequest, opts ...grpc.CallOption) (*ExamResponse, error)
 	GetExam(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamResponse, error)
@@ -58,14 +59,14 @@ type ExamClient interface {
 	GetExamCategories(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamCategoriesResponse, error)
 	GetExamQuestion(ctx context.Context, in *ExamQuestionRequest, opts ...grpc.CallOption) (*ExamQuestionResponse, error)
 	GetExamPermission(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamPermissionResponse, error)
-	DeleteExams(ctx context.Context, in *DeleteExamsRequest, opts ...grpc.CallOption) (*Empty, error)
+	DeleteExams(ctx context.Context, in *DeleteExamsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetExamResults(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ExamResultsResponse, error)
 	// Participant operations
 	GetExamParticipants(ctx context.Context, in *ExamRequest, opts ...grpc.CallOption) (*ParticipantList, error)
 	AddExamParticipant(ctx context.Context, in *AddParticipantRequest, opts ...grpc.CallOption) (*ParticipantResponse, error)
-	RemoveExamParticipant(ctx context.Context, in *RemoveParticipantRequest, opts ...grpc.CallOption) (*Empty, error)
-	StartExam(ctx context.Context, in *StartExamRequest, opts ...grpc.CallOption) (*Empty, error)
-	EndExam(ctx context.Context, in *EndExamRequest, opts ...grpc.CallOption) (*Empty, error)
+	RemoveExamParticipant(ctx context.Context, in *RemoveParticipantRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	StartExam(ctx context.Context, in *StartExamRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	EndExam(ctx context.Context, in *EndExamRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetExamParticipant(ctx context.Context, in *GetExamParticipantRequest, opts ...grpc.CallOption) (*GetExamParticipantResponse, error)
 	GetParticipantById(ctx context.Context, in *ParticipantRequest, opts ...grpc.CallOption) (*ParticipantResponse, error)
 	// Answer operations
@@ -87,7 +88,7 @@ func NewExamClient(cc grpc.ClientConnInterface) ExamClient {
 	return &examClient{cc}
 }
 
-func (c *examClient) GetUserExams(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ExamList, error) {
+func (c *examClient) GetUserExams(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ExamList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExamList)
 	err := c.cc.Invoke(ctx, Exam_GetUserExams_FullMethodName, in, out, cOpts...)
@@ -167,9 +168,9 @@ func (c *examClient) GetExamPermission(ctx context.Context, in *ExamRequest, opt
 	return out, nil
 }
 
-func (c *examClient) DeleteExams(ctx context.Context, in *DeleteExamsRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *examClient) DeleteExams(ctx context.Context, in *DeleteExamsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Exam_DeleteExams_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -207,9 +208,9 @@ func (c *examClient) AddExamParticipant(ctx context.Context, in *AddParticipantR
 	return out, nil
 }
 
-func (c *examClient) RemoveExamParticipant(ctx context.Context, in *RemoveParticipantRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *examClient) RemoveExamParticipant(ctx context.Context, in *RemoveParticipantRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Exam_RemoveExamParticipant_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -217,9 +218,9 @@ func (c *examClient) RemoveExamParticipant(ctx context.Context, in *RemovePartic
 	return out, nil
 }
 
-func (c *examClient) StartExam(ctx context.Context, in *StartExamRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *examClient) StartExam(ctx context.Context, in *StartExamRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Exam_StartExam_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -227,9 +228,9 @@ func (c *examClient) StartExam(ctx context.Context, in *StartExamRequest, opts .
 	return out, nil
 }
 
-func (c *examClient) EndExam(ctx context.Context, in *EndExamRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *examClient) EndExam(ctx context.Context, in *EndExamRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Exam_EndExam_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -332,7 +333,7 @@ func (c *examClient) GetAnswerForEvaluation(ctx context.Context, in *Participant
 // for forward compatibility.
 type ExamServer interface {
 	// Exam operations
-	GetUserExams(context.Context, *Empty) (*ExamList, error)
+	GetUserExams(context.Context, *emptypb.Empty) (*ExamList, error)
 	CreateExam(context.Context, *CreateExamRequest) (*ExamResponse, error)
 	UpdateExam(context.Context, *UpdateExamRequest) (*ExamResponse, error)
 	GetExam(context.Context, *ExamRequest) (*ExamResponse, error)
@@ -340,14 +341,14 @@ type ExamServer interface {
 	GetExamCategories(context.Context, *ExamRequest) (*ExamCategoriesResponse, error)
 	GetExamQuestion(context.Context, *ExamQuestionRequest) (*ExamQuestionResponse, error)
 	GetExamPermission(context.Context, *ExamRequest) (*ExamPermissionResponse, error)
-	DeleteExams(context.Context, *DeleteExamsRequest) (*Empty, error)
+	DeleteExams(context.Context, *DeleteExamsRequest) (*emptypb.Empty, error)
 	GetExamResults(context.Context, *ExamRequest) (*ExamResultsResponse, error)
 	// Participant operations
 	GetExamParticipants(context.Context, *ExamRequest) (*ParticipantList, error)
 	AddExamParticipant(context.Context, *AddParticipantRequest) (*ParticipantResponse, error)
-	RemoveExamParticipant(context.Context, *RemoveParticipantRequest) (*Empty, error)
-	StartExam(context.Context, *StartExamRequest) (*Empty, error)
-	EndExam(context.Context, *EndExamRequest) (*Empty, error)
+	RemoveExamParticipant(context.Context, *RemoveParticipantRequest) (*emptypb.Empty, error)
+	StartExam(context.Context, *StartExamRequest) (*emptypb.Empty, error)
+	EndExam(context.Context, *EndExamRequest) (*emptypb.Empty, error)
 	GetExamParticipant(context.Context, *GetExamParticipantRequest) (*GetExamParticipantResponse, error)
 	GetParticipantById(context.Context, *ParticipantRequest) (*ParticipantResponse, error)
 	// Answer operations
@@ -369,7 +370,7 @@ type ExamServer interface {
 // pointer dereference when methods are called.
 type UnimplementedExamServer struct{}
 
-func (UnimplementedExamServer) GetUserExams(context.Context, *Empty) (*ExamList, error) {
+func (UnimplementedExamServer) GetUserExams(context.Context, *emptypb.Empty) (*ExamList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserExams not implemented")
 }
 func (UnimplementedExamServer) CreateExam(context.Context, *CreateExamRequest) (*ExamResponse, error) {
@@ -393,7 +394,7 @@ func (UnimplementedExamServer) GetExamQuestion(context.Context, *ExamQuestionReq
 func (UnimplementedExamServer) GetExamPermission(context.Context, *ExamRequest) (*ExamPermissionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExamPermission not implemented")
 }
-func (UnimplementedExamServer) DeleteExams(context.Context, *DeleteExamsRequest) (*Empty, error) {
+func (UnimplementedExamServer) DeleteExams(context.Context, *DeleteExamsRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteExams not implemented")
 }
 func (UnimplementedExamServer) GetExamResults(context.Context, *ExamRequest) (*ExamResultsResponse, error) {
@@ -405,13 +406,13 @@ func (UnimplementedExamServer) GetExamParticipants(context.Context, *ExamRequest
 func (UnimplementedExamServer) AddExamParticipant(context.Context, *AddParticipantRequest) (*ParticipantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddExamParticipant not implemented")
 }
-func (UnimplementedExamServer) RemoveExamParticipant(context.Context, *RemoveParticipantRequest) (*Empty, error) {
+func (UnimplementedExamServer) RemoveExamParticipant(context.Context, *RemoveParticipantRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveExamParticipant not implemented")
 }
-func (UnimplementedExamServer) StartExam(context.Context, *StartExamRequest) (*Empty, error) {
+func (UnimplementedExamServer) StartExam(context.Context, *StartExamRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartExam not implemented")
 }
-func (UnimplementedExamServer) EndExam(context.Context, *EndExamRequest) (*Empty, error) {
+func (UnimplementedExamServer) EndExam(context.Context, *EndExamRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EndExam not implemented")
 }
 func (UnimplementedExamServer) GetExamParticipant(context.Context, *GetExamParticipantRequest) (*GetExamParticipantResponse, error) {
@@ -463,7 +464,7 @@ func RegisterExamServer(s grpc.ServiceRegistrar, srv ExamServer) {
 }
 
 func _Exam_GetUserExams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -475,7 +476,7 @@ func _Exam_GetUserExams_Handler(srv interface{}, ctx context.Context, dec func(i
 		FullMethod: Exam_GetUserExams_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExamServer).GetUserExams(ctx, req.(*Empty))
+		return srv.(ExamServer).GetUserExams(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }

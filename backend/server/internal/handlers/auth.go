@@ -95,7 +95,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func VerifySignup(w http.ResponseWriter, r *http.Request) {
+func VerifySignUp(w http.ResponseWriter, r *http.Request) {
 	var verificationReq proto.VerificationRequest
 	if err := json.NewDecoder(r.Body).Decode(&verificationReq); err != nil {
 		http.Error(w, INVALID_REQUEST_BODY, http.StatusBadRequest)
@@ -104,7 +104,7 @@ func VerifySignup(w http.ResponseWriter, r *http.Request) {
 
 	var header metadata.MD
 	authService := services.GetAuthService()
-	response, err := authService.Client().VerifySignup(
+	response, err := authService.Client().VerifySignUp(
 		context.Background(),
 		&verificationReq,
 		grpc.Header(&header),

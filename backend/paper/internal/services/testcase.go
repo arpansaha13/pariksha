@@ -8,6 +8,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
@@ -34,7 +35,7 @@ func NewTestCase(questionRepo *repositories.Question, testCaseRepo *repositories
 }
 
 // UpsertTestCases handles bulk creation and updates of test cases
-func (s *TestCase) UpsertTestCases(ctx context.Context, req *proto.UpsertTestCasesRequest) (*proto.Empty, error) {
+func (s *TestCase) UpsertTestCases(ctx context.Context, req *proto.UpsertTestCasesRequest) (*emptypb.Empty, error) {
 	question, err := interceptors.GetQuestionFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -153,5 +154,5 @@ func (s *TestCase) UpsertTestCases(ctx context.Context, req *proto.UpsertTestCas
 		return nil, err
 	}
 
-	return &proto.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }

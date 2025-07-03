@@ -129,7 +129,7 @@
           <UTextarea
             v-model="examStore.subjectiveAnswerStates[question.id]!.text"
             autoresize
-            rows="4"
+            :rows="4"
             placeholder="Write your answer here..."
             :ui="{ root: 'flex' }"
           />

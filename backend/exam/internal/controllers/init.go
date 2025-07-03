@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
 	"pariksha/exam/internal/config/db"
@@ -62,7 +64,7 @@ func InitializeHandlers() {
 }
 
 // __________________________EXAM HANDLERS__________________________
-func (s *ExamServer) GetUserExams(ctx context.Context, req *proto.Empty) (*proto.ExamList, error) {
+func (s *ExamServer) GetUserExams(ctx context.Context, req *emptypb.Empty) (*proto.ExamList, error) {
 	return examCtrl.HandleGetUserExams(ctx, req)
 }
 
@@ -74,11 +76,11 @@ func (s *ExamServer) UpdateExam(ctx context.Context, req *proto.UpdateExamReques
 	return examCtrl.HandleUpdateExam(ctx, req)
 }
 
-func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest) (*proto.Empty, error) {
+func (s *ExamServer) StartExam(ctx context.Context, req *proto.StartExamRequest) (*emptypb.Empty, error) {
 	return examCtrl.HandleStartExam(ctx, req)
 }
 
-func (s *ExamServer) EndExam(ctx context.Context, req *proto.EndExamRequest) (*proto.Empty, error) {
+func (s *ExamServer) EndExam(ctx context.Context, req *proto.EndExamRequest) (*emptypb.Empty, error) {
 	return examCtrl.HandleEndExam(ctx, req)
 }
 
@@ -90,7 +92,7 @@ func (s *ExamServer) GetExamPermission(ctx context.Context, req *proto.ExamReque
 	return examCtrl.HandleGetExamPermission(ctx, req)
 }
 
-func (s *ExamServer) DeleteExams(ctx context.Context, req *proto.DeleteExamsRequest) (*proto.Empty, error) {
+func (s *ExamServer) DeleteExams(ctx context.Context, req *proto.DeleteExamsRequest) (*emptypb.Empty, error) {
 	return examCtrl.HandleDeleteExams(ctx, req)
 }
 
@@ -103,7 +105,7 @@ func (s *ExamServer) AddExamParticipant(ctx context.Context, req *proto.AddParti
 	return participantCtrl.HandleAddExamParticipant(ctx, req)
 }
 
-func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.RemoveParticipantRequest) (*proto.Empty, error) {
+func (s *ExamServer) RemoveExamParticipant(ctx context.Context, req *proto.RemoveParticipantRequest) (*emptypb.Empty, error) {
 	return participantCtrl.HandleRemoveExamParticipant(ctx, req)
 }
 

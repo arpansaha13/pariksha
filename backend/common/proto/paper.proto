@@ -4,15 +4,16 @@ package proto;
 
 option go_package = "/proto";
 
+import "google/protobuf/empty.proto";
 import "common.proto";
 
 service Paper {
   // Paper operations
-  rpc GetUserPapers(Empty) returns (PaperList) {}
+  rpc GetUserPapers(google.protobuf.Empty) returns (PaperList) {}
   rpc GetPaper(PaperRequest) returns (PaperResponse) {}
-  rpc CreatePaper(Empty) returns (PaperResponse) {}
-  rpc UpdatePaper(UpdatePaperRequest) returns (Empty) {}
-  rpc DeletePapers(DeletePapersRequest) returns (Empty) {}
+  rpc CreatePaper(google.protobuf.Empty) returns (PaperResponse) {}
+  rpc UpdatePaper(UpdatePaperRequest) returns (google.protobuf.Empty) {}
+  rpc DeletePapers(DeletePapersRequest) returns (google.protobuf.Empty) {}
   rpc GetPaperPermissions(PaperRequest) returns (PaperPermissionsResponse) {}
 
   // Question operations
@@ -20,15 +21,17 @@ service Paper {
   rpc GetPaperQuestion(QuestionRequest) returns (QuestionResponse) {}
   rpc CreateQuestion(CreateQuestionRequest) returns (CreateQuestionResponse) {}
   rpc UpdateQuestion(UpdateQuestionRequest) returns (UpdateQuestionResponse) {}
-  rpc DeleteQuestion(QuestionRequest) returns (Empty) {}
-  rpc ReorderQuestions(ReorderQuestionsRequest) returns (Empty) {}
+  rpc DeleteQuestion(QuestionRequest) returns (google.protobuf.Empty) {}
+  rpc ReorderQuestions(ReorderQuestionsRequest)
+      returns (google.protobuf.Empty) {}
 
   // Category operations
   rpc GetPaperCategories(PaperRequest) returns (CategoryList) {}
   rpc CreateCategory(CreateCategoryRequest) returns (CategoryResponse) {}
-  rpc UpdateCategory(UpdateCategoryRequest) returns (Empty) {}
-  rpc DeleteCategory(CategoryRequest) returns (Empty) {}
-  rpc ReorderCategories(ReorderCategoriesRequest) returns (Empty) {}
+  rpc UpdateCategory(UpdateCategoryRequest) returns (google.protobuf.Empty) {}
+  rpc DeleteCategory(CategoryRequest) returns (google.protobuf.Empty) {}
+  rpc ReorderCategories(ReorderCategoriesRequest)
+      returns (google.protobuf.Empty) {}
 
   // Exam operations
   rpc GetQuestionsByIds(GetQuestionsByIdsRequest)
@@ -44,7 +47,8 @@ service Paper {
   rpc GetBoilerplate(GetBoilerplateRequest) returns (GetBoilerplateResponse) {}
 
   // Test Case operations
-  rpc UpsertPaperTestCases(UpsertTestCasesRequest) returns (Empty) {}
+  rpc UpsertPaperTestCases(UpsertTestCasesRequest)
+      returns (google.protobuf.Empty) {}
 
   // Coding Question Input Definitions
   rpc GetCodingQuestionInputDefinitions(

@@ -9,6 +9,7 @@ package proto
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -2199,7 +2200,7 @@ var File_paper_proto protoreflect.FileDescriptor
 
 const file_paper_proto_rawDesc = "" +
 	"\n" +
-	"\vpaper.proto\x12\x05proto\x1a\fcommon.proto\"-\n" +
+	"\vpaper.proto\x12\x05proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\fcommon.proto\"-\n" +
 	"\fPaperRequest\x12\x1d\n" +
 	"\n" +
 	"paper_hash\x18\x01 \x01(\tR\tpaperHash\"\xea\x01\n" +
@@ -2369,32 +2370,32 @@ const file_paper_proto_rawDesc = "" +
 	"\rParameterItem\x12(\n" +
 	"\rproperty_name\x18\x01 \x01(\tH\x00R\fpropertyName\x88\x01\x01\x12(\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x14.proto.ParameterTypeR\x04typeB\x10\n" +
-	"\x0e_property_name2\xb2\x0e\n" +
-	"\x05Paper\x121\n" +
-	"\rGetUserPapers\x12\f.proto.Empty\x1a\x10.proto.PaperList\"\x00\x127\n" +
-	"\bGetPaper\x12\x13.proto.PaperRequest\x1a\x14.proto.PaperResponse\"\x00\x123\n" +
-	"\vCreatePaper\x12\f.proto.Empty\x1a\x14.proto.PaperResponse\"\x00\x128\n" +
-	"\vUpdatePaper\x12\x19.proto.UpdatePaperRequest\x1a\f.proto.Empty\"\x00\x12:\n" +
-	"\fDeletePapers\x12\x1a.proto.DeletePapersRequest\x1a\f.proto.Empty\"\x00\x12M\n" +
+	"\x0e_property_name2\x96\x0f\n" +
+	"\x05Paper\x12;\n" +
+	"\rGetUserPapers\x12\x16.google.protobuf.Empty\x1a\x10.proto.PaperList\"\x00\x127\n" +
+	"\bGetPaper\x12\x13.proto.PaperRequest\x1a\x14.proto.PaperResponse\"\x00\x12=\n" +
+	"\vCreatePaper\x12\x16.google.protobuf.Empty\x1a\x14.proto.PaperResponse\"\x00\x12B\n" +
+	"\vUpdatePaper\x12\x19.proto.UpdatePaperRequest\x1a\x16.google.protobuf.Empty\"\x00\x12D\n" +
+	"\fDeletePapers\x12\x1a.proto.DeletePapersRequest\x1a\x16.google.protobuf.Empty\"\x00\x12M\n" +
 	"\x13GetPaperPermissions\x12\x13.proto.PaperRequest\x1a\x1f.proto.PaperPermissionsResponse\"\x00\x12?\n" +
 	"\x11GetPaperQuestions\x12\x13.proto.PaperRequest\x1a\x13.proto.QuestionList\"\x00\x12E\n" +
 	"\x10GetPaperQuestion\x12\x16.proto.QuestionRequest\x1a\x17.proto.QuestionResponse\"\x00\x12O\n" +
 	"\x0eCreateQuestion\x12\x1c.proto.CreateQuestionRequest\x1a\x1d.proto.CreateQuestionResponse\"\x00\x12O\n" +
-	"\x0eUpdateQuestion\x12\x1c.proto.UpdateQuestionRequest\x1a\x1d.proto.UpdateQuestionResponse\"\x00\x128\n" +
-	"\x0eDeleteQuestion\x12\x16.proto.QuestionRequest\x1a\f.proto.Empty\"\x00\x12B\n" +
-	"\x10ReorderQuestions\x12\x1e.proto.ReorderQuestionsRequest\x1a\f.proto.Empty\"\x00\x12@\n" +
+	"\x0eUpdateQuestion\x12\x1c.proto.UpdateQuestionRequest\x1a\x1d.proto.UpdateQuestionResponse\"\x00\x12B\n" +
+	"\x0eDeleteQuestion\x12\x16.proto.QuestionRequest\x1a\x16.google.protobuf.Empty\"\x00\x12L\n" +
+	"\x10ReorderQuestions\x12\x1e.proto.ReorderQuestionsRequest\x1a\x16.google.protobuf.Empty\"\x00\x12@\n" +
 	"\x12GetPaperCategories\x12\x13.proto.PaperRequest\x1a\x13.proto.CategoryList\"\x00\x12I\n" +
-	"\x0eCreateCategory\x12\x1c.proto.CreateCategoryRequest\x1a\x17.proto.CategoryResponse\"\x00\x12>\n" +
-	"\x0eUpdateCategory\x12\x1c.proto.UpdateCategoryRequest\x1a\f.proto.Empty\"\x00\x128\n" +
-	"\x0eDeleteCategory\x12\x16.proto.CategoryRequest\x1a\f.proto.Empty\"\x00\x12D\n" +
-	"\x11ReorderCategories\x12\x1f.proto.ReorderCategoriesRequest\x1a\f.proto.Empty\"\x00\x12X\n" +
+	"\x0eCreateCategory\x12\x1c.proto.CreateCategoryRequest\x1a\x17.proto.CategoryResponse\"\x00\x12H\n" +
+	"\x0eUpdateCategory\x12\x1c.proto.UpdateCategoryRequest\x1a\x16.google.protobuf.Empty\"\x00\x12B\n" +
+	"\x0eDeleteCategory\x12\x16.proto.CategoryRequest\x1a\x16.google.protobuf.Empty\"\x00\x12N\n" +
+	"\x11ReorderCategories\x12\x1f.proto.ReorderCategoriesRequest\x1a\x16.google.protobuf.Empty\"\x00\x12X\n" +
 	"\x11GetQuestionsByIds\x12\x1f.proto.GetQuestionsByIdsRequest\x1a .proto.GetQuestionsByIdsResponse\"\x00\x12V\n" +
 	"\x12GetCategoriesByIds\x12 .proto.GetCategoriesByIdsRequest\x1a\x1c.proto.CategoryBatchResponse\"\x00\x12N\n" +
 	"\x15GetExamQuestionByHash\x12\x16.proto.QuestionRequest\x1a\x1b.proto.ExamQuestionResponse\"\x00\x12X\n" +
 	"\x11GetQuestionHashes\x12\x1f.proto.GetQuestionHashesRequest\x1a .proto.GetQuestionHashesResponse\"\x00\x12O\n" +
 	"\x0eGetQuestionIds\x12\x1c.proto.GetQuestionIdsRequest\x1a\x1d.proto.GetQuestionIdsResponse\"\x00\x12O\n" +
-	"\x0eGetBoilerplate\x12\x1c.proto.GetBoilerplateRequest\x1a\x1d.proto.GetBoilerplateResponse\"\x00\x12E\n" +
-	"\x14UpsertPaperTestCases\x12\x1d.proto.UpsertTestCasesRequest\x1a\f.proto.Empty\"\x00\x12\x88\x01\n" +
+	"\x0eGetBoilerplate\x12\x1c.proto.GetBoilerplateRequest\x1a\x1d.proto.GetBoilerplateResponse\"\x00\x12O\n" +
+	"\x14UpsertPaperTestCases\x12\x1d.proto.UpsertTestCasesRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x88\x01\n" +
 	"!GetCodingQuestionInputDefinitions\x12/.proto.GetCodingQuestionInputDefinitionsRequest\x1a0.proto.GetCodingQuestionInputDefinitionsResponse\"\x00B\bZ\x06/protob\x06proto3"
 
 var (
@@ -2454,7 +2455,7 @@ var file_paper_proto_goTypes = []any{
 	(QuestionType)(0),                                 // 40: proto.QuestionType
 	(*CodingQuestionTestCase)(nil),                    // 41: proto.CodingQuestionTestCase
 	(ParameterType)(0),                                // 42: proto.ParameterType
-	(*Empty)(nil),                                     // 43: proto.Empty
+	(*emptypb.Empty)(nil),                             // 43: google.protobuf.Empty
 	(*ExamQuestionResponse)(nil),                      // 44: proto.ExamQuestionResponse
 }
 var file_paper_proto_depIdxs = []int32{
@@ -2474,9 +2475,9 @@ var file_paper_proto_depIdxs = []int32{
 	42, // 13: proto.InputDefinition.type:type_name -> proto.ParameterType
 	39, // 14: proto.InputDefinition.items:type_name -> proto.ParameterItem
 	42, // 15: proto.ParameterItem.type:type_name -> proto.ParameterType
-	43, // 16: proto.Paper.GetUserPapers:input_type -> proto.Empty
+	43, // 16: proto.Paper.GetUserPapers:input_type -> google.protobuf.Empty
 	0,  // 17: proto.Paper.GetPaper:input_type -> proto.PaperRequest
-	43, // 18: proto.Paper.CreatePaper:input_type -> proto.Empty
+	43, // 18: proto.Paper.CreatePaper:input_type -> google.protobuf.Empty
 	3,  // 19: proto.Paper.UpdatePaper:input_type -> proto.UpdatePaperRequest
 	5,  // 20: proto.Paper.DeletePapers:input_type -> proto.DeletePapersRequest
 	0,  // 21: proto.Paper.GetPaperPermissions:input_type -> proto.PaperRequest
@@ -2502,27 +2503,27 @@ var file_paper_proto_depIdxs = []int32{
 	2,  // 41: proto.Paper.GetUserPapers:output_type -> proto.PaperList
 	1,  // 42: proto.Paper.GetPaper:output_type -> proto.PaperResponse
 	1,  // 43: proto.Paper.CreatePaper:output_type -> proto.PaperResponse
-	43, // 44: proto.Paper.UpdatePaper:output_type -> proto.Empty
-	43, // 45: proto.Paper.DeletePapers:output_type -> proto.Empty
+	43, // 44: proto.Paper.UpdatePaper:output_type -> google.protobuf.Empty
+	43, // 45: proto.Paper.DeletePapers:output_type -> google.protobuf.Empty
 	27, // 46: proto.Paper.GetPaperPermissions:output_type -> proto.PaperPermissionsResponse
 	8,  // 47: proto.Paper.GetPaperQuestions:output_type -> proto.QuestionList
 	7,  // 48: proto.Paper.GetPaperQuestion:output_type -> proto.QuestionResponse
 	11, // 49: proto.Paper.CreateQuestion:output_type -> proto.CreateQuestionResponse
 	13, // 50: proto.Paper.UpdateQuestion:output_type -> proto.UpdateQuestionResponse
-	43, // 51: proto.Paper.DeleteQuestion:output_type -> proto.Empty
-	43, // 52: proto.Paper.ReorderQuestions:output_type -> proto.Empty
+	43, // 51: proto.Paper.DeleteQuestion:output_type -> google.protobuf.Empty
+	43, // 52: proto.Paper.ReorderQuestions:output_type -> google.protobuf.Empty
 	23, // 53: proto.Paper.GetPaperCategories:output_type -> proto.CategoryList
 	22, // 54: proto.Paper.CreateCategory:output_type -> proto.CategoryResponse
-	43, // 55: proto.Paper.UpdateCategory:output_type -> proto.Empty
-	43, // 56: proto.Paper.DeleteCategory:output_type -> proto.Empty
-	43, // 57: proto.Paper.ReorderCategories:output_type -> proto.Empty
+	43, // 55: proto.Paper.UpdateCategory:output_type -> google.protobuf.Empty
+	43, // 56: proto.Paper.DeleteCategory:output_type -> google.protobuf.Empty
+	43, // 57: proto.Paper.ReorderCategories:output_type -> google.protobuf.Empty
 	16, // 58: proto.Paper.GetQuestionsByIds:output_type -> proto.GetQuestionsByIdsResponse
 	19, // 59: proto.Paper.GetCategoriesByIds:output_type -> proto.CategoryBatchResponse
 	44, // 60: proto.Paper.GetExamQuestionByHash:output_type -> proto.ExamQuestionResponse
 	33, // 61: proto.Paper.GetQuestionHashes:output_type -> proto.GetQuestionHashesResponse
 	35, // 62: proto.Paper.GetQuestionIds:output_type -> proto.GetQuestionIdsResponse
 	29, // 63: proto.Paper.GetBoilerplate:output_type -> proto.GetBoilerplateResponse
-	43, // 64: proto.Paper.UpsertPaperTestCases:output_type -> proto.Empty
+	43, // 64: proto.Paper.UpsertPaperTestCases:output_type -> google.protobuf.Empty
 	37, // 65: proto.Paper.GetCodingQuestionInputDefinitions:output_type -> proto.GetCodingQuestionInputDefinitionsResponse
 	41, // [41:66] is the sub-list for method output_type
 	16, // [16:41] is the sub-list for method input_type

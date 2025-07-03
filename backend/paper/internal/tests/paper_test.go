@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
@@ -70,7 +71,7 @@ func TestGetUserPapers(t *testing.T) {
 			}
 
 			ctx := createContextWithUserID(tt.userID)
-			testrunner.Runner(t, ctx, tt.expectedCode, &proto.Empty{},
+			testrunner.Runner(t, ctx, tt.expectedCode, &emptypb.Empty{},
 				client.GetUserPapers,
 				tt.validate)
 		})
@@ -128,7 +129,7 @@ func TestCreatePaper(t *testing.T) {
 
 			ctx := createContextWithUserID(tt.userID)
 			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.Empty{},
+				&emptypb.Empty{},
 				client.CreatePaper,
 				tt.validate)
 		})
@@ -311,7 +312,7 @@ func TestUpdatePaper(t *testing.T) {
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				tt.request,
 				client.UpdatePaper,
-				func(t *testing.T, _ *proto.Empty) {
+				func(t *testing.T, _ *emptypb.Empty) {
 					if tt.validate != nil {
 						tt.validate(t, paper)
 					}
@@ -608,7 +609,7 @@ func TestDeletePapers(t *testing.T) {
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				&proto.DeletePapersRequest{PaperHashes: paperHashes},
 				client.DeletePapers,
-				func(t *testing.T, _ *proto.Empty) {
+				func(t *testing.T, _ *emptypb.Empty) {
 					if tt.validate != nil {
 						tt.validate(t)
 					}

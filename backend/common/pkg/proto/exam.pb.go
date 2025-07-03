@@ -9,6 +9,7 @@ package proto
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
@@ -2221,7 +2222,7 @@ var File_exam_proto protoreflect.FileDescriptor
 const file_exam_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"exam.proto\x12\x05proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\fcommon.proto\"*\n" +
+	"exam.proto\x12\x05proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\fcommon.proto\"*\n" +
 	"\vExamRequest\x12\x1b\n" +
 	"\texam_hash\x18\x01 \x01(\tR\bexamHash\"\xb5\x02\n" +
 	"\x11CreateExamRequest\x12\x14\n" +
@@ -2401,9 +2402,9 @@ const file_exam_proto_rawDesc = "" +
 	"\aresults\x18\x01 \x03(\v2\x15.proto.ExamResultItemR\aresults*,\n" +
 	"\x0eExamAccessType\x12\t\n" +
 	"\x05OWNER\x10\x00\x12\x0f\n" +
-	"\vPARTICIPANT\x10\x012\xef\r\n" +
-	"\x04Exam\x12/\n" +
-	"\fGetUserExams\x12\f.proto.Empty\x1a\x0f.proto.ExamList\"\x00\x12=\n" +
+	"\vPARTICIPANT\x10\x012\xa1\x0e\n" +
+	"\x04Exam\x129\n" +
+	"\fGetUserExams\x12\x16.google.protobuf.Empty\x1a\x0f.proto.ExamList\"\x00\x12=\n" +
 	"\n" +
 	"CreateExam\x12\x18.proto.CreateExamRequest\x1a\x13.proto.ExamResponse\"\x00\x12=\n" +
 	"\n" +
@@ -2412,14 +2413,14 @@ const file_exam_proto_rawDesc = "" +
 	"\x10GetExamQuestions\x12\x12.proto.ExamRequest\x1a\x1c.proto.ExamQuestionsResponse\"\x00\x12H\n" +
 	"\x11GetExamCategories\x12\x12.proto.ExamRequest\x1a\x1d.proto.ExamCategoriesResponse\"\x00\x12L\n" +
 	"\x0fGetExamQuestion\x12\x1a.proto.ExamQuestionRequest\x1a\x1b.proto.ExamQuestionResponse\"\x00\x12H\n" +
-	"\x11GetExamPermission\x12\x12.proto.ExamRequest\x1a\x1d.proto.ExamPermissionResponse\"\x00\x128\n" +
-	"\vDeleteExams\x12\x19.proto.DeleteExamsRequest\x1a\f.proto.Empty\"\x00\x12B\n" +
+	"\x11GetExamPermission\x12\x12.proto.ExamRequest\x1a\x1d.proto.ExamPermissionResponse\"\x00\x12B\n" +
+	"\vDeleteExams\x12\x19.proto.DeleteExamsRequest\x1a\x16.google.protobuf.Empty\"\x00\x12B\n" +
 	"\x0eGetExamResults\x12\x12.proto.ExamRequest\x1a\x1a.proto.ExamResultsResponse\"\x00\x12C\n" +
 	"\x13GetExamParticipants\x12\x12.proto.ExamRequest\x1a\x16.proto.ParticipantList\"\x00\x12P\n" +
-	"\x12AddExamParticipant\x12\x1c.proto.AddParticipantRequest\x1a\x1a.proto.ParticipantResponse\"\x00\x12H\n" +
-	"\x15RemoveExamParticipant\x12\x1f.proto.RemoveParticipantRequest\x1a\f.proto.Empty\"\x00\x124\n" +
-	"\tStartExam\x12\x17.proto.StartExamRequest\x1a\f.proto.Empty\"\x00\x120\n" +
-	"\aEndExam\x12\x15.proto.EndExamRequest\x1a\f.proto.Empty\"\x00\x12[\n" +
+	"\x12AddExamParticipant\x12\x1c.proto.AddParticipantRequest\x1a\x1a.proto.ParticipantResponse\"\x00\x12R\n" +
+	"\x15RemoveExamParticipant\x12\x1f.proto.RemoveParticipantRequest\x1a\x16.google.protobuf.Empty\"\x00\x12>\n" +
+	"\tStartExam\x12\x17.proto.StartExamRequest\x1a\x16.google.protobuf.Empty\"\x00\x12:\n" +
+	"\aEndExam\x12\x15.proto.EndExamRequest\x1a\x16.google.protobuf.Empty\"\x00\x12[\n" +
 	"\x12GetExamParticipant\x12 .proto.GetExamParticipantRequest\x1a!.proto.GetExamParticipantResponse\"\x00\x12M\n" +
 	"\x12GetParticipantById\x12\x19.proto.ParticipantRequest\x1a\x1a.proto.ParticipantResponse\"\x00\x12G\n" +
 	"\x15GetParticipantAnswers\x12\x19.proto.ParticipantRequest\x1a\x11.proto.AnswerList\"\x00\x12K\n" +
@@ -2484,7 +2485,7 @@ var file_exam_proto_goTypes = []any{
 	(*ExamResultsResponse)(nil),             // 36: proto.ExamResultsResponse
 	(*timestamppb.Timestamp)(nil),           // 37: google.protobuf.Timestamp
 	(QuestionType)(0),                       // 38: proto.QuestionType
-	(*Empty)(nil),                           // 39: proto.Empty
+	(*emptypb.Empty)(nil),                   // 39: google.protobuf.Empty
 	(*ExamQuestionResponse)(nil),            // 40: proto.ExamQuestionResponse
 }
 var file_exam_proto_depIdxs = []int32{
@@ -2510,7 +2511,7 @@ var file_exam_proto_depIdxs = []int32{
 	27, // 19: proto.ExamQuestionsResponse.questions:type_name -> proto.ExamQuestion
 	29, // 20: proto.ExamCategoriesResponse.categories:type_name -> proto.ExamCategory
 	35, // 21: proto.ExamResultsResponse.results:type_name -> proto.ExamResultItem
-	39, // 22: proto.Exam.GetUserExams:input_type -> proto.Empty
+	39, // 22: proto.Exam.GetUserExams:input_type -> google.protobuf.Empty
 	2,  // 23: proto.Exam.CreateExam:input_type -> proto.CreateExamRequest
 	3,  // 24: proto.Exam.UpdateExam:input_type -> proto.UpdateExamRequest
 	1,  // 25: proto.Exam.GetExam:input_type -> proto.ExamRequest
@@ -2542,13 +2543,13 @@ var file_exam_proto_depIdxs = []int32{
 	30, // 51: proto.Exam.GetExamCategories:output_type -> proto.ExamCategoriesResponse
 	40, // 52: proto.Exam.GetExamQuestion:output_type -> proto.ExamQuestionResponse
 	31, // 53: proto.Exam.GetExamPermission:output_type -> proto.ExamPermissionResponse
-	39, // 54: proto.Exam.DeleteExams:output_type -> proto.Empty
+	39, // 54: proto.Exam.DeleteExams:output_type -> google.protobuf.Empty
 	36, // 55: proto.Exam.GetExamResults:output_type -> proto.ExamResultsResponse
 	10, // 56: proto.Exam.GetExamParticipants:output_type -> proto.ParticipantList
 	9,  // 57: proto.Exam.AddExamParticipant:output_type -> proto.ParticipantResponse
-	39, // 58: proto.Exam.RemoveExamParticipant:output_type -> proto.Empty
-	39, // 59: proto.Exam.StartExam:output_type -> proto.Empty
-	39, // 60: proto.Exam.EndExam:output_type -> proto.Empty
+	39, // 58: proto.Exam.RemoveExamParticipant:output_type -> google.protobuf.Empty
+	39, // 59: proto.Exam.StartExam:output_type -> google.protobuf.Empty
+	39, // 60: proto.Exam.EndExam:output_type -> google.protobuf.Empty
 	26, // 61: proto.Exam.GetExamParticipant:output_type -> proto.GetExamParticipantResponse
 	9,  // 62: proto.Exam.GetParticipantById:output_type -> proto.ParticipantResponse
 	20, // 63: proto.Exam.GetParticipantAnswers:output_type -> proto.AnswerList

@@ -10,8 +10,7 @@ const (
 )
 
 const (
-	VERIFICATION_OTP_LENGTH int16 = 6
-	CSRF_TOKEN_LENGTH       int16 = 32
+	CSRF_TOKEN_LENGTH int16 = 32
 )
 
 const (
@@ -28,24 +27,10 @@ const (
 )
 
 const (
-	OTP_PURPOSE_SIGNUP          int16 = 1
-	OTP_PURPOSE_LOGIN           int16 = 2
-	OTP_PURPOSE_FORGOT_PASSWORD int16 = 3
-)
-
-const (
 	EXAM_QUEUE_NAME                   string = "exam_queue"
 	EXAM_QUEUE_TASK_PREPARE_QUESTIONS string = "exam_queue:prepare_questions"
 	EXAM_QUEUE_TASK_AUTO_END          string = "exam_queue:auto_end"
 	EXAM_QUEUE_TASK_DELETE_EXAMS      string = "exam_queue:delete_exams"
-)
-
-const (
-	MAIL_QUEUE_NAME                      string = "mail_queue"
-	MAIL_QUEUE_TASK_SEND_VERIFICATION    string = "mail_queue:send_verification"
-	MAIL_QUEUE_TASK_SEND_LOGIN_OTP       string = "mail_queue:send_login_otp"
-	MAIL_QUEUE_TASK_SEND_FORGOT_PASSWORD string = "mail_queue:send_forgot_password"
-	MAIL_QUEUE_TASK_SEND_RESET_PASSWORD  string = "mail_queue:send_reset_password"
 )
 
 const (

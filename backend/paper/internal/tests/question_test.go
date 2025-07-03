@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
@@ -234,7 +235,7 @@ func TestDeleteQuestion(t *testing.T) {
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				&proto.QuestionRequest{QuestionHash: question.Hash},
 				client.DeleteQuestion,
-				func(t *testing.T, resp *proto.Empty) {
+				func(t *testing.T, resp *emptypb.Empty) {
 					if tt.validate != nil {
 						tt.validate(t, paper, question.ID)
 					}
@@ -293,7 +294,7 @@ func TestReorderQuestions(t *testing.T) {
 			testrunner.Runner(t, ctx, tt.expectedCode,
 				tt.request,
 				client.ReorderQuestions,
-				func(t *testing.T, resp *proto.Empty) {
+				func(t *testing.T, resp *emptypb.Empty) {
 					if tt.validate != nil {
 						tt.validate(t, questions)
 					}

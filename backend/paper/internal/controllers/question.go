@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils/grpcerror"
 	"pariksha/paper/internal/services"
@@ -38,19 +40,19 @@ func (c *Question) HandleUpdateQuestion(ctx context.Context, req *proto.UpdateQu
 	return services.UpdateQuestion(ctx, req)
 }
 
-func (c *Question) HandleDeleteQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.Empty, error) {
+func (c *Question) HandleDeleteQuestion(ctx context.Context, req *proto.QuestionRequest) (*emptypb.Empty, error) {
 	if err := c.questionSvc.DeleteQuestion(ctx, req.QuestionHash); err != nil {
 		return nil, err
 	}
-	return &proto.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // HandleReorderQuestions handles reordering questions in a category
-func (c *Question) HandleReorderQuestions(ctx context.Context, req *proto.ReorderQuestionsRequest) (*proto.Empty, error) {
+func (c *Question) HandleReorderQuestions(ctx context.Context, req *proto.ReorderQuestionsRequest) (*emptypb.Empty, error) {
 	if err := c.questionSvc.ReorderQuestions(ctx, req.CategoryId, req.QuestionHashes); err != nil {
 		return nil, grpcerror.Internal(err, "failed to reorder questions")
 	}
-	return &proto.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // _____________________EXAM QUESTION HANDLERS_____________________

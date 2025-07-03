@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
 	"pariksha/server/internal/services"
-
-	"github.com/gorilla/mux"
 )
 
 func GetUserPapers(w http.ResponseWriter, r *http.Request) {
@@ -19,7 +20,7 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 
 	ctx := paperService.CreateMetadata(userID)
-	response, err := paperService.Client().GetUserPapers(ctx, &proto.Empty{})
+	response, err := paperService.Client().GetUserPapers(ctx, &emptypb.Empty{})
 	if err != nil {
 		handleGRPCError(w, err)
 		return
@@ -92,7 +93,7 @@ func CreatePaper(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 
 	ctx := paperService.CreateMetadata(userID)
-	response, err := paperService.Client().CreatePaper(ctx, &proto.Empty{})
+	response, err := paperService.Client().CreatePaper(ctx, &emptypb.Empty{})
 	if err != nil {
 		handleGRPCError(w, err)
 		return
