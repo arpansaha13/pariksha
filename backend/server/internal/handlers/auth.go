@@ -1,12 +1,11 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -14,10 +13,15 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/config/env"
-	"pariksha/server/internal/services"
+	"pariksha/server/internal/interservice"
 )
 
-func setCookiesFromMetadata(w http.ResponseWriter, md metadata.MD) {
+func setCookiesFromMetadata(w http.ResponseWriter, mdPtr *metadata.MD) error {
+	if mdPtr == nil {
+		return fmt.Errorf("mdPtr is nil")
+	}
+	md := *mdPtr
+
 	sessionKey := md.Get(constants.HEADER_SESSION_KEY)[0]
 	csrfToken := md.Get(constants.HEADER_CSRF_TOKEN)[0]
 	expiresAt, _ := time.Parse(time.RFC3339, md.Get(constants.HEADER_EXPIRES_AT)[0])
@@ -41,6 +45,8 @@ func setCookiesFromMetadata(w http.ResponseWriter, md metadata.MD) {
 		Path:     "/", // JavaScript can read cookie only if current path matches cookie path
 		SameSite: http.SameSiteStrictMode,
 	})
+
+	return nil
 }
 
 type AuthCheckResponse struct {
@@ -59,20 +65,19 @@ func LoginWithPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var header metadata.MD
-	authService := services.GetAuthService()
-	response, err := authService.Client().LoginWithPassword(
-		context.Background(),
+	response, header, err := interservice.LoginWithPassword(
 		&loginReq,
-		grpc.Header(&header),
 	)
 	if err != nil {
 		handleGRPCError(w, err)
-		// http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	setCookiesFromMetadata(w, header)
+	err = setCookiesFromMetadata(w, header)
+	if err != nil {
+		http.Error(w, constants.ErrInternalServer, http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
@@ -85,8 +90,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authService := services.GetAuthService()
-	_, err := authService.Client().SignUp(context.Background(), &signUpReq)
+	_, err := interservice.SignUp(&signUpReq)
 	if err != nil {
 		handleGRPCError(w, err)
 		return
@@ -102,19 +106,19 @@ func VerifySignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var header metadata.MD
-	authService := services.GetAuthService()
-	response, err := authService.Client().VerifySignUp(
-		context.Background(),
+	response, header, err := interservice.VerifySignUp(
 		&verificationReq,
-		grpc.Header(&header),
 	)
 	if err != nil {
 		handleGRPCError(w, err)
 		return
 	}
 
-	setCookiesFromMetadata(w, header)
+	err = setCookiesFromMetadata(w, header)
+	if err != nil {
+		http.Error(w, constants.ErrInternalServer, http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
@@ -127,8 +131,7 @@ func LoginWithOtp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authService := services.GetAuthService()
-	_, err := authService.Client().InitiateLoginWithOtp(context.Background(), &loginOtpReq)
+	_, err := interservice.InitiateLoginWithOtp(&loginOtpReq)
 	if err != nil {
 		// Convert gRPC status error to appropriate HTTP status code
 		st, ok := status.FromError(err)
@@ -158,19 +161,19 @@ func VerifyLoginWithOtp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var header metadata.MD
-	authService := services.GetAuthService()
-	response, err := authService.Client().VerifyLoginOtp(
-		context.Background(),
+	response, header, err := interservice.VerifyLoginOtp(
 		&verificationReq,
-		grpc.Header(&header),
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	setCookiesFromMetadata(w, header)
+	err = setCookiesFromMetadata(w, header)
+	if err != nil {
+		http.Error(w, constants.ErrInternalServer, http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
@@ -183,8 +186,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authService := services.GetAuthService()
-	_, err := authService.Client().ForgotPassword(context.Background(), &forgotPasswordReq)
+	_, err := interservice.ForgotPassword(&forgotPasswordReq)
 	if err != nil {
 		handleGRPCError(w, err)
 		return
@@ -200,8 +202,7 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authService := services.GetAuthService()
-	_, err := authService.Client().ResetPassword(context.Background(), &resetPasswordReq)
+	_, err := interservice.ResetPassword(&resetPasswordReq)
 	if err != nil {
 		handleGRPCError(w, err)
 		return
@@ -217,8 +218,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authService := services.GetAuthService()
-	_, err = authService.Client().Logout(context.Background(), &proto.LogoutRequest{
+	_, err = interservice.Logout(&proto.LogoutRequest{
 		SessionKey: cookie.Value,
 	})
 	if err != nil {

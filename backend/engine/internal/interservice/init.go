@@ -22,6 +22,12 @@ type paperService struct {
 	conn   *grpc.ClientConn
 }
 
+func ClosePaperConn() {
+	if pSvc != nil && pSvc.conn != nil {
+		pSvc.conn.Close()
+	}
+}
+
 func ensurePaperService() {
 	pSvcOnce.Do(func() {
 		pSvc = &paperService{}

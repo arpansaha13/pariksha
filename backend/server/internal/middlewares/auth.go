@@ -7,7 +7,7 @@ import (
 
 	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/config/env"
-	"pariksha/server/internal/services"
+	"pariksha/server/internal/interservice"
 )
 
 type userContextKey string
@@ -31,8 +31,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		csrfToken := r.Header.Get("X-CSRFToken")
-		authService := services.GetAuthService()
-		response, err := authService.Client().Authenticate(context.Background(), &proto.AuthenticateRequest{
+		response, err := interservice.Authenticate(&proto.AuthenticateRequest{
 			SessionKey: sessionCookie.Value,
 			CsrfToken:  csrfToken,
 		})

@@ -49,7 +49,7 @@ func (s *EngineService) Close() error {
 }
 
 func init() {
-	GetAuthService()
+	GetEngineService()
 }
 
 func (s *EngineService) Client() proto.EngineClient {

@@ -10,6 +10,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/engine/internal/config/env"
 	"pariksha/engine/internal/handlers"
+	"pariksha/engine/internal/interservice"
 )
 
 func main() {
@@ -31,4 +32,6 @@ func main() {
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+
+	defer interservice.ClosePaperConn()
 }

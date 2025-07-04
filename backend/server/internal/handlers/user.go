@@ -9,8 +9,8 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
+	"pariksha/server/internal/interservice"
 	"pariksha/server/internal/middlewares"
-	"pariksha/server/internal/services"
 )
 
 func GetAuthUser(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +20,7 @@ func GetAuthUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := services.GetAuthService().Client().GetUser(r.Context(), &proto.GetUserRequest{
+	resp, err := interservice.GetUser(&proto.GetUserRequest{
 		UserId: userID,
 	})
 
@@ -42,7 +42,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := services.GetAuthService().Client().GetUser(r.Context(), &proto.GetUserRequest{
+	resp, err := interservice.GetUser(&proto.GetUserRequest{
 		UserId: userID,
 	})
 
@@ -85,7 +85,7 @@ func UpdateAuthUser(w http.ResponseWriter, r *http.Request) {
 		req.LastName = &userDto.LastName
 	}
 
-	resp, err := services.GetAuthService().Client().UpdateUser(r.Context(), req)
+	resp, err := interservice.UpdateUser(req)
 
 	if err != nil {
 		handleGRPCError(w, err)

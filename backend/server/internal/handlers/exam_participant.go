@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
@@ -10,6 +9,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
+	"pariksha/server/internal/interservice"
 	"pariksha/server/internal/middlewares"
 	"pariksha/server/internal/services"
 )
@@ -33,13 +33,10 @@ func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authService := services.GetAuthService()
-	authCtx := context.Background()
-
 	response := make([]dtos.ExamParticipantResponseDto, len(participants.Participants))
 	for i, p := range participants.Participants {
 		// Get user details from auth service
-		userResp, err := authService.Client().GetUser(authCtx, &proto.GetUserRequest{
+		userResp, err := interservice.GetUser(&proto.GetUserRequest{
 			UserId: p.UserId,
 		})
 
@@ -135,10 +132,7 @@ func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
 
 	// First create/update user if email is provided
 	if participantDto.Email != "" {
-		authService := services.GetAuthService()
-		authCtx := context.Background()
-
-		userResp, err := authService.Client().UpsertUser(authCtx, &proto.UpsertUserRequest{
+		userResp, err := interservice.UpsertUser(&proto.UpsertUserRequest{
 			Email:     participantDto.Email,
 			FirstName: &participantDto.FirstName,
 			LastName:  &participantDto.LastName,
