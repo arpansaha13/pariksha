@@ -2,7 +2,11 @@
   <div class="flex h-full shrink-0 flex-col">
     <slot name="leading" />
 
-    <UNavigationMenu class="mt-2" :items="links" orientation="vertical" />
+    <UNavigationMenu
+      :class="$slots.leading && 'mt-2'"
+      :items="links"
+      orientation="vertical"
+    />
 
     <UDropdownMenu
       v-if="authUser"
