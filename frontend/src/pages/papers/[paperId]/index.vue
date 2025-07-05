@@ -1,50 +1,32 @@
 <template>
-  <div v-if="paper" class="col-span-2 flex items-center gap-2">
-    <Icon name="i-heroicons-document-text" size="2rem" />
-
-    <PaperTitle :paper="paper" />
-
-    <div class="ml-auto">
-      <PaperDurationModal :paper="paper" />
-    </div>
-  </div>
-
-  <div class="flex items-center justify-end">
-    <UButton
-      to="/papers"
-      label="Back"
-      icon="i-heroicons-arrow-uturn-left"
-      size="sm"
-      color="neutral"
-      variant="ghost"
-    />
-  </div>
-
-  <div
-    v-if="!isNullOrUndefined(sortedCategories)"
-    class="col-span-2 flex items-center justify-between gap-x-2 border-b border-gray-200 dark:border-gray-800"
-  >
-    <PaperCategoryNavigation :sorted-categories="sortedCategories" />
-
-    <PaperCategoryManageModal
-      v-if="!isNullOrUndefined(groupedQuestions) && currentCategoryId"
-      :sorted-categories="sortedCategories"
-      :grouped-questions="groupedQuestions"
-      :current-category-id="currentCategoryId"
-    />
-  </div>
-
-  <UCard
-    :ui="{
-      root: 'col-start-3 row-span-2 row-start-2 overflow-hidden flex flex-col',
-      body: 'overflow-auto grow p-0 sm:p-0',
-    }"
-  >
-    <template #header>
-      <h2 class="text-lg font-semibold">Question Pallet</h2>
+  <NuxtLayout name="paper">
+    <template #title>
+      <PaperTitle v-if="paper" :paper="paper" />
     </template>
 
-    <div>
+    <template #header-trailing>
+      <PaperDurationModal v-if="paper" :paper="paper" />
+
+      <PaperCategoryManageModal
+        v-if="
+          !isNullOrUndefined(groupedQuestions) &&
+          !isNullOrUndefined(sortedCategories) &&
+          currentCategoryId
+        "
+        :sorted-categories="sortedCategories"
+        :grouped-questions="groupedQuestions"
+        :current-category-id="currentCategoryId"
+      />
+    </template>
+
+    <template #category-nav>
+      <PaperCategoryNavigation
+        v-if="!isNullOrUndefined(sortedCategories)"
+        :sorted-categories="sortedCategories"
+      />
+    </template>
+
+    <template #question-nav>
       <PaperQuestionList
         v-if="currentCategoryId && !isNullOrUndefined(currentQuestionId)"
         :current-category-id="currentCategoryId"
@@ -53,9 +35,9 @@
         :show-question-edit-chip="showQuestionEditChip"
         :question-navigation="questionNavigation"
       />
-    </div>
+    </template>
 
-    <template #footer>
+    <template #new-question-link>
       <UButton
         :to="{ query: { ...route.query, question: QUESTION_ID_ADD } }"
         icon="i-heroicons-plus"
@@ -65,65 +47,65 @@
         replace
       />
     </template>
-  </UCard>
 
-  <UCard
-    :ui="{ root: 'col-span-2 overflow-hidden', body: 'h-full overflow-auto' }"
-  >
-    <PaperQuestionForm
-      v-if="
-        currentQuestionId === QUESTION_ID_ADD &&
-        currentCategoryId &&
-        createQuestionFormStates[currentCategoryId]
-      "
-      ref="createQuestionForm"
-      v-model:form-data="createQuestionFormStates[currentCategoryId]"
-      :has-test-cases="false"
-      @submit="onCreateQuestionSubmit"
-    />
-    <PaperQuestionForm
-      v-else-if="currentQuestionId && editQuestionFormStates[currentQuestionId]"
-      ref="editQuestionForm"
-      v-model:form-data="editQuestionFormStates[currentQuestionId]!"
-      :has-test-cases="
-        !isNullOrUndefined(question) &&
-        question.type === QuestionType.CODING &&
-        !isNullOrUndefined(question.test_cases) &&
-        question.test_cases.length > 0
-      "
-      @submit="onEditQuestionSubmit"
-    />
-    <PaperQuestionCodingTestCasesForm
-      v-else-if="
-        question &&
-        currentQuestionId &&
-        question.type === QuestionType.CODING &&
-        codingQuestionTestCaseFormStates[currentQuestionId]
-      "
-      ref="codingQuestionTestCaseForm"
-      v-model:test-cases="codingQuestionTestCaseFormStates[currentQuestionId]!"
-      :coding-question-content="question.question"
-      @submit="onDefineTestCasesSubmit"
-    />
-    <template v-else-if="question">
-      <PaperQuestionMcq
-        v-if="question.type === QuestionType.MCQ"
-        :question="question.question"
+    <template #body>
+      <PaperQuestionForm
+        v-if="
+          currentQuestionId === QUESTION_ID_ADD &&
+          currentCategoryId &&
+          createQuestionFormStates[currentCategoryId]
+        "
+        ref="createQuestionForm"
+        v-model:form-data="createQuestionFormStates[currentCategoryId]"
+        :has-test-cases="false"
+        @submit="onCreateQuestionSubmit"
       />
-      <div v-else-if="question.type === QuestionType.SUBJECTIVE">
-        <p>{{ question.question.statement }}</p>
-      </div>
-      <DisplayCodingQuestion
-        v-else-if="question.type === QuestionType.CODING"
-        :content="question.question"
-        :test-cases="question.test_cases ?? []"
-        :editor-link="`/editor/questions/${question.id}`"
+      <PaperQuestionForm
+        v-else-if="
+          currentQuestionId && editQuestionFormStates[currentQuestionId]
+        "
+        ref="editQuestionForm"
+        v-model:form-data="editQuestionFormStates[currentQuestionId]!"
+        :has-test-cases="
+          !isNullOrUndefined(question) &&
+          question.type === QuestionType.CODING &&
+          !isNullOrUndefined(question.test_cases) &&
+          question.test_cases.length > 0
+        "
+        @submit="onEditQuestionSubmit"
       />
+      <PaperQuestionCodingTestCasesForm
+        v-else-if="
+          question &&
+          currentQuestionId &&
+          question.type === QuestionType.CODING &&
+          codingQuestionTestCaseFormStates[currentQuestionId]
+        "
+        ref="codingQuestionTestCaseForm"
+        v-model:test-cases="
+          codingQuestionTestCaseFormStates[currentQuestionId]!
+        "
+        :coding-question-content="question.question"
+        @submit="onDefineTestCasesSubmit"
+      />
+      <template v-else-if="question">
+        <PaperQuestionMcq
+          v-if="question.type === QuestionType.MCQ"
+          :question="question.question"
+        />
+        <div v-else-if="question.type === QuestionType.SUBJECTIVE">
+          <p>{{ question.question.statement }}</p>
+        </div>
+        <DisplayCodingQuestion
+          v-else-if="question.type === QuestionType.CODING"
+          :content="question.question"
+          :test-cases="question.test_cases ?? []"
+          :editor-link="`/editor/questions/${question.id}`"
+        />
+      </template>
     </template>
-  </UCard>
 
-  <UCard :ui="{ root: 'col-span-2', body: 'flex justify-between' }">
-    <div>
+    <template #footer-leading>
       <UButton
         v-if="questionNavigation.prev"
         replace
@@ -132,8 +114,9 @@
         variant="outline"
         :to="{ query: { ...route.query, question: questionNavigation.prev } }"
       />
-    </div>
-    <div class="space-x-2">
+    </template>
+
+    <template #footer-trailing>
       <UButton
         v-if="currentQuestionId === QUESTION_ID_ADD"
         label="Add question"
@@ -186,8 +169,8 @@
         variant="outline"
         :to="{ query: { ...route.query, question: questionNavigation.next } }"
       />
-    </div>
-  </UCard>
+    </template>
+  </NuxtLayout>
 </template>
 
 <script setup lang="ts">
@@ -201,7 +184,7 @@ import {
 } from '#components'
 
 definePageMeta({
-  layout: 'paper',
+  layout: false,
   middleware: ['check-paper-permission'],
 })
 

@@ -8,7 +8,7 @@
     @submit="updatePaperTitle"
   >
     <EditableArea
-      class="rounded-sm px-1 text-xl focus-within:outline hover:outline"
+      class="rounded-sm px-1 text-lg focus-within:outline hover:outline sm:text-xl"
     >
       <EditablePreview as="h1" class="font-semibold" />
       <EditableInput class="font-semibold outline-none" />

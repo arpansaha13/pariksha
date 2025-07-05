@@ -168,7 +168,7 @@ import { isNullOrUndefined } from '@arpansaha13/utils'
 import { ConfirmModal } from '#components'
 
 definePageMeta({
-  layout: 'paper',
+  layout: 'exam',
   middleware: [
     'check-exam-permission',
     to => {
