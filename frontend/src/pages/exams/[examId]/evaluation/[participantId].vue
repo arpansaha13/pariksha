@@ -1,144 +1,145 @@
 <template>
-  <div v-if="exam" class="col-span-2 flex items-center gap-2">
-    <Icon name="i-heroicons-document-text" size="2rem" />
-    <h1 class="text-xl font-semibold">{{ exam.title }}</h1>
-  </div>
+  <NuxtLayout name="evaluation">
+    <template #title>
+      <h1 class="text-lg font-semibold sm:text-xl">{{ exam.title }}</h1>
+    </template>
 
-  <div class="flex items-center justify-end gap-2.5">
-    <UButton
-      label="Submit evaluation"
-      loading-auto
-      @click="handleEvaluationSubmit"
-    />
-  </div>
+    <template #submit>
+      <UButton
+        label="Submit"
+        icon="heroicons:cloud-arrow-up"
+        loading-auto
+        class="hidden sm:flex"
+        @click="handleEvaluationSubmit"
+      />
+      <UButton
+        icon="heroicons:cloud-arrow-up"
+        size="sm"
+        loading-auto
+        class="sm:hidden"
+        @click="handleEvaluationSubmit"
+      />
+    </template>
 
-  <div class="col-span-2 flex h-full flex-col gap-y-4">
-    <ExamCategoryNavigation
-      v-if="!isNullOrUndefined(sortedCategories)"
-      :sorted-categories="sortedCategories"
-      :get-question-id-for-category-id="getQuestionIdForCategoryId"
-    />
-  </div>
+    <template #category-nav v-if="currentCategoryQuestions">
+      <ExamCategoryNavigation
+        v-if="!isNullOrUndefined(sortedCategories)"
+        :sorted-categories="sortedCategories"
+        :get-question-id-for-category-id="getQuestionIdForCategoryId"
+      />
+    </template>
 
-  <div class="col-start-3 row-span-2 row-start-2 flex flex-col">
-    <h2 class="mb-4 text-lg font-semibold">Question Pallet</h2>
-
-    <UCard v-if="currentCategoryQuestions" :ui="{ root: 'grow' }">
+    <template #question-nav v-if="currentCategoryQuestions">
       <EvaluationQuestionList
         v-if="!isNullOrUndefined(currentQuestionId)"
         :current-question-id="currentQuestionId"
         :current-category-questions="currentCategoryQuestions"
       />
-    </UCard>
-  </div>
+    </template>
+    <template #body v-if="currentQuestionAnswer && currentQuestionId">
+      <UCard>
+        <p
+          v-if="currentQuestionAnswer.type === QuestionType.CODING"
+          class="mb-2 text-lg font-bold"
+        >
+          {{ currentQuestionAnswer.question.content.title }}
+        </p>
+        <p class="font-medium">
+          {{ currentQuestionAnswer.question.content.statement }}
+        </p>
+      </UCard>
 
-  <div
-    v-if="currentQuestionAnswer && currentQuestionId"
-    class="col-span-2 row-span-2 -m-[2px] flex flex-col gap-y-2.5 overflow-auto p-[2px]"
-  >
-    <UCard>
-      <p
-        v-if="currentQuestionAnswer.type === QuestionType.CODING"
-        class="mb-2 text-lg font-bold"
+      <UCard
+        :ui="{
+          root:
+            isNullOrUndefined(currentQuestionAnswer.answer?.content) &&
+            currentQuestionAnswer.type !== QuestionType.MCQ &&
+            'grow',
+        }"
       >
-        {{ currentQuestionAnswer.question.content.title }}
-      </p>
-      <p class="font-medium">
-        {{ currentQuestionAnswer.question.content.statement }}
-      </p>
-    </UCard>
+        <template v-if="currentQuestionAnswer.type === QuestionType.MCQ">
+          <URadioGroup
+            v-if="!isNullOrUndefined(currentQuestionMcqOptions)"
+            v-model="selectedOptionIndex"
+            :items="currentQuestionMcqOptions"
+            variant="card"
+            disabled
+            :ui="{
+              wrapper: 'ml-3',
+              fieldset: 'space-y-1',
+              label: 'opacity-100',
+              item: 'opacity-100',
+            }"
+          />
+        </template>
 
-    <UCard
-      :ui="{
-        root:
-          isNullOrUndefined(currentQuestionAnswer.answer?.content) &&
-          currentQuestionAnswer.type !== QuestionType.MCQ &&
-          'grow',
-      }"
-    >
-      <template v-if="currentQuestionAnswer.type === QuestionType.MCQ">
-        <URadioGroup
-          v-if="!isNullOrUndefined(currentQuestionMcqOptions)"
-          v-model="selectedOptionIndex"
-          :items="currentQuestionMcqOptions"
-          variant="card"
-          disabled
-          :ui="{
-            wrapper: 'ml-3',
-            fieldset: 'space-y-1',
-            label: 'opacity-100',
-            item: 'opacity-100',
-          }"
-        />
-      </template>
+        <template v-else>
+          <EvaluationUnanswered
+            v-if="isNullOrUndefined(currentQuestionAnswer.answer?.content)"
+          />
 
-      <template v-else>
+          <p v-else-if="currentQuestionAnswer.type === QuestionType.SUBJECTIVE">
+            {{
+              (currentQuestionAnswer.answer.content as SubjectiveAnswer).text
+            }}
+          </p>
+
+          <Shiki
+            v-else-if="currentQuestionAnswer.type === QuestionType.CODING"
+            :code="(currentQuestionAnswer.answer.content as CodingAnswer).code"
+          />
+        </template>
+      </UCard>
+
+      <!-- Show evaluation section for MCQ because EvaluationUnanswered for MCQ is shown here -->
+      <UCard
+        v-if="
+          !isNullOrUndefined(currentQuestionAnswer.answer?.content) ||
+          currentQuestionAnswer.type === QuestionType.MCQ
+        "
+        :ui="{ root: 'grow' }"
+      >
         <EvaluationUnanswered
           v-if="isNullOrUndefined(currentQuestionAnswer.answer?.content)"
         />
-
-        <p v-else-if="currentQuestionAnswer.type === QuestionType.SUBJECTIVE">
-          {{ (currentQuestionAnswer.answer.content as SubjectiveAnswer).text }}
-        </p>
-
-        <Shiki
-          v-else-if="currentQuestionAnswer.type === QuestionType.CODING"
-          :code="(currentQuestionAnswer.answer.content as CodingAnswer).code"
-        />
-      </template>
-    </UCard>
-
-    <!-- Show evaluation section for MCQ because EvaluationUnanswered for MCQ is shown here -->
-    <UCard
-      v-if="
-        !isNullOrUndefined(currentQuestionAnswer.answer?.content) ||
-        currentQuestionAnswer.type === QuestionType.MCQ
-      "
-      :ui="{ root: 'grow' }"
-    >
-      <EvaluationUnanswered
-        v-if="isNullOrUndefined(currentQuestionAnswer.answer?.content)"
-      />
-      <UFormField
-        v-else
-        label="Score"
-        description="Score to be awarded for this answer"
-        name="score_awarded"
-        required
-      >
-        <UInputNumber
-          v-model="
-            evaluationStates[currentQuestionAnswer.answer.id].score_awarded
-          "
-          :min="0"
-          :max="currentQuestionAnswer.question.max_score"
+        <UFormField
+          v-else
+          label="Score"
+          description="Score to be awarded for this answer"
+          name="score_awarded"
           required
-        />
-      </UFormField>
-    </UCard>
-  </div>
+        >
+          <UInputNumber
+            v-model="
+              evaluationStates[currentQuestionAnswer.answer.id].score_awarded
+            "
+            :min="0"
+            :max="currentQuestionAnswer.question.max_score"
+            required
+          />
+        </UFormField>
+      </UCard>
+    </template>
 
-  <UCard
-    v-if="currentCategoryQuestions.length > 1"
-    :ui="{ root: 'col-start-3', body: 'flex' }"
-  >
-    <UButton
-      v-if="prevQuestionId"
-      label="Previous"
-      color="neutral"
-      variant="outline"
-      :to="{ query: { ...route.query, question: prevQuestionId } }"
-      replace
-    />
-    <UButton
-      v-if="nextQuestionId"
-      :to="{ query: { ...route.query, question: nextQuestionId } }"
-      label="Next"
-      variant="subtle"
-      class="ml-auto"
-      replace
-    />
-  </UCard>
+    <template #footer v-if="currentCategoryQuestions.length > 1">
+      <UButton
+        v-if="prevQuestionId"
+        label="Previous"
+        color="neutral"
+        variant="outline"
+        :to="{ query: { ...route.query, question: prevQuestionId } }"
+        replace
+      />
+      <UButton
+        v-if="nextQuestionId"
+        :to="{ query: { ...route.query, question: nextQuestionId } }"
+        label="Next"
+        variant="subtle"
+        class="ml-auto"
+        replace
+      />
+    </template>
+  </NuxtLayout>
 </template>
 
 <script lang="ts" setup>
@@ -146,7 +147,7 @@ import { ConfirmModal } from '#components'
 import { isNullOrUndefined } from '@arpansaha13/utils'
 
 definePageMeta({
-  layout: 'exam',
+  layout: false,
   middleware: [
     'check-exam-permission',
     to => {
