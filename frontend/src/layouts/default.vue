@@ -1,41 +1,37 @@
 <template>
-  <UContainer class="flex min-h-screen gap-6">
-    <div class="sticky top-0 flex h-screen w-60 shrink-0 flex-col p-2">
-      <div class="flex items-center gap-1.5 p-2">
-        <Logo class="size-8" />
-        <p class="text-md font-bold">Pariksha</p>
-      </div>
+  <USlideover
+    side="left"
+    v-model:open="isOpen"
+    :ui="{ title: 'flex items-center gap-1.5', description: 'm-0!' }"
+  >
+    <UContainer class="bg-default py-2.5 shadow-sm sm:hidden">
+      <UButton icon="heroicons:bars-3" color="neutral" variant="subtle" />
+    </UContainer>
 
-      <UNavigationMenu class="mt-2" :items="links" orientation="vertical" />
+    <template #title>
+      <Logo class="size-8" />
+      <p class="text-md font-bold">Pariksha</p>
+    </template>
 
-      <UDropdownMenu
-        v-if="authUser"
-        :items="profileMenuItems"
-        :content="{
-          align: 'center',
-          side: 'top',
-          sideOffset: 8,
-        }"
-        :ui="{
-          content: 'w-48',
-        }"
-      >
-        <UButton
-          color="neutral"
-          variant="ghost"
-          class="mt-auto flex items-center gap-x-1.5 p-2 text-left"
-        >
-          <UAvatar icon="heroicons:user-20-solid" size="xl" />
+    <template #description>
+      <p class="sr-only">Navbar</p>
+    </template>
 
-          <div class="text-sm">
-            <p v-if="authUser.first_name" class="font-semibold">
-              {{ authUser.first_name }} {{ authUser.last_name }}
-            </p>
-            <p v-else>{{ authUser.email }}</p>
-            <p class="font-normal">@{{ authUser.username }}</p>
+    <template #body>
+      <Sidebar />
+    </template>
+  </USlideover>
+
+  <UContainer class="min-h-screen gap-6 sm:flex">
+    <div class="sticky top-0 hidden h-screen w-60 shrink-0 sm:block">
+      <Sidebar class="p-2">
+        <template #leading>
+          <div class="flex items-center gap-1.5 p-2">
+            <Logo class="size-8" />
+            <p class="text-md font-bold">Pariksha</p>
           </div>
-        </UButton>
-      </UDropdownMenu>
+        </template>
+      </Sidebar>
     </div>
 
     <div class="grow py-4">
@@ -45,50 +41,15 @@
 </template>
 
 <script setup lang="ts">
-import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
+const isOpen = ref(false)
 
-const { data: authUser } = await useAuthUser()
-
-const profileMenuItems = ref<DropdownMenuItem[]>([
-  {
-    label: 'Logout',
-    icon: 'lucide:log-out',
-    onSelect: async () => {
-      await logout()
-      reloadNuxtApp({ persistState: false, path: '/auth/login' })
-    },
-  },
-])
-
-const links: NavigationMenuItem[][] = [
-  [
-    {
-      label: 'Home',
-      to: '/',
-      icon: 'i-heroicons-home',
-    },
-    {
-      label: 'Exams',
-      to: '/exams',
-      icon: 'i-heroicons-academic-cap',
-    },
-    {
-      label: 'Papers',
-      to: '/papers',
-      icon: 'i-heroicons-document-text',
-    },
-  ],
-  [
-    {
-      label: 'Create new exam',
-      to: '/exams/new',
-      icon: 'i-lucide-bookmark-plus',
-    },
-    {
-      label: 'Create new paper',
-      to: '/papers/new',
-      icon: 'i-heroicons-document-plus',
-    },
-  ],
-]
+const route = useRoute()
+watch(
+  () => route.path,
+  (newVal, oldVal) => {
+    if (newVal !== oldVal) {
+      isOpen.value = false
+    }
+  }
+)
 </script>
