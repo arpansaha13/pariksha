@@ -4,7 +4,9 @@
       <Icon :name="icon" size="2.5rem" />
     </div>
     <p v-if="title" class="text-sm font-medium">{{ title }}</p>
-    <p v-if="description" class="text-sm">{{ description }}</p>
+    <p v-if="description" class="text-center text-sm text-pretty">
+      {{ description }}
+    </p>
   </div>
 </template>
 

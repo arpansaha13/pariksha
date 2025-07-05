@@ -6,7 +6,7 @@
       </h2>
 
       <UButton
-        v-if="editorLink"
+        v-if="!$device.isMobileOrTablet && editorLink"
         :to="editorLink"
         size="sm"
         color="neutral"
@@ -16,7 +16,17 @@
       />
     </div>
 
-    <p>
+    <UAlert
+      v-if="$device.isMobileOrTablet"
+      color="warning"
+      variant="subtle"
+      title="Editor not supported on this device."
+      description="Try again from a desktop for full functionality."
+      icon="heroicons:exclamation-circle"
+      :ui="{ root: 'mb-4' }"
+    />
+
+    <p class="text-sm sm:text-base">
       {{ content.statement }}
     </p>
 

@@ -135,17 +135,17 @@
       >
         <UButton
           v-if="question?.type === QuestionType.CODING"
-          label="Define test cases"
           color="primary"
           variant="subtle"
           @click="startDefineTestCases"
-        />
-        <UButton
-          label="Edit question"
-          color="primary"
-          variant="subtle"
-          @click="startQuestionEdit"
-        />
+        >
+          <span class="sm:hidden">Define tests</span>
+          <span class="hidden sm:inline">Define test cases</span>
+        </UButton>
+
+        <UButton color="primary" variant="subtle" @click="startQuestionEdit">
+          Edit <span class="hidden sm:inline">question</span>
+        </UButton>
       </template>
       <template v-else>
         <UButton

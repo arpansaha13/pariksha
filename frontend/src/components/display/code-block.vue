@@ -9,7 +9,7 @@
       :ui="{
         root: bodyBgColor,
         body: [
-          'font-mono',
+          'font-mono text-sm space-y-0.5',
           bodyPadding,
           preserveWhiteSpace && 'whitespace-pre-wrap',
         ],
