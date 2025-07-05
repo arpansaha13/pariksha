@@ -89,15 +89,11 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 		return nil, err
 	}
 
-	// Create execution context with timeout
-	execCtx, cancel := context.WithTimeout(ctx, time.Duration(engineConstants.ExecutionTimeout)*time.Second)
-	defer cancel()
-
 	// Check if image exists locally
-	_, _, err = s.dockerClient.ImageInspectWithRaw(execCtx, envConfig.Image)
+	_, _, err = s.dockerClient.ImageInspectWithRaw(context.Background(), envConfig.Image)
 	if err != nil {
 		// Image not found locally, pull it
-		reader, err := s.dockerClient.ImagePull(execCtx, envConfig.Image, image.PullOptions{})
+		reader, err := s.dockerClient.ImagePull(context.Background(), envConfig.Image, image.PullOptions{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to pull docker image: %v", err)
 		}
@@ -178,7 +174,7 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 		},
 	}
 
-	resp, err := s.dockerClient.ContainerCreate(execCtx, containerConfig, hostConfig, nil, nil, "")
+	resp, err := s.dockerClient.ContainerCreate(context.Background(), containerConfig, hostConfig, nil, nil, "")
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create container: %v", err)
 	}
@@ -191,13 +187,17 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 		}
 	}()
 
+	// Create execution context with timeout
+	execCtx, cancel := context.WithTimeout(ctx, time.Duration(engineConstants.ExecutionTimeout)*time.Second)
+	defer cancel()
+
 	_, err = s.startContainerAndWait(&execCtx, resp.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get container logs
-	logs, err := s.dockerClient.ContainerLogs(execCtx, resp.ID, container.LogsOptions{
+	logs, err := s.dockerClient.ContainerLogs(context.Background(), resp.ID, container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 	})
