@@ -1,5 +1,16 @@
 <template>
-  <UButton label="Submit" @click="showConfirmDialog" />
+  <UButton
+    label="Submit"
+    icon="heroicons:cloud-arrow-up"
+    @click="showConfirmDialog"
+    class="hidden sm:flex"
+  />
+  <UButton
+    size="sm"
+    icon="heroicons:cloud-arrow-up"
+    @click="showConfirmDialog"
+    class="sm:hidden"
+  />
 </template>
 
 <script setup lang="ts">

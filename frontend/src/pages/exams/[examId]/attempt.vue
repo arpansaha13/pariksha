@@ -20,73 +20,41 @@
     </UButton>
   </UContainer>
 
-  <template v-else>
-    <div v-if="exam" class="col-span-2 flex items-center gap-2">
-      <Icon name="i-heroicons-document-text" size="2rem" />
-      <h1 class="text-xl font-semibold">{{ exam.title }}</h1>
-    </div>
+  <NuxtLayout v-else name="exam">
+    <template #title>
+      <h1 class="text-lg font-semibold sm:text-xl">{{ exam.title }}</h1>
+    </template>
 
-    <div class="flex items-center justify-end gap-2.5">
+    <template #timer>
       <ExamTimer
         v-if="participant"
         :started-at="participant.started_at"
         :scheduled-end-time="participant.scheduled_end_time"
         @timeout="handleExamSubmit"
       />
+    </template>
 
+    <template #submit>
       <ExamSubmit @submit="handleExamSubmit" />
-    </div>
+    </template>
 
-    <div class="col-span-2 flex h-full flex-col gap-y-4">
+    <template #category-nav>
       <ExamCategoryNavigation
         v-if="!isNullOrUndefined(sortedCategories)"
         :sorted-categories="sortedCategories"
         :get-question-id-for-category-id="getQuestionIdForCategoryId"
       />
-    </div>
+    </template>
 
-    <UCard
-      v-if="currentCategoryQuestions"
-      :ui="{
-        root: 'col-start-3 row-span-2 row-start-2 flex flex-col',
-        body: 'grow overflow-auto',
-        footer: 'flex',
-      }"
-    >
-      <template #header>
-        <h3 class="heading">Question Pallet</h3>
-      </template>
-
+    <template #question-nav>
       <ExamQuestionList
         v-if="!isNullOrUndefined(currentQuestionId)"
         :current-question-id="currentQuestionId"
         :current-category-questions="currentCategoryQuestions"
       />
+    </template>
 
-      <template #footer v-if="currentCategoryQuestions.length > 1">
-        <UButton
-          v-if="prevQuestionId"
-          :to="{ query: { ...route.query, question: prevQuestionId } }"
-          replace
-          label="Previous"
-          color="neutral"
-          variant="outline"
-        />
-        <UButton
-          v-if="nextQuestionId"
-          :to="{ query: { ...route.query, question: nextQuestionId } }"
-          label="Next"
-          variant="subtle"
-          class="ml-auto"
-          replace
-        />
-      </template>
-    </UCard>
-
-    <div
-      v-if="!isNullOrUndefined(currentQuestionType) && question"
-      class="col-span-2 -m-[2px] flex flex-col gap-y-2.5 overflow-auto p-[2px]"
-    >
+    <template #body v-if="!isNullOrUndefined(currentQuestionType) && question">
       <template v-if="currentQuestionType === QuestionType.MCQ">
         <UCard>
           <p class="font-medium">{{ question.question.statement }}</p>
@@ -159,8 +127,31 @@
           </template>
         </UCard>
       </template>
-    </div>
-  </template>
+    </template>
+
+    <template
+      #footer
+      v-if="currentCategoryQuestions && currentCategoryQuestions.length > 1"
+    >
+      <UButton
+        v-if="prevQuestionId"
+        :to="{ query: { ...route.query, question: prevQuestionId } }"
+        replace
+        label="Previous"
+        color="neutral"
+        variant="outline"
+      />
+
+      <UButton
+        v-if="nextQuestionId"
+        :to="{ query: { ...route.query, question: nextQuestionId } }"
+        replace
+        label="Next"
+        variant="subtle"
+        class="ml-auto"
+      />
+    </template>
+  </NuxtLayout>
 </template>
 
 <script setup lang="ts">
@@ -168,7 +159,7 @@ import { isNullOrUndefined } from '@arpansaha13/utils'
 import { ConfirmModal } from '#components'
 
 definePageMeta({
-  layout: 'exam',
+  layout: false,
   middleware: [
     'check-exam-permission',
     to => {
