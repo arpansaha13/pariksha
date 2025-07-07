@@ -34,6 +34,11 @@ var (
 	PAPER_SERVER_PORT string
 )
 
+var (
+	QUESTION_SERVER_HOST string
+	QUESTION_SERVER_PORT string
+)
+
 func init() {
 	if os.Getenv("GO_ENV") == "" {
 		if godotenv.Load("../../env/test.env") != nil {
@@ -50,7 +55,6 @@ func init() {
 	}
 
 	GO_ENV = os.Getenv("GO_ENV")
-	EXAM_API_TOKEN = os.Getenv("EXAM_API_TOKEN")
 
 	EXAM_SERVER_PORT = os.Getenv("EXAM_SERVER_PORT")
 
@@ -58,16 +62,21 @@ func init() {
 	DB_PASS = os.Getenv("DB_PASS")
 	DB_NAME = os.Getenv("DB_NAME")
 
-	EXAM_QUEUE_HOST = os.Getenv("EXAM_QUEUE_HOST")
-	EXAM_QUEUE_PORT = os.Getenv("EXAM_QUEUE_PORT")
-
-	PAPER_SERVER_HOST = os.Getenv("PAPER_SERVER_HOST")
-	PAPER_SERVER_PORT = os.Getenv("PAPER_SERVER_PORT")
-
 	if GO_ENV != constants.GO_ENV_TEST {
 		DB_HOST = os.Getenv("DB_HOST")
 		DB_PORT = os.Getenv("DB_PORT")
 		DB_SSLMODE = os.Getenv("DB_SSLMODE")
+
+		EXAM_API_TOKEN = os.Getenv("EXAM_API_TOKEN")
+
+		EXAM_QUEUE_HOST = os.Getenv("EXAM_QUEUE_HOST")
+		EXAM_QUEUE_PORT = os.Getenv("EXAM_QUEUE_PORT")
+
+		PAPER_SERVER_HOST = os.Getenv("PAPER_SERVER_HOST")
+		PAPER_SERVER_PORT = os.Getenv("PAPER_SERVER_PORT")
+
+		QUESTION_SERVER_HOST = os.Getenv("QUESTION_SERVER_HOST")
+		QUESTION_SERVER_PORT = os.Getenv("QUESTION_SERVER_PORT")
 	}
 }
 
@@ -78,19 +87,20 @@ func getRequiredEnvVars() []string {
 		"DB_USER",
 		"DB_PASS",
 		"DB_NAME",
-		"PAPER_SERVER_HOST",
-		"PAPER_SERVER_PORT",
-		"EXAM_API_TOKEN",
 	}
 
 	if os.Getenv("GO_ENV") != constants.GO_ENV_TEST {
-		// require these vars only when not in test environment
 		additionalEnvVars := []string{
 			"DB_HOST",
 			"DB_PORT",
 			"DB_SSLMODE",
+			"EXAM_API_TOKEN",
 			"EXAM_QUEUE_HOST",
 			"EXAM_QUEUE_PORT",
+			"PAPER_SERVER_HOST",
+			"PAPER_SERVER_PORT",
+			"QUESTION_SERVER_HOST",
+			"QUESTION_SERVER_PORT",
 		}
 		baseEnvVars = append(baseEnvVars, additionalEnvVars...)
 	}

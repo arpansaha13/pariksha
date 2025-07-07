@@ -5,10 +5,13 @@ export async function reorderQuestions(
 ): Promise<void> {
   const { $api } = useNuxtApp()
 
-  await $api(`/api/categories/${categoryId}/questions/reorder`, {
-    method: 'PATCH',
-    body: { questions: questionIds },
-  })
+  await $api(
+    `/api/papers/${paperId}/categories/${categoryId}/questions/reorder`,
+    {
+      method: 'PATCH',
+      body: { questions: questionIds },
+    }
+  )
 
   await refreshNuxtData(UseAsyncDataKeys.paper_questions(paperId))
 }

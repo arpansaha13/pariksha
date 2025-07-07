@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"strconv"
 	"testing"
@@ -12,11 +11,10 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
-	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/generate"
 	"pariksha/exam/internal/config/db"
-	"pariksha/exam/internal/interservice/paper"
+	"pariksha/exam/internal/interservice"
 )
 
 const (
@@ -166,7 +164,6 @@ func createTestAnswer(t *testing.T, examParticipant *models.ExamParticipant, que
 		ExamParticipantID: examParticipant.ID,
 		QuestionID:        questionID,
 		Answer:            &rawAnswer,
-		Comments:          sql.NullString{String: "Test Comment", Valid: true},
 		ScoreAwarded:      5,
 		Evaluated:         true,
 	}
@@ -199,9 +196,6 @@ func createTestExamQuestions(t *testing.T, exam *models.Exam, questions []models
 		if questions[i].MaxScore == 0 {
 			questions[i].MaxScore = 10
 		}
-		if questions[i].Type == 0 {
-			questions[i].Type = proto.QuestionType_MCQ
-		}
 
 		// Set order based on index
 		questions[i].Order = int16(i + 1)
@@ -213,15 +207,15 @@ func createTestExamQuestions(t *testing.T, exam *models.Exam, questions []models
 	return result
 }
 
-func getQuestionIdForHash(questionHash string) int64 {
+func getQuestionIdForHash(questionHash string) types.QuestionID {
 	hashesList := []string{questionHash}
-	questionIDs, _ := paper.FetchQuestionIdsForHashes(hashesList)
+	questionIDs, _ := interservice.GetQuestionIDsByHashes(hashesList)
 	return questionIDs[0]
 }
 
 func getQuestionHashForId(questionID types.QuestionID) string {
-	idsList := make([]int64, 1)
-	idsList[0] = int64(questionID)
-	questionHashes, _ := paper.FetchQuestionHashesForIds(idsList)
+	idsList := make([]types.QuestionID, 1)
+	idsList[0] = questionID
+	questionHashes, _ := interservice.GetQuestionHashesByIds(idsList)
 	return questionHashes[0]
 }

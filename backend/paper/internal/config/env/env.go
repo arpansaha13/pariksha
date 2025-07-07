@@ -13,7 +13,6 @@ var (
 	GO_ENV            string
 	PAPER_SERVER_PORT string
 	EXAM_API_TOKEN    string
-	ENGINE_API_TOKEN  string
 )
 
 var (
@@ -23,6 +22,11 @@ var (
 	DB_PASS    string
 	DB_NAME    string
 	DB_SSLMODE string
+)
+
+var (
+	QUESTION_SERVER_HOST string
+	QUESTION_SERVER_PORT string
 )
 
 func init() {
@@ -43,8 +47,11 @@ func init() {
 	GO_ENV = os.Getenv("GO_ENV")
 
 	PAPER_SERVER_PORT = os.Getenv("PAPER_SERVER_PORT")
+
+	QUESTION_SERVER_HOST = os.Getenv("QUESTION_SERVER_HOST")
+	QUESTION_SERVER_PORT = os.Getenv("QUESTION_SERVER_PORT")
+
 	EXAM_API_TOKEN = os.Getenv("EXAM_API_TOKEN")
-	ENGINE_API_TOKEN = os.Getenv("ENGINE_API_TOKEN")
 
 	DB_USER = os.Getenv("DB_USER")
 	DB_PASS = os.Getenv("DB_PASS")
@@ -60,20 +67,20 @@ func init() {
 func getRequiredEnvVars() []string {
 	baseEnvVars := []string{
 		"GO_ENV",
-		"PAPER_SERVER_PORT",
 		"DB_USER",
 		"DB_PASS",
 		"DB_NAME",
-		"EXAM_API_TOKEN",
-		"ENGINE_API_TOKEN",
+		"PAPER_SERVER_PORT",
 	}
 
 	if os.Getenv("GO_ENV") != constants.GO_ENV_TEST {
-		// require these vars only when not in test environment
 		additionalEnvVars := []string{
 			"DB_HOST",
 			"DB_PORT",
 			"DB_SSLMODE",
+			"QUESTION_SERVER_HOST",
+			"QUESTION_SERVER_PORT",
+			"EXAM_API_TOKEN",
 		}
 		baseEnvVars = append(baseEnvVars, additionalEnvVars...)
 	}

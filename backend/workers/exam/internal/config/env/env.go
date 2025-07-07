@@ -5,7 +5,10 @@ import (
 	"os"
 )
 
-var GO_ENV string
+var (
+	GO_ENV         string
+	EXAM_API_TOKEN string
+)
 
 var (
 	EXAM_DB_HOST    string
@@ -17,36 +20,36 @@ var (
 )
 
 var (
-	PAPER_DB_HOST    string
-	PAPER_DB_USER    string
-	PAPER_DB_PASS    string
-	PAPER_DB_NAME    string
-	PAPER_DB_PORT    string
-	PAPER_DB_SSLMODE string
+	EXAM_QUEUE_HOST string
+	EXAM_QUEUE_PORT string
 )
 
 var (
-	EXAM_QUEUE_HOST string
-	EXAM_QUEUE_PORT string
+	PAPER_SERVER_HOST string
+	PAPER_SERVER_PORT string
+)
+
+var (
+	QUESTION_SERVER_HOST string
+	QUESTION_SERVER_PORT string
 )
 
 func init() {
 	requiredEnvVars := []string{
 		"GO_ENV",
+		"EXAM_API_TOKEN",
 		"EXAM_DB_HOST",
 		"EXAM_DB_USER",
 		"EXAM_DB_PASS",
 		"EXAM_DB_NAME",
 		"EXAM_DB_PORT",
 		"EXAM_DB_SSLMODE",
-		"PAPER_DB_HOST",
-		"PAPER_DB_USER",
-		"PAPER_DB_PASS",
-		"PAPER_DB_NAME",
-		"PAPER_DB_PORT",
-		"PAPER_DB_SSLMODE",
 		"EXAM_QUEUE_HOST",
 		"EXAM_QUEUE_PORT",
+		"PAPER_SERVER_HOST",
+		"PAPER_SERVER_PORT",
+		"QUESTION_SERVER_HOST",
+		"QUESTION_SERVER_PORT",
 	}
 
 	for _, envVar := range requiredEnvVars {
@@ -56,6 +59,7 @@ func init() {
 	}
 
 	GO_ENV = os.Getenv("GO_ENV")
+	EXAM_API_TOKEN = os.Getenv("EXAM_API_TOKEN")
 
 	EXAM_DB_HOST = os.Getenv("EXAM_DB_HOST")
 	EXAM_DB_USER = os.Getenv("EXAM_DB_USER")
@@ -64,13 +68,12 @@ func init() {
 	EXAM_DB_PORT = os.Getenv("EXAM_DB_PORT")
 	EXAM_DB_SSLMODE = os.Getenv("EXAM_DB_SSLMODE")
 
-	PAPER_DB_HOST = os.Getenv("PAPER_DB_HOST")
-	PAPER_DB_USER = os.Getenv("PAPER_DB_USER")
-	PAPER_DB_PASS = os.Getenv("PAPER_DB_PASS")
-	PAPER_DB_NAME = os.Getenv("PAPER_DB_NAME")
-	PAPER_DB_PORT = os.Getenv("PAPER_DB_PORT")
-	PAPER_DB_SSLMODE = os.Getenv("PAPER_DB_SSLMODE")
-
 	EXAM_QUEUE_HOST = os.Getenv("EXAM_QUEUE_HOST")
 	EXAM_QUEUE_PORT = os.Getenv("EXAM_QUEUE_PORT")
+
+	PAPER_SERVER_HOST = os.Getenv("PAPER_SERVER_HOST")
+	PAPER_SERVER_PORT = os.Getenv("PAPER_SERVER_PORT")
+
+	QUESTION_SERVER_HOST = os.Getenv("QUESTION_SERVER_HOST")
+	QUESTION_SERVER_PORT = os.Getenv("QUESTION_SERVER_PORT")
 }

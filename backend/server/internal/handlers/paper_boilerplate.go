@@ -29,7 +29,7 @@ func GetBoilerplate(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	ctx := services.GetPaperService().CreateMetadata(userID)
-	resp, err := services.GetPaperService().Client().GetBoilerplate(ctx, &proto.GetBoilerplateRequest{
+	resp, err := services.GetPaperService().Client().GetPaperBoilerplate(ctx, &proto.GetPaperBoilerplateRequest{
 		QuestionHash: questionHash,
 		LanguageId:   int32(languageID),
 	})

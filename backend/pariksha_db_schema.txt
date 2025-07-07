@@ -76,7 +76,6 @@ Table answers {
   question_id bigint [not null]
   answer jsonb
   score_awarded smallint [not null, default: 0]
-  comments text [note: 'Any comments the evaluator might want to add, for e.g. why is the answer wrong']
   evaluated boolean [not null, default: false]
 }
 

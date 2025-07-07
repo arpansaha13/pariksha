@@ -38,7 +38,6 @@ func GetExamResults(w http.ResponseWriter, r *http.Request) {
 		response[i] = dtos.ExamResultDto{
 			ID:           answer.AnswerId,
 			ScoreAwarded: answer.ScoreAwarded,
-			Comments:     answer.Comments,
 		}
 	}
 

@@ -15,7 +15,7 @@ import (
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/interceptors"
-	"pariksha/exam/internal/interservice/paper"
+	"pariksha/exam/internal/interservice"
 	"pariksha/exam/internal/repositories"
 )
 
@@ -56,7 +56,7 @@ func (s *Answer) GetParticipantAnswers(ctx context.Context, req *proto.Participa
 	}
 
 	// Fetch question content from paper service
-	questions, err := paper.FetchQuestionsByIds(questionIDs)
+	questions, err := interservice.GetQuestionsByIDs(questionIDs)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch questions")
 	}
@@ -71,9 +71,9 @@ func (s *Answer) GetParticipantAnswers(ctx context.Context, req *proto.Participa
 			ExamParticipantId: int64(result.ExamParticipantID),
 			Order:             int32(result.Order),
 			CategoryId:        int64(result.CategoryID),
-			QuestionType:      result.Type,
+			QuestionType:      questions[i].Type,
 			MaxScore:          int32(result.MaxScore),
-			QuestionHash:      questions[i].QuestionHash,
+			QuestionHash:      questions[i].Hash,
 			Question:          questions[i].RawQuestion,
 		}
 		if result.Answer != nil {
@@ -148,13 +148,12 @@ func (s *Answer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersReque
 		return nil, status.Error(codes.FailedPrecondition, "participant must be in STARTED state")
 	}
 
-	// Use repository to fetch question type
-	questionType, err := s.questionRepo.GetExamQuestionType(nil, req.ExamHash, questionID)
+	questionTypes, err := interservice.GetQuestionTypesByIds([]types.QuestionID{questionID})
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question")
 	}
 
-	if err := validateAnswerJSON(req.Answer.Answer, questionType); err != nil {
+	if err := validateAnswerJSON(req.Answer.Answer, questionTypes[0]); err != nil {
 		return nil, err
 	}
 
@@ -182,7 +181,7 @@ func (s *Answer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersReque
 	}
 
 	// Convert question ID to hash
-	questionHashes, err := paper.FetchQuestionHashesForIds([]int64{int64(answer.QuestionID)})
+	questionHashes, err := interservice.GetQuestionHashesByIds([]types.QuestionID{answer.QuestionID})
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question hash")
 	}

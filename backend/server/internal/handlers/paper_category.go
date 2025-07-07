@@ -37,7 +37,7 @@ func GetPaperCategories(w http.ResponseWriter, r *http.Request) {
 	categories := make([]dtos.QuestionCategoryResponseDto, len(response.Categories))
 	for i, c := range response.Categories {
 		categories[i] = dtos.QuestionCategoryResponseDto{
-			ID:    c.CategoryId,
+			ID:    c.Id,
 			Name:  c.Name,
 			Order: c.Order,
 		}
@@ -59,7 +59,7 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	response, err := paperService.Client().CreateCategory(ctx, &proto.CreateCategoryRequest{
+	response, err := paperService.Client().CreatePaperCategory(ctx, &proto.CreatePaperCategoryRequest{
 		PaperHash: paperHash,
 	})
 
@@ -70,7 +70,7 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(dtos.QuestionCategoryResponseDto{
-		ID:    response.CategoryId,
+		ID:    response.Id,
 		Name:  response.Name,
 		Order: response.Order,
 	})
@@ -98,7 +98,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	_, err = paperService.Client().UpdateCategory(ctx, &proto.UpdateCategoryRequest{
+	_, err = paperService.Client().UpdatePaperCategory(ctx, &proto.UpdatePaperCategoryRequest{
 		CategoryId: categoryID,
 		Name:       categoryDto.Name,
 	})
@@ -122,7 +122,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	_, err = paperService.Client().DeleteCategory(ctx, &proto.CategoryRequest{
+	_, err = paperService.Client().DeletePaperCategory(ctx, &proto.PaperCategoryRequest{
 		CategoryId: categoryID,
 	})
 
@@ -162,7 +162,7 @@ func ReorderCategories(w http.ResponseWriter, r *http.Request) {
 		categoryIDs[i] = id
 	}
 
-	_, err = paperService.Client().ReorderCategories(ctx, &proto.ReorderCategoriesRequest{
+	_, err = paperService.Client().ReorderPaperCategories(ctx, &proto.ReorderPaperCategoriesRequest{
 		PaperHash:   paperHash,
 		CategoryIds: categoryIDs,
 	})

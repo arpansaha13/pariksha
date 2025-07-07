@@ -10,12 +10,12 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/models"
 )
 
 func TestUpdateMcqQuestion(t *testing.T) {

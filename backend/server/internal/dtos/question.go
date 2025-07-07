@@ -14,15 +14,13 @@ type PaperTestCaseDto struct {
 }
 
 type QuestionResponseDto struct {
-	ID            string              `json:"id"`
-	Question      json.RawMessage     `json:"question"`
-	CategoryID    int64               `json:"category_id"`
-	Type          proto.QuestionType  `json:"type"`
-	Tags          json.RawMessage     `json:"tags"`
-	PaperID       string              `json:"paper_id"`
-	MaxScore      int32               `json:"max_score"`
-	TestCases     *[]PaperTestCaseDto `json:"test_cases"`
-	CorrectAnswer string              `json:"correct_answer"`
+	ID         string              `json:"id"`
+	Question   json.RawMessage     `json:"question"`
+	CategoryID int64               `json:"category_id"`
+	Type       proto.QuestionType  `json:"type"`
+	PaperID    string              `json:"paper_id"`
+	MaxScore   int32               `json:"max_score"`
+	TestCases  *[]PaperTestCaseDto `json:"test_cases"`
 }
 
 type QuestionMinimalResponseDto struct {
@@ -40,20 +38,16 @@ type QuestionCategoryResponseDto struct {
 }
 
 type CreateQuestionDto struct {
-	Question      json.RawMessage    `json:"question" validate:"required"`
-	CategoryID    int64              `json:"category_id" validate:"required"`
-	Type          proto.QuestionType `json:"type" validate:"required"`
-	Tags          json.RawMessage    `json:"tags,omitempty" validate:"required"`
-	MaxScore      int32              `json:"max_score" validate:"required"`
-	CorrectAnswer string             `json:"correct_answer,omitempty"`
+	Question   json.RawMessage    `json:"question" validate:"required"`
+	CategoryID int64              `json:"category_id" validate:"required"`
+	Type       proto.QuestionType `json:"type" validate:"required"`
+	MaxScore   int32              `json:"max_score" validate:"required"`
 }
 
 type UpdateQuestionDto struct {
-	Type          proto.QuestionType `json:"type,omitempty"`
-	Question      json.RawMessage    `json:"question,omitempty"`
-	MaxScore      int32              `json:"max_score,omitempty"`
-	Tags          json.RawMessage    `json:"tags,omitempty"`
-	CorrectAnswer string             `json:"correct_answer,omitempty"`
+	Type     proto.QuestionType `json:"type,omitempty"`
+	Question json.RawMessage    `json:"question,omitempty"`
+	MaxScore int32              `json:"max_score,omitempty"`
 }
 
 type ReorderQuestionsDto struct {

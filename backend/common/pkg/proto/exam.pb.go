@@ -1318,7 +1318,6 @@ type UpdateAnswerRequest struct {
 	AnswerId      int64                  `protobuf:"varint,1,opt,name=answer_id,json=answerId,proto3" json:"answer_id,omitempty"`
 	NewScore      *int32                 `protobuf:"varint,2,opt,name=new_score,json=newScore,proto3,oneof" json:"new_score,omitempty"`
 	Evaluated     *bool                  `protobuf:"varint,3,opt,name=evaluated,proto3,oneof" json:"evaluated,omitempty"`
-	Comments      *string                `protobuf:"bytes,4,opt,name=comments,proto3,oneof" json:"comments,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1372,13 +1371,6 @@ func (x *UpdateAnswerRequest) GetEvaluated() bool {
 		return *x.Evaluated
 	}
 	return false
-}
-
-func (x *UpdateAnswerRequest) GetComments() string {
-	if x != nil && x.Comments != nil {
-		return *x.Comments
-	}
-	return ""
 }
 
 type GetAnswerRequest struct {
@@ -2006,7 +1998,6 @@ type GetAnswerEvaluationDataResponse struct {
 	AnswerId      int64                  `protobuf:"varint,1,opt,name=answer_id,json=answerId,proto3" json:"answer_id,omitempty"`
 	QuestionHash  string                 `protobuf:"bytes,2,opt,name=question_hash,json=questionHash,proto3" json:"question_hash,omitempty"`
 	ScoreAwarded  int32                  `protobuf:"varint,3,opt,name=score_awarded,json=scoreAwarded,proto3" json:"score_awarded,omitempty"`
-	Comments      string                 `protobuf:"bytes,4,opt,name=comments,proto3" json:"comments,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2062,13 +2053,6 @@ func (x *GetAnswerEvaluationDataResponse) GetScoreAwarded() int32 {
 	return 0
 }
 
-func (x *GetAnswerEvaluationDataResponse) GetComments() string {
-	if x != nil {
-		return x.Comments
-	}
-	return ""
-}
-
 type DeleteExamsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ExamHashes    []string               `protobuf:"bytes,1,rep,name=exam_hashes,json=examHashes,proto3" json:"exam_hashes,omitempty"`
@@ -2117,7 +2101,6 @@ type ExamResultItem struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AnswerId      int64                  `protobuf:"varint,1,opt,name=answer_id,json=answerId,proto3" json:"answer_id,omitempty"`
 	ScoreAwarded  int32                  `protobuf:"varint,2,opt,name=score_awarded,json=scoreAwarded,proto3" json:"score_awarded,omitempty"`
-	Comments      string                 `protobuf:"bytes,3,opt,name=comments,proto3" json:"comments,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2164,13 +2147,6 @@ func (x *ExamResultItem) GetScoreAwarded() int32 {
 		return x.ScoreAwarded
 	}
 	return 0
-}
-
-func (x *ExamResultItem) GetComments() string {
-	if x != nil {
-		return x.Comments
-	}
-	return ""
 }
 
 type ExamResultsResponse struct {
@@ -2328,17 +2304,15 @@ const file_exam_proto_rawDesc = "" +
 	"\bquestion\x18\t \x01(\fR\bquestion\"=\n" +
 	"\n" +
 	"AnswerList\x12/\n" +
-	"\aanswers\x18\x01 \x03(\v2\x15.proto.AnswerResponseR\aanswers\"\xc1\x01\n" +
+	"\aanswers\x18\x01 \x03(\v2\x15.proto.AnswerResponseR\aanswers\"\x93\x01\n" +
 	"\x13UpdateAnswerRequest\x12\x1b\n" +
 	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12 \n" +
 	"\tnew_score\x18\x02 \x01(\x05H\x00R\bnewScore\x88\x01\x01\x12!\n" +
-	"\tevaluated\x18\x03 \x01(\bH\x01R\tevaluated\x88\x01\x01\x12\x1f\n" +
-	"\bcomments\x18\x04 \x01(\tH\x02R\bcomments\x88\x01\x01B\f\n" +
+	"\tevaluated\x18\x03 \x01(\bH\x01R\tevaluated\x88\x01\x01B\f\n" +
 	"\n" +
 	"_new_scoreB\f\n" +
 	"\n" +
-	"_evaluatedB\v\n" +
-	"\t_comments\"T\n" +
+	"_evaluated\"T\n" +
 	"\x10GetAnswerRequest\x12\x1b\n" +
 	"\texam_hash\x18\x01 \x01(\tR\bexamHash\x12#\n" +
 	"\rquestion_hash\x18\x02 \x01(\tR\fquestionHash\"q\n" +
@@ -2385,19 +2359,17 @@ const file_exam_proto_rawDesc = "" +
 	"\x13_participant_status\"h\n" +
 	"\x1aParticipantQuestionRequest\x12%\n" +
 	"\x0eparticipant_id\x18\x01 \x01(\x03R\rparticipantId\x12#\n" +
-	"\rquestion_hash\x18\x02 \x01(\tR\fquestionHash\"\xa4\x01\n" +
+	"\rquestion_hash\x18\x02 \x01(\tR\fquestionHash\"\x88\x01\n" +
 	"\x1fGetAnswerEvaluationDataResponse\x12\x1b\n" +
 	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12#\n" +
 	"\rquestion_hash\x18\x02 \x01(\tR\fquestionHash\x12#\n" +
-	"\rscore_awarded\x18\x03 \x01(\x05R\fscoreAwarded\x12\x1a\n" +
-	"\bcomments\x18\x04 \x01(\tR\bcomments\"5\n" +
+	"\rscore_awarded\x18\x03 \x01(\x05R\fscoreAwarded\"5\n" +
 	"\x12DeleteExamsRequest\x12\x1f\n" +
 	"\vexam_hashes\x18\x01 \x03(\tR\n" +
-	"examHashes\"n\n" +
+	"examHashes\"R\n" +
 	"\x0eExamResultItem\x12\x1b\n" +
 	"\tanswer_id\x18\x01 \x01(\x03R\banswerId\x12#\n" +
-	"\rscore_awarded\x18\x02 \x01(\x05R\fscoreAwarded\x12\x1a\n" +
-	"\bcomments\x18\x03 \x01(\tR\bcomments\"F\n" +
+	"\rscore_awarded\x18\x02 \x01(\x05R\fscoreAwarded\"F\n" +
 	"\x13ExamResultsResponse\x12/\n" +
 	"\aresults\x18\x01 \x03(\v2\x15.proto.ExamResultItemR\aresults*,\n" +
 	"\x0eExamAccessType\x12\t\n" +

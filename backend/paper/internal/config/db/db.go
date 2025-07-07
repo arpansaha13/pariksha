@@ -9,9 +9,8 @@ import (
 
 	"pariksha/common/pkg/config"
 	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/models"
 	"pariksha/paper/internal/config/env"
-	"pariksha/paper/internal/seed"
+	"pariksha/paper/internal/models"
 )
 
 var DB *gorm.DB
@@ -34,22 +33,15 @@ func InitDB(host, port, user, password, dbname, sslmode string) error {
 		}
 	}
 
-	if err := seed.Languages(DB); err != nil {
-		return err
-	}
-
 	return nil
 }
 
 func autoMigrateDB() error {
 	err := DB.AutoMigrate(
 		&models.Paper{},
+		&models.PaperQuestion{},
+		&models.PaperCategory{},
 		&models.PaperPermission{},
-		&models.Question{},
-		&models.QuestionCategory{},
-		&models.Boilerplate{},
-		&models.Language{},
-		&models.TestCase{},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to auto-migrate database: %v", err)

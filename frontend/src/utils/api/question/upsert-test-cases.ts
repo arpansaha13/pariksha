@@ -1,4 +1,5 @@
 export async function upsertPaperTestCases(
+  paperId: PaperId,
   questionId: QuestionId,
   testCases: ReadonlyArray<QuestionCodingTestCase>
 ): Promise<void> {
@@ -13,7 +14,7 @@ export async function upsertPaperTestCases(
     return
   }
 
-  await $api(`/api/questions/${questionId}/test-cases`, {
+  await $api(`/api/papers/${paperId}/questions/${questionId}/test-cases`, {
     method: 'PUT',
     body: {
       test_cases: testCases,

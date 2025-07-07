@@ -1,60 +1,78 @@
 package services
 
 import (
-	"database/sql"
 	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 
-	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/grpcerror"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/interservice"
+	"pariksha/paper/internal/models"
 	"pariksha/paper/internal/repositories"
 )
 
 type Category struct {
-	categoryRepo *repositories.Category
-	paperRepo    *repositories.Paper
-	questionRepo *repositories.Question
+	paperRepo      *repositories.Paper
+	paperCatRepo   *repositories.PaperCategory
+	paperQuestRepo *repositories.PaperQuestion
 }
 
 // NewCategoryService creates a new category service instance
 func NewCategory(
-	categoryRepo *repositories.Category,
 	paperRepo *repositories.Paper,
-	questionRepo *repositories.Question,
+	paperCatRepo *repositories.PaperCategory,
+	paperQuestRepo *repositories.PaperQuestion,
 ) *Category {
 	return &Category{
-		categoryRepo: categoryRepo,
-		paperRepo:    paperRepo,
-		questionRepo: questionRepo,
+		paperRepo:      paperRepo,
+		paperCatRepo:   paperCatRepo,
+		paperQuestRepo: paperQuestRepo,
 	}
 }
 
 // GetPaperCategories handles fetching all categories for a paper
-func (s *Category) GetPaperCategories(paperHash string) (*proto.CategoryList, error) {
-	categories, err := s.categoryRepo.GetAllByPaperHash(paperHash)
+func (s *Category) GetPaperCategories(paperHash string) (*proto.PaperCategoryList, error) {
+	paperCategories, err := s.paperCatRepo.GetAllByPaperHash(nil, paperHash)
 	if err != nil {
 		return nil, grpcerror.Internal(err, "failed to fetch paper categories")
 	}
 
-	return categoriesToProto(categories), nil
+	categoryIDs := make([]types.CategoryID, len(paperCategories))
+	for i, pc := range paperCategories {
+		categoryIDs[i] = pc.CategoryID
+	}
+
+	categories, err := interservice.GetCategoriesByIDs(categoryIDs)
+	if err != nil {
+		return nil, grpcerror.Internal(err, "failed to fetch question meta")
+	}
+
+	response := &proto.PaperCategoryList{
+		Categories: make([]*proto.PaperCategoryResponse, len(categories)),
+	}
+
+	for i, c := range categories {
+		pc := paperCategories[i]
+		response.Categories[i] = &proto.PaperCategoryResponse{
+			Id:    int64(pc.CategoryID),
+			Name:  c.Name,
+			Order: int32(pc.Order),
+		}
+	}
+
+	return response, nil
 }
 
 // ReorderCategories handles the business logic for reordering categories
 func (s *Category) ReorderCategories(paperHash string, categoryIDs []int64) error {
 	return utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		paper, err := s.paperRepo.GetByHash(tx, paperHash)
-		if err != nil {
-			return utils.HandleDBError(err, "paper not found")
-		}
-
-		count, err := s.categoryRepo.ValidatePaperCategories(tx, paper.ID, categoryIDs)
+		count, err := s.paperCatRepo.GetCategoriesCountByPaperHash(tx, paperHash, categoryIDs)
 		if err != nil {
 			return err
 		}
@@ -64,7 +82,7 @@ func (s *Category) ReorderCategories(paperHash string, categoryIDs []int64) erro
 		}
 
 		for i, categoryID := range categoryIDs {
-			if err := s.categoryRepo.UpdateOrder(tx, categoryID, int16(i+1)); err != nil {
+			if err := s.paperCatRepo.UpdateOrder(tx, categoryID, int16(i+1)); err != nil {
 				return err
 			}
 		}
@@ -74,8 +92,9 @@ func (s *Category) ReorderCategories(paperHash string, categoryIDs []int64) erro
 }
 
 // CreateCategory handles creating a new category
-func (s *Category) CreateCategory(paperHash string) (*proto.CategoryResponse, error) {
-	var category models.QuestionCategory
+func (s *Category) CreateCategory(paperHash string) (*proto.PaperCategoryResponse, error) {
+	var paperCategory models.PaperCategory
+	var category *proto.CategoryResponse
 
 	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		paper, err := s.paperRepo.GetByHash(tx, paperHash)
@@ -83,75 +102,67 @@ func (s *Category) CreateCategory(paperHash string) (*proto.CategoryResponse, er
 			return utils.HandleDBError(err, "paper not found")
 		}
 
-		maxOrder, err := s.categoryRepo.GetMaxOrder(tx, paper.ID)
+		maxOrder, err := s.paperCatRepo.GetMaxOrder(tx, paper.ID)
 		if err != nil {
-			return err
+			return grpcerror.Internal(err, "failed to get max category order")
 		}
 
-		category = models.QuestionCategory{
-			PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-			Name:    fmt.Sprintf("Category %d", maxOrder+1),
-			Order:   maxOrder + 1,
+		category, err = interservice.CreateCategory(fmt.Sprintf("Category %d", maxOrder+1))
+		if err != nil {
+			return grpcerror.Internal(err, "failed to create category")
 		}
 
-		return s.categoryRepo.Create(tx, &category)
+		paperCategory = models.PaperCategory{
+			PaperID:    paper.ID,
+			CategoryID: types.CategoryID(category.Id),
+			Order:      maxOrder + 1,
+		}
+
+		return s.paperCatRepo.Create(tx, &paperCategory)
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return categoryToProto(category), nil
+	return &proto.PaperCategoryResponse{
+		Id:    int64(category.Id),
+		Name:  category.Name,
+		Order: int32(paperCategory.Order),
+	}, nil
 }
 
 // UpdateCategory handles updating a category's name
-func (s *Category) UpdateCategory(categoryID int64, name string) error {
+func (s *Category) UpdateCategory(req *proto.UpdatePaperCategoryRequest) error {
 	return utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		// Get existing category
-		category, err := s.categoryRepo.GetByID(tx, categoryID)
+		category, err := s.paperCatRepo.GetByPaperHashAndCategoryID(tx, req.PaperHash, types.CategoryID(req.CategoryId))
 		if err != nil {
 			return utils.HandleDBError(err, "category not found")
 		}
 
-		// If category is locked, create a new row with updates
-		if category.Locked {
-			// Create new category with updates
-			newCategory := models.QuestionCategory{
-				PaperID: category.PaperID,
-				Name:    name,
-				Order:   category.Order,
-				Locked:  false,
-			}
-
-			// Create new category
-			if err := s.categoryRepo.Create(tx, &newCategory); err != nil {
-				return status.Error(codes.Internal, constants.ErrInternalServer)
-			}
-
-			// Update questions to point to new category
-			if err := s.questionRepo.UpdateCategory(tx, category.ID, newCategory.ID); err != nil {
-				return status.Error(codes.Internal, constants.ErrInternalServer)
-			}
-
-			// Unlink old category
-			return s.categoryRepo.UnlinkFromPaper(tx, category.ID)
+		_, err = interservice.UpdateCategoryName(&proto.UpdateCategoryRequest{
+			Id:   int64(category.CategoryID),
+			Name: req.Name,
+		})
+		if err != nil {
+			return grpcerror.Internal(err, "failed to update category")
 		}
 
-		// Update existing category
-		return s.categoryRepo.UpdateName(tx, categoryID, name)
+		return nil
 	})
 }
 
 // DeleteCategory handles deleting a category and its contents
-func (s *Category) DeleteCategory(categoryID int64) error {
+func (s *Category) DeleteCategory(req *proto.PaperCategoryRequest) error {
 	return utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		category, err := s.categoryRepo.GetByID(tx, categoryID)
+		paperCategory, err := s.paperCatRepo.GetByPaperHashAndCategoryID(tx, req.PaperHash, types.CategoryID(req.CategoryId))
 		if err != nil {
 			return utils.HandleDBError(err, "category not found")
 		}
 
 		// Check if there is only one category
-		categoryCount, err := s.categoryRepo.GetCountByPaperId(tx, category.PaperID)
+		categoryCount, err := s.paperCatRepo.GetCountByPaperId(tx, paperCategory.PaperID)
 		if err != nil {
 			return grpcerror.Internal(err, "failed to get count by paper id")
 		}
@@ -160,74 +171,44 @@ func (s *Category) DeleteCategory(categoryID int64) error {
 			return status.Error(codes.FailedPrecondition, "cannot delete the last category")
 		}
 
-		// Get paper to update question counts
-		paper, err := utils.FindRecord[models.Paper](tx, category.PaperID.Int64, "paper not found")
-		if err != nil {
-			return err
-		}
-
-		// Get both locked and non-locked questions in this category
-		questions, err := s.questionRepo.GetAllInCategory(tx, category.ID)
+		paperQuests, err := s.paperQuestRepo.GetAllByCategoryID(tx, paperCategory.CategoryID)
 		if err != nil {
 			return grpcerror.Internal(err, "failed to get questions in category")
 		}
 
-		// Accumulate the diff in max_score and question_counts
-		var totalScoreDiff int32
-		questionCounts := paper.QuestionCounts
-
-		for _, q := range questions {
-			totalScoreDiff -= int32(q.MaxScore)
-			if questionCounts, err = updateQuestionCounts(questionCounts, q.Type, -1); err != nil {
-				return err
-			}
+		questionIDs := make([]types.QuestionID, len(paperQuests))
+		for i, pq := range paperQuests {
+			questionIDs[i] = pq.QuestionID
 		}
 
-		if err := updatePaperStats(tx, *paper, totalScoreDiff, questionCounts); err != nil {
-			return err
+		// Decrement paper indegree for deleted paper questions
+		if err := interservice.DecQuestionPaperIndegreeByIds(questionIDs); err != nil {
+			return grpcerror.Internal(err, "failed to decrement question paper indegrees")
 		}
 
-		// Handle questions based on lock status
-		if err := s.questionRepo.DeleteNonLocked(tx, category.ID); err != nil {
-			return grpcerror.Internal(err, "failed to delete non-locked questions")
+		// Delete paper questions in this category
+		if err := s.paperQuestRepo.BulkDeleteByPaperIDAndCategoryID(tx, paperCategory.PaperID, paperCategory.CategoryID); err != nil {
+			return grpcerror.Internal(err, "failed to delete questions in category")
 		}
 
-		if err := s.questionRepo.UnlinkLockedInCategoryFromPaper(tx, category.ID); err != nil {
-			return grpcerror.Internal(err, "failed to unlink questions")
-		}
-
-		if category.Locked {
-			return s.categoryRepo.UnlinkFromPaper(tx, category.ID)
-		}
-
-		return s.categoryRepo.Delete(tx, category.ID)
+		return s.paperCatRepo.DeleteByID(tx, paperCategory.PaperID, paperCategory.CategoryID)
 	})
 }
 
-// GetCategoriesByIds retrieves multiple categories by their IDs
-func (s *Category) GetCategoriesByIds(categoryIDs []int64) (*proto.CategoryBatchResponse, error) {
-	categories, err := s.categoryRepo.GetByIds(nil, categoryIDs)
+func (s *Category) GetPaperCategoriesMeta(req *proto.PaperRequest) (*proto.PaperCategoriesMeta, error) {
+	paperCategories, err := s.paperCatRepo.GetAllByPaperHash(nil, req.PaperHash)
 	if err != nil {
-		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
+		return nil, grpcerror.Internal(err, "failed to fetch paper categories")
 	}
 
-	// Create a map for O(1) lookup
-	categoryMap := make(map[int64]models.QuestionCategory, len(categories))
-	for _, category := range categories {
-		categoryMap[int64(category.ID)] = category
+	response := &proto.PaperCategoriesMeta{
+		Categories: make([]*proto.PaperCategoryMeta, len(paperCategories)),
 	}
 
-	response := &proto.CategoryBatchResponse{
-		Categories: make([]*proto.CategoryBatchItem, len(categoryIDs)),
-	}
-
-	// Construct response in same order as input categoryIDs
-	for i, id := range categoryIDs {
-		if category, exists := categoryMap[id]; exists {
-			response.Categories[i] = &proto.CategoryBatchItem{
-				CategoryId: int64(category.ID),
-				Name:       category.Name,
-			}
+	for i, pc := range paperCategories {
+		response.Categories[i] = &proto.PaperCategoryMeta{
+			Id:    int64(pc.CategoryID),
+			Order: int32(pc.Order),
 		}
 	}
 

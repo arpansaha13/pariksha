@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"slices"
 
 	"google.golang.org/grpc/codes"
@@ -15,7 +14,7 @@ import (
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/exam/internal/interceptors"
-	"pariksha/exam/internal/interservice/paper"
+	"pariksha/exam/internal/interservice"
 	"pariksha/exam/internal/repositories"
 )
 
@@ -93,7 +92,6 @@ func (s *Evaluation) GetAnswerEvaluationData(ctx context.Context, req *proto.Par
 		AnswerId:     int64(answer.ID),
 		QuestionHash: req.QuestionHash,
 		ScoreAwarded: int32(answer.ScoreAwarded),
-		Comments:     answer.Comments.String,
 	}, nil
 }
 
@@ -130,9 +128,6 @@ func (s *Evaluation) UpdateAnswerForEvaluation(ctx context.Context, req *proto.U
 		if req.Evaluated != nil {
 			txAnswer.Evaluated = *req.Evaluated
 		}
-		if req.Comments != nil {
-			txAnswer.Comments = sql.NullString{String: *req.Comments, Valid: true}
-		}
 
 		if err := s.answerRepo.UpdateAnswerForEvaluation(tx, txAnswer); err != nil {
 			return err
@@ -144,7 +139,7 @@ func (s *Evaluation) UpdateAnswerForEvaluation(ctx context.Context, req *proto.U
 		return nil, err
 	}
 
-	questionHashes, err := paper.FetchQuestionHashesForIds([]int64{int64(answer.QuestionID)})
+	questionHashes, err := interservice.GetQuestionHashesByIds([]types.QuestionID{answer.QuestionID})
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question hash")
 	}
@@ -153,7 +148,6 @@ func (s *Evaluation) UpdateAnswerForEvaluation(ctx context.Context, req *proto.U
 		AnswerId:     int64(answer.ID),
 		QuestionHash: questionHashes[0],
 		ScoreAwarded: int32(answer.ScoreAwarded),
-		Comments:     answer.Comments.String,
 	}, nil
 }
 

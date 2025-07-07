@@ -10,7 +10,9 @@ import (
 
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/types"
 	"pariksha/workers/exam/internal/config/db"
+	"pariksha/workers/exam/internal/interservice"
 )
 
 func PostDeleteExamsCleanup(ctx context.Context, task *asynq.Task) error {
@@ -21,6 +23,21 @@ func PostDeleteExamsCleanup(ctx context.Context, task *asynq.Task) error {
 	}
 
 	err := db.Exams.Transaction(func(tx *gorm.DB) error {
+		// Get question IDs first
+		var questionIDs []types.QuestionID
+		if err := tx.Model(&models.ExamQuestion{}).
+			Where("exam_id IN ?", payload.ExamIDs).
+			Pluck("question_id", &questionIDs).Error; err != nil {
+			return err
+		}
+
+		// Decrease question exam indegree
+		if len(questionIDs) > 0 {
+			if err := interservice.DecQuestionExamIndegreeByIds(questionIDs); err != nil {
+				return err
+			}
+		}
+
 		// Delete exam questions
 		if err := tx.Where("exam_id IN ?", payload.ExamIDs).
 			Delete(&models.ExamQuestion{}).Error; err != nil {

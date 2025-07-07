@@ -6,10 +6,13 @@ import (
 	"log"
 
 	"github.com/hibiken/asynq"
+	"gorm.io/gorm"
 
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/types"
 	"pariksha/workers/exam/internal/config/db"
+	"pariksha/workers/exam/internal/interservice"
 )
 
 func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
@@ -19,128 +22,66 @@ func PrepareExamQuestions(ctx context.Context, task *asynq.Task) error {
 		return err
 	}
 
-	// Start a transaction in papers DB
-	papersTx := db.Papers.Begin()
-	if papersTx.Error != nil {
-		log.Default().Printf("Failed to start papers transaction: %v", papersTx.Error)
-		return papersTx.Error
-	}
-
-	// First get the paper using hash
-	var paper models.Paper
-	if err := papersTx.Where("hash = ?", payload.PaperHash).Take(&paper).Error; err != nil {
-		papersTx.Rollback()
-		log.Default().Printf("Failed to fetch paper with hash %s: %v", payload.PaperHash, err)
-		return err
-	}
-
-	// Get all questions for the paper
-	var questions []models.Question
-	err := papersTx.Select("id", "category_id", "type", "order", "max_score").
-		Where("paper_id = ?", paper.ID).
-		Find(&questions).Error
+	questions, err := interservice.GetPaperQuestionsMeta(payload.PaperHash)
 	if err != nil {
-		papersTx.Rollback()
-		log.Default().Printf("Failed to fetch questions: %v", err)
+		log.Default().Printf("failed to fetch paper questions meta: %v", err)
 		return err
 	}
 
-	// Get all categories for the paper
-	var categories []models.QuestionCategory
-	err = papersTx.Select("id", "order").
-		Where("paper_id = ?", paper.ID).
-		Find(&categories).Error
+	categories, err := interservice.GetPaperCategoriesMeta(payload.PaperHash)
 	if err != nil {
-		papersTx.Rollback()
-		log.Default().Printf("Failed to fetch categories: %v", err)
+		log.Default().Printf("failed to fetch paper categories meta: %v", err)
 		return err
 	}
 
-	// Lock all questions
-	err = papersTx.Model(&models.Question{}).
-		Where("paper_id = ?", paper.ID).
-		Update("locked", true).Error
-	if err != nil {
-		papersTx.Rollback()
-		log.Default().Printf("Failed to lock questions: %v", err)
+	// Gather question IDs and increment their exam indegree
+	questionIDs := make([]types.QuestionID, len(questions))
+	for i, q := range questions {
+		questionIDs[i] = types.QuestionID(q.Id)
+	}
+	if err := interservice.IncQuestionExamIndegreeByIds(questionIDs); err != nil {
+		log.Default().Printf("failed to increment question exam indegree: %v", err)
 		return err
 	}
 
-	// Lock all categories
-	err = papersTx.Model(&models.QuestionCategory{}).
-		Where("paper_id = ?", paper.ID).
-		Update("locked", true).Error
-	if err != nil {
-		papersTx.Rollback()
-		log.Default().Printf("Failed to lock categories: %v", err)
-		return err
-	}
+	return db.Exams.Transaction(func(tx *gorm.DB) error {
+		var totalMaxScore int32
+		// Create exam questions
+		for _, q := range questions {
+			examQuestion := models.ExamQuestion{
+				ExamID:     payload.ExamID,
+				QuestionID: types.QuestionID(q.Id),
+				CategoryID: types.CategoryID(q.CategoryId),
+				Order:      int16(q.Order),
+				MaxScore:   int16(q.MaxScore),
+			}
+			totalMaxScore += int32(q.MaxScore) // Accumulate total max_score
 
-	// Start a transaction in exams DB
-	examsTx := db.Exams.Begin()
-	if examsTx.Error != nil {
-		papersTx.Rollback()
-		log.Default().Printf("Failed to start exams transaction: %v", examsTx.Error)
-		return examsTx.Error
-	}
-
-	var totalMaxScore int32
-	// Create exam questions
-	for _, q := range questions {
-		examQuestion := models.ExamQuestion{
-			ExamID:     payload.ExamID,
-			QuestionID: q.ID,
-			CategoryID: q.CategoryID,
-			Type:       q.Type,
-			Order:      q.Order,
-			MaxScore:   q.MaxScore,
+			if err := tx.Create(&examQuestion).Error; err != nil {
+				log.Default().Printf("Failed to create exam question: %v", err)
+				return err
+			}
 		}
-		totalMaxScore += int32(q.MaxScore) // Accumulate total max_score
 
-		if err := examsTx.Create(&examQuestion).Error; err != nil {
-			examsTx.Rollback()
-			papersTx.Rollback()
-			log.Default().Printf("Failed to create exam question: %v", err)
+		// Create exam categories
+		for _, c := range categories {
+			examCategory := models.ExamCategory{
+				ExamID:     payload.ExamID,
+				CategoryID: types.CategoryID(c.Id),
+				Order:      int16(c.Order),
+			}
+			if err := tx.Create(&examCategory).Error; err != nil {
+				log.Default().Printf("Failed to create exam category: %v", err)
+				return err
+			}
+		}
+
+		// Update exam's max_score
+		if err := tx.Model(&models.Exam{}).Where("id = ?", payload.ExamID).Update("max_score", totalMaxScore).Error; err != nil {
+			log.Default().Printf("Failed to update exam max score: %v", err)
 			return err
 		}
-	}
 
-	// Create exam categories
-	for _, c := range categories {
-		examCategory := models.ExamCategory{
-			ExamID:     payload.ExamID,
-			CategoryID: c.ID,
-			Order:      c.Order,
-		}
-		if err := examsTx.Create(&examCategory).Error; err != nil {
-			examsTx.Rollback()
-			papersTx.Rollback()
-			log.Default().Printf("Failed to create exam category: %v", err)
-			return err
-		}
-	}
-
-	// Update exam's max_score
-	if err := examsTx.Model(&models.Exam{}).Where("id = ?", payload.ExamID).Update("max_score", totalMaxScore).Error; err != nil {
-		examsTx.Rollback()
-		papersTx.Rollback()
-		log.Default().Printf("Failed to update exam max score: %v", err)
-		return err
-	}
-
-	// Commit both transactions
-	if err := examsTx.Commit().Error; err != nil {
-		examsTx.Rollback()
-		papersTx.Rollback()
-		log.Default().Printf("Failed to commit exams transaction: %v", err)
-		return err
-	}
-
-	if err := papersTx.Commit().Error; err != nil {
-		log.Default().Printf("Failed to commit papers transaction: %v", err)
-		return err
-	}
-
-	log.Default().Printf("Successfully prepared exam questions for exam %d from paper %d", payload.ExamID, paper.ID)
-	return nil
+		return nil
+	})
 }

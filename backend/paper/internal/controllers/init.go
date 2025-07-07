@@ -24,11 +24,9 @@ func init() {
 }
 
 var (
-	paperCtrl       *Paper
-	categoryCtrl    *Category
-	questionCtrl    *Question
-	boilerplateCtrl *Boilerplate
-	testCaseCtrl    *TestCase
+	paperCtrl    *Paper
+	categoryCtrl *Category
+	questionCtrl *Question
 )
 
 // InitializeHandlers sets up all handler dependencies.
@@ -36,24 +34,19 @@ var (
 func InitializeHandlers() {
 	// Initialize repositories
 	paperRepo := repositories.NewPaper(db.DB)
-	questionRepo := repositories.NewQuestion(db.DB)
-	categoryRepo := repositories.NewCategory(db.DB)
-	boilerplateRepo := repositories.NewBoilerplate(db.DB)
-	testCaseRepo := repositories.NewTestCase(db.DB)
+	paperCatRepo := repositories.NewPaperCategory(db.DB)
+	paperPermRepo := repositories.NewPaperPermission(db.DB)
+	paperQuestRepo := repositories.NewPaperQuestion(db.DB)
 
 	// Initialize services
-	paperSvc := services.NewPaper(paperRepo)
-	questionSvc := services.NewQuestion(paperRepo, questionRepo)
-	categorySvc := services.NewCategory(categoryRepo, paperRepo, questionRepo)
-	boilerplateSvc := services.NewBoilerplate(boilerplateRepo)
-	testCaseSvc := services.NewTestCase(questionRepo, testCaseRepo)
+	paperSvc := services.NewPaper(paperRepo, paperCatRepo, paperPermRepo, paperQuestRepo)
+	questionSvc := services.NewQuestion(paperRepo, paperQuestRepo)
+	categorySvc := services.NewCategory(paperRepo, paperCatRepo, paperQuestRepo)
 
 	// Initialize controllers
 	paperCtrl = NewPaper(paperSvc)
 	categoryCtrl = NewCategory(categorySvc)
 	questionCtrl = NewQuestion(questionSvc)
-	boilerplateCtrl = NewBoilerplate(boilerplateSvc)
-	testCaseCtrl = NewTestCase(testCaseSvc)
 }
 
 // _________________________PAPER HANDLERS__________________________
@@ -62,7 +55,7 @@ func (s *PaperServer) GetUserPapers(ctx context.Context, req *emptypb.Empty) (*p
 	return paperCtrl.HandleGetUserPapers(ctx, req)
 }
 
-func (s *PaperServer) CreatePaper(ctx context.Context, req *emptypb.Empty) (*proto.PaperResponse, error) {
+func (s *PaperServer) CreatePaper(ctx context.Context, req *emptypb.Empty) (*proto.CreatePaperResponse, error) {
 	return paperCtrl.HandleCreatePaper(ctx, req)
 }
 
@@ -88,87 +81,62 @@ func (s *PaperServer) GetPaperQuestions(ctx context.Context, req *proto.PaperReq
 	return questionCtrl.HandleGetPaperQuestions(ctx, req)
 }
 
-func (s *PaperServer) GetPaperQuestion(ctx context.Context, req *proto.QuestionRequest) (*proto.QuestionResponse, error) {
+func (s *PaperServer) GetPaperQuestion(ctx context.Context, req *proto.PaperQuestionRequest) (*proto.PaperQuestionResponse, error) {
 	return questionCtrl.HandleGetPaperQuestion(ctx, req)
 }
 
-func (s *PaperServer) CreateQuestion(ctx context.Context, req *proto.CreateQuestionRequest) (*proto.CreateQuestionResponse, error) {
+func (s *PaperServer) CreatePaperQuestion(ctx context.Context, req *proto.CreatePaperQuestionRequest) (*proto.CreatePaperQuestionResponse, error) {
 	return questionCtrl.HandleCreateQuestion(ctx, req)
 }
 
-func (s *PaperServer) UpdateQuestion(ctx context.Context, req *proto.UpdateQuestionRequest) (*proto.UpdateQuestionResponse, error) {
+func (s *PaperServer) UpdatePaperQuestion(ctx context.Context, req *proto.UpdatePaperQuestionRequest) (*proto.UpdatePaperQuestionResponse, error) {
 	return questionCtrl.HandleUpdateQuestion(ctx, req)
 }
 
-func (s *PaperServer) DeleteQuestion(ctx context.Context, req *proto.QuestionRequest) (*emptypb.Empty, error) {
+func (s *PaperServer) DeletePaperQuestion(ctx context.Context, req *proto.PaperQuestionRequest) (*emptypb.Empty, error) {
 	return questionCtrl.HandleDeleteQuestion(ctx, req)
 }
 
-func (s *PaperServer) ReorderQuestions(ctx context.Context, req *proto.ReorderQuestionsRequest) (*emptypb.Empty, error) {
+func (s *PaperServer) ReorderPaperQuestions(ctx context.Context, req *proto.ReorderPaperQuestionsRequest) (*emptypb.Empty, error) {
 	return questionCtrl.HandleReorderQuestions(ctx, req)
+}
+
+func (s *PaperServer) GetPaperBoilerplate(ctx context.Context, req *proto.GetPaperBoilerplateRequest) (*proto.BoilerplateResponse, error) {
+	return questionCtrl.HandleGetBoilerplate(ctx, req)
+}
+
+func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.UpsertPaperTestCasesRequest) (*emptypb.Empty, error) {
+	return questionCtrl.HandleUpsertTestCases(ctx, req)
 }
 
 // ________________________CATEGORY HANDLERS________________________
 
-func (s *PaperServer) GetPaperCategories(ctx context.Context, req *proto.PaperRequest) (*proto.CategoryList, error) {
+func (s *PaperServer) GetPaperCategories(ctx context.Context, req *proto.PaperRequest) (*proto.PaperCategoryList, error) {
 	return categoryCtrl.HandleGetPaperCategories(ctx, req)
 }
 
-func (s *PaperServer) CreateCategory(ctx context.Context, req *proto.CreateCategoryRequest) (*proto.CategoryResponse, error) {
+func (s *PaperServer) CreatePaperCategory(ctx context.Context, req *proto.CreatePaperCategoryRequest) (*proto.PaperCategoryResponse, error) {
 	return categoryCtrl.HandleCreateCategory(ctx, req)
 }
 
-func (s *PaperServer) UpdateCategory(ctx context.Context, req *proto.UpdateCategoryRequest) (*emptypb.Empty, error) {
+func (s *PaperServer) UpdatePaperCategory(ctx context.Context, req *proto.UpdatePaperCategoryRequest) (*emptypb.Empty, error) {
 	return categoryCtrl.HandleUpdateCategory(ctx, req)
 }
 
-func (s *PaperServer) DeleteCategory(ctx context.Context, req *proto.CategoryRequest) (*emptypb.Empty, error) {
+func (s *PaperServer) DeletePaperCategory(ctx context.Context, req *proto.PaperCategoryRequest) (*emptypb.Empty, error) {
 	return categoryCtrl.HandleDeleteCategory(ctx, req)
 }
 
-func (s *PaperServer) ReorderCategories(ctx context.Context, req *proto.ReorderCategoriesRequest) (*emptypb.Empty, error) {
+func (s *PaperServer) ReorderPaperCategories(ctx context.Context, req *proto.ReorderPaperCategoriesRequest) (*emptypb.Empty, error) {
 	return categoryCtrl.HandleReorderCategories(ctx, req)
 }
 
-// ______________________BOILERPLATE HANDLERS_______________________
-
-func (s *PaperServer) GetBoilerplate(ctx context.Context, req *proto.GetBoilerplateRequest) (*proto.GetBoilerplateResponse, error) {
-	return boilerplateCtrl.HandleGetBoilerplate(ctx, req)
-}
-
-// ________________________TESTCASE HANDLERS________________________
-
-func (s *PaperServer) UpsertPaperTestCases(ctx context.Context, req *proto.UpsertTestCasesRequest) (*emptypb.Empty, error) {
-	return testCaseCtrl.HandleUpsertTestCases(ctx, req)
-}
-
 // __________________________EXAM HANDLERS__________________________
-// These handlers are only meant for the Exam Service
 
-func (s *PaperServer) GetQuestionsByIds(ctx context.Context, req *proto.GetQuestionsByIdsRequest) (*proto.GetQuestionsByIdsResponse, error) {
-	return questionCtrl.HandleGetQuestionsByIds(ctx, req)
+func (s *PaperServer) GetPaperQuestionsMeta(ctx context.Context, req *proto.PaperRequest) (*proto.PaperQuestionsMeta, error) {
+	return questionCtrl.HandleGetPaperQuestionsMeta(ctx, req)
 }
 
-func (s *PaperServer) GetExamQuestionByHash(ctx context.Context, req *proto.QuestionRequest) (*proto.ExamQuestionResponse, error) {
-	return questionCtrl.HandleGetExamQuestionByHash(ctx, req)
-}
-
-func (s *PaperServer) GetQuestionHashes(ctx context.Context, req *proto.GetQuestionHashesRequest) (*proto.GetQuestionHashesResponse, error) {
-	return questionCtrl.HandleGetQuestionHashes(ctx, req)
-}
-
-func (s *PaperServer) GetQuestionIds(ctx context.Context, req *proto.GetQuestionIdsRequest) (*proto.GetQuestionIdsResponse, error) {
-	return questionCtrl.HandleGetQuestionIds(ctx, req)
-}
-
-// GetCategoriesByIds retrieves multiple categories by their IDs in a single request
-func (s *PaperServer) GetCategoriesByIds(ctx context.Context, req *proto.GetCategoriesByIdsRequest) (*proto.CategoryBatchResponse, error) {
-	return categoryCtrl.HandleGetCategoriesByIds(ctx, req)
-}
-
-// _________________________ENGINE HANDLERS_________________________
-// These handlers are only meant for the Engine Service
-
-func (s *PaperServer) GetCodingQuestionInputDefinitions(ctx context.Context, req *proto.GetCodingQuestionInputDefinitionsRequest) (*proto.GetCodingQuestionInputDefinitionsResponse, error) {
-	return questionCtrl.HandleGetCodingQuestionInputDefinitions(ctx, req)
+func (s *PaperServer) GetPaperCategoriesMeta(ctx context.Context, req *proto.PaperRequest) (*proto.PaperCategoriesMeta, error) {
+	return categoryCtrl.HandleGetPaperCategoriesMeta(ctx, req)
 }

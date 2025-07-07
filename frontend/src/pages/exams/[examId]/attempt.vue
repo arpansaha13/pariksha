@@ -115,14 +115,14 @@
           <DisplayCodingQuestion
             :content="question.question"
             :test-cases="question.test_cases ?? []"
-            :editor-link="`/editor/exams/${exam.id}/questions/${question.id}`"
+            :editor-link="`/editor/exams/${exam.id}/${question.id}`"
           />
 
           <template #footer>
             <UButton
               label="Open in editor"
               variant="subtle"
-              :to="`/editor/exams/${exam.id}/questions/${question.id}`"
+              :to="`/editor/exams/${exam.id}/${question.id}`"
             />
           </template>
         </UCard>

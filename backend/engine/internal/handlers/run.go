@@ -84,7 +84,7 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 
 	// Fetch input definitions
 	// Will be used for parsing inputs
-	inputDefinitions, err := interservice.FetchInputDefinitions(req.QuestionHash)
+	inputDefinitions, err := interservice.GetInputDefinitions(req.QuestionHash)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 }
 
 // parseTestCase parses all inputs in a test case according to their input definitions
-func parseTestCase(testCaseInputs []string, inputDefs []proto.InputDefinition) ([]any, error) {
+func parseTestCase(testCaseInputs []string, inputDefs []*proto.InputDefinition) ([]any, error) {
 	if len(testCaseInputs) != len(inputDefs) {
 		return nil, status.Errorf(codes.InvalidArgument, "input count mismatch: expected %d, got %d", len(inputDefs), len(testCaseInputs))
 	}

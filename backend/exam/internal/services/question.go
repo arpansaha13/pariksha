@@ -5,7 +5,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	"pariksha/common/pkg/proto"
-	"pariksha/exam/internal/interservice/paper"
+	"pariksha/common/pkg/types"
+	"pariksha/exam/internal/interservice"
 	"pariksha/exam/internal/repositories"
 )
 
@@ -25,15 +26,20 @@ func (s *Question) GetExamQuestions(req *proto.ExamRequest) (*proto.ExamQuestion
 	}
 
 	// Get question IDs for hash lookup
-	questionIDs := make([]int64, len(examQuestions))
+	questionIDs := make([]types.QuestionID, len(examQuestions))
 	for i, eq := range examQuestions {
-		questionIDs[i] = int64(eq.QuestionID)
+		questionIDs[i] = types.QuestionID(eq.QuestionID)
 	}
 
 	// Fetch question hashes from paper service
-	questionHashes, err := paper.FetchQuestionHashesForIds(questionIDs)
+	questionHashes, err := interservice.GetQuestionHashesByIds(questionIDs)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question hashes")
+	}
+
+	questionTypes, err := interservice.GetQuestionTypesByIds(questionIDs)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to fetch question")
 	}
 
 	questions := make([]*proto.ExamQuestion, len(examQuestions))
@@ -43,7 +49,7 @@ func (s *Question) GetExamQuestions(req *proto.ExamRequest) (*proto.ExamQuestion
 			CategoryId:   int64(eq.CategoryID),
 			Order:        int32(eq.Order),
 			MaxScore:     int32(eq.MaxScore),
-			Type:         eq.Type,
+			Type:         questionTypes[i],
 		}
 	}
 
@@ -55,13 +61,13 @@ func (s *Question) GetExamQuestions(req *proto.ExamRequest) (*proto.ExamQuestion
 // GetExamQuestion retrieves the question specified by the hash
 func (s *Question) GetExamQuestion(req *proto.ExamQuestionRequest) (*proto.ExamQuestionResponse, error) {
 	// Fetch question hashes from paper service
-	question, err := paper.FetchQuestionByHash(req.QuestionHash)
+	question, err := interservice.GetQuestionByHash(req.QuestionHash)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question hashes")
 	}
 
 	return &proto.ExamQuestionResponse{
-		QuestionHash: question.QuestionHash,
+		QuestionHash: question.Hash,
 		Type:         question.Type,
 		RawQuestion:  question.RawQuestion,
 		TestCases:    question.TestCases,

@@ -18,7 +18,7 @@ export async function deleteQuestion(
   categoryQuestions.splice(questionIdx, 1)
 
   try {
-    await $api(`/api/questions/${questionId}`, {
+    await $api(`/api/paper/${paperId}/questions/${questionId}`, {
       method: 'DELETE',
     })
 

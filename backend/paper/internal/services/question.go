@@ -2,57 +2,64 @@ package services
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
-	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 
-	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
-	"pariksha/common/pkg/utils/generate"
 	"pariksha/common/pkg/utils/grpcerror"
-	"pariksha/common/pkg/utils/ptr"
 	"pariksha/paper/internal/config/db"
-	"pariksha/paper/internal/interceptors"
+	"pariksha/paper/internal/interservice"
+	"pariksha/paper/internal/models"
 	"pariksha/paper/internal/repositories"
 	"pariksha/paper/internal/utils/validate"
 )
 
 type Question struct {
-	paperRepo    *repositories.Paper
-	questionRepo *repositories.Question
+	paperRepo      *repositories.Paper
+	paperQuestRepo *repositories.PaperQuestion
 }
 
-func NewQuestion(paperRepo *repositories.Paper, questionRepo *repositories.Question) *Question {
+func NewQuestion(paperRepo *repositories.Paper, paperQuestRepo *repositories.PaperQuestion) *Question {
 	return &Question{
-		paperRepo:    paperRepo,
-		questionRepo: questionRepo,
+		paperRepo:      paperRepo,
+		paperQuestRepo: paperQuestRepo,
 	}
 }
 
 // GetPaperQuestions handles fetching all questions for a paper
 func (s *Question) GetPaperQuestions(ctx context.Context, paperHash string) (*proto.QuestionList, error) {
-	questions, err := s.questionRepo.GetPaperQuestions(nil, paperHash)
+	paperQuests, err := s.paperQuestRepo.GetAllByPaperHash(nil, paperHash)
 	if err != nil {
 		return nil, grpcerror.Internal(err, "failed to fetch paper questions")
+	}
+
+	questionIDs := make([]types.QuestionID, len(paperQuests))
+	for i, pq := range paperQuests {
+		questionIDs[i] = pq.QuestionID
+	}
+
+	questions, err := interservice.GetQuestionsMetaByIDs(questionIDs)
+	if err != nil {
+		return nil, grpcerror.Internal(err, "failed to fetch question meta")
 	}
 
 	response := &proto.QuestionList{
 		Questions: make([]*proto.QuestionMinimal, len(questions)),
 	}
 
-	for i, question := range questions {
-		question.Paper.Hash = paperHash
-		response.Questions[i], err = questionToMinimalProto(question)
-		if err != nil {
-			return nil, err
+	for i, q := range questions {
+		pq := paperQuests[i]
+		response.Questions[i] = &proto.QuestionMinimal{
+			QuestionHash: q.Hash,
+			CategoryId:   int64(pq.CategoryID),
+			PaperHash:    paperHash,
+			Order:        int32(pq.Order),
+			RawQuestion:  q.RawQuestion,
 		}
 	}
 
@@ -60,63 +67,43 @@ func (s *Question) GetPaperQuestions(ctx context.Context, paperHash string) (*pr
 }
 
 // GetPaperQuestion handles fetching a single question with its test cases
-func (s *Question) GetPaperQuestion(ctx context.Context) (*proto.QuestionResponse, error) {
-	question, err := interceptors.GetQuestionFromContext(ctx)
+func (s *Question) GetPaperQuestion(req *proto.PaperQuestionRequest) (*proto.PaperQuestionResponse, error) {
+	question, err := interservice.GetQuestionByHash(req.QuestionHash)
 	if err != nil {
-		return nil, err
+		return nil, grpcerror.Internal(err, "failed to fetch question")
 	}
 
-	var testCases []models.TestCase
-	if question.Type == proto.QuestionType_CODING {
-		testCases, err = s.questionRepo.GetTestCasesForQuestion(nil, question.ID)
-		if err != nil {
-			return nil, status.Error(codes.Internal, constants.ErrInternalServer)
-		}
+	paperQuest, err := s.paperQuestRepo.GetByPaperHashAndQuestionID(nil, req.PaperHash, types.QuestionID(question.Id))
+	if err != nil {
+		return nil, grpcerror.Internal(err, "failed to fetch paper question")
 	}
 
-	return questionToProto(*question, testCases)
+	return &proto.PaperQuestionResponse{
+		QuestionHash: question.Hash,
+		RawQuestion:  question.RawQuestion,
+		CategoryId:   int64(paperQuest.CategoryID),
+		Type:         question.Type,
+		PaperHash:    req.PaperHash,
+		MaxScore:     int32(paperQuest.MaxScore),
+		TestCases:    question.TestCases,
+	}, nil
 }
 
-// CreateQuestion handles the business logic for creating a new question.
-func (s *Question) CreateQuestion(ctx context.Context, req *proto.CreateQuestionRequest) (*proto.CreateQuestionResponse, error) {
+// CreatePaperQuestion handles the business logic for creating a new question.
+func (s *Question) CreatePaperQuestion(ctx context.Context, req *proto.CreatePaperQuestionRequest) (*proto.CreatePaperQuestionResponse, error) {
 	if err := validate.MaxScore(req.MaxScore); err != nil {
 		return nil, err
 	}
 
-	// Validate question data based on type
-	var coding structs.CodingQuestion
-	switch req.Type {
-	case proto.QuestionType_MCQ:
-		var mcq structs.MCQQuestion
-		if err := utils.StrictUnmarshal(req.RawQuestion, &mcq); err != nil {
-			return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid MCQ question format: %s", err.Error()))
-		}
-		if err := mcq.Validate(); err != nil {
-			return nil, err
-		}
-	case proto.QuestionType_SUBJECTIVE:
-		var subjective structs.SubjectiveQuestion
-		if err := utils.StrictUnmarshal(req.RawQuestion, &subjective); err != nil {
-			return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid subjective question format: %s", err.Error()))
-		}
-		if err := subjective.Validate(); err != nil {
-			return nil, err
-		}
-	case proto.QuestionType_CODING:
-		if err := utils.StrictUnmarshal(req.RawQuestion, &coding); err != nil {
-			return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid coding question format: %s", err.Error()))
-		}
-		if err := coding.Validate(); err != nil {
-			return nil, err
-		}
-	default:
-		return nil, status.Error(codes.InvalidArgument, "invalid question type")
+	resp, err := interservice.CreateQuestion(&proto.CreateQuestionRequest{
+		RawQuestion: req.RawQuestion,
+		Type:        req.Type,
+	})
+	if err != nil {
+		return nil, grpcerror.Internal(err, "failed to create question")
 	}
 
-	tags, _ := json.Marshal(req.Tags)
-	var question models.Question
-
-	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		// Get paper by hash
 		paper, err := s.paperRepo.GetByHash(tx, req.PaperHash)
 		if err != nil {
@@ -124,109 +111,93 @@ func (s *Question) CreateQuestion(ctx context.Context, req *proto.CreateQuestion
 		}
 
 		// Get max order for this category
-		maxOrder, err := s.questionRepo.GetMaxQuestionOrder(tx, req.CategoryId)
+		maxOrder, err := s.paperQuestRepo.GetMaxQuestionOrder(tx, req.CategoryId)
 		if err != nil {
 			return grpcerror.Internal(err, "failed to get max order for category")
 		}
 
-		question = models.Question{
-			PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
+		paperQuest := models.PaperQuestion{
+			PaperID:    paper.ID,
+			QuestionID: types.QuestionID(resp.Id),
 			CategoryID: types.CategoryID(req.CategoryId),
 			Order:      maxOrder + 1,
-			Question:   json.RawMessage(req.RawQuestion),
-			Type:       req.Type,
-			Tags:       ptr.JsonRawMessage(tags),
 			MaxScore:   int16(req.MaxScore),
-			CorrectAnswer: sql.NullString{
-				String: req.GetCorrectAnswer(),
-				Valid:  req.CorrectAnswer != nil,
-			},
 		}
 
-		if err := s.questionRepo.CreateQuestion(tx, &question); err != nil {
-			return err
-		}
-
-		// Generate and store hash
-		question.Hash = generate.HMACHash(int64(question.ID))
-		if err := s.questionRepo.UpdateQuestionHash(tx, question.ID, question.Hash); err != nil {
-			return status.Error(codes.Internal, "failed to store question hash")
-		}
-
-		// Create boilerplates for coding questions
-		if req.Type == proto.QuestionType_CODING {
-			if err := upsertBoilerplates(tx, question.ID, coding.InputDefinitions, coding.OutputDefinition); err != nil {
-				return status.Error(codes.Internal, "failed to create boilerplates")
-			}
-		}
-
-		newCounts, err := updateQuestionCounts(paper.QuestionCounts, req.Type, 1)
-		if err != nil {
-			return err
-		}
-
-		return updatePaperStats(tx, *paper, int32(req.MaxScore), newCounts)
+		return s.paperQuestRepo.Create(tx, &paperQuest)
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &proto.CreateQuestionResponse{
-		QuestionHash: question.Hash,
+	return &proto.CreatePaperQuestionResponse{
+		QuestionHash: resp.Hash,
+	}, nil
+}
+
+// UpdateQuestion handles question updates with proper locking to prevent race conditions
+func (s *Question) UpdatePaperQuestion(req *proto.UpdatePaperQuestionRequest) (*proto.UpdatePaperQuestionResponse, error) {
+	if req.MaxScore != nil {
+		if err := validate.MaxScore(*req.MaxScore); err != nil {
+			return nil, err
+		}
+	}
+
+	questionMeta, err := interservice.GetQuestionMetaByHash(req.QuestionHash)
+	if err != nil {
+		return nil, grpcerror.Internal(err, "failed to fetch question")
+	}
+
+	paperQuest, err := s.paperQuestRepo.GetByPaperHashAndQuestionID(nil, req.PaperHash, types.QuestionID(questionMeta.Id))
+	if err != nil {
+		return nil, grpcerror.Internal(err, "failed to get paper question")
+	}
+
+	resp, err := interservice.UpdateQuestion(&proto.UpdateQuestionRequest{
+		Hash:        req.QuestionHash,
+		Type:        req.Type,
+		RawQuestion: req.RawQuestion,
+	})
+	if err != nil {
+		return nil, grpcerror.Internal(err, "failed to update question")
+	}
+
+	paperQuest.MaxScore = int16(*req.MaxScore)
+	paperQuest.QuestionID = types.QuestionID(resp.Id)
+
+	err = s.paperQuestRepo.Save(nil, paperQuest)
+	if err != nil {
+		return nil, grpcerror.Internal(err, "failed to save paper question")
+	}
+
+	return &proto.UpdatePaperQuestionResponse{
+		QuestionHash: resp.Hash,
 	}, nil
 }
 
 // DeleteQuestion handles the business logic for deleting a question
-func (s *Question) DeleteQuestion(ctx context.Context, questionHash string) error {
+func (s *Question) DeletePaperQuestion(paperHash string, questionHash string) error {
 	return utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		// Get question by hash
-		question, err := s.questionRepo.GetQuestionByHash(tx, questionHash)
+		question, err := interservice.GetQuestionMetaByHash(questionHash)
 		if err != nil {
-			return utils.HandleDBError(err, "question not found")
+			return grpcerror.Internal(err, "faled to fetch question id")
 		}
 
-		// Get paper details
-		paper, err := s.paperRepo.GetDetails(tx, types.PaperID(question.PaperID.Int64))
-		if err != nil {
-			return utils.HandleDBError(err, "failed to fetch paper details")
-		}
-
-		// Update paper max score
-		if err := s.paperRepo.UpdateMaxScore(tx, paper.ID, question.MaxScore); err != nil {
-			return err
-		}
-
-		// Update question counts
-		newCounts, err := updateQuestionCounts(paper.QuestionCounts, question.Type, -1)
-		if err != nil {
-			return err
-		}
-
-		if err := s.paperRepo.UpdateQuestionCounts(tx, paper.ID, newCounts); err != nil {
-			return err
-		}
-
-		// Handle question deletion or unlinking
-		if question.Locked {
-			if err := s.questionRepo.UnlinkFromPaper(tx, question.ID); err != nil {
-				return err
-			}
-		} else {
-			if err := s.questionRepo.Delete(tx, question.ID); err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return s.paperQuestRepo.DeleteByID(nil, types.QuestionID(question.Id))
 	})
 }
 
 // ReorderQuestions handles the business logic for reordering questions
-func (s *Question) ReorderQuestions(ctx context.Context, categoryID int64, questionHashes []string) error {
+func (s *Question) ReorderQuestions(categoryID int64, questionHashes []string) error {
 	return utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+		questionIDs, err := interservice.GetQuestionIDsByHashes(questionHashes)
+		if err != nil {
+			return grpcerror.Internal(err, "failed to fetch question ids")
+		}
+
 		// Verify all questions belong to the category
-		count, err := s.questionRepo.ValidateCategoryQuestions(tx, categoryID, questionHashes)
+		count, err := s.paperQuestRepo.ValidateCategoryQuestions(tx, categoryID, questionIDs)
 		if err != nil {
 			return err
 		}
@@ -236,8 +207,8 @@ func (s *Question) ReorderQuestions(ctx context.Context, categoryID int64, quest
 		}
 
 		// Update orders
-		for i, questionHash := range questionHashes {
-			if err := s.questionRepo.UpdateOrder(tx, questionHash, int16(i+1)); err != nil {
+		for i, questionID := range questionIDs {
+			if err := s.paperQuestRepo.UpdateOrder(tx, questionID, int16(i+1)); err != nil {
 				return err
 			}
 		}
@@ -246,133 +217,38 @@ func (s *Question) ReorderQuestions(ctx context.Context, categoryID int64, quest
 	})
 }
 
-// GetQuestionsByIds handles fetching multiple questions by their IDs
-func (s *Question) GetQuestionsByIds(ctx context.Context, questionIDs []int64) (*proto.GetQuestionsByIdsResponse, error) {
-	questions, err := s.questionRepo.GetByIds(nil, questionIDs)
+func (s *Question) GetBoilerplate(req *proto.GetPaperBoilerplateRequest) (*proto.BoilerplateResponse, error) {
+	return interservice.GetBoilerplate(&proto.GetBoilerplateRequest{
+		QuestionHash: req.QuestionHash,
+		LanguageId:   req.LanguageId,
+	})
+}
+
+func (s *Question) UpsertTestCases(req *proto.UpsertPaperTestCasesRequest) (*emptypb.Empty, error) {
+	return interservice.UpsertTestCases(&proto.UpsertTestCasesRequest{
+		QuestionHash: req.QuestionHash,
+		TestCases:    req.TestCases,
+	})
+}
+
+func (s *Question) GetPaperQuestionsMeta(req *proto.PaperRequest) (*proto.PaperQuestionsMeta, error) {
+	paperQuests, err := s.paperQuestRepo.GetAllByPaperHash(nil, req.PaperHash)
 	if err != nil {
-		return nil, grpcerror.Internal(err, "failed to fetch questions")
+		return nil, grpcerror.Internal(err, "failed to fetch paper questions")
 	}
 
-	response := &proto.GetQuestionsByIdsResponse{
-		Questions: make([]*proto.QuestionBatchItem, len(questions)),
+	response := &proto.PaperQuestionsMeta{
+		Questions: make([]*proto.PaperQuestionMeta, len(paperQuests)),
 	}
 
-	for i, question := range questions {
-		response.Questions[i] = &proto.QuestionBatchItem{
-			QuestionId:   int64(question.ID),
-			QuestionHash: question.Hash,
-			MaxScore:     int32(question.MaxScore),
-			Type:         question.Type,
-			RawQuestion:  question.Question,
+	for i, pq := range paperQuests {
+		response.Questions[i] = &proto.PaperQuestionMeta{
+			Id:         int64(pq.QuestionID),
+			CategoryId: int64(pq.CategoryID),
+			Order:      int32(pq.Order),
+			MaxScore:   int32(pq.MaxScore),
 		}
 	}
 
 	return response, nil
-}
-
-// GetExamQuestionByHash handles fetching question data for exam taking
-func (s *Question) GetExamQuestionByHash(ctx context.Context, hash string) (*proto.ExamQuestionResponse, error) {
-	question, err := s.questionRepo.GetExamQuestionByHash(nil, hash)
-	if err != nil {
-		return nil, status.Error(codes.NotFound, constants.ErrNotFound)
-	}
-
-	var testCases []models.TestCase
-	if question.Type == proto.QuestionType_CODING {
-		testCases, err = s.questionRepo.GetNonHiddenTestCases(nil, question.ID)
-		if err != nil {
-			return nil, status.Error(codes.Internal, constants.ErrInternalServer)
-		}
-	}
-
-	protoTestCases, err := testCasesToProto(testCases)
-	if err != nil {
-		return nil, err
-	}
-
-	return &proto.ExamQuestionResponse{
-		QuestionHash: hash,
-		RawQuestion:  question.Question,
-		Type:         question.Type,
-		TestCases:    protoTestCases,
-	}, nil
-}
-
-// GetQuestionHashes handles the business logic for fetching question hashes
-func (s *Question) GetQuestionHashes(ctx context.Context, questionIDs []int64) (*proto.GetQuestionHashesResponse, error) {
-	if len(questionIDs) == 0 {
-		return &proto.GetQuestionHashesResponse{}, nil
-	}
-
-	questions, err := s.questionRepo.GetQuestionHashes(nil, questionIDs)
-	if err != nil {
-		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
-	}
-
-	// Create a map for quick hash lookups
-	hashMap := make(map[int64]string, len(questions))
-	for _, q := range questions {
-		hashMap[int64(q.ID)] = q.Hash
-	}
-
-	// Create response maintaining same sequence as request
-	hashes := make([]string, len(questionIDs))
-	for i, id := range questionIDs {
-		if hash, ok := hashMap[id]; ok {
-			hashes[i] = hash
-		}
-	}
-
-	return &proto.GetQuestionHashesResponse{
-		QuestionHashes: hashes,
-	}, nil
-}
-
-// GetQuestionIds handles the business logic for getting question IDs from hashes
-func (s *Question) GetQuestionIds(ctx context.Context, questionHashes []string) (*proto.GetQuestionIdsResponse, error) {
-	if len(questionHashes) == 0 {
-		return &proto.GetQuestionIdsResponse{}, nil
-	}
-
-	questions, err := s.questionRepo.GetQuestionsByHashes(nil, questionHashes)
-	if err != nil {
-		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
-	}
-
-	// Create a map for quick ID lookups
-	idMap := make(map[string]int64, len(questions))
-	for _, q := range questions {
-		idMap[q.Hash] = int64(q.ID)
-	}
-
-	// Create response maintaining same sequence as request
-	ids := make([]int64, len(questionHashes))
-	for i, hash := range questionHashes {
-		if id, ok := idMap[hash]; ok {
-			ids[i] = id
-		}
-	}
-
-	return &proto.GetQuestionIdsResponse{
-		QuestionIds: ids,
-	}, nil
-}
-
-// GetCodingQuestionInputDefinitions fetches input definitions for a coding question by hash.
-func (s *Question) GetCodingQuestionInputDefinitions(ctx context.Context, questionHash string) (*proto.GetCodingQuestionInputDefinitionsResponse, error) {
-	inputDefs, err := s.questionRepo.GetInputDefinitionsByHash(nil, questionHash)
-	if err != nil {
-		return nil, grpcerror.Internal(err, "failed to fetch input definitions")
-	}
-	resp := &proto.GetCodingQuestionInputDefinitionsResponse{
-		InputDefinitions: make([]*proto.InputDefinition, len(inputDefs)),
-	}
-	for i, def := range inputDefs {
-		resp.InputDefinitions[i] = &proto.InputDefinition{
-			VariableName: def.VariableName,
-			Type:         def.Type,
-			Items:        def.Items,
-		}
-	}
-	return resp, nil
 }

@@ -42,7 +42,6 @@ func TestGetParticipantAnswers(t *testing.T) {
 						Type: proto.QuestionType_SUBJECTIVE,
 					},
 					{
-						Type:     proto.QuestionType_MCQ,
 						MaxScore: 5,
 					},
 				})
@@ -54,7 +53,6 @@ func TestGetParticipantAnswers(t *testing.T) {
 					QuestionID:        questions[0].QuestionID,
 					Answer:            &rawAnswer1,
 					ScoreAwarded:      8,
-					Comments:          sql.NullString{String: "Good answer", Valid: true},
 					Evaluated:         true,
 				}
 				require.NoError(t, db.DB.Create(&answer1).Error)
@@ -151,11 +149,9 @@ func TestGetParticipantAnswers(t *testing.T) {
 
 				questions := createTestExamQuestions(t, &exam, []models.ExamQuestion{
 					{
-						Type:     proto.QuestionType_SUBJECTIVE,
 						MaxScore: 10,
 					},
 					{
-						Type:     proto.QuestionType_MCQ,
 						MaxScore: 5,
 					},
 				})
@@ -167,7 +163,6 @@ func TestGetParticipantAnswers(t *testing.T) {
 					QuestionID:        questions[0].QuestionID,
 					Answer:            &rawAnswer1,
 					ScoreAwarded:      8,
-					Comments:          sql.NullString{String: "Good answer", Valid: true},
 					Evaluated:         true,
 				}
 				require.NoError(t, db.DB.Create(&answer1).Error)
@@ -328,7 +323,6 @@ func TestUpsertAnswer(t *testing.T) {
 				exam := createDefaultTestExam(t, 2)
 				questions := createTestExamQuestions(t, &exam, []models.ExamQuestion{
 					{
-						Type:     proto.QuestionType_SUBJECTIVE,
 						MaxScore: 10,
 					},
 				})
@@ -377,7 +371,6 @@ func TestUpsertAnswer(t *testing.T) {
 				exam := createDefaultTestExam(t, 2)
 				createTestExamQuestions(t, &exam, []models.ExamQuestion{
 					{
-						Type:     proto.QuestionType_SUBJECTIVE,
 						MaxScore: 10,
 					},
 				})

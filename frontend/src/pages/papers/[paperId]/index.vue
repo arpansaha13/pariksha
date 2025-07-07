@@ -100,7 +100,7 @@
           v-else-if="question.type === QuestionType.CODING"
           :content="question.question"
           :test-cases="question.test_cases ?? []"
-          :editor-link="`/editor/questions/${question.id}`"
+          :editor-link="`/editor/papers/${paperId}/${question.id}`"
         />
       </template>
     </template>
@@ -241,7 +241,7 @@ const { questionNavigation } = usePaperQuestionNavigation({
   currentCategoryQuestions,
 })
 
-const { data: question } = await usePaperQuestion(currentQuestionId)
+const { data: question } = await usePaperQuestion(paperId, currentQuestionId)
 
 // ________________PAPER QUESTION-ID FOR CATEGORY-ID________________
 watchImmediate(route, newRoute => {
@@ -450,7 +450,7 @@ async function onDefineTestCasesSubmit() {
   const testCases = codingQuestionTestCaseFormStates[qid]!
 
   try {
-    await upsertPaperTestCases(qid, testCases)
+    await upsertPaperTestCases(paperId, qid, testCases)
     // Clear form state after successful update
     codingQuestionTestCaseFormStates[qid] = null
     showQuestionEditChip.value[qid] = false

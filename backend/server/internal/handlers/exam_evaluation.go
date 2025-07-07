@@ -45,7 +45,6 @@ func GetAnswerEvaluationData(w http.ResponseWriter, r *http.Request) {
 		ID:           resp.AnswerId,
 		QuestionID:   questionHash,
 		ScoreAwarded: resp.ScoreAwarded,
-		Comments:     resp.Comments,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -77,7 +76,6 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 	req := &proto.UpdateAnswerRequest{
 		AnswerId:  answerId,
 		Evaluated: updateDTO.Evaluated,
-		Comments:  updateDTO.Comments,
 		NewScore:  ptr.Int32(*updateDTO.NewScore),
 	}
 
@@ -92,7 +90,6 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 		ID:           resp.AnswerId,
 		QuestionID:   resp.QuestionHash,
 		ScoreAwarded: resp.ScoreAwarded,
-		Comments:     resp.Comments,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -46,7 +46,6 @@ func (s *Result) GetExamResults(ctx context.Context, req *proto.ExamRequest) (*p
 		results[i] = &proto.ExamResultItem{
 			AnswerId:     int64(answer.ID),
 			ScoreAwarded: int32(answer.ScoreAwarded),
-			Comments:     answer.Comments.String,
 		}
 	}
 

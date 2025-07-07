@@ -6,8 +6,6 @@ import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/models"
-	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 )
 
@@ -31,24 +29,12 @@ func (r *Question) Transaction(fc func(tx *gorm.DB) error, opts ...*sql.TxOption
 	return utils.TransactionHandler(r.db, fc, opts...)
 }
 
-// GetExamQuestionType gets the question type for validation
-func (r *Question) GetExamQuestionType(tx *gorm.DB, examHash string, questionID types.QuestionID) (proto.QuestionType, error) {
-	tx = r.getTx(tx)
-	var examQuestion models.ExamQuestion
-	err := tx.Model(&models.ExamQuestion{}).
-		Select("exam_questions.type").
-		Joins("INNER JOIN exams ON exams.id = exam_questions.exam_id").
-		Where("exams.hash = ? AND exam_questions.question_id = ?", examHash, questionID).
-		Take(&examQuestion).Error
-	return examQuestion.Type, err
-}
-
 // GetExamQuestions gets all questions for an exam by exam hash.
 func (r *Question) GetExamQuestions(tx *gorm.DB, examHash string) ([]models.ExamQuestion, error) {
 	tx = r.getTx(tx)
 	var questions []models.ExamQuestion
 	err := tx.Model(&models.ExamQuestion{}).
-		Select("exam_questions.question_id", "exam_questions.category_id", "exam_questions.type", "exam_questions.order", "exam_questions.max_score").
+		Select("exam_questions.question_id", "exam_questions.category_id", "exam_questions.order", "exam_questions.max_score").
 		Joins("JOIN exams ON exams.id = exam_questions.exam_id").
 		Where("exams.hash = ?", examHash).
 		Find(&questions).Error

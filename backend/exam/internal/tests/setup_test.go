@@ -25,7 +25,6 @@ import (
 	"pariksha/exam/internal/controllers"
 	"pariksha/exam/internal/interceptors"
 	"pariksha/exam/internal/interservice"
-	"pariksha/exam/internal/interservice/paper"
 )
 
 const (
@@ -164,18 +163,18 @@ func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 
 // mockPaperService replaces the actual paper service with test doubles
 func mockPaperService() func() {
-	originalFetchHashes := paper.FetchQuestionHashesForIds
-	originalFetchIDs := paper.FetchQuestionIdsForHashes
-	originalFetchQuestions := paper.FetchQuestionsByIds
-	originalFetchQuestionByHash := paper.FetchQuestionByHash
-	originalFetchCategoriesByIds := paper.FetchCategoriesByIds
+	originalFetchHashes := interservice.GetQuestionHashesByIds
+	originalFetchIDs := interservice.GetQuestionIDsByHashes
+	originalFetchQuestionsByIDs := interservice.GetQuestionsByIDs
+	originalFetchQuestionByHash := interservice.GetQuestionByHash
+	originalFetchCategoriesByIds := interservice.GetCategoriesByIDs
 
 	// List of question IDs to use in tests
-	testQuestionIDs := []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 999}
+	testQuestionIDs := []types.QuestionID{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 999}
 
 	// Generate hash mappings at runtime
-	idToHash := make(map[int64]string)
-	hashToID := make(map[string]int64)
+	idToHash := make(map[types.QuestionID]string)
+	hashToID := make(map[string]types.QuestionID)
 
 	// Sample raw question content
 	rawQuestion := json.RawMessage(`{
@@ -186,13 +185,13 @@ func mockPaperService() func() {
 
 	// Generate hashes for test question IDs
 	for _, id := range testQuestionIDs {
-		hash := fmt.Sprintf("q_%s", generate.HMACHash(id))
+		hash := fmt.Sprintf("q_%s", generate.HMACHash(int64(id)))
 		idToHash[id] = hash
 		hashToID[hash] = id
 	}
 
-	// Mock FetchQuestionHashesForIds
-	paper.FetchQuestionHashesForIds = func(questionIDs []int64) ([]string, error) {
+	// Mock GetQuestionHashesByIds
+	interservice.GetQuestionHashesByIds = func(questionIDs []types.QuestionID) ([]string, error) {
 		hashes := make([]string, len(questionIDs))
 		for i, id := range questionIDs {
 			if hash, exists := idToHash[id]; exists {
@@ -204,9 +203,9 @@ func mockPaperService() func() {
 		return hashes, nil
 	}
 
-	// Mock FetchQuestionIdsForHashes
-	paper.FetchQuestionIdsForHashes = func(hashes []string) ([]int64, error) {
-		ids := make([]int64, len(hashes))
+	// Mock GetQuestionIDsByHashes
+	interservice.GetQuestionIDsByHashes = func(hashes []string) ([]types.QuestionID, error) {
+		ids := make([]types.QuestionID, len(hashes))
 		for i, hash := range hashes {
 			if id, exists := hashToID[hash]; exists {
 				ids[i] = id
@@ -217,32 +216,30 @@ func mockPaperService() func() {
 		return ids, nil
 	}
 
-	// Mock FetchQuestionsByIds
-	paper.FetchQuestionsByIds = func(typedQuestionIDs []types.QuestionID) ([]*proto.QuestionBatchItem, error) {
-		questions := make([]*proto.QuestionBatchItem, len(typedQuestionIDs))
+	// Mock GetQuestionsByIDs
+	interservice.GetQuestionsByIDs = func(typedQuestionIDs []types.QuestionID) ([]*proto.QuestionResponse, error) {
+		questions := make([]*proto.QuestionResponse, len(typedQuestionIDs))
 		for i, typedID := range typedQuestionIDs {
-			id := int64(typedID)
-			hash, exists := idToHash[id]
+			hash, exists := idToHash[typedID]
 			if !exists {
-				return nil, fmt.Errorf("question ID %d not found", id)
+				return nil, fmt.Errorf("question ID %d not found", int64(typedID))
 			}
-			questions[i] = &proto.QuestionBatchItem{
-				QuestionId:   id,
-				QuestionHash: hash,
-				RawQuestion:  rawQuestion,
-				MaxScore:     10,
-				Type:         proto.QuestionType_MCQ,
+			questions[i] = &proto.QuestionResponse{
+				Id:          int64(typedID),
+				Hash:        hash,
+				RawQuestion: rawQuestion,
+				Type:        proto.QuestionType_MCQ,
 			}
 		}
 		return questions, nil
 	}
 
-	// Mock FetchQuestionByHash
-	paper.FetchQuestionByHash = func(questionHash string) (*proto.ExamQuestionResponse, error) {
-		return &proto.ExamQuestionResponse{
-			QuestionHash: questionHash,
-			RawQuestion:  rawQuestion,
-			Type:         proto.QuestionType_MCQ,
+	// Mock GetQuestionByHash
+	interservice.GetQuestionByHash = func(questionHash string) (*proto.QuestionResponse, error) {
+		return &proto.QuestionResponse{
+			Hash:        questionHash,
+			RawQuestion: rawQuestion,
+			Type:        proto.QuestionType_MCQ,
 			TestCases: []*proto.CodingQuestionTestCase{
 				{
 					Inputs:      []string{"1", "2"},
@@ -259,24 +256,24 @@ func mockPaperService() func() {
 		}, nil
 	}
 
-	// Mock FetchCategoriesByIds
-	paper.FetchCategoriesByIds = func(typedCategoryIDs []types.CategoryID) ([]*proto.CategoryBatchItem, error) {
-		questions := make([]*proto.CategoryBatchItem, len(typedCategoryIDs))
+	// Mock GetCategoriesByIDs
+	interservice.GetCategoriesByIDs = func(typedCategoryIDs []types.CategoryID) ([]*proto.CategoryResponse, error) {
+		questions := make([]*proto.CategoryResponse, len(typedCategoryIDs))
 		for i, typedID := range typedCategoryIDs {
-			questions[i] = &proto.CategoryBatchItem{
-				CategoryId: int64(typedID),
-				Name:       fmt.Sprintf("Category %d", i+1),
+			questions[i] = &proto.CategoryResponse{
+				Id:   int64(typedID),
+				Name: fmt.Sprintf("Category %d", i+1),
 			}
 		}
 		return questions, nil
 	}
 
 	return func() {
-		paper.FetchQuestionHashesForIds = originalFetchHashes
-		paper.FetchQuestionIdsForHashes = originalFetchIDs
-		paper.FetchQuestionsByIds = originalFetchQuestions
-		paper.FetchQuestionByHash = originalFetchQuestionByHash
-		paper.FetchCategoriesByIds = originalFetchCategoriesByIds
+		interservice.GetQuestionHashesByIds = originalFetchHashes
+		interservice.GetQuestionIDsByHashes = originalFetchIDs
+		interservice.GetQuestionsByIDs = originalFetchQuestionsByIDs
+		interservice.GetQuestionByHash = originalFetchQuestionByHash
+		interservice.GetCategoriesByIDs = originalFetchCategoriesByIds
 	}
 }
 

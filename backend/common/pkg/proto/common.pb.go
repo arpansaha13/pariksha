@@ -212,8 +212,8 @@ type ExamQuestionResponse struct {
 	state         protoimpl.MessageState    `protogen:"open.v1"`
 	QuestionHash  string                    `protobuf:"bytes,1,opt,name=question_hash,json=questionHash,proto3" json:"question_hash,omitempty"`
 	RawQuestion   []byte                    `protobuf:"bytes,2,opt,name=raw_question,json=rawQuestion,proto3" json:"raw_question,omitempty"`
-	Type          QuestionType              `protobuf:"varint,5,opt,name=type,proto3,enum=proto.QuestionType" json:"type,omitempty"`
-	TestCases     []*CodingQuestionTestCase `protobuf:"bytes,10,rep,name=test_cases,json=testCases,proto3" json:"test_cases,omitempty"`
+	Type          QuestionType              `protobuf:"varint,3,opt,name=type,proto3,enum=proto.QuestionType" json:"type,omitempty"`
+	TestCases     []*CodingQuestionTestCase `protobuf:"bytes,4,rep,name=test_cases,json=testCases,proto3" json:"test_cases,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -276,6 +276,118 @@ func (x *ExamQuestionResponse) GetTestCases() []*CodingQuestionTestCase {
 	return nil
 }
 
+type UpsertTestCase struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Inputs        []string               `protobuf:"bytes,2,rep,name=inputs,proto3" json:"inputs,omitempty"`
+	Output        string                 `protobuf:"bytes,3,opt,name=output,proto3" json:"output,omitempty"`
+	Explanation   *string                `protobuf:"bytes,4,opt,name=explanation,proto3,oneof" json:"explanation,omitempty"`
+	Hidden        bool                   `protobuf:"varint,5,opt,name=hidden,proto3" json:"hidden,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpsertTestCase) Reset() {
+	*x = UpsertTestCase{}
+	mi := &file_common_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertTestCase) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertTestCase) ProtoMessage() {}
+
+func (x *UpsertTestCase) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertTestCase.ProtoReflect.Descriptor instead.
+func (*UpsertTestCase) Descriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *UpsertTestCase) GetInputs() []string {
+	if x != nil {
+		return x.Inputs
+	}
+	return nil
+}
+
+func (x *UpsertTestCase) GetOutput() string {
+	if x != nil {
+		return x.Output
+	}
+	return ""
+}
+
+func (x *UpsertTestCase) GetExplanation() string {
+	if x != nil && x.Explanation != nil {
+		return *x.Explanation
+	}
+	return ""
+}
+
+func (x *UpsertTestCase) GetHidden() bool {
+	if x != nil {
+		return x.Hidden
+	}
+	return false
+}
+
+type BoilerplateResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BoilerplateResponse) Reset() {
+	*x = BoilerplateResponse{}
+	mi := &file_common_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BoilerplateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BoilerplateResponse) ProtoMessage() {}
+
+func (x *BoilerplateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BoilerplateResponse.ProtoReflect.Descriptor instead.
+func (*BoilerplateResponse) Descriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *BoilerplateResponse) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
 var File_common_proto protoreflect.FileDescriptor
 
 const file_common_proto_rawDesc = "" +
@@ -291,10 +403,17 @@ const file_common_proto_rawDesc = "" +
 	"\x14ExamQuestionResponse\x12#\n" +
 	"\rquestion_hash\x18\x01 \x01(\tR\fquestionHash\x12!\n" +
 	"\fraw_question\x18\x02 \x01(\fR\vrawQuestion\x12'\n" +
-	"\x04type\x18\x05 \x01(\x0e2\x13.proto.QuestionTypeR\x04type\x12<\n" +
+	"\x04type\x18\x03 \x01(\x0e2\x13.proto.QuestionTypeR\x04type\x12<\n" +
 	"\n" +
-	"test_cases\x18\n" +
-	" \x03(\v2\x1d.proto.CodingQuestionTestCaseR\ttestCases*N\n" +
+	"test_cases\x18\x04 \x03(\v2\x1d.proto.CodingQuestionTestCaseR\ttestCases\"\x8f\x01\n" +
+	"\x0eUpsertTestCase\x12\x16\n" +
+	"\x06inputs\x18\x02 \x03(\tR\x06inputs\x12\x16\n" +
+	"\x06output\x18\x03 \x01(\tR\x06output\x12%\n" +
+	"\vexplanation\x18\x04 \x01(\tH\x00R\vexplanation\x88\x01\x01\x12\x16\n" +
+	"\x06hidden\x18\x05 \x01(\bR\x06hiddenB\x0e\n" +
+	"\f_explanation\")\n" +
+	"\x13BoilerplateResponse\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code*N\n" +
 	"\fQuestionType\x12\x19\n" +
 	"\x15UNKNOWN_QUESTION_TYPE\x10\x00\x12\a\n" +
 	"\x03MCQ\x10\x01\x12\x0e\n" +
@@ -324,12 +443,14 @@ func file_common_proto_rawDescGZIP() []byte {
 }
 
 var file_common_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_common_proto_goTypes = []any{
 	(QuestionType)(0),              // 0: proto.QuestionType
 	(ParameterType)(0),             // 1: proto.ParameterType
 	(*CodingQuestionTestCase)(nil), // 2: proto.CodingQuestionTestCase
 	(*ExamQuestionResponse)(nil),   // 3: proto.ExamQuestionResponse
+	(*UpsertTestCase)(nil),         // 4: proto.UpsertTestCase
+	(*BoilerplateResponse)(nil),    // 5: proto.BoilerplateResponse
 }
 var file_common_proto_depIdxs = []int32{
 	0, // 0: proto.ExamQuestionResponse.type:type_name -> proto.QuestionType
@@ -347,13 +468,14 @@ func file_common_proto_init() {
 		return
 	}
 	file_common_proto_msgTypes[0].OneofWrappers = []any{}
+	file_common_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_proto_rawDesc), len(file_common_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

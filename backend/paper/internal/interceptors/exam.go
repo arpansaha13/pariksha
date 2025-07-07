@@ -2,22 +2,18 @@ package interceptors
 
 import (
 	"context"
+	"pariksha/common/pkg/constants"
+	"pariksha/paper/internal/config/env"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-
-	"pariksha/common/pkg/constants"
-	"pariksha/paper/internal/config/env"
 )
 
 var examOnlyEndpoints = map[string]bool{
-	"/proto.Paper/GetQuestionsByIds":  true,
-	"/proto.Paper/GetCategoriesByIds": true,
-	"/proto.Paper/GetExamQuestion":    true,
-	"/proto.Paper/GetQuestionHashes":  true,
-	"/proto.Paper/GetQuestionIds":     true,
+	"/proto.Paper/GetPaperQuestionsMeta":  true,
+	"/proto.Paper/GetPaperCategoriesMeta": true,
 }
 
 // ExamServiceAuthInterceptor validates that only the exam service can access certain endpoints

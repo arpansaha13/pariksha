@@ -43,47 +43,61 @@ services:
       - backend-network
       - global_auth-network
 
+  question:
+    depends_on:
+      questionsDb:
+        condition: service_healthy
+    networks:
+      - question-network
+      - internal_question-network
+
   paper:
     depends_on:
+      question:
+        condition: service_started
       papersDb:
         condition: service_healthy
     networks:
       - backend-network
       - paper-network
-      - exam-paper-network
+      - question-network
+      - internal_paper-network
 
   exam:
     depends_on:
+      question:
+        condition: service_started
+      paper:
+        condition: service_started
       examsDb:
         condition: service_healthy
       commonQueue:
         condition: service_healthy
-      paper:
-        condition: service_started
     networks:
       - backend-network
       - exam-network
-      - exam-paper-network
+      - question-network
+      - internal_exam-network
       - common-queue-network
 
   engine:
     depends_on:
-      paper:
+      question:
         condition: service_started
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./docker/data/engineTmp/tmp:/tmp
     networks:
       - backend-network
-      - engine-paper-network
+      - question-network
 
   # A common message queue for all services
   commonQueue:
     image: redis:7-alpine
     container_name: common_queue
-    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -108,7 +122,7 @@ services:
     volumes:
       - ./docker/data/papersDb:/var/lib/postgresql/data
     networks:
-      - paper-network
+      - internal_paper-network
     logging:
       driver: "json-file"
       options:
@@ -122,7 +136,21 @@ services:
     volumes:
       - ./docker/data/examsDb:/var/lib/postgresql/data
     networks:
-      - exam-network
+      - internal_exam-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
+
+  questionsDb:
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB_QUESTIONS}
+    volumes:
+      - ./docker/data/questionsDb:/var/lib/postgresql/data
+    networks:
+      - internal_question-network
     logging:
       driver: "json-file"
       options:
@@ -131,15 +159,16 @@ services:
 
   examWorker:
     depends_on:
+      paper:
+        condition: service_started
       commonQueue:
         condition: service_healthy
       examsDb:
         condition: service_healthy
-      papersDb:
-        condition: service_healthy
     networks:
-      - exam-network
+      - internal_exam-network
       - paper-network
+      - question-network
       - common-queue-network
 
 networks:
@@ -153,11 +182,15 @@ networks:
     name: backend-network
   common-queue-network:
     name: common-queue-network
+  question-network:
+    name: question-network
+  internal_question-network:
+    name: internal_question-network
   paper-network:
     name: paper-network
+  internal_paper-network:
+    name: internal_paper-network
   exam-network:
     name: exam-network
-  exam-paper-network:
-    name: exam-paper-network
-  engine-paper-network:
-    name: engine-paper-network
+  internal_exam-network:
+    name: internal_exam-network

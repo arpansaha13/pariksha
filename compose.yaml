@@ -4,4 +4,5 @@ include:
   - backend/compose.paper.yaml
   - backend/compose.exam.yaml
   - backend/compose.engine.yaml
+  - backend/compose.question.yaml
   - backend/compose.exam-worker.yaml

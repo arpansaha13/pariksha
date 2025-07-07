@@ -14,9 +14,15 @@ const (
 const (
 	TABLE_PAPERS            = "papers"
 	TABLE_PAPER_PERMISSIONS = "permissions"
-	TABLE_QUESTIONS         = "questions"
-	TABLE_BOILERPLATES      = "boilerplates"
-	TABLE_LANGUAGES         = "languages"
-	TABLE_CATEGORIES        = "categories"
-	TABLE_TEST_CASES        = "test_cases"
+	TABLE_PAPER_QUESTIONS   = "paper_questions"
+	TABLE_PAPER_CATEGORIES  = "paper_categories"
+)
+
+// questionDb
+const (
+	TABLE_QUESTIONS    = "questions"
+	TABLE_BOILERPLATES = "boilerplates"
+	TABLE_LANGUAGES    = "languages"
+	TABLE_CATEGORIES   = "categories"
+	TABLE_TEST_CASES   = "test_cases"
 )

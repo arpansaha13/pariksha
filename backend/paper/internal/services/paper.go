@@ -8,26 +8,41 @@ import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/generate"
+	"pariksha/common/pkg/utils/grpcerror"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/interservice"
+	"pariksha/paper/internal/models"
 	"pariksha/paper/internal/repositories"
 	"pariksha/paper/internal/utils/validate"
 )
 
 type Paper struct {
-	paperRepo *repositories.Paper
+	paperRepo      *repositories.Paper
+	paperCatRepo   *repositories.PaperCategory
+	paperPermRepo  *repositories.PaperPermission
+	paperQuestRepo *repositories.PaperQuestion
 }
 
-func NewPaper(paperRepo *repositories.Paper) *Paper {
-	return &Paper{paperRepo: paperRepo}
+func NewPaper(
+	paperRepo *repositories.Paper,
+	paperCatRepo *repositories.PaperCategory,
+	paperPermRepo *repositories.PaperPermission,
+	paperQuestRepo *repositories.PaperQuestion,
+) *Paper {
+	return &Paper{
+		paperRepo:      paperRepo,
+		paperCatRepo:   paperCatRepo,
+		paperPermRepo:  paperPermRepo,
+		paperQuestRepo: paperQuestRepo,
+	}
 }
 
 // GetUserPapers handles the business logic for fetching user's papers
-func (s *Paper) GetUserPapers(ctx context.Context, userID types.UserID) (*proto.PaperList, error) {
+func (s *Paper) GetUserPapers(userID types.UserID) (*proto.PaperList, error) {
 	papers, err := s.paperRepo.GetAllByUserId(nil, userID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
@@ -36,21 +51,90 @@ func (s *Paper) GetUserPapers(ctx context.Context, userID types.UserID) (*proto.
 	response := &proto.PaperList{
 		Papers: make([]*proto.PaperResponse, len(papers)),
 	}
-	for i, paper := range papers {
-		response.Papers[i] = paperToProto(paper)
+	for i, p := range papers {
+		paperResp, err := s.GetPaper((p.Hash))
+		if err != nil {
+			return nil, grpcerror.Internal(err, "failed to get paper response")
+		}
+
+		response.Papers[i] = paperResp
 	}
 
 	return response, nil
 }
 
+// GetUserPapers handles the business logic for fetching user's papers
+func (s *Paper) GetPaper(paperHash string) (*proto.PaperResponse, error) {
+	paper, err := s.paperRepo.GetByHash(nil, paperHash)
+	if err != nil {
+		return nil, grpcerror.Internal(err, "failed to get paper")
+	}
+
+	paperQuests, err := s.paperQuestRepo.GetAllByPaperHash(nil, paperHash)
+	if err != nil {
+		return nil, grpcerror.Internal(err, "failed to get paper questions")
+	}
+
+	questionIDs := make([]types.QuestionID, len(paperQuests))
+	totalMaxScore := int32(0)
+	for i, pq := range paperQuests {
+		totalMaxScore += int32(pq.MaxScore)
+		questionIDs[i] = pq.QuestionID
+	}
+
+	questions, err := interservice.GetQuestionsMetaByIDs(questionIDs)
+	questionCounts := proto.QuestionCount{
+		Mcq:        0,
+		Subjective: 0,
+		Coding:     0,
+	}
+
+	for _, q := range questions {
+		switch q.Type {
+		case proto.QuestionType_MCQ:
+			questionCounts.Mcq++
+		case proto.QuestionType_SUBJECTIVE:
+			questionCounts.Subjective++
+		case proto.QuestionType_CODING:
+			questionCounts.Coding++
+		}
+	}
+
+	return &proto.PaperResponse{
+		PaperHash:       paper.Hash,
+		Title:           paper.Title,
+		MaxScore:        totalMaxScore,
+		DurationMinutes: int32(paper.DurationMinutes),
+		CreatedBy:       int64(paper.CreatedBy),
+		QuestionCounts:  &questionCounts,
+	}, nil
+}
+
 // CreatePaper handles the business logic for creating a new paper
-func (s *Paper) CreatePaper(ctx context.Context, userID types.UserID) (*proto.PaperResponse, error) {
+func (s *Paper) CreatePaper(userID types.UserID) (*proto.CreatePaperResponse, error) {
 	var paper models.Paper
 
 	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
 		paper = models.Paper{CreatedBy: userID}
 		if err := s.paperRepo.Create(tx, &paper, userID); err != nil {
-			return status.Error(codes.Internal, constants.ErrInternalServer)
+			return grpcerror.Internal(err, "failed to create paper")
+		}
+
+		if err := s.paperPermRepo.Create(tx, paper.ID, userID); err != nil {
+			return grpcerror.Internal(err, "failed to create paper permission")
+		}
+
+		// Create default category
+		category, err := interservice.CreateCategory("Category 1")
+		if err != nil {
+			return grpcerror.Internal(err, "failed to create default category")
+		}
+		if err := s.paperCatRepo.Create(tx, &models.PaperCategory{
+			PaperID:    paper.ID,
+			CategoryID: types.CategoryID(category.Id),
+			Order:      1,
+		}); err != nil {
+			return grpcerror.Internal(err, "failed to create category")
 		}
 
 		paper.Hash = generate.HMACHash(int64(paper.ID))
@@ -65,7 +149,9 @@ func (s *Paper) CreatePaper(ctx context.Context, userID types.UserID) (*proto.Pa
 		return nil, err
 	}
 
-	return paperToProto(paper), nil
+	return &proto.CreatePaperResponse{
+		PaperHash: paper.Hash,
+	}, nil
 }
 
 // UpdatePaper handles the business logic for updating a paper
@@ -111,7 +197,34 @@ func (s *Paper) DeletePapers(ctx context.Context, hashes []string) error {
 			return status.Error(codes.Internal, "failed to fetch paper IDs")
 		}
 
+		// Get question IDs before deletion
+		var questionIDs []types.QuestionID
+		if err := tx.Model(&models.PaperQuestion{}).
+			Where("paper_id IN ?", paperIDs).
+			Pluck("question_id", &questionIDs).Error; err != nil {
+			return status.Error(codes.Internal, "failed to fetch question IDs")
+		}
+
+		// Decrease question paper indegree if there are questions
+		if len(questionIDs) > 0 {
+			if err := interservice.DecQuestionPaperIndegreeByIds(questionIDs); err != nil {
+				return status.Error(codes.Internal, "failed to decrease question paper indegree")
+			}
+		}
+
 		if err := s.paperRepo.BulkDelete(tx, paperIDs); err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+
+		if err := s.paperPermRepo.BulkDeleteByPaperIDs(tx, paperIDs); err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+
+		if err := s.paperQuestRepo.BulkDeleteByPaperIDs(tx, paperIDs); err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+
+		if err := s.paperCatRepo.BulkDeleteByPaperIDs(tx, paperIDs); err != nil {
 			return status.Error(codes.Internal, err.Error())
 		}
 

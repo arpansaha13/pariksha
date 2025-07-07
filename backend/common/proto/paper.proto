@@ -11,49 +11,41 @@ service Paper {
   // Paper operations
   rpc GetUserPapers(google.protobuf.Empty) returns (PaperList) {}
   rpc GetPaper(PaperRequest) returns (PaperResponse) {}
-  rpc CreatePaper(google.protobuf.Empty) returns (PaperResponse) {}
+  rpc CreatePaper(google.protobuf.Empty) returns (CreatePaperResponse) {}
   rpc UpdatePaper(UpdatePaperRequest) returns (google.protobuf.Empty) {}
   rpc DeletePapers(DeletePapersRequest) returns (google.protobuf.Empty) {}
   rpc GetPaperPermissions(PaperRequest) returns (PaperPermissionsResponse) {}
 
   // Question operations
   rpc GetPaperQuestions(PaperRequest) returns (QuestionList) {}
-  rpc GetPaperQuestion(QuestionRequest) returns (QuestionResponse) {}
-  rpc CreateQuestion(CreateQuestionRequest) returns (CreateQuestionResponse) {}
-  rpc UpdateQuestion(UpdateQuestionRequest) returns (UpdateQuestionResponse) {}
-  rpc DeleteQuestion(QuestionRequest) returns (google.protobuf.Empty) {}
-  rpc ReorderQuestions(ReorderQuestionsRequest)
+  rpc GetPaperQuestion(PaperQuestionRequest) returns (PaperQuestionResponse) {}
+  rpc CreatePaperQuestion(CreatePaperQuestionRequest)
+      returns (CreatePaperQuestionResponse) {}
+  rpc UpdatePaperQuestion(UpdatePaperQuestionRequest)
+      returns (UpdatePaperQuestionResponse) {}
+  rpc DeletePaperQuestion(PaperQuestionRequest)
+      returns (google.protobuf.Empty) {}
+  rpc ReorderPaperQuestions(ReorderPaperQuestionsRequest)
+      returns (google.protobuf.Empty) {}
+  rpc GetPaperBoilerplate(GetPaperBoilerplateRequest)
+      returns (BoilerplateResponse) {}
+  rpc UpsertPaperTestCases(UpsertPaperTestCasesRequest)
       returns (google.protobuf.Empty) {}
 
   // Category operations
-  rpc GetPaperCategories(PaperRequest) returns (CategoryList) {}
-  rpc CreateCategory(CreateCategoryRequest) returns (CategoryResponse) {}
-  rpc UpdateCategory(UpdateCategoryRequest) returns (google.protobuf.Empty) {}
-  rpc DeleteCategory(CategoryRequest) returns (google.protobuf.Empty) {}
-  rpc ReorderCategories(ReorderCategoriesRequest)
+  rpc GetPaperCategories(PaperRequest) returns (PaperCategoryList) {}
+  rpc CreatePaperCategory(CreatePaperCategoryRequest)
+      returns (PaperCategoryResponse) {}
+  rpc UpdatePaperCategory(UpdatePaperCategoryRequest)
+      returns (google.protobuf.Empty) {}
+  rpc DeletePaperCategory(PaperCategoryRequest)
+      returns (google.protobuf.Empty) {}
+  rpc ReorderPaperCategories(ReorderPaperCategoriesRequest)
       returns (google.protobuf.Empty) {}
 
   // Exam operations
-  rpc GetQuestionsByIds(GetQuestionsByIdsRequest)
-      returns (GetQuestionsByIdsResponse) {}
-  rpc GetCategoriesByIds(GetCategoriesByIdsRequest)
-      returns (CategoryBatchResponse) {}
-  rpc GetExamQuestionByHash(QuestionRequest) returns (ExamQuestionResponse) {}
-  rpc GetQuestionHashes(GetQuestionHashesRequest)
-      returns (GetQuestionHashesResponse) {}
-  rpc GetQuestionIds(GetQuestionIdsRequest) returns (GetQuestionIdsResponse) {}
-
-  // Boilerplate operations
-  rpc GetBoilerplate(GetBoilerplateRequest) returns (GetBoilerplateResponse) {}
-
-  // Test Case operations
-  rpc UpsertPaperTestCases(UpsertTestCasesRequest)
-      returns (google.protobuf.Empty) {}
-
-  // Coding Question Input Definitions
-  rpc GetCodingQuestionInputDefinitions(
-      GetCodingQuestionInputDefinitionsRequest)
-      returns (GetCodingQuestionInputDefinitionsResponse) {}
+  rpc GetPaperQuestionsMeta(PaperRequest) returns (PaperQuestionsMeta) {}
+  rpc GetPaperCategoriesMeta(PaperRequest) returns (PaperCategoriesMeta) {}
 }
 
 // Paper messages
@@ -67,6 +59,8 @@ message PaperResponse {
   QuestionCount question_counts = 5;
   int64 created_by = 6;
 }
+
+message CreatePaperResponse { string paper_hash = 1; }
 
 message PaperList { repeated PaperResponse papers = 1; }
 
@@ -85,18 +79,19 @@ message QuestionCount {
 message DeletePapersRequest { repeated string paper_hashes = 1; }
 
 // Question messages
-message QuestionRequest { string question_hash = 1; }
+message PaperQuestionRequest {
+  string paper_hash = 1;
+  string question_hash = 2;
+}
 
-message QuestionResponse {
+message PaperQuestionResponse {
   string question_hash = 1;
   bytes raw_question = 2;
   int64 category_id = 4;
   QuestionType type = 5;
-  repeated string tags = 6;
-  string paper_hash = 7;
-  int32 max_score = 8;
-  optional string correct_answer = 9;
-  repeated CodingQuestionTestCase test_cases = 10;
+  string paper_hash = 6;
+  int32 max_score = 7;
+  repeated CodingQuestionTestCase test_cases = 8;
 }
 
 message QuestionList { repeated QuestionMinimal questions = 1; }
@@ -109,77 +104,72 @@ message QuestionMinimal {
   bytes raw_question = 5;
 }
 
-message CreateQuestionRequest {
+message PaperQuestionsMeta { repeated PaperQuestionMeta questions = 1; }
+
+message PaperQuestionMeta {
+  int64 id = 1;
+  int64 category_id = 2;
+  int32 order = 3;
+  int32 max_score = 4;
+}
+
+message CreatePaperQuestionRequest {
   string paper_hash = 1;
   bytes raw_question = 2;
   int64 category_id = 3;
   QuestionType type = 4;
-  repeated string tags = 5;
-  int32 max_score = 6;
-  optional string correct_answer = 7;
+  int32 max_score = 5;
 }
 
-message CreateQuestionResponse { string question_hash = 1; }
+message CreatePaperQuestionResponse { string question_hash = 1; }
 
-message UpdateQuestionRequest {
-  string question_hash = 1;
-  optional QuestionType type = 2;
-  optional bytes raw_question = 3;
-  optional int32 max_score = 4;
-  repeated string tags = 5;
-  optional string correct_answer = 6;
-}
-
-message UpdateQuestionResponse { string question_hash = 1; }
-
-message ReorderQuestionsRequest {
-  int64 category_id = 1;
-  repeated string question_hashes = 2;
-}
-
-message GetQuestionsByIdsRequest {
-  // Internal handler for exam service. IDs can be allowed.
-  repeated int64 question_ids = 1;
-}
-
-message GetQuestionsByIdsResponse { repeated QuestionBatchItem questions = 1; }
-
-message QuestionBatchItem {
-  int64 question_id = 1;
+message UpdatePaperQuestionRequest {
+  string paper_hash = 1;
   string question_hash = 2;
-  bytes raw_question = 3;
-  int32 max_score = 4;
-  QuestionType type = 5;
+  optional QuestionType type = 3;
+  optional bytes raw_question = 4;
+  optional int32 max_score = 5;
+}
+
+message UpdatePaperQuestionResponse { string question_hash = 1; }
+
+message ReorderPaperQuestionsRequest {
+  string paper_hash = 1;
+  int64 category_id = 2;
+  repeated string question_hashes = 3;
 }
 
 // Category messages
-message GetCategoriesByIdsRequest { repeated int64 category_ids = 1; }
 
-message CategoryBatchResponse { repeated CategoryBatchItem categories = 1; }
-
-message CategoryBatchItem {
-  int64 category_id = 1;
-  string name = 2;
+message PaperCategoryRequest {
+  string paper_hash = 1;
+  int64 category_id = 2;
 }
 
-message CategoryRequest { int64 category_id = 1; }
+message PaperCategoryList { repeated PaperCategoryResponse categories = 1; }
 
-message CategoryResponse {
-  int64 category_id = 1;
+message PaperCategoryResponse {
+  int64 id = 1;
   string name = 2;
   int32 order = 3;
 }
 
-message CategoryList { repeated CategoryResponse categories = 1; }
+message PaperCategoriesMeta { repeated PaperCategoryMeta categories = 1; }
 
-message CreateCategoryRequest { string paper_hash = 1; }
-
-message UpdateCategoryRequest {
-  int64 category_id = 1;
-  string name = 2;
+message PaperCategoryMeta {
+  int64 id = 1;
+  int32 order = 3;
 }
 
-message ReorderCategoriesRequest {
+message CreatePaperCategoryRequest { string paper_hash = 1; }
+
+message UpdatePaperCategoryRequest {
+  string paper_hash = 1;
+  int64 category_id = 2;
+  string name = 3;
+}
+
+message ReorderPaperCategoriesRequest {
   string paper_hash = 1;
   repeated int64 category_ids = 2;
 }
@@ -189,48 +179,14 @@ message PaperPermissionsResponse {
   bool can_write = 2;
 }
 
-// Boilerplate messages
-message GetBoilerplateRequest {
-  string question_hash = 1;
-  int32 language_id = 2;
+message GetPaperBoilerplateRequest {
+  string paper_hash = 1;
+  string question_hash = 2;
+  int32 language_id = 3;
 }
 
-message GetBoilerplateResponse { string code = 1; }
-
-message UpsertTestCase {
-  repeated string inputs = 2;
-  string output = 3;
-  optional string explanation = 4;
-  bool hidden = 5;
-}
-
-message UpsertTestCasesRequest {
-  string question_hash = 1;
-  repeated UpsertTestCase test_cases = 2;
-}
-
-message GetQuestionHashesRequest { repeated int64 question_ids = 1; }
-
-message GetQuestionHashesResponse { repeated string question_hashes = 1; }
-
-message GetQuestionIdsRequest { repeated string question_hashes = 1; }
-
-message GetQuestionIdsResponse { repeated int64 question_ids = 1; }
-
-// Coding Question Input Definitions
-message GetCodingQuestionInputDefinitionsRequest { string question_hash = 1; }
-
-message GetCodingQuestionInputDefinitionsResponse {
-  repeated InputDefinition input_definitions = 1;
-}
-
-message InputDefinition {
-  string variable_name = 1;
-  ParameterType type = 2;
-  repeated ParameterItem items = 3;
-}
-
-message ParameterItem {
-  optional string property_name = 1;
-  ParameterType type = 2;
+message UpsertPaperTestCasesRequest {
+  string paper_hash = 1;
+  string question_hash = 2;
+  repeated UpsertTestCase test_cases = 3;
 }

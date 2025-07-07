@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/models"
-	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 )
@@ -38,11 +37,10 @@ type QueryResult struct {
 	ExamParticipantID types.ParticipantID `gorm:"type:bigint"`
 	Answer            *json.RawMessage    `gorm:"type:json"`
 
-	QuestionID types.QuestionID   `gorm:"type:bigint"`
-	Order      int16              `gorm:"column:order"`
-	CategoryID types.CategoryID   `gorm:"column:category_id"`
-	Type       proto.QuestionType `gorm:"column:type"`
-	MaxScore   int16              `gorm:"column:max_score"`
+	QuestionID types.QuestionID `gorm:"type:bigint"`
+	Order      int16            `gorm:"column:order"`
+	CategoryID types.CategoryID `gorm:"column:category_id"`
+	MaxScore   int16            `gorm:"column:max_score"`
 }
 
 // GetParticipantAnswers fetches answers and related question info for a participant and exam.
@@ -50,7 +48,7 @@ func (r *Answer) GetParticipantAnswers(tx *gorm.DB, examID types.ExamID, partici
 	tx = r.getTx(tx)
 	var results []QueryResult
 	err := tx.Table("exam_questions").
-		Select("exam_questions.question_id, exam_questions.order, exam_questions.category_id, exam_questions.type, exam_questions.max_score", "answers.id, answers.answer, answers.exam_participant_id").
+		Select("exam_questions.question_id, exam_questions.order, exam_questions.category_id, exam_questions.max_score", "answers.id, answers.answer, answers.exam_participant_id").
 		Joins("LEFT JOIN answers ON exam_questions.question_id = answers.question_id AND answers.exam_participant_id = ?", participantID).
 		Where("exam_questions.exam_id = ?", examID).
 		Find(&results).Error
@@ -113,7 +111,7 @@ func (r *Answer) GetAnswerEvaluationData(tx *gorm.DB, participantID types.Partic
 	tx = r.getTx(tx)
 	var answer models.Answer
 	err := tx.Model(&models.Answer{}).
-		Select("id", "question_id", "score_awarded", "comments").
+		Select("id", "question_id", "score_awarded").
 		Where("exam_participant_id = ? AND question_id = ? AND answer IS NOT NULL", participantID, questionID).
 		Take(&answer).Error
 	if err != nil {
@@ -153,7 +151,7 @@ func (r *Answer) UpdateAnswerForEvaluation(tx *gorm.DB, answer *models.Answer) e
 func (r *Answer) UpdateScoreAwarded(tx *gorm.DB, participantID types.ParticipantID, oldScore, newScore int32) error {
 	tx = r.getTx(tx)
 	return tx.Exec(
-		`UPDATE exam_participants 
+		`UPDATE exam_participants
 		SET score_awarded = score_awarded - ? + ?
 		WHERE id = ?`,
 		oldScore, newScore, participantID,

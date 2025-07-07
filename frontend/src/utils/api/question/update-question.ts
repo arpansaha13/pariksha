@@ -23,10 +23,13 @@ export async function updateQuestion(
   // If no changes, return early
   if (Object.keys(requestBody).length === 0) return
 
-  const res = await $api<UpdateQuestionReturn>(`/api/questions/${questionId}`, {
-    method: 'PATCH',
-    body: requestBody,
-  })
+  const res = await $api<UpdateQuestionReturn>(
+    `/api/papers/${paperId}/questions/${questionId}`,
+    {
+      method: 'PATCH',
+      body: requestBody,
+    }
+  )
 
   // Update the particular question in paperQuestions
   const { data: groupedQuestions } = useNuxtData<

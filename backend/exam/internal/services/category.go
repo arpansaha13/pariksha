@@ -6,7 +6,7 @@ import (
 
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
-	"pariksha/exam/internal/interservice/paper"
+	"pariksha/exam/internal/interservice"
 	"pariksha/exam/internal/repositories"
 )
 
@@ -30,7 +30,7 @@ func (s *Category) GetExamCategories(req *proto.ExamRequest) (*proto.ExamCategor
 		categoryIDs[i] = ec.CategoryID
 	}
 
-	paperCategories, err := paper.FetchCategoriesByIds(categoryIDs)
+	paperCategories, err := interservice.GetCategoriesByIDs(categoryIDs)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch categories from paper service")
 	}

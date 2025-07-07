@@ -1,0 +1,37 @@
+services:
+  question:
+    build:
+      context: .
+      dockerfile: ./question/Dockerfile
+    image: pariksha_question_service
+    container_name: question_service
+    env_file:
+      - /question/env/.env
+    develop:
+      watch:
+        - action: rebuild
+          path: ./question/internal
+        - action: rebuild
+          path: ./question/cmd
+        - action: rebuild
+          path: ./common/pkg
+        - action: rebuild
+          path: ./question/go.mod
+        - action: rebuild
+          path: ./question/go.sum
+
+  questionsDb:
+    image: postgres:15.10-alpine
+    restart: always
+    container_name: questions_db
+    env_file:
+      - ./question/env/questionsDb.env
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_QUESTIONS}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    expose:
+      - "5432"
+    ports:
+      - 6040:5432 # needed for pgAdmin

@@ -5,9 +5,9 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
+	"pariksha/paper/internal/models"
 )
 
 // BaseTestCase contains common fields used across all test cases

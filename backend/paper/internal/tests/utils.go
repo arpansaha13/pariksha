@@ -13,11 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
 
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/structs"
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/generate"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/models"
 	paperUtils "pariksha/paper/internal/utils"
 )
 

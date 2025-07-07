@@ -24,9 +24,9 @@ COPY server/cmd/ ./cmd/
 COPY server/internal/ ./internal/
 
 RUN --mount=type=cache,target=/gomod-cache \
-    --mount=type=cache,target=/go-cache \
-    go build -ldflags="-w -s" \
-    -o ./bin/pariksha ./cmd/pariksha/main.go
+  --mount=type=cache,target=/go-cache \
+  go build -ldflags="-w -s" \
+  -o ./bin/pariksha ./cmd/pariksha/main.go
 
 FROM alpine:3.22.0
 

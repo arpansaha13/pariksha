@@ -33,5 +33,5 @@ func main() {
 		log.Fatalf("failed to serve: %v", err)
 	}
 
-	defer interservice.ClosePaperConn()
+	defer interservice.CloseQuestionConn()
 }

@@ -19,16 +19,20 @@ var (
 
 // mockPaperService replaces the actual paper service with test doubles
 func mockPaperService() func() {
-	originalFetchInputDefinitions := interservice.FetchInputDefinitions
+	originalFetchInputDefinitions := interservice.GetInputDefinitions
 
 	// Mock FetchInputDefinitions
-	interservice.FetchInputDefinitions = func(questionHash string) ([]proto.InputDefinition, error) {
+	interservice.GetInputDefinitions = func(questionHash string) ([]*proto.InputDefinition, error) {
+		defs := make([]*proto.InputDefinition, len(mockInputDefinitions))
+		for i := range mockInputDefinitions {
+			defs[i] = &mockInputDefinitions[i]
+		}
 		// Set the mock before running the test
-		return mockInputDefinitions, nil
+		return defs, nil
 	}
 
 	return func() {
-		interservice.FetchInputDefinitions = originalFetchInputDefinitions
+		interservice.GetInputDefinitions = originalFetchInputDefinitions
 	}
 }
 

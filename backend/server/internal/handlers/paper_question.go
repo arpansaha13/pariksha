@@ -53,6 +53,12 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
+	paperHash, err := getPaperIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	questionHash, err := getQuestionIdFromVars(mux.Vars(r))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -62,7 +68,8 @@ func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	response, err := paperService.Client().GetPaperQuestion(ctx, &proto.QuestionRequest{
+	response, err := paperService.Client().GetPaperQuestion(ctx, &proto.PaperQuestionRequest{
+		PaperHash:    paperHash,
 		QuestionHash: questionHash,
 	})
 
@@ -71,18 +78,14 @@ func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tags, _ := json.Marshal(response.Tags)
-
 	httpResponse := dtos.QuestionResponseDto{
-		ID:            response.QuestionHash,
-		Question:      response.RawQuestion,
-		CategoryID:    response.CategoryId,
-		Type:          response.Type,
-		Tags:          tags,
-		PaperID:       response.PaperHash,
-		MaxScore:      response.MaxScore,
-		TestCases:     nil,
-		CorrectAnswer: response.GetCorrectAnswer(),
+		ID:         response.QuestionHash,
+		Question:   response.RawQuestion,
+		CategoryID: response.CategoryId,
+		Type:       response.Type,
+		PaperID:    response.PaperHash,
+		MaxScore:   response.MaxScore,
+		TestCases:  nil,
 	}
 
 	if response.Type == proto.QuestionType_CODING {
@@ -127,12 +130,6 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	var tags []string
-	if err := json.Unmarshal(questionDto.Tags, &tags); err != nil {
-		http.Error(w, "Invalid tags data", http.StatusBadRequest)
-		return
-	}
-
 	// Get raw question bytes
 	questionBytes, err := questionDto.Question.MarshalJSON()
 	if err != nil {
@@ -140,17 +137,15 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	requestObj := proto.CreateQuestionRequest{
-		PaperHash:     paperHash,
-		RawQuestion:   questionBytes,
-		CategoryId:    questionDto.CategoryID,
-		Type:          questionDto.Type,
-		Tags:          tags,
-		MaxScore:      int32(questionDto.MaxScore),
-		CorrectAnswer: &questionDto.CorrectAnswer,
+	requestObj := proto.CreatePaperQuestionRequest{
+		PaperHash:   paperHash,
+		RawQuestion: questionBytes,
+		CategoryId:  questionDto.CategoryID,
+		Type:        questionDto.Type,
+		MaxScore:    int32(questionDto.MaxScore),
 	}
 
-	response, err := paperService.Client().CreateQuestion(ctx, &requestObj)
+	response, err := paperService.Client().CreatePaperQuestion(ctx, &requestObj)
 	if err != nil {
 		handleGRPCError(w, err)
 		return
@@ -167,6 +162,12 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
+	paperHash, err := getPaperIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	questionHash, err := getQuestionIdFromVars(mux.Vars(r))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -182,7 +183,8 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	request := &proto.UpdateQuestionRequest{
+	request := &proto.UpdatePaperQuestionRequest{
+		PaperHash:    paperHash,
 		QuestionHash: questionHash,
 	}
 
@@ -205,20 +207,7 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 		request.MaxScore = &maxScore
 	}
 
-	if updateDto.Tags != nil {
-		var tags []string
-		if err := json.Unmarshal(updateDto.Tags, &tags); err != nil {
-			http.Error(w, "Invalid tags data", http.StatusBadRequest)
-			return
-		}
-		request.Tags = tags
-	}
-
-	if updateDto.CorrectAnswer != "" {
-		request.CorrectAnswer = &updateDto.CorrectAnswer
-	}
-
-	response, err := paperService.Client().UpdateQuestion(ctx, request)
+	response, err := paperService.Client().UpdatePaperQuestion(ctx, request)
 	if err != nil {
 		handleGRPCError(w, err)
 		return
@@ -234,8 +223,15 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 
 func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	vars := mux.Vars(r)
 
-	questionHash, err := getQuestionIdFromVars(mux.Vars(r))
+	paperHash, err := getPaperIdFromVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	questionHash, err := getQuestionIdFromVars(vars)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -244,7 +240,8 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	_, err = paperService.Client().DeleteQuestion(ctx, &proto.QuestionRequest{
+	_, err = paperService.Client().DeletePaperQuestion(ctx, &proto.PaperQuestionRequest{
+		PaperHash:    paperHash,
 		QuestionHash: questionHash,
 	})
 
@@ -257,12 +254,20 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReorderQuestions(w http.ResponseWriter, r *http.Request) {
-	categoryID, err := getInt64FromVars(mux.Vars(r), "category_id")
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	vars := mux.Vars(r)
+
+	paperHash, err := getPaperIdFromVars(vars)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+
+	categoryID, err := getInt64FromVars(vars, "category_id")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	var reorderDto dtos.ReorderQuestionsDto
 	if err := json.NewDecoder(r.Body).Decode(&reorderDto); err != nil {
@@ -278,7 +283,8 @@ func ReorderQuestions(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	_, err = paperService.Client().ReorderQuestions(ctx, &proto.ReorderQuestionsRequest{
+	_, err = paperService.Client().ReorderPaperQuestions(ctx, &proto.ReorderPaperQuestionsRequest{
+		PaperHash:      paperHash,
 		CategoryId:     categoryID,
 		QuestionHashes: reorderDto.Questions,
 	})
@@ -293,6 +299,12 @@ func ReorderQuestions(w http.ResponseWriter, r *http.Request) {
 
 func UpsertPaperTestCases(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+
+	paperHash, err := getPaperIdFromVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	questionHash, err := getQuestionIdFromVars(mux.Vars(r))
 	if err != nil {
@@ -324,7 +336,8 @@ func UpsertPaperTestCases(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, err = paperService.Client().UpsertPaperTestCases(ctx, &proto.UpsertTestCasesRequest{
+	_, err = paperService.Client().UpsertPaperTestCases(ctx, &proto.UpsertPaperTestCasesRequest{
+		PaperHash:    paperHash,
 		QuestionHash: questionHash,
 		TestCases:    testCases,
 	})

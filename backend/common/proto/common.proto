@@ -36,6 +36,15 @@ message CodingQuestionTestCase {
 message ExamQuestionResponse {
   string question_hash = 1;
   bytes raw_question = 2;
-  QuestionType type = 5;
-  repeated CodingQuestionTestCase test_cases = 10;
+  QuestionType type = 3;
+  repeated CodingQuestionTestCase test_cases = 4;
 }
+
+message UpsertTestCase {
+  repeated string inputs = 2;
+  string output = 3;
+  optional string explanation = 4;
+  bool hidden = 5;
+}
+
+message BoilerplateResponse { string code = 1; }

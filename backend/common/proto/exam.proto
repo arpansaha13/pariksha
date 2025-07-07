@@ -166,7 +166,6 @@ message UpdateAnswerRequest {
   int64 answer_id = 1;
   optional int32 new_score = 2;
   optional bool evaluated = 3;
-  optional string comments = 4;
 }
 
 message GetAnswerRequest {
@@ -231,7 +230,6 @@ message GetAnswerEvaluationDataResponse {
   int64 answer_id = 1;
   string question_hash = 2;
   int32 score_awarded = 3;
-  string comments = 4;
 }
 
 message DeleteExamsRequest { repeated string exam_hashes = 1; }
@@ -239,7 +237,6 @@ message DeleteExamsRequest { repeated string exam_hashes = 1; }
 message ExamResultItem {
   int64 answer_id = 1;
   int32 score_awarded = 2;
-  string comments = 3;
 }
 
 message ExamResultsResponse { repeated ExamResultItem results = 1; }

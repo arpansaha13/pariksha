@@ -7,10 +7,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/models"
 )
 
 const deletePaperPath = "/proto.Paper/DeletePapers"

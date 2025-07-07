@@ -102,9 +102,7 @@ func CreatePaper(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 
 	json.NewEncoder(w).Encode(dtos.CreatePaperResponseDto{
-		ID:        response.PaperHash,
-		Title:     response.Title,
-		CreatedBy: response.CreatedBy,
+		ID: response.PaperHash,
 	})
 }
 

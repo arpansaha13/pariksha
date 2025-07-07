@@ -10,4 +10,6 @@ use ./exam
 
 use ./engine
 
+use ./question
+
 use ./workers/exam

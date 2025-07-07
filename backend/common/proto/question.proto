@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "/proto";
+
+import "google/protobuf/empty.proto";
+import "common.proto";
+
+service Question {
+  // Question operations
+  rpc CreateQuestion(CreateQuestionRequest) returns (CreateQuestionResponse) {}
+  rpc UpdateQuestion(UpdateQuestionRequest) returns (UpdateQuestionResponse) {}
+  rpc GetQuestionsByIds(QuestionIdsRequest) returns (GetQuestionsResponse) {}
+  rpc GetQuestionsByHashes(QuestionHashesRequest)
+      returns (GetQuestionsResponse) {}
+  rpc GetQuestionsMetaByIds(QuestionIdsRequest)
+      returns (QuestionsMetaResponse) {}
+  rpc GetQuestionsMetaByHashes(QuestionHashesRequest)
+      returns (QuestionsMetaResponse) {}
+  rpc GetQuestionIdsByHashes(QuestionHashesRequest)
+      returns (GetQuestionIdsByHashesResponse) {}
+  rpc GetQuestionHashesByIds(QuestionIdsRequest)
+      returns (GetQuestionHashesByIdsResponse) {}
+  rpc IncQuestionPaperIndegreeByIds(QuestionIdsRequest)
+      returns (google.protobuf.Empty) {}
+  rpc DecQuestionPaperIndegreeByIds(QuestionIdsRequest)
+      returns (google.protobuf.Empty) {}
+  rpc IncQuestionExamIndegreeByIds(QuestionIdsRequest)
+      returns (google.protobuf.Empty) {}
+  rpc DecQuestionExamIndegreeByIds(QuestionIdsRequest)
+      returns (google.protobuf.Empty) {}
+  rpc UpsertTestCases(UpsertTestCasesRequest) returns (google.protobuf.Empty) {}
+  rpc GetBoilerplate(GetBoilerplateRequest) returns (BoilerplateResponse) {}
+
+  // Category operations
+  rpc CreateCategory(CreateCategoryRequest) returns (CategoryResponse) {}
+  rpc GetCategoriesByIds(CategoryIdsRequest) returns (GetCategoriesResponse) {}
+  rpc UpdateCategoryName(UpdateCategoryRequest)
+      returns (UpdateCategoryResponse) {}
+
+  // Engine Operations
+  rpc GetCodingQuestionInputDefinitions(
+      GetCodingQuestionInputDefinitionsRequest)
+      returns (GetCodingQuestionInputDefinitionsResponse) {}
+}
+
+message CreateQuestionRequest {
+  bytes raw_question = 1;
+  QuestionType type = 2;
+}
+
+message CreateQuestionResponse {
+  int64 id = 1;
+  string hash = 2;
+}
+
+message UpdateQuestionRequest {
+  string hash = 1;
+  optional QuestionType type = 2;
+  optional bytes raw_question = 3;
+}
+
+message UpdateQuestionResponse {
+  int64 id = 1;
+  string hash = 2;
+}
+
+message QuestionIdsRequest { repeated int64 ids = 1; }
+
+message GetQuestionsResponse { repeated QuestionResponse questions = 1; }
+
+message QuestionsMetaResponse { repeated QuestionMeta meta = 1; }
+
+message QuestionHashesRequest { repeated string hashes = 1; }
+
+message GetQuestionIdsByHashesResponse { repeated int64 ids = 1; }
+
+message GetQuestionHashesByIdsResponse { repeated string hashes = 1; }
+
+message QuestionResponse {
+  int64 id = 1;
+  string hash = 2;
+  bytes raw_question = 3;
+  QuestionType type = 4;
+  repeated CodingQuestionTestCase test_cases = 5;
+}
+
+message QuestionMeta {
+  int64 id = 1;
+  string hash = 2;
+  bytes raw_question = 3;
+  QuestionType type = 4;
+}
+
+message GetBoilerplateRequest {
+  string question_hash = 1;
+  int32 language_id = 2;
+}
+
+message UpsertTestCasesRequest {
+  string question_hash = 1;
+  repeated UpsertTestCase test_cases = 2;
+}
+
+message CategoryIdsRequest { repeated int64 ids = 1; }
+
+message CategoryResponse {
+  int64 id = 1;
+  string name = 2;
+}
+
+message GetCategoriesResponse { repeated CategoryResponse categories = 1; }
+
+message CreateCategoryRequest { string name = 2; }
+
+message UpdateCategoryRequest {
+  int64 id = 1;
+  string name = 2;
+}
+
+message UpdateCategoryResponse { int64 id = 1; }
+
+message GetCodingQuestionInputDefinitionsRequest { string question_hash = 1; }
+
+message GetCodingQuestionInputDefinitionsResponse {
+  repeated InputDefinition input_definitions = 1;
+}
+
+message InputDefinition {
+  string variable_name = 1;
+  ParameterType type = 2;
+  repeated ParameterItem items = 3;
+}
+
+message ParameterItem {
+  optional string property_name = 1;
+  ParameterType type = 2;
+}

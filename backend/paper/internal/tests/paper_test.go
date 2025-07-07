@@ -8,13 +8,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/generate"
 	"pariksha/common/pkg/utils/ptr"
 	"pariksha/common/pkg/utils/testrunner"
 	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/models"
 )
 
 func TestGetUserPapers(t *testing.T) {

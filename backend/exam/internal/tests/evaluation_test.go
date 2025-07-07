@@ -35,7 +35,6 @@ func TestGetAnswerForEvaluation(t *testing.T) {
 					{
 						QuestionID: 1,
 						CategoryID: 1,
-						Type:       proto.QuestionType_SUBJECTIVE,
 						MaxScore:   10,
 					},
 				})
@@ -176,7 +175,6 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 			validate: func(t *testing.T, resp *proto.GetAnswerEvaluationDataResponse) {
 				assert.NotZero(t, resp.AnswerId)
 				assert.EqualValues(t, 5, resp.ScoreAwarded)
-				assert.Equal(t, "Test Comment", resp.Comments)
 			},
 		},
 		{
@@ -246,7 +244,6 @@ func TestGetAnswerEvaluationData(t *testing.T) {
 func TestUpdateAnswerForEvaluation(t *testing.T) {
 	newScore := int32(8)
 	evaluated := true
-	comments := "Good attempt"
 	exceedingScore := int32(15) // Exceeds max_score in exam_questions
 
 	tests := []updateAnswerForEvaluationTestCase{
@@ -273,7 +270,6 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 					{
 						QuestionID: 1,
 						CategoryID: 1,
-						Type:       proto.QuestionType_MCQ,
 						MaxScore:   10,
 					},
 				})
@@ -288,55 +284,17 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 			request: &proto.UpdateAnswerRequest{
 				NewScore:  &newScore,
 				Evaluated: &evaluated,
-				Comments:  &comments,
 			},
 			validate: func(t *testing.T, answerId types.AnswerID) {
 				var answer models.Answer
 				require.NoError(t, db.DB.First(&answer, answerId).Error)
 				assert.EqualValues(t, newScore, answer.ScoreAwarded)
-				assert.Equal(t, comments, answer.Comments.String)
 				assert.True(t, answer.Evaluated)
 
 				// Verify participant total score is updated
 				var participant models.ExamParticipant
 				require.NoError(t, db.DB.First(&participant, answer.ExamParticipantID).Error)
 				assert.EqualValues(t, newScore, participant.ScoreAwarded)
-			},
-		},
-		{
-			baseTestCase: baseTestCase{
-				name:         "Success - Update only comments",
-				metadata:     map[string]string{"user_id": strconv.FormatInt(userID, 10)},
-				expectedCode: codes.OK,
-				userID:       typedUserID,
-			},
-			setup: func(t *testing.T) *models.Answer {
-				exam := createDefaultTestExam(t, typedUserID)
-				questions := createTestExamQuestions(t, &exam, []models.ExamQuestion{
-					{
-						Type:     proto.QuestionType_SUBJECTIVE,
-						MaxScore: 5,
-					},
-				})
-
-				createTestExamParticipants(t, &exam, []models.ExamParticipant{
-					{UserID: 2, Status: constants.PARTICIPANT_STATUS_ENDED},
-				})
-
-				var participant models.ExamParticipant
-				require.NoError(t, db.DB.Where("exam_id = ?", exam.ID).First(&participant).Error)
-
-				answer := createTestAnswer(t, &participant, questions[0].QuestionID)
-				return &answer
-			},
-			request: &proto.UpdateAnswerRequest{
-				Comments: &comments,
-			},
-			validate: func(t *testing.T, answerId types.AnswerID) {
-				var answer models.Answer
-				require.NoError(t, db.DB.First(&answer, answerId).Error)
-				assert.Equal(t, comments, answer.Comments.String)
-				assert.EqualValues(t, 5, answer.ScoreAwarded) // Original score unchanged
 			},
 		},
 		{
@@ -381,7 +339,6 @@ func TestUpdateAnswerForEvaluation(t *testing.T) {
 					{
 						QuestionID: 1,
 						CategoryID: 1,
-						Type:       proto.QuestionType_MCQ,
 						MaxScore:   10,
 					},
 				})

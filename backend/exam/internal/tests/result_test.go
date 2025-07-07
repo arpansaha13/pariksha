@@ -47,7 +47,6 @@ func TestGetExamResults(t *testing.T) {
 				for _, result := range resp.Results {
 					assert.NotZero(t, result.AnswerId)
 					assert.EqualValues(t, 5, result.ScoreAwarded)
-					assert.Equal(t, "Test Comment", result.Comments)
 				}
 			},
 		},

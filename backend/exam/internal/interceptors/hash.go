@@ -9,7 +9,7 @@ import (
 
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
-	"pariksha/exam/internal/interservice/paper"
+	"pariksha/exam/internal/interservice"
 )
 
 type hashContextKey string
@@ -41,7 +41,7 @@ func SingleQuestionHashInterceptor() grpc.UnaryServerInterceptor {
 		}
 
 		// Get question ID using utility function
-		questionIDs, err := paper.FetchQuestionIdsForHashes([]string{hash})
+		questionIDs, err := interservice.GetQuestionIDsByHashes([]string{hash})
 		if err != nil {
 			return nil, status.Error(codes.Internal, "failed to fetch question ID")
 		}

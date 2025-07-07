@@ -93,7 +93,6 @@ export interface ExamParticipantResponse {
 export type ExamResult = {
   readonly id: AnswerId
   readonly score_awarded: number
-  readonly comments: string
 }
 
 // ___________________________QUESTION____________________________
@@ -204,7 +203,6 @@ export interface EvaluationAnswer {
   id: AnswerId
   question_id: QuestionId
   score_awarded: Answer['score_awarded']
-  comments: Answer['comments']
 }
 
 // ____________________________ANSWER_____________________________
@@ -228,7 +226,6 @@ export interface Answer {
   /** `null` indicates that the question is unanswered */
   answer: MCQAnswer | SubjectiveAnswer | CodingAnswer | null
   score_awarded: number
-  comments: string
 }
 
 export type AnswerMinimal = Pick<Answer, 'id' | 'answer' | 'question_id'>

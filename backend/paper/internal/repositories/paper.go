@@ -1,13 +1,10 @@
 package repositories
 
 import (
-	"database/sql"
-	"encoding/json"
-
 	"gorm.io/gorm"
 
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/types"
+	"pariksha/paper/internal/models"
 )
 
 type Paper struct {
@@ -31,7 +28,7 @@ func (r *Paper) GetAllByUserId(tx *gorm.DB, userID types.UserID) ([]models.Paper
 	tx = r.getTx(tx)
 	var papers []models.Paper
 	err := tx.
-		Select("papers.id, papers.hash, papers.title, papers.max_score, papers.duration_minutes, papers.question_counts, papers.created_by").
+		Select("papers.id, papers.hash, papers.title, papers.duration_minutes, papers.created_by").
 		Joins("INNER JOIN permissions ON permissions.paper_id = papers.id").
 		Where("permissions.user_id = ?", userID).
 		Find(&papers).Error
@@ -41,28 +38,7 @@ func (r *Paper) GetAllByUserId(tx *gorm.DB, userID types.UserID) ([]models.Paper
 // Create creates a new paper and its associated records
 func (r *Paper) Create(tx *gorm.DB, paper *models.Paper, userID types.UserID) error {
 	tx = r.getTx(tx)
-	if err := tx.Create(paper).Error; err != nil {
-		return err
-	}
-
-	// Create default category
-	defaultCategory := models.QuestionCategory{
-		PaperID: sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-		Name:    "Category 1",
-		Order:   1,
-	}
-	if err := tx.Create(&defaultCategory).Error; err != nil {
-		return err
-	}
-
-	// Create permissions entry
-	permissions := models.PaperPermission{
-		PaperID: paper.ID,
-		UserID:  userID,
-	}
-	permissions.SetWrite()
-
-	return tx.Create(&permissions).Error
+	return tx.Create(paper).Error
 }
 
 // UpdateHash updates the hash of a paper
@@ -71,11 +47,19 @@ func (r *Paper) UpdateHash(tx *gorm.DB, paper *models.Paper, hash string) error 
 	return tx.Model(paper).Update("hash", hash).Error
 }
 
+// GetByID fetches a paper by its id
+func (r *Paper) GetByID(tx *gorm.DB, paperId types.PaperID) (*models.Paper, error) {
+	tx = r.getTx(tx)
+	var paper models.Paper
+	err := tx.Where("id = ?", paperId).Take(&paper).Error
+	return &paper, err
+}
+
 // GetByHash fetches a paper by its hash
 func (r *Paper) GetByHash(tx *gorm.DB, hash string) (*models.Paper, error) {
 	tx = r.getTx(tx)
 	var paper models.Paper
-	err := tx.Where("hash = ?", hash).First(&paper).Error
+	err := tx.Where("hash = ?", hash).Take(&paper).Error
 	return &paper, err
 }
 
@@ -95,61 +79,9 @@ func (r *Paper) GetIDsByHashes(tx *gorm.DB, hashes []string) ([]types.PaperID, e
 	return paperIDs, err
 }
 
-// BulkDelete deletes papers and their related entities
+// BulkDelete deletes papers by their IDs
 func (r *Paper) BulkDelete(tx *gorm.DB, paperIDs []types.PaperID) error {
 	tx = r.getTx(tx)
-	// Delete papers
-	if err := tx.Where("id IN ?", paperIDs).Delete(&models.Paper{}).Error; err != nil {
-		return err
-	}
 
-	// Delete non-locked questions
-	if err := tx.Where("paper_id IN ? AND locked = ?", paperIDs, false).
-		Delete(&models.Question{}).Error; err != nil {
-		return err
-	}
-
-	// Delete non-locked categories
-	if err := tx.Where("paper_id IN ? AND locked = ?", paperIDs, false).
-		Delete(&models.QuestionCategory{}).Error; err != nil {
-		return err
-	}
-
-	// Delete permissions
-	return tx.Where("paper_id IN ?", paperIDs).
-		Delete(&models.PaperPermission{}).Error
-}
-
-// GetDetails fetches paper details by ID
-func (r *Paper) GetDetails(tx *gorm.DB, paperID types.PaperID) (*models.Paper, error) {
-	tx = r.getTx(tx)
-	var paper models.Paper
-	err := tx.Select("id, question_counts").Where("id = ?", paperID).Take(&paper).Error
-	return &paper, err
-}
-
-// UpdateMaxScore updates the paper's max score
-func (r *Paper) UpdateMaxScore(tx *gorm.DB, paperID types.PaperID, scoreDiff int16) error {
-	tx = r.getTx(tx)
-	return tx.Model(&models.Paper{}).
-		Where("id = ?", paperID).
-		UpdateColumn("max_score", gorm.Expr("max_score - ?", scoreDiff)).Error
-}
-
-// UpdateStats updates paper's statistics
-func (r *Paper) UpdateStats(tx *gorm.DB, paper models.Paper, scoreDiff int32, newQuestionCounts json.RawMessage) error {
-	tx = r.getTx(tx)
-	return tx.Model(&paper).
-		Updates(map[string]any{
-			"max_score":       gorm.Expr("max_score + ?", scoreDiff),
-			"question_counts": newQuestionCounts,
-		}).Error
-}
-
-// UpdateQuestionCounts updates the paper's question counts
-func (r *Paper) UpdateQuestionCounts(tx *gorm.DB, paperID types.PaperID, counts json.RawMessage) error {
-	tx = r.getTx(tx)
-	return tx.Model(&models.Paper{}).
-		Where("id = ?", paperID).
-		Update("question_counts", counts).Error
+	return tx.Where("id IN ?", paperIDs).Delete(&models.Paper{}).Error
 }

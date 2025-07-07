@@ -6,7 +6,7 @@ services:
     image: pariksha_backend
     container_name: backend
     env_file:
-      - ./server/.env
+      - ./server/env/.env
     expose:
       - "4000"
     develop:

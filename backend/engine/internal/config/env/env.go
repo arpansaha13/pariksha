@@ -22,6 +22,11 @@ var (
 	PAPER_SERVER_PORT string
 )
 
+var (
+	QUESTION_SERVER_HOST string
+	QUESTION_SERVER_PORT string
+)
+
 func init() {
 	if os.Getenv("GO_ENV") == "" {
 		if godotenv.Load("../../env/test.env") != nil {
@@ -39,14 +44,14 @@ func init() {
 
 	GO_ENV = os.Getenv("GO_ENV")
 	ENGINE_SERVER_PORT = os.Getenv("ENGINE_SERVER_PORT")
-	ENGINE_API_TOKEN = os.Getenv("ENGINE_API_TOKEN")
-
-	PAPER_SERVER_HOST = os.Getenv("PAPER_SERVER_HOST")
-	PAPER_SERVER_PORT = os.Getenv("PAPER_SERVER_PORT")
 
 	HOST_TMP_MOUNT_PATH = utils.GetEnvWithDefault("HOST_TMP_MOUNT_PATH", "")
 
 	if GO_ENV != constants.GO_ENV_TEST {
+		ENGINE_API_TOKEN = os.Getenv("ENGINE_API_TOKEN")
+
+		QUESTION_SERVER_HOST = os.Getenv("QUESTION_SERVER_HOST")
+		QUESTION_SERVER_PORT = os.Getenv("QUESTION_SERVER_PORT")
 	}
 }
 
@@ -55,14 +60,14 @@ func getRequiredEnvVars() []string {
 		"GO_ENV",
 		"ENGINE_SERVER_PORT",
 		"DOCKER_API_VERSION", // used to create docker client with `client.FromEnv`
-		"PAPER_SERVER_HOST",
-		"PAPER_SERVER_PORT",
-		"ENGINE_API_TOKEN",
 	}
 
 	if os.Getenv("GO_ENV") != constants.GO_ENV_TEST {
-		// require these vars only when not in test environment
-		additionalEnvVars := []string{}
+		additionalEnvVars := []string{
+			"ENGINE_API_TOKEN",
+			"QUESTION_SERVER_HOST",
+			"QUESTION_SERVER_PORT",
+		}
 		baseEnvVars = append(baseEnvVars, additionalEnvVars...)
 	}
 

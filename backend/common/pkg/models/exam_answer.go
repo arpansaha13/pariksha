@@ -1,7 +1,6 @@
 package models
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 
@@ -15,7 +14,6 @@ type Answer struct {
 	QuestionID        types.QuestionID    `gorm:"type:bigint"`
 	Answer            *json.RawMessage    `gorm:"type:jsonb"`
 	ScoreAwarded      int16               `gorm:"type:smallint;default:0;not null"`
-	Comments          sql.NullString      `gorm:"type:text"`
 	Evaluated         bool                `gorm:"default:false;not null"`
 	ExamParticipant   ExamParticipant     `gorm:"foreignKey:ExamParticipantID"`
 }
