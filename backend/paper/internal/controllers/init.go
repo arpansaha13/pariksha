@@ -5,10 +5,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/db"
-	"pariksha/paper/internal/config/env"
 	"pariksha/paper/internal/repositories"
 	"pariksha/paper/internal/services"
 )
@@ -17,21 +15,15 @@ type PaperServer struct {
 	proto.UnimplementedPaperServer
 }
 
-func init() {
-	if env.GO_ENV != constants.GO_ENV_TEST {
-		InitializeHandlers()
-	}
-}
-
 var (
 	paperCtrl    *Paper
 	categoryCtrl *Category
 	questionCtrl *Question
 )
 
-// InitializeHandlers sets up all handler dependencies.
+// Init sets up all handler dependencies.
 // Must be called before using any handlers.
-func InitializeHandlers() {
+func Init() {
 	// Initialize repositories
 	paperRepo := repositories.NewPaper(db.DB)
 	paperCatRepo := repositories.NewPaperCategory(db.DB)

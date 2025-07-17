@@ -2,42 +2,40 @@ package db
 
 import (
 	"fmt"
-	"log"
 
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/config"
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
-	"pariksha/exam/internal/config/env"
 )
 
-var DB *gorm.DB
+var (
+	DB            *gorm.DB
+	dbInitializer config.DBInitializer = &config.PostgresInitializer{}
+)
 
-// InitDB initializes the main database connection with given parameters
-func InitDB(host, port, user, password, dbname, sslmode string) error {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
-		host, user, password, dbname, port, sslmode)
-
+func Init(gormDsn config.GormDsn, gormConfig *gorm.Config, migrator config.DBMigrator) error {
 	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), config.GormLogger(env.GO_ENV))
+	DB, err = dbInitializer.Init(gormDsn, gormConfig, migrator)
 	if err != nil {
-		return fmt.Errorf("failed to connect to database: %v", err)
+		return fmt.Errorf("failed to initialize database: %v", err)
 	}
-
-	// Only run auto-migrations in development and test environments
-	if env.GO_ENV == constants.GO_ENV_DEV || env.GO_ENV == constants.GO_ENV_DOCKER_DEV || env.GO_ENV == constants.GO_ENV_TEST {
-		if err := autoMigrateDB(); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
-func autoMigrateDB() error {
-	err := DB.AutoMigrate(
+func Close() {
+	if DB != nil {
+		sqlDb, _ := DB.DB()
+		sqlDb.Close()
+	}
+}
+
+// ____________________DB MIGRATOR IMPLEMENTATIONS___________________
+
+type AutoMigrator struct{}
+
+func (m *AutoMigrator) Migrate(db *gorm.DB) error {
+	return db.AutoMigrate(
 		&models.Exam{},
 		&models.Answer{},
 		&models.ExamParticipant{},
@@ -45,28 +43,4 @@ func autoMigrateDB() error {
 		&models.ExamQuestion{},
 		&models.ExamCategory{},
 	)
-	if err != nil {
-		return fmt.Errorf("failed to auto-migrate database: %v", err)
-	}
-	return nil
-}
-
-func init() {
-	// Skip initialization if in test environment
-	if env.GO_ENV == constants.GO_ENV_TEST {
-		return
-	}
-
-	// Initialize with environment variables for non-test environments
-	err := InitDB(
-		env.DB_HOST,
-		env.DB_PORT,
-		env.DB_USER,
-		env.DB_PASS,
-		env.DB_NAME,
-		env.DB_SSLMODE,
-	)
-	if err != nil {
-		log.Fatal("Failed to initialize database:", err)
-	}
 }

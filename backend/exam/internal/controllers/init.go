@@ -5,22 +5,14 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
 	"pariksha/exam/internal/config/db"
-	"pariksha/exam/internal/config/env"
 	"pariksha/exam/internal/repositories"
 	"pariksha/exam/internal/services"
 )
 
 type ExamServer struct {
 	proto.UnimplementedExamServer
-}
-
-func init() {
-	if env.GO_ENV != constants.GO_ENV_TEST {
-		InitializeHandlers()
-	}
 }
 
 var (
@@ -33,9 +25,9 @@ var (
 	resultCtrl      *Result
 )
 
-// InitializeHandlers sets up all handler dependencies.
+// Init sets up all handler dependencies.
 // Must be called before using any handlers.
-func InitializeHandlers() {
+func Init() {
 	// Initialize repositories
 	examRepo := repositories.NewExam(db.DB)
 	answerRepo := repositories.NewAnswer(db.DB)

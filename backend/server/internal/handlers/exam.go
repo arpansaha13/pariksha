@@ -23,7 +23,7 @@ func GetUserExams(w http.ResponseWriter, r *http.Request) {
 
 	examList, err := examService.Client().GetUserExams(ctx, &emptypb.Empty{})
 	if err != nil {
-		http.Error(w, "Failed to retrieve exams", http.StatusInternalServerError)
+		handleGRPCError(w, err)
 		return
 	}
 

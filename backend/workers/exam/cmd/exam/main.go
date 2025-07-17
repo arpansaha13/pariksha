@@ -6,13 +6,20 @@ import (
 
 	"github.com/hibiken/asynq"
 
+	"pariksha/common/pkg/config"
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/utils"
+	"pariksha/workers/exam/internal/config/db"
 	"pariksha/workers/exam/internal/config/env"
 	"pariksha/workers/exam/internal/handlers"
 )
 
 func main() {
+	err := initDB()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	redisAddr := fmt.Sprintf("%s:%s", env.EXAM_QUEUE_HOST, env.EXAM_QUEUE_PORT)
 	srv := asynq.NewServer(
 		asynq.RedisClientOpt{Addr: redisAddr},
@@ -32,5 +39,35 @@ func main() {
 		utils.FailOnError(err, "Failed to run asynq server")
 	}
 
-	log.Printf(" [*] Running exam questions worker. To exit press CTRL+C")
+	log.Printf("[*] Running exam questions worker. To exit press CTRL+C")
+
+	defer db.Close()
+}
+
+func initDB() error {
+	if env.GO_ENV == constants.GO_ENV_TEST {
+		return nil
+	}
+
+	gormConfig := config.GetDevEnvGormConfig()
+	if env.GO_ENV == constants.GO_ENV_PROD {
+		gormConfig = config.GetDefaultGormConfig()
+	}
+
+	err := db.Init(
+		&config.GormDsnImpl{
+			Host:     env.EXAM_DB_HOST,
+			Port:     env.EXAM_DB_PORT,
+			User:     env.EXAM_DB_USER,
+			Password: env.EXAM_DB_PASS,
+			Dbname:   env.EXAM_DB_NAME,
+			Sslmode:  env.EXAM_DB_SSLMODE,
+		},
+		gormConfig,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to initialize database: %v", err)
+	}
+
+	return nil
 }

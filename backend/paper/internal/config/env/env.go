@@ -16,12 +16,12 @@ var (
 )
 
 var (
-	DB_HOST    string
-	DB_PORT    string
-	DB_USER    string
-	DB_PASS    string
-	DB_NAME    string
-	DB_SSLMODE string
+	PAPER_DB_HOST    string
+	PAPER_DB_PORT    string
+	PAPER_DB_USER    string
+	PAPER_DB_PASS    string
+	PAPER_DB_NAME    string
+	PAPER_DB_SSLMODE string
 )
 
 var (
@@ -53,31 +53,31 @@ func init() {
 
 	EXAM_API_TOKEN = os.Getenv("EXAM_API_TOKEN")
 
-	DB_USER = os.Getenv("DB_USER")
-	DB_PASS = os.Getenv("DB_PASS")
-	DB_NAME = os.Getenv("DB_NAME")
+	PAPER_DB_USER = os.Getenv("PAPER_DB_USER")
+	PAPER_DB_PASS = os.Getenv("PAPER_DB_PASS")
+	PAPER_DB_NAME = os.Getenv("PAPER_DB_NAME")
 
 	if GO_ENV != constants.GO_ENV_TEST {
-		DB_HOST = os.Getenv("DB_HOST")
-		DB_PORT = os.Getenv("DB_PORT")
-		DB_SSLMODE = os.Getenv("DB_SSLMODE")
+		PAPER_DB_HOST = os.Getenv("PAPER_DB_HOST")
+		PAPER_DB_PORT = os.Getenv("PAPER_DB_PORT")
+		PAPER_DB_SSLMODE = os.Getenv("PAPER_DB_SSLMODE")
 	}
 }
 
 func getRequiredEnvVars() []string {
 	baseEnvVars := []string{
 		"GO_ENV",
-		"DB_USER",
-		"DB_PASS",
-		"DB_NAME",
+		"PAPER_DB_USER",
+		"PAPER_DB_PASS",
+		"PAPER_DB_NAME",
 		"PAPER_SERVER_PORT",
 	}
 
 	if os.Getenv("GO_ENV") != constants.GO_ENV_TEST {
 		additionalEnvVars := []string{
-			"DB_HOST",
-			"DB_PORT",
-			"DB_SSLMODE",
+			"PAPER_DB_HOST",
+			"PAPER_DB_PORT",
+			"PAPER_DB_SSLMODE",
 			"QUESTION_SERVER_HOST",
 			"QUESTION_SERVER_PORT",
 			"EXAM_API_TOKEN",

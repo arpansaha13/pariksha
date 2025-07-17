@@ -112,7 +112,7 @@ func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 	)
 
 	// Initialize all controllers before registering server
-	controllers.InitializeHandlers()
+	controllers.Init()
 	proto.RegisterPaperServer(srv, &controllers.PaperServer{})
 
 	go func() {

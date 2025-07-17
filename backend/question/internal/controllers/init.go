@@ -5,10 +5,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
 	"pariksha/question/internal/config/db"
-	"pariksha/question/internal/config/env"
 	"pariksha/question/internal/repositories"
 	"pariksha/question/internal/services"
 )
@@ -22,15 +20,9 @@ var (
 	categoryCtrl *Category
 )
 
-func init() {
-	if env.GO_ENV != constants.GO_ENV_TEST {
-		InitializeHandlers()
-	}
-}
-
-// InitializeHandlers sets up all handler dependencies.
+// Init sets up all handler dependencies.
 // Must be called before using any handlers.
-func InitializeHandlers() {
+func Init() {
 	// Initialize repositories
 	questionRepo := repositories.NewQuestion(db.DB)
 	categoryRepo := repositories.NewCategory(db.DB)

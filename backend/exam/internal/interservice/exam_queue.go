@@ -38,7 +38,6 @@ func init() {
 		return
 	}
 
-	// Initialize with environment variables for non-test environments
 	err := InitExamQueue(env.EXAM_QUEUE_HOST, env.EXAM_QUEUE_PORT)
 	utils.FailOnError(err, "Failed to initialize Exam Queue")
 }
