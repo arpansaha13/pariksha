@@ -110,22 +110,6 @@ func (s *QuestionServer) UpdateCategoryName(ctx context.Context, req *proto.Upda
 	return categoryCtrl.HandleUpdateCategoryName(ctx, req)
 }
 
-// func (s *QuestionServer) IncCategoryPaperIndegree(ctx context.Context, req *proto.CategoryIdsRequest) (*emptypb.Empty, error) {
-// 	return categoryCtrl.HandleIncCategoryPaperIndegree(ctx, req)
-// }
-
-// func (s *QuestionServer) DecCategoryPaperIndegree(ctx context.Context, req *proto.CategoryIdsRequest) (*emptypb.Empty, error) {
-// 	return categoryCtrl.HandleDecCategoryPaperIndegree(ctx, req)
-// }
-
-// func (s *QuestionServer) IncCategoryExamIndegree(ctx context.Context, req *proto.CategoryIdsRequest) (*emptypb.Empty, error) {
-// 	return categoryCtrl.HandleIncCategoryExamIndegree(ctx, req)
-// }
-
-// func (s *QuestionServer) DecCategoryExamIndegree(ctx context.Context, req *proto.CategoryIdsRequest) (*emptypb.Empty, error) {
-// 	return categoryCtrl.HandleDecCategoryExamIndegree(ctx, req)
-// }
-
 // _____________________ENGINE-SPECIFIC HANDLERS_____________________
 
 func (s *QuestionServer) GetCodingQuestionInputDefinitions(ctx context.Context, req *proto.GetCodingQuestionInputDefinitionsRequest) (*proto.GetCodingQuestionInputDefinitionsResponse, error) {

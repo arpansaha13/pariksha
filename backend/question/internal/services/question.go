@@ -120,11 +120,19 @@ func (s *Question) UpdateQuestion(req *proto.UpdateQuestionRequest) (*proto.Upda
 			return grpcerror.Internal(err, "failed to fetch question")
 		}
 
-		// Validate updates if question type is changing
+		// Validate if raw_question is provided if question type is changing
 		if req.Type != nil && *req.Type != originalQuestion.Type {
 			if req.RawQuestion == nil {
 				return status.Error(codes.InvalidArgument, "raw_question must be provided when changing question type")
 			}
+		}
+
+		// For the switch case
+		if req.Type == nil {
+			req.Type = &originalQuestion.Type
+		}
+
+		if req.RawQuestion != nil {
 			// Validate question data based on new type
 			switch *req.Type {
 			case proto.QuestionType_MCQ:

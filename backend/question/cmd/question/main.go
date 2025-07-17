@@ -22,12 +22,14 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	err = initDB()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	if env.GO_ENV != constants.GO_ENV_TEST {
+		err = initDB()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
 
-	controllers.Init()
+		controllers.Init()
+	}
 
 	grpcServer := grpc.NewServer()
 	proto.RegisterQuestionServer(grpcServer, &controllers.QuestionServer{})
@@ -41,10 +43,6 @@ func main() {
 }
 
 func initDB() error {
-	if env.GO_ENV == constants.GO_ENV_TEST {
-		return nil
-	}
-
 	gormConfig := config.GetDevEnvGormConfig()
 	if env.GO_ENV == constants.GO_ENV_PROD {
 		gormConfig = config.GetDefaultGormConfig()

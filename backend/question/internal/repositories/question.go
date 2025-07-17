@@ -231,6 +231,9 @@ func (r *Question) GetQuestionByHash(tx *gorm.DB, hash string) (*models.Question
 	if err != nil {
 		return nil, err
 	}
+	if len(questions) == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
 	return &questions[0], err
 }
 
