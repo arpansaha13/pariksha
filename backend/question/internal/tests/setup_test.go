@@ -91,11 +91,11 @@ func setupContainers() func() {
 
 func clearTables(t *testing.T) {
 	tables := []string{
+		constants.TABLE_BOILERPLATES,
+		constants.TABLE_TEST_CASES,
 		constants.TABLE_QUESTIONS,
 		constants.TABLE_CATEGORIES,
-		constants.TABLE_BOILERPLATES,
 		constants.TABLE_LANGUAGES,
-		constants.TABLE_TEST_CASES,
 	}
 	for _, table := range tables {
 		err := db.DB.Exec(fmt.Sprintf("DELETE FROM %s", table)).Error

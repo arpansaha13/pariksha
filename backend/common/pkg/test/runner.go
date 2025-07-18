@@ -13,12 +13,12 @@ import (
 )
 
 // Runner executes a gRPC test case with common error handling
-func Runner[Req any, Resp any](
+func Runner[Req any, Resp any, SetupReturn any](
 	t *testing.T,
-	tc TestCase[Req, Resp],
+	tc TestCase[Req, Resp, SetupReturn],
 	call func(context.Context, Req, ...grpc.CallOption) (Resp, error),
 ) {
-	var setupData map[string]any
+	var setupData SetupReturn
 	if tc.Setup != nil {
 		setupData = tc.Setup(t)
 	}

@@ -349,6 +349,10 @@ func (s *Question) GetQuestionsMetaByHashes(hashes []string) (*proto.QuestionsMe
 		return nil, status.Error(codes.Internal, "failed to get metadata by hashes: "+err.Error())
 	}
 
+	if len(meta) != len(hashes) {
+		return nil, status.Error(codes.NotFound, "could not find questions with given hashes")
+	}
+
 	orderedMeta := OrderByRequestSequence(hashes, meta, func(q models.Question) string {
 		return q.Hash
 	})

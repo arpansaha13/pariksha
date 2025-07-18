@@ -19,7 +19,7 @@ func Languages(db *gorm.DB) error {
 		{
 			Slug:      "node",
 			Name:      "JavaScript (Node)",
-			Extension: ".js",
+			Extension: "js",
 			Version:   "22",
 		},
 	}

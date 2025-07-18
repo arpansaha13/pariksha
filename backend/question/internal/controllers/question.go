@@ -6,7 +6,14 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/question/internal/services"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+)
+
+var (
+	ErrEmptyQuestionIDsList    error = status.Error(codes.InvalidArgument, "empty question IDs list")
+	ErrEmptyQuestionHashesList error = status.Error(codes.InvalidArgument, "empty question hashes list")
 )
 
 type Question struct {
@@ -26,42 +33,72 @@ func (c *Question) HandleUpdateQuestion(ctx context.Context, req *proto.UpdateQu
 }
 
 func (c *Question) HandleGetQuestionsByIds(ctx context.Context, req *proto.QuestionIdsRequest) (*proto.GetQuestionsResponse, error) {
+	if len(req.Ids) == 0 {
+		return nil, ErrEmptyQuestionIDsList
+	}
 	return c.questionSvc.GetQuestionsByIds(req)
 }
 
 func (c *Question) HandleGetQuestionsMetaByIds(ctx context.Context, req *proto.QuestionIdsRequest) (*proto.QuestionsMetaResponse, error) {
+	if len(req.Ids) == 0 {
+		return nil, ErrEmptyQuestionIDsList
+	}
 	return c.questionSvc.GetQuestionsMetaByIds(req)
 }
 
 func (c *Question) HandleGetQuestionsMetaByHashes(ctx context.Context, req *proto.QuestionHashesRequest) (*proto.QuestionsMetaResponse, error) {
+	if len(req.Hashes) == 0 {
+		return nil, ErrEmptyQuestionHashesList
+	}
 	return c.questionSvc.GetQuestionsMetaByHashes(req.Hashes)
 }
 
 func (c *Question) HandleGetQuestionHashesByIds(ctx context.Context, req *proto.QuestionIdsRequest) (*proto.GetQuestionHashesByIdsResponse, error) {
+	if len(req.Ids) == 0 {
+		return nil, ErrEmptyQuestionIDsList
+	}
 	return c.questionSvc.GetQuestionHashesByIds(req)
 }
 
 func (c *Question) HandleGetQuestionIdsByHashes(ctx context.Context, req *proto.QuestionHashesRequest) (*proto.GetQuestionIdsByHashesResponse, error) {
+	if len(req.Hashes) == 0 {
+		return nil, ErrEmptyQuestionHashesList
+	}
 	return c.questionSvc.GetQuestionIdsByHashes(req.Hashes)
 }
 
 func (c *Question) HandleIncQuestionPaperIndegreeByIds(ctx context.Context, req *proto.QuestionIdsRequest) (*emptypb.Empty, error) {
+	if len(req.Ids) == 0 {
+		return nil, ErrEmptyQuestionIDsList
+	}
 	return c.questionSvc.IncPaperIndegreeByIds(req.Ids)
 }
 
 func (c *Question) HandleDecQuestionPaperIndegreeByIds(ctx context.Context, req *proto.QuestionIdsRequest) (*emptypb.Empty, error) {
+	if len(req.Ids) == 0 {
+		return nil, ErrEmptyQuestionIDsList
+	}
 	return c.questionSvc.DecPaperIndegreeByIds(req.Ids)
 }
 
 func (c *Question) HandleIncQuestionExamIndegreeByIds(ctx context.Context, req *proto.QuestionIdsRequest) (*emptypb.Empty, error) {
+	if len(req.Ids) == 0 {
+		return nil, ErrEmptyQuestionIDsList
+	}
 	return c.questionSvc.IncExamIndegreeByIds(req.Ids)
 }
 
 func (c *Question) HandleDecQuestionExamIndegreeByIds(ctx context.Context, req *proto.QuestionIdsRequest) (*emptypb.Empty, error) {
+	if len(req.Ids) == 0 {
+		return nil, ErrEmptyQuestionIDsList
+	}
 	return c.questionSvc.DecExamIndegreeByIds(req.Ids)
 }
 
 func (c *Question) HandleGetQuestionsByHashes(ctx context.Context, req *proto.QuestionHashesRequest) (*proto.GetQuestionsResponse, error) {
+	if len(req.Hashes) == 0 {
+		return nil, ErrEmptyQuestionHashesList
+	}
 	return c.questionSvc.GetQuestionsByHashes(req.Hashes)
 }
 

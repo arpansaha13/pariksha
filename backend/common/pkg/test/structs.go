@@ -7,11 +7,11 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-type TestCase[Req any, Resp any] struct {
+type TestCase[Req any, Resp any, SetupReturn any] struct {
 	Name         string
 	Metadata     metadata.MD
 	ExpectedCode codes.Code
-	GetRequest   func(map[string]any) Req
-	Setup        func(*testing.T) map[string]any
-	Validate     func(*testing.T, Resp, map[string]any)
+	GetRequest   func(SetupReturn) Req
+	Setup        func(*testing.T) SetupReturn
+	Validate     func(*testing.T, Resp, SetupReturn)
 }
