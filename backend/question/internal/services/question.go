@@ -1,6 +1,7 @@
 package services
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -553,6 +554,12 @@ func (s *Question) UpsertTestCases(req *proto.UpsertTestCasesRequest) (*emptypb.
 func (s *Question) GetCodingQuestionInputDefinitions(req *proto.GetCodingQuestionInputDefinitionsRequest) (*proto.GetCodingQuestionInputDefinitionsResponse, error) {
 	inputDefs, err := s.questionRepo.GetInputDefinitionsByHash(nil, req.QuestionHash)
 	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.NotFound, "could not find question")
+		}
+		if err == sql.ErrNoRows {
+			return nil, status.Error(codes.FailedPrecondition, "not a coding question")
+		}
 		return nil, grpcerror.Internal(err, "failed to fetch input definitions")
 	}
 

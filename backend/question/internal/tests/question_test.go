@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,6 +16,8 @@ import (
 	"pariksha/question/internal/config/db"
 	"pariksha/question/internal/models"
 )
+
+const EMPTY_IDS_TEST_CASE_NAME = "Empty IDs list"
 
 func TestCreateQuestion(t *testing.T) {
 	testCases := []test.TestCase[*proto.CreateQuestionRequest, *proto.CreateQuestionResponse, map[string]any]{
@@ -408,7 +411,7 @@ func TestGetQuestionsByIds(t *testing.T) {
 			ExpectedCode: codes.NotFound,
 		},
 		{
-			Name: "Empty IDs list",
+			Name: EMPTY_IDS_TEST_CASE_NAME,
 			GetRequest: func(setupData *SetupReturn) *proto.QuestionIdsRequest {
 				return &proto.QuestionIdsRequest{Ids: []int64{}}
 			},
@@ -538,7 +541,7 @@ func TestGetQuestionsMetaByIds(t *testing.T) {
 			},
 		},
 		{
-			Name: "Empty IDs list",
+			Name: EMPTY_IDS_TEST_CASE_NAME,
 			GetRequest: func(setupData *SetupReturn) *proto.QuestionIdsRequest {
 				return &proto.QuestionIdsRequest{Ids: []int64{}}
 			},
@@ -591,7 +594,7 @@ func TestGetQuestionHashesByIds(t *testing.T) {
 			},
 		},
 		{
-			Name: "Empty IDs list",
+			Name: EMPTY_IDS_TEST_CASE_NAME,
 			GetRequest: func(setupData *SetupReturn) *proto.QuestionIdsRequest {
 				return &proto.QuestionIdsRequest{Ids: []int64{}}
 			},
@@ -870,7 +873,7 @@ func TestIncPaperIndegreeByIds(t *testing.T) {
 			},
 		},
 		{
-			Name: "Empty IDs list",
+			Name: EMPTY_IDS_TEST_CASE_NAME,
 			GetRequest: func(setupData *SetupReturn) *proto.QuestionIdsRequest {
 				return &proto.QuestionIdsRequest{Ids: []int64{}}
 			},
@@ -927,7 +930,7 @@ func TestDecPaperIndegreeByIds(t *testing.T) {
 			},
 		},
 		{
-			Name: "Empty IDs list",
+			Name: EMPTY_IDS_TEST_CASE_NAME,
 			GetRequest: func(setupData *SetupReturn) *proto.QuestionIdsRequest {
 				return &proto.QuestionIdsRequest{Ids: []int64{}}
 			},
@@ -984,7 +987,7 @@ func TestIncExamIndegreeByIds(t *testing.T) {
 			},
 		},
 		{
-			Name: "Empty IDs list",
+			Name: EMPTY_IDS_TEST_CASE_NAME,
 			GetRequest: func(setupData *SetupReturn) *proto.QuestionIdsRequest {
 				return &proto.QuestionIdsRequest{Ids: []int64{}}
 			},
@@ -1041,7 +1044,7 @@ func TestDecExamIndegreeByIds(t *testing.T) {
 			},
 		},
 		{
-			Name: "Empty IDs list",
+			Name: EMPTY_IDS_TEST_CASE_NAME,
 			GetRequest: func(setupData *SetupReturn) *proto.QuestionIdsRequest {
 				return &proto.QuestionIdsRequest{Ids: []int64{}}
 			},
@@ -1053,6 +1056,217 @@ func TestDecExamIndegreeByIds(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			clearTables(t)
 			test.Runner(t, tc, client.DecQuestionExamIndegreeByIds)
+		})
+	}
+}
+
+func TestUpsertTestCases(t *testing.T) {
+	type SetupReturn struct {
+		Question models.Question
+	}
+
+	testCases := []test.TestCase[*proto.UpsertTestCasesRequest, *emptypb.Empty, *SetupReturn]{
+		{
+			Name: "Create new test cases",
+			Setup: func(t *testing.T) *SetupReturn {
+				questions := createTestQuestions(t, []models.Question{
+					{
+						Question: []byte(`{
+							"title": "Add Numbers",
+							"statement": "Add two numbers",
+							"input_definitions": [{"variable_name": "a", "type": 1}, {"variable_name": "b", "type": 1}],
+							"output_definition": {"type": 1}
+						}`),
+						Type: proto.QuestionType_CODING,
+					},
+				})
+				return &SetupReturn{Question: questions[0]}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.UpsertTestCasesRequest {
+				return &proto.UpsertTestCasesRequest{
+					QuestionHash: setupData.Question.Hash,
+					TestCases: []*proto.UpsertTestCase{
+						{
+							Inputs: []string{"1", "2"},
+							Output: "3",
+							Hidden: false,
+						},
+						{
+							Inputs: []string{"10", "20"},
+							Output: "30",
+							Hidden: true,
+						},
+					},
+				}
+			},
+			ExpectedCode: codes.OK,
+			Validate: func(t *testing.T, resp *emptypb.Empty, setupData *SetupReturn) {
+				var testCases []models.TestCase
+				err := db.DB.Where("question_id = ?", setupData.Question.ID).Order("\"order\" asc").Find(&testCases).Error
+				require.NoError(t, err)
+				require.Len(t, testCases, 2)
+
+				// Validate first test case
+				var content1 models.TestCaseContent
+				err = json.Unmarshal(testCases[0].Content, &content1)
+				require.NoError(t, err)
+				assert.Equal(t, []string{"1", "2"}, content1.Inputs)
+				assert.Equal(t, "3", content1.Output)
+				assert.False(t, testCases[0].Hidden)
+				assert.Equal(t, int16(1), testCases[0].Order)
+
+				// Validate second test case
+				var content2 models.TestCaseContent
+				err = json.Unmarshal(testCases[1].Content, &content2)
+				require.NoError(t, err)
+				assert.Equal(t, []string{"10", "20"}, content2.Inputs)
+				assert.Equal(t, "30", content2.Output)
+				assert.True(t, testCases[1].Hidden)
+				assert.Equal(t, int16(2), testCases[1].Order)
+			},
+		},
+		{
+			Name: "Invalid question type",
+			Setup: func(t *testing.T) *SetupReturn {
+				questions := createTestQuestions(t, []models.Question{
+					{
+						Question: []byte(`{"statement": "MCQ Question", "options": ["1", "2", "3", "4"]}`),
+						Type:     proto.QuestionType_MCQ,
+					},
+				})
+				return &SetupReturn{Question: questions[0]}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.UpsertTestCasesRequest {
+				return &proto.UpsertTestCasesRequest{
+					QuestionHash: setupData.Question.Hash,
+					TestCases: []*proto.UpsertTestCase{
+						{
+							Inputs: []string{"1"},
+							Output: "1",
+						},
+					},
+				}
+			},
+			ExpectedCode: codes.InvalidArgument,
+		},
+		{
+			Name: "Invalid inputs count",
+			Setup: func(t *testing.T) *SetupReturn {
+				questions := createTestQuestions(t, []models.Question{
+					{
+						Question: []byte(`{
+							"title": "Add Numbers",
+							"statement": "Add two numbers",
+							"input_definitions": [{"variable_name": "a", "type": 1}, {"variable_name": "b", "type": 1}],
+							"output_definition": {"type": 1}
+						}`),
+						Type: proto.QuestionType_CODING,
+					},
+				})
+				return &SetupReturn{Question: questions[0]}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.UpsertTestCasesRequest {
+				return &proto.UpsertTestCasesRequest{
+					QuestionHash: setupData.Question.Hash,
+					TestCases: []*proto.UpsertTestCase{
+						{
+							Inputs: []string{"1"}, // Should be 2 inputs
+							Output: "1",
+						},
+					},
+				}
+			},
+			ExpectedCode: codes.InvalidArgument,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			clearTables(t)
+			test.Runner(t, tc, client.UpsertTestCases)
+		})
+	}
+}
+
+func TestGetCodingQuestionInputDefinitions(t *testing.T) {
+	type SetupReturn struct {
+		Question models.Question
+	}
+
+	testCases := []test.TestCase[*proto.GetCodingQuestionInputDefinitionsRequest, *proto.GetCodingQuestionInputDefinitionsResponse, *SetupReturn]{
+		{
+			Name: "Get input definitions for coding question",
+			Setup: func(t *testing.T) *SetupReturn {
+				questions := createTestQuestions(t, []models.Question{
+					{
+						Question: []byte(`{
+							"title": "Add Numbers",
+							"statement": "Add two numbers",
+							"input_definitions": [
+								{"variable_name": "a", "type": 1},
+								{"variable_name": "b", "type": 4, "items": [{"type": 1}]}
+							],
+							"output_definition": {"type": 1}
+						}`),
+						Type: proto.QuestionType_CODING,
+					},
+				})
+				return &SetupReturn{Question: questions[0]}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.GetCodingQuestionInputDefinitionsRequest {
+				return &proto.GetCodingQuestionInputDefinitionsRequest{
+					QuestionHash: setupData.Question.Hash,
+				}
+			},
+			ExpectedCode: codes.OK,
+			Validate: func(t *testing.T, resp *proto.GetCodingQuestionInputDefinitionsResponse, setupData *SetupReturn) {
+				require.Len(t, resp.InputDefinitions, 2)
+
+				// Validate first input definition
+				assert.Equal(t, "a", resp.InputDefinitions[0].VariableName)
+				assert.Equal(t, proto.ParameterType_NUMBER, resp.InputDefinitions[0].Type)
+				assert.Empty(t, resp.InputDefinitions[0].Items)
+
+				// Validate second input definition
+				assert.Equal(t, "b", resp.InputDefinitions[1].VariableName)
+				assert.Equal(t, proto.ParameterType_ARRAY, resp.InputDefinitions[1].Type)
+				require.Len(t, resp.InputDefinitions[1].Items, 1)
+				assert.Equal(t, proto.ParameterType_NUMBER, resp.InputDefinitions[1].Items[0].Type)
+			},
+		},
+		{
+			Name: "Non-coding question",
+			Setup: func(t *testing.T) *SetupReturn {
+				questions := createTestQuestions(t, []models.Question{
+					{
+						Question: []byte(`{"statement": "MCQ Question", "options": ["1", "2", "3", "4"]}`),
+						Type:     proto.QuestionType_MCQ,
+					},
+				})
+				return &SetupReturn{Question: questions[0]}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.GetCodingQuestionInputDefinitionsRequest {
+				return &proto.GetCodingQuestionInputDefinitionsRequest{
+					QuestionHash: setupData.Question.Hash,
+				}
+			},
+			ExpectedCode: codes.FailedPrecondition,
+		},
+		{
+			Name: "Non-existent question hash",
+			GetRequest: func(setupData *SetupReturn) *proto.GetCodingQuestionInputDefinitionsRequest {
+				return &proto.GetCodingQuestionInputDefinitionsRequest{
+					QuestionHash: "nonexistent",
+				}
+			},
+			ExpectedCode: codes.NotFound,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			clearTables(t)
+			test.Runner(t, tc, client.GetCodingQuestionInputDefinitions)
 		})
 	}
 }
