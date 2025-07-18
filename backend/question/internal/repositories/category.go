@@ -40,10 +40,19 @@ func (r *Category) GetByIDs(tx *gorm.DB, ids []int64) ([]models.Category, error)
 	return categories, err
 }
 
-// UpdateName updates the name of a category
 func (r *Category) UpdateName(tx *gorm.DB, id int64, name string) error {
 	tx = r.getTx(tx)
-	return tx.Model(&models.Category{}).
+
+	result := tx.Model(&models.Category{}).
 		Where("id = ?", id).
-		Update("name", name).Error
+		Update("name", name)
+
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
 }

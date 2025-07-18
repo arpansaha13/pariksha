@@ -73,6 +73,9 @@ func (s *Category) GetCategoriesByIds(ids []int64) (*proto.GetCategoriesResponse
 // UpdateCategoryName updates the name of a question category
 func (s *Category) UpdateCategoryName(req *proto.UpdateCategoryRequest) (*proto.UpdateCategoryResponse, error) {
 	if err := s.categoryRepo.UpdateName(nil, req.Id, req.Name); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.NotFound, "could not find category")
+		}
 		return nil, status.Error(codes.Internal, "failed to update category name")
 	}
 

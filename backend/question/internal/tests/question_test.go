@@ -17,7 +17,10 @@ import (
 	"pariksha/question/internal/models"
 )
 
-const EMPTY_IDS_TEST_CASE_NAME = "Empty IDs list"
+const (
+	EMPTY_IDS_TEST_CASE_NAME    string = "Empty IDs list"
+	EMPTY_HASHES_TEST_CASE_NAME string = "Empty hashes list"
+)
 
 func TestCreateQuestion(t *testing.T) {
 	testCases := []test.TestCase[*proto.CreateQuestionRequest, *proto.CreateQuestionResponse, map[string]any]{
@@ -485,7 +488,7 @@ func TestGetQuestionsByHashes(t *testing.T) {
 			ExpectedCode: codes.NotFound,
 		},
 		{
-			Name: "Empty hashes list",
+			Name: EMPTY_HASHES_TEST_CASE_NAME,
 			GetRequest: func(setupData *SetupReturn) *proto.QuestionHashesRequest {
 				return &proto.QuestionHashesRequest{Hashes: []string{}}
 			},
@@ -668,7 +671,7 @@ func TestGetQuestionsMetaByHashes(t *testing.T) {
 			ExpectedCode: codes.NotFound,
 		},
 		{
-			Name: "Empty hashes list",
+			Name: EMPTY_HASHES_TEST_CASE_NAME,
 			GetRequest: func(setupData *SetupReturn) *proto.QuestionHashesRequest {
 				return &proto.QuestionHashesRequest{Hashes: []string{}}
 			},
@@ -721,7 +724,7 @@ func TestGetQuestionIdsByHashes(t *testing.T) {
 			},
 		},
 		{
-			Name: "Empty hashes list",
+			Name: EMPTY_HASHES_TEST_CASE_NAME,
 			GetRequest: func(setupData *SetupReturn) *proto.QuestionHashesRequest {
 				return &proto.QuestionHashesRequest{Hashes: []string{}}
 			},
