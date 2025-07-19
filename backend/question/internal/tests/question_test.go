@@ -13,7 +13,6 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/test"
 	"pariksha/common/pkg/types"
-	"pariksha/question/internal/config/db"
 	"pariksha/question/internal/models"
 )
 
@@ -184,7 +183,7 @@ func TestUpdateQuestion(t *testing.T) {
 			ExpectedCode: codes.OK,
 			Validate: func(t *testing.T, resp *proto.UpdateQuestionResponse, setupData *SetupReturn) {
 				var question models.Question
-				err := db.DB.Take(&question, setupData.QuestionID).Error
+				err := dbInst.Take(&question, setupData.QuestionID).Error
 				require.NoError(t, err)
 				assert.Contains(t, string(question.Question), "3+3")
 			},
@@ -219,7 +218,7 @@ func TestUpdateQuestion(t *testing.T) {
 			ExpectedCode: codes.OK,
 			Validate: func(t *testing.T, resp *proto.UpdateQuestionResponse, setupData *SetupReturn) {
 				var question models.Question
-				err := db.DB.Take(&question, setupData.QuestionID).Error
+				err := dbInst.Take(&question, setupData.QuestionID).Error
 				require.NoError(t, err)
 				assert.Equal(t, proto.QuestionType_SUBJECTIVE, question.Type)
 			},
@@ -255,14 +254,14 @@ func TestUpdateQuestion(t *testing.T) {
 			Validate: func(t *testing.T, resp *proto.UpdateQuestionResponse, setupData *SetupReturn) {
 				// Verify original question exists unchanged
 				var originalQuestion models.Question
-				err := db.DB.Take(&originalQuestion, setupData.QuestionID).Error
+				err := dbInst.Take(&originalQuestion, setupData.QuestionID).Error
 				require.NoError(t, err)
 				assert.Contains(t, string(originalQuestion.Question), "2+2")
 				assert.Equal(t, int32(1), originalQuestion.ExamIndegree)
 
 				// Verify new version exists
 				var newQuestion models.Question
-				err = db.DB.Take(&newQuestion, resp.Id).Error
+				err = dbInst.Take(&newQuestion, resp.Id).Error
 				require.NoError(t, err)
 				assert.Contains(t, string(newQuestion.Question), "3+3")
 				assert.Equal(t, int32(0), newQuestion.ExamIndegree)
@@ -760,7 +759,7 @@ func TestGetBoilerplate(t *testing.T) {
 					Version:   "22",
 					IsEnabled: true,
 				}
-				err := db.DB.Create(&language).Error
+				err := dbInst.Create(&language).Error
 				require.NoError(t, err)
 
 				// Create test question
@@ -782,7 +781,7 @@ func TestGetBoilerplate(t *testing.T) {
 					LanguageID: language.ID,
 					Code:       "function solve(a) {\n\n}",
 				}
-				err = db.DB.Create(&boilerplate).Error
+				err = dbInst.Create(&boilerplate).Error
 				require.NoError(t, err)
 
 				return &SetupReturn{
@@ -813,7 +812,7 @@ func TestGetBoilerplate(t *testing.T) {
 					Version:   "22",
 					IsEnabled: true,
 				}
-				err := db.DB.Create(&language).Error
+				err := dbInst.Create(&language).Error
 				require.NoError(t, err)
 				return &SetupReturn{Language: language}
 			},
@@ -869,7 +868,7 @@ func TestIncPaperIndegreeByIds(t *testing.T) {
 			Validate: func(t *testing.T, resp *emptypb.Empty, setupData *SetupReturn) {
 				for _, original := range setupData.Questions {
 					var updated models.Question
-					err := db.DB.Take(&updated, original.ID).Error
+					err := dbInst.Take(&updated, original.ID).Error
 					require.NoError(t, err)
 					assert.Equal(t, original.PaperIndegree+1, updated.PaperIndegree)
 				}
@@ -926,7 +925,7 @@ func TestDecPaperIndegreeByIds(t *testing.T) {
 			Validate: func(t *testing.T, resp *emptypb.Empty, setupData *SetupReturn) {
 				for _, original := range setupData.Questions {
 					var updated models.Question
-					err := db.DB.Take(&updated, original.ID).Error
+					err := dbInst.Take(&updated, original.ID).Error
 					require.NoError(t, err)
 					assert.Equal(t, original.PaperIndegree-1, updated.PaperIndegree)
 				}
@@ -983,7 +982,7 @@ func TestIncExamIndegreeByIds(t *testing.T) {
 			Validate: func(t *testing.T, resp *emptypb.Empty, setupData *SetupReturn) {
 				for _, original := range setupData.Questions {
 					var updated models.Question
-					err := db.DB.Take(&updated, original.ID).Error
+					err := dbInst.Take(&updated, original.ID).Error
 					require.NoError(t, err)
 					assert.Equal(t, original.ExamIndegree+1, updated.ExamIndegree)
 				}
@@ -1040,7 +1039,7 @@ func TestDecExamIndegreeByIds(t *testing.T) {
 			Validate: func(t *testing.T, resp *emptypb.Empty, setupData *SetupReturn) {
 				for _, original := range setupData.Questions {
 					var updated models.Question
-					err := db.DB.Take(&updated, original.ID).Error
+					err := dbInst.Take(&updated, original.ID).Error
 					require.NoError(t, err)
 					assert.Equal(t, original.ExamIndegree-1, updated.ExamIndegree)
 				}
@@ -1105,7 +1104,7 @@ func TestUpsertTestCases(t *testing.T) {
 			ExpectedCode: codes.OK,
 			Validate: func(t *testing.T, resp *emptypb.Empty, setupData *SetupReturn) {
 				var testCases []models.TestCase
-				err := db.DB.Where("question_id = ?", setupData.Question.ID).Order("\"order\" asc").Find(&testCases).Error
+				err := dbInst.Where("question_id = ?", setupData.Question.ID).Order("\"order\" asc").Find(&testCases).Error
 				require.NoError(t, err)
 				require.Len(t, testCases, 2)
 

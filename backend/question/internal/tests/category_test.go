@@ -9,7 +9,6 @@ import (
 
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/test"
-	"pariksha/question/internal/config/db"
 	"pariksha/question/internal/models"
 )
 
@@ -34,7 +33,7 @@ func TestCreateCategory(t *testing.T) {
 
 				// Verify in database
 				var category models.Category
-				err := db.DB.Take(&category, resp.Id).Error
+				err := dbInst.Take(&category, resp.Id).Error
 				require.NoError(t, err)
 				assert.Equal(t, TEST_CATEGORY_NAME, category.Name)
 				assert.Equal(t, int32(0), category.PaperIndegree)
@@ -74,7 +73,7 @@ func TestUpdateCategoryName(t *testing.T) {
 					PaperIndegree: 1,
 					ExamIndegree:  0,
 				}
-				err := db.DB.Create(&category).Error
+				err := dbInst.Create(&category).Error
 				require.NoError(t, err)
 				return &SetupReturn{Category: category}
 			},
@@ -90,7 +89,7 @@ func TestUpdateCategoryName(t *testing.T) {
 
 				// Verify in database
 				var updatedCategory models.Category
-				err := db.DB.Take(&updatedCategory, setupData.Category.ID).Error
+				err := dbInst.Take(&updatedCategory, setupData.Category.ID).Error
 				require.NoError(t, err)
 				assert.Equal(t, TEST_NEW_CATEGORY_NAME, updatedCategory.Name)
 				// Other fields should remain unchanged
@@ -139,7 +138,7 @@ func TestGetCategoriesByIds(t *testing.T) {
 						ExamIndegree:  1,
 					},
 				}
-				err := db.DB.Create(&categories).Error
+				err := dbInst.Create(&categories).Error
 				require.NoError(t, err)
 				return &SetupReturn{Categories: categories}
 			},

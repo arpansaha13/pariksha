@@ -7,7 +7,6 @@ import (
 
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/generate"
-	"pariksha/question/internal/config/db"
 	"pariksha/question/internal/models"
 )
 
@@ -18,7 +17,7 @@ func createTestQuestions(t *testing.T, questions []models.Question) []models.Que
 	result := make([]models.Question, len(questions))
 	for i := range questions {
 		// Create question
-		err := db.DB.Create(&questions[i]).Error
+		err := dbInst.Create(&questions[i]).Error
 		require.NoError(t, err)
 
 		// Check if hash exists for this ID, if not generate and store
@@ -30,7 +29,7 @@ func createTestQuestions(t *testing.T, questions []models.Question) []models.Que
 		}
 
 		// Update hash in database
-		err = db.DB.Model(&questions[i]).Update("hash", questions[i].Hash).Error
+		err = dbInst.Model(&questions[i]).Update("hash", questions[i].Hash).Error
 		require.NoError(t, err)
 
 		result[i] = questions[i]

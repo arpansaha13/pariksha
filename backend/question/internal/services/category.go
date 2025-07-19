@@ -6,8 +6,6 @@ import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/utils"
-	"pariksha/question/internal/config/db"
 	"pariksha/question/internal/models"
 	"pariksha/question/internal/repositories"
 )
@@ -24,23 +22,15 @@ func NewCategory(repo *repositories.Category) *Category {
 func (s *Category) CreateCategory(req *proto.CreateCategoryRequest) (*proto.CategoryResponse, error) {
 	var category models.Category
 
-	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		// Create new category
-		category = models.Category{
-			Name:          req.Name,
-			PaperIndegree: 0,
-			ExamIndegree:  0,
-		}
+	// Create new category
+	category = models.Category{
+		Name:          req.Name,
+		PaperIndegree: 0,
+		ExamIndegree:  0,
+	}
 
-		if err := s.categoryRepo.Create(tx, &category); err != nil {
-			return status.Error(codes.Internal, "failed to create category")
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
+	if err := s.categoryRepo.Create(nil, &category); err != nil {
+		return nil, status.Error(codes.Internal, "failed to create category")
 	}
 
 	return &proto.CategoryResponse{
