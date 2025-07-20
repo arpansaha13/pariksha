@@ -71,21 +71,30 @@ func (r *PaperCategory) GetByPaperHashAndCategoryID(tx *gorm.DB, paperHash strin
 	return &paperCategory, nil
 }
 
-// GetCategoriesCountByPaperHash counts the categories in a paper by paper hash
-func (r *PaperCategory) GetCategoriesCountByPaperHash(tx *gorm.DB, paperHash string, categoryIDs []int64) (int64, error) {
+// GetCountByPaperHash counts the categories in a paper by paper hash
+func (r *PaperCategory) GetCountByPaperHash(tx *gorm.DB, paperHash string) (int64, error) {
 	var count int64
 	err := tx.Model(&models.PaperCategory{}).
 		Joins("JOIN papers ON papers.id = paper_categories.paper_id").
-		Where("papers.hash = ? AND category_id IN ?", paperHash, categoryIDs).
+		Where("papers.hash = ?", paperHash).
 		Count(&count).Error
 	return count, err
 }
 
 // UpdateOrder updates category order
 func (r *PaperCategory) UpdateOrder(tx *gorm.DB, categoryID int64, order int16) error {
-	return tx.Model(&models.PaperCategory{}).
-		Where("id = ?", categoryID).
-		Update("order", order).Error
+	result := tx.Model(&models.PaperCategory{}).
+		Where("category_id = ?", categoryID).
+		Update("order", order)
+
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
 }
 
 // GetMaxOrder gets max order for categories in paper
@@ -103,16 +112,6 @@ func (r *PaperCategory) GetCountByPaperId(tx *gorm.DB, paperID types.PaperID) (i
 	var count int64
 	err := tx.Model(&models.PaperCategory{}).
 		Where("paper_id = ?", paperID).
-		Count(&count).Error
-	return count, err
-}
-
-// GetCountByPaperHash gets total categories count for the paper
-func (r *PaperCategory) GetCountByPaperHash(tx *gorm.DB, paperHash string) (int64, error) {
-	var count int64
-	err := tx.Model(&models.PaperCategory{}).
-		Joins("JOIN papers ON papers.id = paper_categories.paper_id").
-		Where("papers.hash = ?", paperHash).
 		Count(&count).Error
 	return count, err
 }

@@ -6,7 +6,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/utils/grpcerror"
 	"pariksha/paper/internal/services"
 )
 
@@ -24,7 +23,7 @@ func (c *Category) HandleGetPaperCategories(ctx context.Context, req *proto.Pape
 	return c.categorySvc.GetPaperCategories(req.PaperHash)
 }
 
-func (c *Category) HandleCreateCategory(ctx context.Context, req *proto.CreatePaperCategoryRequest) (*proto.PaperCategoryResponse, error) {
+func (c *Category) HandleCreateCategory(ctx context.Context, req *proto.PaperRequest) (*proto.PaperCategoryResponse, error) {
 	return c.categorySvc.CreateCategory(req.PaperHash)
 }
 
@@ -37,7 +36,7 @@ func (c *Category) HandleUpdateCategory(ctx context.Context, req *proto.UpdatePa
 
 func (c *Category) HandleReorderCategories(ctx context.Context, req *proto.ReorderPaperCategoriesRequest) (*emptypb.Empty, error) {
 	if err := c.categorySvc.ReorderCategories(req.PaperHash, req.CategoryIds); err != nil {
-		return nil, grpcerror.Internal(err, "failed to reorder categories")
+		return nil, err
 	}
 	return &emptypb.Empty{}, nil
 }

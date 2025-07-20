@@ -48,9 +48,6 @@ func init() {
 
 	PAPER_SERVER_PORT = os.Getenv("PAPER_SERVER_PORT")
 
-	QUESTION_SERVER_HOST = os.Getenv("QUESTION_SERVER_HOST")
-	QUESTION_SERVER_PORT = os.Getenv("QUESTION_SERVER_PORT")
-
 	EXAM_API_TOKEN = os.Getenv("EXAM_API_TOKEN")
 
 	PAPER_DB_USER = os.Getenv("PAPER_DB_USER")
@@ -61,16 +58,20 @@ func init() {
 		PAPER_DB_HOST = os.Getenv("PAPER_DB_HOST")
 		PAPER_DB_PORT = os.Getenv("PAPER_DB_PORT")
 		PAPER_DB_SSLMODE = os.Getenv("PAPER_DB_SSLMODE")
+
+		QUESTION_SERVER_HOST = os.Getenv("QUESTION_SERVER_HOST")
+		QUESTION_SERVER_PORT = os.Getenv("QUESTION_SERVER_PORT")
 	}
 }
 
 func getRequiredEnvVars() []string {
 	baseEnvVars := []string{
 		"GO_ENV",
+		"PAPER_SERVER_PORT",
+		"EXAM_API_TOKEN",
 		"PAPER_DB_USER",
 		"PAPER_DB_PASS",
 		"PAPER_DB_NAME",
-		"PAPER_SERVER_PORT",
 	}
 
 	if os.Getenv("GO_ENV") != constants.GO_ENV_TEST {
@@ -80,7 +81,6 @@ func getRequiredEnvVars() []string {
 			"PAPER_DB_SSLMODE",
 			"QUESTION_SERVER_HOST",
 			"QUESTION_SERVER_PORT",
-			"EXAM_API_TOKEN",
 		}
 		baseEnvVars = append(baseEnvVars, additionalEnvVars...)
 	}

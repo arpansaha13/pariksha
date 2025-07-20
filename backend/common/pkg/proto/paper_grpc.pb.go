@@ -65,7 +65,7 @@ type PaperClient interface {
 	UpsertPaperTestCases(ctx context.Context, in *UpsertPaperTestCasesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Category operations
 	GetPaperCategories(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*PaperCategoryList, error)
-	CreatePaperCategory(ctx context.Context, in *CreatePaperCategoryRequest, opts ...grpc.CallOption) (*PaperCategoryResponse, error)
+	CreatePaperCategory(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*PaperCategoryResponse, error)
 	UpdatePaperCategory(ctx context.Context, in *UpdatePaperCategoryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeletePaperCategory(ctx context.Context, in *PaperCategoryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ReorderPaperCategories(ctx context.Context, in *ReorderPaperCategoriesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -232,7 +232,7 @@ func (c *paperClient) GetPaperCategories(ctx context.Context, in *PaperRequest, 
 	return out, nil
 }
 
-func (c *paperClient) CreatePaperCategory(ctx context.Context, in *CreatePaperCategoryRequest, opts ...grpc.CallOption) (*PaperCategoryResponse, error) {
+func (c *paperClient) CreatePaperCategory(ctx context.Context, in *PaperRequest, opts ...grpc.CallOption) (*PaperCategoryResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PaperCategoryResponse)
 	err := c.cc.Invoke(ctx, Paper_CreatePaperCategory_FullMethodName, in, out, cOpts...)
@@ -314,7 +314,7 @@ type PaperServer interface {
 	UpsertPaperTestCases(context.Context, *UpsertPaperTestCasesRequest) (*emptypb.Empty, error)
 	// Category operations
 	GetPaperCategories(context.Context, *PaperRequest) (*PaperCategoryList, error)
-	CreatePaperCategory(context.Context, *CreatePaperCategoryRequest) (*PaperCategoryResponse, error)
+	CreatePaperCategory(context.Context, *PaperRequest) (*PaperCategoryResponse, error)
 	UpdatePaperCategory(context.Context, *UpdatePaperCategoryRequest) (*emptypb.Empty, error)
 	DeletePaperCategory(context.Context, *PaperCategoryRequest) (*emptypb.Empty, error)
 	ReorderPaperCategories(context.Context, *ReorderPaperCategoriesRequest) (*emptypb.Empty, error)
@@ -376,7 +376,7 @@ func (UnimplementedPaperServer) UpsertPaperTestCases(context.Context, *UpsertPap
 func (UnimplementedPaperServer) GetPaperCategories(context.Context, *PaperRequest) (*PaperCategoryList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPaperCategories not implemented")
 }
-func (UnimplementedPaperServer) CreatePaperCategory(context.Context, *CreatePaperCategoryRequest) (*PaperCategoryResponse, error) {
+func (UnimplementedPaperServer) CreatePaperCategory(context.Context, *PaperRequest) (*PaperCategoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePaperCategory not implemented")
 }
 func (UnimplementedPaperServer) UpdatePaperCategory(context.Context, *UpdatePaperCategoryRequest) (*emptypb.Empty, error) {
@@ -686,7 +686,7 @@ func _Paper_GetPaperCategories_Handler(srv interface{}, ctx context.Context, dec
 }
 
 func _Paper_CreatePaperCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreatePaperCategoryRequest)
+	in := new(PaperRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -698,7 +698,7 @@ func _Paper_CreatePaperCategory_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: Paper_CreatePaperCategory_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaperServer).CreatePaperCategory(ctx, req.(*CreatePaperCategoryRequest))
+		return srv.(PaperServer).CreatePaperCategory(ctx, req.(*PaperRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

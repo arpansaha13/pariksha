@@ -34,7 +34,7 @@ service Paper {
 
   // Category operations
   rpc GetPaperCategories(PaperRequest) returns (PaperCategoryList) {}
-  rpc CreatePaperCategory(CreatePaperCategoryRequest)
+  rpc CreatePaperCategory(PaperRequest)
       returns (PaperCategoryResponse) {}
   rpc UpdatePaperCategory(UpdatePaperCategoryRequest)
       returns (google.protobuf.Empty) {}
@@ -160,8 +160,6 @@ message PaperCategoryMeta {
   int64 id = 1;
   int32 order = 3;
 }
-
-message CreatePaperCategoryRequest { string paper_hash = 1; }
 
 message UpdatePaperCategoryRequest {
   string paper_hash = 1;

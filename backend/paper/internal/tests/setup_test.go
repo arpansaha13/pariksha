@@ -8,112 +8,44 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/types"
-	"pariksha/paper/internal/config/db"
-	"pariksha/paper/internal/config/env"
-	"pariksha/paper/internal/controllers"
-	"pariksha/paper/internal/interceptors"
-)
-
-const (
-	bufSize              = 1024 * 1024
-	userID  types.UserID = 1
+	"pariksha/paper/internal/modules"
 )
 
 var (
-	lis    *bufconn.Listener
-	ctx    context.Context
 	client proto.PaperClient
+	dbInst *gorm.DB
 )
 
-func setupContainer() func() {
-	ctx = context.Background()
+func TestMain(m *testing.M) {
+	mockServer, mockDbInst, mockIntc, cleanup := modules.NewMock()
+	defer cleanup()
+	dbInst = mockDbInst
 
-	// Start Postgres container
-	pgContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "postgres:15.10-alpine",
-			ExposedPorts: []string{"5432/tcp"},
-			Env: map[string]string{
-				"POSTGRES_USER":     env.DB_USER,
-				"POSTGRES_PASSWORD": env.DB_PASS,
-				"POSTGRES_DB":       env.DB_NAME,
-			},
-			WaitingFor: wait.ForAll(
-				wait.ForLog("database system is ready to accept connections"),
-				wait.ForExposedPort(),
-			),
-		},
-		Started: true,
-	})
-	if err != nil {
-		log.Fatalf("Failed to setup container: %v", err)
-	}
+	srv, conn := setupGrpcServer(mockServer, mockIntc)
+	defer func() {
+		conn.Close()
+		srv.Stop()
+	}()
 
-	// Get container host and mapped port
-	pgHost, _ := pgContainer.Host(ctx)
-	pgPort, _ := pgContainer.MappedPort(ctx, "5432")
+	client = proto.NewPaperClient(conn)
 
-	// Initialize DB connection
-	err = db.InitDB(
-		pgHost,
-		pgPort.Port(),
-		env.DB_USER,
-		env.DB_PASS,
-		env.DB_NAME,
-		"disable",
-	)
-	if err != nil {
-		log.Fatalf("Failed to initialize DB: %v", err)
-	}
+	code := m.Run()
 
-	return func() {
-		pgContainer.Terminate(ctx)
-	}
+	os.Exit(code)
 }
 
-func clearTables(t *testing.T) {
-	tables := []string{
-		constants.TABLE_BOILERPLATES,
-		constants.TABLE_LANGUAGES,
-		constants.TABLE_TEST_CASES,
-		constants.TABLE_QUESTIONS,
-		constants.TABLE_CATEGORIES,
-		constants.TABLE_PAPER_PERMISSIONS,
-		constants.TABLE_PAPERS,
-	}
-
-	for i := range tables {
-		err := db.DB.Exec("TRUNCATE TABLE " + string(tables[i]) + " CASCADE").Error
-		require.NoError(t, err)
-	}
-}
-
-func bufDialer(context.Context, string) (net.Conn, error) {
-	return lis.Dial()
-}
-
-func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
-	lis = bufconn.Listen(bufSize)
-	srv := grpc.NewServer(
-		grpc.ChainUnaryInterceptor(
-			interceptors.ExamServiceAuthInterceptor(),
-			interceptors.PaperAuthInterceptor(),
-			interceptors.DeletePaperAuthInterceptor(),
-		),
-	)
-
-	// Initialize all controllers before registering server
-	controllers.Init()
-	proto.RegisterPaperServer(srv, &controllers.PaperServer{})
+func setupGrpcServer(server proto.PaperServer, mockIntc []grpc.UnaryServerInterceptor) (*grpc.Server, *grpc.ClientConn) {
+	const bufSize = 1024 * 1024
+	lis := bufconn.Listen(bufSize)
+	srv := grpc.NewServer(grpc.ChainUnaryInterceptor(mockIntc...))
+	proto.RegisterPaperServer(srv, server)
 
 	go func() {
 		if err := srv.Serve(lis); err != nil {
@@ -121,8 +53,13 @@ func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 		}
 	}()
 
-	conn, err := grpc.NewClient(
-		"passthrough://bufnet",
+	bufDialer := func(context.Context, string) (net.Conn, error) {
+		return lis.Dial()
+	}
+
+	conn, err := grpc.DialContext(
+		context.Background(),
+		"bufnet",
 		grpc.WithContextDialer(bufDialer),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
@@ -133,19 +70,16 @@ func setupGrpcServer() (*grpc.Server, *grpc.ClientConn) {
 	return srv, conn
 }
 
-func TestMain(m *testing.M) {
-	cleanup := setupContainer()
+func clearTables(t *testing.T) {
+	tables := []string{
+		constants.TABLE_PAPER_QUESTIONS,
+		constants.TABLE_PAPER_CATEGORIES,
+		constants.TABLE_PAPER_PERMISSIONS,
+		constants.TABLE_PAPERS,
+	}
 
-	srv, conn := setupGrpcServer()
-	defer func() {
-		conn.Close()
-		srv.Stop()
-	}()
-
-	client = proto.NewPaperClient(conn)
-
-	code := m.Run()
-
-	cleanup()
-	os.Exit(code)
+	for i := range tables {
+		err := dbInst.Exec("TRUNCATE TABLE " + string(tables[i]) + " CASCADE").Error
+		require.NoError(t, err)
+	}
 }

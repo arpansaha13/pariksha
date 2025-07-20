@@ -71,10 +71,34 @@ func (s *Category) GetPaperCategories(paperHash string) (*proto.PaperCategoryLis
 	return response, nil
 }
 
+func (s *Category) GetPaperCategoriesMeta(req *proto.PaperRequest) (*proto.PaperCategoriesMeta, error) {
+	paperCategories, err := s.paperCatRepo.GetAllByPaperHash(nil, req.PaperHash)
+	if err != nil {
+		return nil, grpcerror.Internal(err, "failed to fetch paper categories")
+	}
+
+	if len(paperCategories) == 0 {
+		return nil, status.Error(codes.NotFound, "could not find paper categories")
+	}
+
+	response := &proto.PaperCategoriesMeta{
+		Categories: make([]*proto.PaperCategoryMeta, len(paperCategories)),
+	}
+
+	for i, pc := range paperCategories {
+		response.Categories[i] = &proto.PaperCategoryMeta{
+			Id:    int64(pc.CategoryID),
+			Order: int32(pc.Order),
+		}
+	}
+
+	return response, nil
+}
+
 // ReorderCategories handles the business logic for reordering categories
 func (s *Category) ReorderCategories(paperHash string, categoryIDs []int64) error {
 	return s.paperRepo.Transaction(func(tx *gorm.DB) error {
-		count, err := s.paperCatRepo.GetCategoriesCountByPaperHash(tx, paperHash, categoryIDs)
+		count, err := s.paperCatRepo.GetCountByPaperHash(tx, paperHash)
 		if err != nil {
 			return err
 		}
@@ -85,7 +109,10 @@ func (s *Category) ReorderCategories(paperHash string, categoryIDs []int64) erro
 
 		for i, categoryID := range categoryIDs {
 			if err := s.paperCatRepo.UpdateOrder(tx, categoryID, int16(i+1)); err != nil {
-				return err
+				if err == gorm.ErrRecordNotFound {
+					return status.Error(codes.NotFound, "could not find category")
+				}
+				return grpcerror.Internal(err, "failed to update category order")
 			}
 		}
 
@@ -195,24 +222,4 @@ func (s *Category) DeleteCategory(req *proto.PaperCategoryRequest) error {
 
 		return s.paperCatRepo.DeleteByID(tx, paperCategory.PaperID, paperCategory.CategoryID)
 	})
-}
-
-func (s *Category) GetPaperCategoriesMeta(req *proto.PaperRequest) (*proto.PaperCategoriesMeta, error) {
-	paperCategories, err := s.paperCatRepo.GetAllByPaperHash(nil, req.PaperHash)
-	if err != nil {
-		return nil, grpcerror.Internal(err, "failed to fetch paper categories")
-	}
-
-	response := &proto.PaperCategoriesMeta{
-		Categories: make([]*proto.PaperCategoryMeta, len(paperCategories)),
-	}
-
-	for i, pc := range paperCategories {
-		response.Categories[i] = &proto.PaperCategoryMeta{
-			Id:    int64(pc.CategoryID),
-			Order: int32(pc.Order),
-		}
-	}
-
-	return response, nil
 }

@@ -34,5 +34,7 @@ func Runner[Req any, Resp any, SetupReturn any](
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 
-	tc.Validate(t, resp, setupData)
+	if tc.Validate != nil {
+		tc.Validate(t, resp, setupData)
+	}
 }

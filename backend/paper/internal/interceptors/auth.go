@@ -31,15 +31,15 @@ var requiresRead = map[string]struct{}{
 }
 
 var requiresWrite = map[string]struct{}{
-	"/proto.Paper/UpdatePaper":          {},
-	"/proto.Paper/CreateCategory":       {},
-	"/proto.Paper/UpdateCategory":       {},
-	"/proto.Paper/DeleteCategory":       {},
-	"/proto.Paper/ReorderCategories":    {},
-	"/proto.Paper/UpdateQuestion":       {},
-	"/proto.Paper/DeleteQuestion":       {},
-	"/proto.Paper/CreateQuestion":       {},
-	"/proto.Paper/UpsertPaperTestCases": {},
+	"/proto.Paper/UpdatePaper":            {},
+	"/proto.Paper/CreatePaperCategory":    {},
+	"/proto.Paper/UpdatePaperCategory":    {},
+	"/proto.Paper/DeletePaperCategory":    {},
+	"/proto.Paper/ReorderPaperCategories": {},
+	"/proto.Paper/UpdatePaperQuestion":    {},
+	"/proto.Paper/DeletePaperQuestion":    {},
+	"/proto.Paper/CreatePaperQuestion":    {},
+	"/proto.Paper/UpsertPaperTestCases":   {},
 }
 
 func PaperAuthInterceptor(permissionRepo *repositories.PaperPermission) grpc.UnaryServerInterceptor {

@@ -199,35 +199,39 @@ func (s *Paper) DeletePapers(ctx context.Context, hashes []string) error {
 			return status.Error(codes.Internal, "failed to fetch paper IDs")
 		}
 
+		// Ignore non-existent papers
+		if len(paperIDs) == 0 {
+			return nil
+		}
+
 		// Get question IDs before deletion
 		var questionIDs []types.QuestionID
 		if err := tx.Model(&models.PaperQuestion{}).
 			Where("paper_id IN ?", paperIDs).
 			Pluck("question_id", &questionIDs).Error; err != nil {
-			return status.Error(codes.Internal, "failed to fetch question IDs")
+			return grpcerror.Internal(err, "failed to fetch question IDs")
 		}
 
 		// Decrease question paper indegree if there are questions
 		if len(questionIDs) > 0 {
 			if err := s.questionIntSvc.DecQuestionPaperIndegreeByIds(questionIDs); err != nil {
-				return status.Error(codes.Internal, "failed to decrease question paper indegree")
+				return grpcerror.Internal(err, "failed to decrease question paper indegree")
 			}
 		}
-
-		if err := s.paperRepo.BulkDelete(tx, paperIDs); err != nil {
-			return status.Error(codes.Internal, err.Error())
-		}
-
 		if err := s.paperPermRepo.BulkDeleteByPaperIDs(tx, paperIDs); err != nil {
-			return status.Error(codes.Internal, err.Error())
+			return grpcerror.Internal(err, "failed to delete paper permissions")
 		}
 
 		if err := s.paperQuestRepo.BulkDeleteByPaperIDs(tx, paperIDs); err != nil {
-			return status.Error(codes.Internal, err.Error())
+			return grpcerror.Internal(err, "failed to delete paper questions")
 		}
 
 		if err := s.paperCatRepo.BulkDeleteByPaperIDs(tx, paperIDs); err != nil {
-			return status.Error(codes.Internal, err.Error())
+			return grpcerror.Internal(err, "failed to delete paper categories")
+		}
+
+		if err := s.paperRepo.BulkDelete(tx, paperIDs); err != nil {
+			return grpcerror.Internal(err, "failed to delete papers")
 		}
 
 		return nil

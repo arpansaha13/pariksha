@@ -53,6 +53,9 @@ func (r *PaperPermission) GetByPaperHashAndUserId(tx *gorm.DB, paperHash string,
 	if err != nil {
 		return nil, err
 	}
+	if len(permissions) == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
 
 	return &permissions[0], nil
 }
@@ -61,5 +64,5 @@ func (r *PaperPermission) BulkDeleteByPaperIDs(tx *gorm.DB, paperIDs []types.Pap
 	tx = r.getTx(tx)
 
 	return tx.Where("paper_id IN ?", paperIDs).
-		Delete(models.PaperPermission{}).Error
+		Delete(&models.PaperPermission{}).Error
 }

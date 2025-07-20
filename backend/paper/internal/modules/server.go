@@ -83,7 +83,7 @@ func (s *paperServer) GetPaperCategories(ctx context.Context, req *proto.PaperRe
 	return s.categoryCtrl.HandleGetPaperCategories(ctx, req)
 }
 
-func (s *paperServer) CreatePaperCategory(ctx context.Context, req *proto.CreatePaperCategoryRequest) (*proto.PaperCategoryResponse, error) {
+func (s *paperServer) CreatePaperCategory(ctx context.Context, req *proto.PaperRequest) (*proto.PaperCategoryResponse, error) {
 	return s.categoryCtrl.HandleCreateCategory(ctx, req)
 }
 

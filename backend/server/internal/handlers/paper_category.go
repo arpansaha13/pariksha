@@ -59,7 +59,7 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 	paperService := services.GetPaperService()
 	ctx := paperService.CreateMetadata(userID)
 
-	response, err := paperService.Client().CreatePaperCategory(ctx, &proto.CreatePaperCategoryRequest{
+	response, err := paperService.Client().CreatePaperCategory(ctx, &proto.PaperRequest{
 		PaperHash: paperHash,
 	})
 
