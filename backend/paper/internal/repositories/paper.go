@@ -1,9 +1,12 @@
 package repositories
 
 import (
+	"database/sql"
+
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/utils"
 	"pariksha/paper/internal/models"
 )
 
@@ -21,6 +24,10 @@ func (r *Paper) getTx(tx *gorm.DB) *gorm.DB {
 		return r.db
 	}
 	return tx
+}
+
+func (r *Paper) Transaction(fc func(tx *gorm.DB) error, opts ...*sql.TxOptions) error {
+	return utils.TransactionHandler(r.db, fc, opts...)
 }
 
 // GetAllByUserId fetches all papers accessible to a user

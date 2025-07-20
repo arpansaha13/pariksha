@@ -35,9 +35,31 @@ func (r *PaperPermission) Create(tx *gorm.DB, paperID types.PaperID, userID type
 	return tx.Create(&perm).Error
 }
 
+func (r *PaperPermission) GetByPaperHashesAndUserId(tx *gorm.DB, paperHashes []string, userID types.UserID) ([]models.PaperPermission, error) {
+	tx = r.getTx(tx)
+
+	var permissions []models.PaperPermission
+	if err := tx.Joins("INNER JOIN papers ON papers.id = permissions.paper_id").
+		Where("papers.hash IN ? AND permissions.user_id = ?", paperHashes, userID).
+		Find(&permissions).Error; err != nil {
+		return nil, err
+	}
+
+	return permissions, nil
+}
+
+func (r *PaperPermission) GetByPaperHashAndUserId(tx *gorm.DB, paperHash string, userID types.UserID) (*models.PaperPermission, error) {
+	permissions, err := r.GetByPaperHashesAndUserId(tx, []string{paperHash}, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &permissions[0], nil
+}
+
 func (r *PaperPermission) BulkDeleteByPaperIDs(tx *gorm.DB, paperIDs []types.PaperID) error {
 	tx = r.getTx(tx)
 
 	return tx.Where("paper_id IN ?", paperIDs).
-		Delete(&models.PaperPermission{}).Error
+		Delete(models.PaperPermission{}).Error
 }

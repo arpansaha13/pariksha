@@ -12,7 +12,6 @@ import (
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/grpcerror"
-	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/interservice"
 	"pariksha/paper/internal/models"
 	"pariksha/paper/internal/repositories"
@@ -22,12 +21,14 @@ import (
 type Question struct {
 	paperRepo      *repositories.Paper
 	paperQuestRepo *repositories.PaperQuestion
+	questionIntSvc *interservice.Question
 }
 
-func NewQuestion(paperRepo *repositories.Paper, paperQuestRepo *repositories.PaperQuestion) *Question {
+func NewQuestion(paperRepo *repositories.Paper, paperQuestRepo *repositories.PaperQuestion, questionIntSvc *interservice.Question) *Question {
 	return &Question{
 		paperRepo:      paperRepo,
 		paperQuestRepo: paperQuestRepo,
+		questionIntSvc: questionIntSvc,
 	}
 }
 
@@ -43,7 +44,7 @@ func (s *Question) GetPaperQuestions(ctx context.Context, paperHash string) (*pr
 		questionIDs[i] = pq.QuestionID
 	}
 
-	questions, err := interservice.GetQuestionsMetaByIDs(questionIDs)
+	questions, err := s.questionIntSvc.GetQuestionsMetaByIDs(questionIDs)
 	if err != nil {
 		return nil, grpcerror.Internal(err, "failed to fetch question meta")
 	}
@@ -68,7 +69,7 @@ func (s *Question) GetPaperQuestions(ctx context.Context, paperHash string) (*pr
 
 // GetPaperQuestion handles fetching a single question with its test cases
 func (s *Question) GetPaperQuestion(req *proto.PaperQuestionRequest) (*proto.PaperQuestionResponse, error) {
-	question, err := interservice.GetQuestionByHash(req.QuestionHash)
+	question, err := s.questionIntSvc.GetQuestionByHash(req.QuestionHash)
 	if err != nil {
 		return nil, grpcerror.Internal(err, "failed to fetch question")
 	}
@@ -95,7 +96,7 @@ func (s *Question) CreatePaperQuestion(ctx context.Context, req *proto.CreatePap
 		return nil, err
 	}
 
-	resp, err := interservice.CreateQuestion(&proto.CreateQuestionRequest{
+	resp, err := s.questionIntSvc.CreateQuestion(&proto.CreateQuestionRequest{
 		RawQuestion: req.RawQuestion,
 		Type:        req.Type,
 	})
@@ -103,7 +104,7 @@ func (s *Question) CreatePaperQuestion(ctx context.Context, req *proto.CreatePap
 		return nil, grpcerror.Internal(err, "failed to create question")
 	}
 
-	err = utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+	err = s.paperRepo.Transaction(func(tx *gorm.DB) error {
 		// Get paper by hash
 		paper, err := s.paperRepo.GetByHash(tx, req.PaperHash)
 		if err != nil {
@@ -144,7 +145,7 @@ func (s *Question) UpdatePaperQuestion(req *proto.UpdatePaperQuestionRequest) (*
 		}
 	}
 
-	questionMeta, err := interservice.GetQuestionMetaByHash(req.QuestionHash)
+	questionMeta, err := s.questionIntSvc.GetQuestionMetaByHash(req.QuestionHash)
 	if err != nil {
 		return nil, grpcerror.Internal(err, "failed to fetch question")
 	}
@@ -154,7 +155,7 @@ func (s *Question) UpdatePaperQuestion(req *proto.UpdatePaperQuestionRequest) (*
 		return nil, grpcerror.Internal(err, "failed to get paper question")
 	}
 
-	resp, err := interservice.UpdateQuestion(&proto.UpdateQuestionRequest{
+	resp, err := s.questionIntSvc.UpdateQuestion(&proto.UpdateQuestionRequest{
 		Hash:        req.QuestionHash,
 		Type:        req.Type,
 		RawQuestion: req.RawQuestion,
@@ -178,8 +179,8 @@ func (s *Question) UpdatePaperQuestion(req *proto.UpdatePaperQuestionRequest) (*
 
 // DeleteQuestion handles the business logic for deleting a question
 func (s *Question) DeletePaperQuestion(paperHash string, questionHash string) error {
-	return utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		question, err := interservice.GetQuestionMetaByHash(questionHash)
+	return s.paperRepo.Transaction(func(tx *gorm.DB) error {
+		question, err := s.questionIntSvc.GetQuestionMetaByHash(questionHash)
 		if err != nil {
 			return grpcerror.Internal(err, "faled to fetch question id")
 		}
@@ -190,8 +191,8 @@ func (s *Question) DeletePaperQuestion(paperHash string, questionHash string) er
 
 // ReorderQuestions handles the business logic for reordering questions
 func (s *Question) ReorderQuestions(categoryID int64, questionHashes []string) error {
-	return utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
-		questionIDs, err := interservice.GetQuestionIDsByHashes(questionHashes)
+	return s.paperRepo.Transaction(func(tx *gorm.DB) error {
+		questionIDs, err := s.questionIntSvc.GetQuestionIDsByHashes(questionHashes)
 		if err != nil {
 			return grpcerror.Internal(err, "failed to fetch question ids")
 		}
@@ -218,14 +219,14 @@ func (s *Question) ReorderQuestions(categoryID int64, questionHashes []string) e
 }
 
 func (s *Question) GetBoilerplate(req *proto.GetPaperBoilerplateRequest) (*proto.BoilerplateResponse, error) {
-	return interservice.GetBoilerplate(&proto.GetBoilerplateRequest{
+	return s.questionIntSvc.GetBoilerplate(&proto.GetBoilerplateRequest{
 		QuestionHash: req.QuestionHash,
 		LanguageId:   req.LanguageId,
 	})
 }
 
 func (s *Question) UpsertTestCases(req *proto.UpsertPaperTestCasesRequest) (*emptypb.Empty, error) {
-	return interservice.UpsertTestCases(&proto.UpsertTestCasesRequest{
+	return s.questionIntSvc.UpsertTestCases(&proto.UpsertTestCasesRequest{
 		QuestionHash: req.QuestionHash,
 		TestCases:    req.TestCases,
 	})

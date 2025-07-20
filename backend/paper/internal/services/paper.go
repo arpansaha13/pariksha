@@ -13,7 +13,6 @@ import (
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/generate"
 	"pariksha/common/pkg/utils/grpcerror"
-	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/interservice"
 	"pariksha/paper/internal/models"
 	"pariksha/paper/internal/repositories"
@@ -25,6 +24,7 @@ type Paper struct {
 	paperCatRepo   *repositories.PaperCategory
 	paperPermRepo  *repositories.PaperPermission
 	paperQuestRepo *repositories.PaperQuestion
+	questionIntSvc *interservice.Question
 }
 
 func NewPaper(
@@ -32,12 +32,14 @@ func NewPaper(
 	paperCatRepo *repositories.PaperCategory,
 	paperPermRepo *repositories.PaperPermission,
 	paperQuestRepo *repositories.PaperQuestion,
+	questionIntSvc *interservice.Question,
 ) *Paper {
 	return &Paper{
 		paperRepo:      paperRepo,
 		paperCatRepo:   paperCatRepo,
 		paperPermRepo:  paperPermRepo,
 		paperQuestRepo: paperQuestRepo,
+		questionIntSvc: questionIntSvc,
 	}
 }
 
@@ -82,7 +84,7 @@ func (s *Paper) GetPaper(paperHash string) (*proto.PaperResponse, error) {
 		questionIDs[i] = pq.QuestionID
 	}
 
-	questions, err := interservice.GetQuestionsMetaByIDs(questionIDs)
+	questions, err := s.questionIntSvc.GetQuestionsMetaByIDs(questionIDs)
 	questionCounts := proto.QuestionCount{
 		Mcq:        0,
 		Subjective: 0,
@@ -114,7 +116,7 @@ func (s *Paper) GetPaper(paperHash string) (*proto.PaperResponse, error) {
 func (s *Paper) CreatePaper(userID types.UserID) (*proto.CreatePaperResponse, error) {
 	var paper models.Paper
 
-	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+	err := s.paperRepo.Transaction(func(tx *gorm.DB) error {
 		paper = models.Paper{CreatedBy: userID}
 		if err := s.paperRepo.Create(tx, &paper, userID); err != nil {
 			return grpcerror.Internal(err, "failed to create paper")
@@ -125,7 +127,7 @@ func (s *Paper) CreatePaper(userID types.UserID) (*proto.CreatePaperResponse, er
 		}
 
 		// Create default category
-		category, err := interservice.CreateCategory("Category 1")
+		category, err := s.questionIntSvc.CreateCategory("Category 1")
 		if err != nil {
 			return grpcerror.Internal(err, "failed to create default category")
 		}
@@ -156,7 +158,7 @@ func (s *Paper) CreatePaper(userID types.UserID) (*proto.CreatePaperResponse, er
 
 // UpdatePaper handles the business logic for updating a paper
 func (s *Paper) UpdatePaper(ctx context.Context, req *proto.UpdatePaperRequest) error {
-	return utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+	return s.paperRepo.Transaction(func(tx *gorm.DB) error {
 		paper, err := s.paperRepo.GetByHash(tx, req.PaperHash)
 		if err != nil {
 			return utils.HandleDBError(err, "paper not found")
@@ -191,7 +193,7 @@ func (s *Paper) UpdatePaper(ctx context.Context, req *proto.UpdatePaperRequest) 
 
 // DeletePapers handles the business logic for deleting multiple papers
 func (s *Paper) DeletePapers(ctx context.Context, hashes []string) error {
-	return utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+	return s.paperRepo.Transaction(func(tx *gorm.DB) error {
 		paperIDs, err := s.paperRepo.GetIDsByHashes(tx, hashes)
 		if err != nil {
 			return status.Error(codes.Internal, "failed to fetch paper IDs")
@@ -207,7 +209,7 @@ func (s *Paper) DeletePapers(ctx context.Context, hashes []string) error {
 
 		// Decrease question paper indegree if there are questions
 		if len(questionIDs) > 0 {
-			if err := interservice.DecQuestionPaperIndegreeByIds(questionIDs); err != nil {
+			if err := s.questionIntSvc.DecQuestionPaperIndegreeByIds(questionIDs); err != nil {
 				return status.Error(codes.Internal, "failed to decrease question paper indegree")
 			}
 		}

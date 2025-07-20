@@ -9,15 +9,14 @@ import (
 
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
-	"pariksha/paper/internal/config/db"
-	"pariksha/paper/internal/models"
+	"pariksha/paper/internal/repositories"
 )
 
 const deletePaperPath = "/proto.Paper/DeletePapers"
 
 // DeletePaperAuthInterceptor returns a new unary server interceptor that handles
 // permission checks for the DeletePapers endpoint.
-func DeletePaperAuthInterceptor() grpc.UnaryServerInterceptor {
+func DeletePaperAuthInterceptor(permissionRepo *repositories.PaperPermission) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		// Only intercept DeletePapers requests
 		if info.FullMethod != deletePaperPath {
@@ -41,10 +40,8 @@ func DeletePaperAuthInterceptor() grpc.UnaryServerInterceptor {
 		}
 
 		// Get permissions for all papers using JOIN with papers table
-		var permissions []models.PaperPermission
-		if err := db.DB.Joins("INNER JOIN papers ON papers.id = permissions.paper_id").
-			Where("papers.hash IN ? AND permissions.user_id = ?", deleteReq.PaperHashes, userID).
-			Find(&permissions).Error; err != nil {
+		permissions, err := permissionRepo.GetByPaperHashesAndUserId(nil, deleteReq.PaperHashes, userID)
+		if err != nil {
 			return nil, status.Error(codes.Internal, "failed to fetch permissions")
 		}
 

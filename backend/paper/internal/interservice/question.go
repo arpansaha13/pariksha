@@ -2,84 +2,51 @@ package interservice
 
 import (
 	"context"
-	"fmt"
-	"log"
-	"sync"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
-	"pariksha/paper/internal/config/env"
 )
 
-var (
-	qSvc     *questionService
-	qSvcOnce sync.Once
-)
-
-type questionService struct {
-	client proto.QuestionClient
-	conn   *grpc.ClientConn
+type Question struct {
 	ctx    context.Context
+	conn   *grpc.ClientConn
+	client proto.QuestionClient
 }
 
-func CloseQuestionConn() {
-	if qSvc != nil && qSvc.conn != nil {
-		qSvc.conn.Close()
+func NewQuestion(conn *grpc.ClientConn, client proto.QuestionClient) *Question {
+	return &Question{
+		conn:   conn,
+		client: client,
+		ctx:    context.Background(),
 	}
 }
 
-func ensureQuestionService() {
-	qSvcOnce.Do(func() {
-		qSvc = &questionService{}
-		addr := fmt.Sprintf("%s:%s", env.QUESTION_SERVER_HOST, env.QUESTION_SERVER_PORT)
-		conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if err != nil {
-			log.Fatalf("Failed to connect to question service: %v", err)
-		}
-
-		qSvc.conn = conn
-		qSvc.client = proto.NewQuestionClient(conn)
-		qSvc.ctx = context.Background()
-	})
-}
-
-func init() {
-	ensureQuestionService()
+func (ic *Question) Close() {
+	if ic.conn != nil {
+		ic.conn.Close()
+	}
 }
 
 // Question operations
-var CreateQuestion = createQuestion
 
-// CreateQuestion creates a new question by calling the gRPC CreateQuestion method.
-func createQuestion(req *proto.CreateQuestionRequest) (*proto.CreateQuestionResponse, error) {
-	ensureQuestionService()
-	return qSvc.client.CreateQuestion(qSvc.ctx, req)
+func (ic *Question) CreateQuestion(req *proto.CreateQuestionRequest) (*proto.CreateQuestionResponse, error) {
+	return ic.client.CreateQuestion(ic.ctx, req)
 }
 
-var UpdateQuestion = updateQuestion
-
-// UpdateQuestion updates an existing question by calling the gRPC UpdateQuestion method.
-func updateQuestion(req *proto.UpdateQuestionRequest) (*proto.UpdateQuestionResponse, error) {
-	ensureQuestionService()
-	return qSvc.client.UpdateQuestion(qSvc.ctx, req)
+func (ic *Question) UpdateQuestion(req *proto.UpdateQuestionRequest) (*proto.UpdateQuestionResponse, error) {
+	return ic.client.UpdateQuestion(ic.ctx, req)
 }
 
-var GetQuestionsMetaByIDs = getQuestionsMetaByIDs
-
-// GetQuestionsMetaByIDs fetches question metadata for given IDs.
-func getQuestionsMetaByIDs(typedQuestionIDs []types.QuestionID) ([]*proto.QuestionMeta, error) {
-	ensureQuestionService()
-
+func (ic *Question) GetQuestionsMetaByIDs(typedQuestionIDs []types.QuestionID) ([]*proto.QuestionMeta, error) {
 	questionIDs := make([]int64, len(typedQuestionIDs))
 	for i, qid := range typedQuestionIDs {
 		questionIDs[i] = int64(qid)
 	}
 
-	resp, err := qSvc.client.GetQuestionsMetaByIds(qSvc.ctx, &proto.QuestionIdsRequest{
+	resp, err := ic.client.GetQuestionsMetaByIds(ic.ctx, &proto.QuestionIdsRequest{
 		Ids: questionIDs,
 	})
 	if err != nil {
@@ -88,12 +55,8 @@ func getQuestionsMetaByIDs(typedQuestionIDs []types.QuestionID) ([]*proto.Questi
 	return resp.Meta, nil
 }
 
-var GetQuestionIDsByHashes = getQuestionIDsByHashes
-
-func getQuestionIDsByHashes(questionHashes []string) ([]types.QuestionID, error) {
-	ensureQuestionService()
-
-	resp, err := qSvc.client.GetQuestionIdsByHashes(qSvc.ctx, &proto.QuestionHashesRequest{
+func (ic *Question) GetQuestionIDsByHashes(questionHashes []string) ([]types.QuestionID, error) {
+	resp, err := ic.client.GetQuestionIdsByHashes(ic.ctx, &proto.QuestionHashesRequest{
 		Hashes: questionHashes,
 	})
 	if err != nil {
@@ -108,13 +71,9 @@ func getQuestionIDsByHashes(questionHashes []string) ([]types.QuestionID, error)
 	return typedQuestionIDs, err
 }
 
-var GetQuestionMetaByHash = getQuestionMetaByHash
-
 // GetQuestionMetaByHash fetches question metadata for a given hash.
-func getQuestionMetaByHash(questionHash string) (*proto.QuestionMeta, error) {
-	ensureQuestionService()
-
-	resp, err := qSvc.client.GetQuestionsMetaByHashes(qSvc.ctx, &proto.QuestionHashesRequest{
+func (ic *Question) GetQuestionMetaByHash(questionHash string) (*proto.QuestionMeta, error) {
+	resp, err := ic.client.GetQuestionsMetaByHashes(ic.ctx, &proto.QuestionHashesRequest{
 		Hashes: []string{questionHash},
 	})
 	if err != nil {
@@ -127,10 +86,8 @@ func getQuestionMetaByHash(questionHash string) (*proto.QuestionMeta, error) {
 	return resp.Meta[0], nil
 }
 
-var GetQuestionByID = getQuestionByID
-
-func getQuestionByID(typedQuestionID types.QuestionID) (*proto.QuestionResponse, error) {
-	resp, err := qSvc.client.GetQuestionsByIds(qSvc.ctx, &proto.QuestionIdsRequest{
+func (ic *Question) GetQuestionByID(typedQuestionID types.QuestionID) (*proto.QuestionResponse, error) {
+	resp, err := ic.client.GetQuestionsByIds(ic.ctx, &proto.QuestionIdsRequest{
 		Ids: []int64{int64(typedQuestionID)},
 	})
 	if err != nil {
@@ -140,12 +97,8 @@ func getQuestionByID(typedQuestionID types.QuestionID) (*proto.QuestionResponse,
 	return resp.Questions[0], err
 }
 
-var GetQuestionByHash = getQuestionByHash
-
-func getQuestionByHash(questionHash string) (*proto.QuestionResponse, error) {
-	ensureQuestionService()
-
-	resp, err := qSvc.client.GetQuestionsByHashes(qSvc.ctx, &proto.QuestionHashesRequest{
+func (ic *Question) GetQuestionByHash(questionHash string) (*proto.QuestionResponse, error) {
+	resp, err := ic.client.GetQuestionsByHashes(ic.ctx, &proto.QuestionHashesRequest{
 		Hashes: []string{questionHash},
 	})
 	if err != nil {
@@ -155,59 +108,41 @@ func getQuestionByHash(questionHash string) (*proto.QuestionResponse, error) {
 	return resp.Questions[0], nil
 }
 
-var DecQuestionPaperIndegreeByIds = decQuestionPaperIndegreeByIds
-
-func decQuestionPaperIndegreeByIds(typedQuestionIDs []types.QuestionID) error {
-	ensureQuestionService()
-
+func (ic *Question) DecQuestionPaperIndegreeByIds(typedQuestionIDs []types.QuestionID) error {
 	questionIDs := make([]int64, len(typedQuestionIDs))
 	for i, q := range typedQuestionIDs {
 		questionIDs[i] = int64(q)
 	}
 
-	_, err := qSvc.client.DecQuestionPaperIndegreeByIds(qSvc.ctx, &proto.QuestionIdsRequest{
+	_, err := ic.client.DecQuestionPaperIndegreeByIds(ic.ctx, &proto.QuestionIdsRequest{
 		Ids: questionIDs,
 	})
 	return err
 }
 
-var GetBoilerplate = getBoilerplate
-
-func getBoilerplate(req *proto.GetBoilerplateRequest) (*proto.BoilerplateResponse, error) {
-	ensureQuestionService()
-	return qSvc.client.GetBoilerplate(qSvc.ctx, req)
+func (ic *Question) GetBoilerplate(req *proto.GetBoilerplateRequest) (*proto.BoilerplateResponse, error) {
+	return ic.client.GetBoilerplate(ic.ctx, req)
 }
 
-var UpsertTestCases = upsertTestCases
-
-func upsertTestCases(req *proto.UpsertTestCasesRequest) (*emptypb.Empty, error) {
-	ensureQuestionService()
-	return qSvc.client.UpsertTestCases(qSvc.ctx, req)
+func (ic *Question) UpsertTestCases(req *proto.UpsertTestCasesRequest) (*emptypb.Empty, error) {
+	return ic.client.UpsertTestCases(ic.ctx, req)
 }
 
 // CreateCategory creates a new category by calling the gRPC CreateCategory method.
-var CreateCategory = createCategory
-
-func createCategory(name string) (*proto.CategoryResponse, error) {
-	ensureQuestionService()
-	// Assuming CreateCategory takes an empty request.
-	return qSvc.client.CreateCategory(qSvc.ctx, &proto.CreateCategoryRequest{
+func (ic *Question) CreateCategory(name string) (*proto.CategoryResponse, error) { // Assuming CreateCategory takes an empty request.
+	return ic.client.CreateCategory(ic.ctx, &proto.CreateCategoryRequest{
 		Name: name,
 	})
 }
 
 // GetCategoriesByIDs fetches categories by their IDs.
-var GetCategoriesByIDs = getCategoriesByIDs
-
-func getCategoriesByIDs(typedCategoryIDs []types.CategoryID) ([]*proto.CategoryResponse, error) {
-	ensureQuestionService()
-
+func (ic *Question) GetCategoriesByIDs(typedCategoryIDs []types.CategoryID) ([]*proto.CategoryResponse, error) {
 	catIds := make([]int64, len(typedCategoryIDs))
 	for i, id := range typedCategoryIDs {
 		catIds[i] = int64(id)
 	}
 
-	resp, err := qSvc.client.GetCategoriesByIds(qSvc.ctx, &proto.CategoryIdsRequest{
+	resp, err := ic.client.GetCategoriesByIds(ic.ctx, &proto.CategoryIdsRequest{
 		Ids: catIds,
 	})
 	if err != nil {
@@ -218,12 +153,8 @@ func getCategoriesByIDs(typedCategoryIDs []types.CategoryID) ([]*proto.CategoryR
 }
 
 // UpdateCategoryName updates the name of a category.
-var UpdateCategoryName = updateCategoryName
-
-func updateCategoryName(req *proto.UpdateCategoryRequest) (*proto.UpdateCategoryResponse, error) {
-	ensureQuestionService()
-
-	resp, err := qSvc.client.UpdateCategoryName(qSvc.ctx, req)
+func (ic *Question) UpdateCategoryName(req *proto.UpdateCategoryRequest) (*proto.UpdateCategoryResponse, error) {
+	resp, err := ic.client.UpdateCategoryName(ic.ctx, req)
 	if err != nil {
 		return nil, err
 	}

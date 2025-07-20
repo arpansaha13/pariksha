@@ -11,7 +11,6 @@ import (
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/grpcerror"
-	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/interservice"
 	"pariksha/paper/internal/models"
 	"pariksha/paper/internal/repositories"
@@ -21,6 +20,7 @@ type Category struct {
 	paperRepo      *repositories.Paper
 	paperCatRepo   *repositories.PaperCategory
 	paperQuestRepo *repositories.PaperQuestion
+	questionIntSvc *interservice.Question
 }
 
 // NewCategoryService creates a new category service instance
@@ -28,11 +28,13 @@ func NewCategory(
 	paperRepo *repositories.Paper,
 	paperCatRepo *repositories.PaperCategory,
 	paperQuestRepo *repositories.PaperQuestion,
+	questionIntSvc *interservice.Question,
 ) *Category {
 	return &Category{
 		paperRepo:      paperRepo,
 		paperCatRepo:   paperCatRepo,
 		paperQuestRepo: paperQuestRepo,
+		questionIntSvc: questionIntSvc,
 	}
 }
 
@@ -48,7 +50,7 @@ func (s *Category) GetPaperCategories(paperHash string) (*proto.PaperCategoryLis
 		categoryIDs[i] = pc.CategoryID
 	}
 
-	categories, err := interservice.GetCategoriesByIDs(categoryIDs)
+	categories, err := s.questionIntSvc.GetCategoriesByIDs(categoryIDs)
 	if err != nil {
 		return nil, grpcerror.Internal(err, "failed to fetch question meta")
 	}
@@ -71,7 +73,7 @@ func (s *Category) GetPaperCategories(paperHash string) (*proto.PaperCategoryLis
 
 // ReorderCategories handles the business logic for reordering categories
 func (s *Category) ReorderCategories(paperHash string, categoryIDs []int64) error {
-	return utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+	return s.paperRepo.Transaction(func(tx *gorm.DB) error {
 		count, err := s.paperCatRepo.GetCategoriesCountByPaperHash(tx, paperHash, categoryIDs)
 		if err != nil {
 			return err
@@ -96,7 +98,7 @@ func (s *Category) CreateCategory(paperHash string) (*proto.PaperCategoryRespons
 	var paperCategory models.PaperCategory
 	var category *proto.CategoryResponse
 
-	err := utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+	err := s.paperRepo.Transaction(func(tx *gorm.DB) error {
 		paper, err := s.paperRepo.GetByHash(tx, paperHash)
 		if err != nil {
 			return utils.HandleDBError(err, "paper not found")
@@ -107,7 +109,7 @@ func (s *Category) CreateCategory(paperHash string) (*proto.PaperCategoryRespons
 			return grpcerror.Internal(err, "failed to get max category order")
 		}
 
-		category, err = interservice.CreateCategory(fmt.Sprintf("Category %d", maxOrder+1))
+		category, err = s.questionIntSvc.CreateCategory(fmt.Sprintf("Category %d", maxOrder+1))
 		if err != nil {
 			return grpcerror.Internal(err, "failed to create category")
 		}
@@ -134,14 +136,14 @@ func (s *Category) CreateCategory(paperHash string) (*proto.PaperCategoryRespons
 
 // UpdateCategory handles updating a category's name
 func (s *Category) UpdateCategory(req *proto.UpdatePaperCategoryRequest) error {
-	return utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+	return s.paperRepo.Transaction(func(tx *gorm.DB) error {
 		// Get existing category
 		category, err := s.paperCatRepo.GetByPaperHashAndCategoryID(tx, req.PaperHash, types.CategoryID(req.CategoryId))
 		if err != nil {
 			return utils.HandleDBError(err, "category not found")
 		}
 
-		_, err = interservice.UpdateCategoryName(&proto.UpdateCategoryRequest{
+		_, err = s.questionIntSvc.UpdateCategoryName(&proto.UpdateCategoryRequest{
 			Id:   int64(category.CategoryID),
 			Name: req.Name,
 		})
@@ -155,7 +157,7 @@ func (s *Category) UpdateCategory(req *proto.UpdatePaperCategoryRequest) error {
 
 // DeleteCategory handles deleting a category and its contents
 func (s *Category) DeleteCategory(req *proto.PaperCategoryRequest) error {
-	return utils.TransactionHandler(db.DB, func(tx *gorm.DB) error {
+	return s.paperRepo.Transaction(func(tx *gorm.DB) error {
 		paperCategory, err := s.paperCatRepo.GetByPaperHashAndCategoryID(tx, req.PaperHash, types.CategoryID(req.CategoryId))
 		if err != nil {
 			return utils.HandleDBError(err, "category not found")
@@ -182,7 +184,7 @@ func (s *Category) DeleteCategory(req *proto.PaperCategoryRequest) error {
 		}
 
 		// Decrement paper indegree for deleted paper questions
-		if err := interservice.DecQuestionPaperIndegreeByIds(questionIDs); err != nil {
+		if err := s.questionIntSvc.DecQuestionPaperIndegreeByIds(questionIDs); err != nil {
 			return grpcerror.Internal(err, "failed to decrement question paper indegrees")
 		}
 
