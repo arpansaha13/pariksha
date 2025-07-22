@@ -11,6 +11,7 @@ export default defineNuxtConfig({
     'pinia-plugin-persistedstate/nuxt',
     'nuxt-monaco-editor',
     'nuxt-lodash',
+    '@nuxtjs/device',
     // '@nuxtjs/html-validator',
   ],
 
