@@ -30,7 +30,7 @@ func (r *PaperQuestion) Create(tx *gorm.DB, paperQuest *models.PaperQuestion) er
 
 func (r *PaperQuestion) DeleteByID(tx *gorm.DB, questionID types.QuestionID) error {
 	tx = r.getTx(tx)
-	return tx.Where("question_id IN ?", questionID).
+	return tx.Where("question_id = ?", questionID).
 		Delete(&models.PaperQuestion{}).Error
 }
 

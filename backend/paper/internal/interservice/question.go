@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"pariksha/common/pkg/proto"
@@ -68,7 +70,7 @@ func (ic *Question) GetQuestionIDsByHashes(questionHashes []string) ([]types.Que
 		typedQuestionIDs[i] = types.QuestionID(qid)
 	}
 
-	return typedQuestionIDs, err
+	return typedQuestionIDs, nil
 }
 
 // GetQuestionMetaByHash fetches question metadata for a given hash.
@@ -101,8 +103,12 @@ func (ic *Question) GetQuestionByHash(questionHash string) (*proto.QuestionRespo
 	resp, err := ic.client.GetQuestionsByHashes(ic.ctx, &proto.QuestionHashesRequest{
 		Hashes: []string{questionHash},
 	})
+
 	if err != nil {
 		return nil, err
+	}
+	if len(resp.Questions) == 0 {
+		return nil, status.Error(codes.NotFound, "could not find question")
 	}
 
 	return resp.Questions[0], nil

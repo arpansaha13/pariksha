@@ -6,6 +6,8 @@ import (
 	"pariksha/common/pkg/proto"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -13,8 +15,13 @@ type QuestionClient struct{}
 
 // _________________________QUESTION OPERATIONS________________________
 
+// CreateCategory will return a static response with question_id=6.
+// Make sure question_id=6 is not already created before running the test.
 func (m *QuestionClient) CreateQuestion(ctx context.Context, req *proto.CreateQuestionRequest, opts ...grpc.CallOption) (*proto.CreateQuestionResponse, error) {
-	return &proto.CreateQuestionResponse{}, nil
+	return &proto.CreateQuestionResponse{
+		Id:   questionMap[6].Id,
+		Hash: questionMap[6].Hash,
+	}, nil
 }
 
 func (m *QuestionClient) UpdateQuestion(ctx context.Context, req *proto.UpdateQuestionRequest, opts ...grpc.CallOption) (*proto.UpdateQuestionResponse, error) {
@@ -93,6 +100,9 @@ func (m *QuestionClient) GetQuestionsMetaByHashes(ctx context.Context, req *prot
 			}
 		}
 	}
+	if len(meta) == 0 {
+		return nil, status.Error(codes.NotFound, "could not find question")
+	}
 	return &proto.QuestionsMetaResponse{Meta: meta}, nil
 }
 
@@ -132,19 +142,33 @@ func (m *QuestionClient) GetCodingQuestionInputDefinitions(ctx context.Context, 
 // _______________________BOILERPLATE OPERATIONS_______________________
 
 func (m *QuestionClient) GetBoilerplate(ctx context.Context, req *proto.GetBoilerplateRequest, opts ...grpc.CallOption) (*proto.BoilerplateResponse, error) {
-	return &proto.BoilerplateResponse{}, nil
+	if langMap, ok := boilerplateMap[req.QuestionHash]; ok {
+		if boilerplate, exists := langMap[req.LanguageId]; exists {
+			return boilerplate, nil
+		}
+	}
+	return nil, status.Error(codes.NotFound, "could not find boilerplate")
 }
 
 // ________________________TESTCASE OPERATIONS_________________________
 
 func (m *QuestionClient) UpsertTestCases(ctx context.Context, req *proto.UpsertTestCasesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	return &emptypb.Empty{}, nil
+	for _, q := range questionMap {
+		if q.Hash != req.QuestionHash {
+			continue
+		}
+		if q.Type != proto.QuestionType_CODING {
+			return nil, status.Error(codes.InvalidArgument, "test cases can only be added to coding questions")
+		}
+		return &emptypb.Empty{}, nil
+	}
+	return nil, status.Error(codes.NotFound, "could not find question")
 }
 
 // _________________________CATEGORY OPERATIONS________________________
 
-// CreateCategory will return a static response with question_id=6.
-// Make sure question_id=6 is not already created before running the test.
+// CreateCategory will return a static response with category_id=6.
+// Make sure category_id=6 is not already created before running the test.
 func (m *QuestionClient) CreateCategory(ctx context.Context, req *proto.CreateCategoryRequest, opts ...grpc.CallOption) (*proto.CategoryResponse, error) {
 	return &proto.CategoryResponse{
 		Id:   6,

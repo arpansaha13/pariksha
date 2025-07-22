@@ -1,455 +1,1019 @@
 package tests
 
 import (
-	"database/sql"
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/structs"
+	"pariksha/common/pkg/test"
 	"pariksha/common/pkg/types"
-	"pariksha/common/pkg/utils/generate"
-	"pariksha/common/pkg/utils/testrunner"
-	"pariksha/paper/internal/config/db"
+	"pariksha/paper/internal/config/env"
 	"pariksha/paper/internal/models"
 )
 
 func TestGetPaperQuestions(t *testing.T) {
-	tests := []QuestionListCase{
+	type SetupReturn struct {
+		Paper      models.Paper
+		Questions  []models.PaperQuestion
+		Categories []models.PaperCategory
+	}
+
+	testCases := []test.TestCase[*proto.PaperRequest, *proto.QuestionList, *SetupReturn]{
 		{
-			BaseTestCase: BaseTestCase{
-				name:         "Success - Get questions for paper with all test cases",
-				userID:       userID,
-				expectedCode: codes.OK,
+			Name:     "Get multiple questions from paper",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+
+				categories := createTestCategories(t, []models.PaperCategory{
+					{
+						PaperID:    papers[0].ID,
+						CategoryID: 1,
+					},
+					{
+						PaperID:    papers[0].ID,
+						CategoryID: 2,
+					},
+				})
+
+				questions := createTestQuestions(t, []models.PaperQuestion{
+					{
+						PaperID:    papers[0].ID,
+						QuestionID: 1,
+						CategoryID: categories[0].CategoryID,
+						MaxScore:   10,
+					},
+					{
+						PaperID:    papers[0].ID,
+						QuestionID: 2,
+						CategoryID: categories[1].CategoryID,
+						MaxScore:   15,
+					},
+				})
+
+				return &SetupReturn{
+					Paper:      papers[0],
+					Questions:  questions,
+					Categories: categories,
+				}
 			},
-			setup: func(t *testing.T) (*models.Paper, []models.Question) {
-				paper := createTestPaper(t, userID)
-				category := createDefaultTestCategory(t, paper.ID)
-
-				questions := createTestQuestions(t, []models.Question{
-					{
-						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-						CategoryID: category.ID,
-						Type:       proto.QuestionType_MCQ,
-						Question:   json.RawMessage(`{"statement":"MCQ Question","options":["A","B","C"]}`),
-					},
-					{
-						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-						CategoryID: category.ID,
-						Type:       proto.QuestionType_SUBJECTIVE,
-						Question:   json.RawMessage(`{"statement":"Subjective Question"}`),
-					},
-					{
-						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-						CategoryID: category.ID,
-						Type:       proto.QuestionType_CODING,
-						Question: json.RawMessage(`{
-							"title": "Sum Numbers",
-							"statement": "Add two numbers",
-							"input_definitions": [
-								{ "variable_name": "a", "type": 1 },
-								{ "variable_name": "b", "type": 1 }
-							],
-							"output_definition": {"type": 1}
-						}`),
-					},
-				})
-
-				// Create test cases for coding question
-				createTestCases(t, []models.TestCase{
-					{
-						QuestionID: questions[2].ID,
-						Content:    json.RawMessage(`{"inputs": ["1", "2"], "output": "3"}`),
-						Hidden:     false,
-					},
-					{
-						QuestionID: questions[2].ID,
-						Content:    json.RawMessage(`{"inputs": ["4", "5"], "output": "9"}`),
-						Hidden:     true,
-					},
-				})
-
-				return &paper, questions
+			GetRequest: func(setupData *SetupReturn) *proto.PaperRequest {
+				return &proto.PaperRequest{
+					PaperHash: setupData.Paper.Hash,
+				}
 			},
-			validate: func(t *testing.T, resp *proto.QuestionList) {
-				assert.Equal(t, 3, len(resp.Questions))
-
-				// Validate MCQ question
-				mcqJson, _ := json.Marshal(structs.MCQQuestion{
-					Statement: "MCQ Question",
-					Options:   []string{"A", "B", "C"},
-				})
-				assert.True(t, compareJSONByteArrays(mcqJson, resp.Questions[0].RawQuestion))
-
-				// Validate subjective question
-				subjJson, _ := json.Marshal(structs.SubjectiveQuestion{
-					Statement: "Subjective Question",
-				})
-				assert.True(t, compareJSONByteArrays(subjJson, resp.Questions[1].RawQuestion))
-
-				// Validate coding question
-				var coding structs.CodingQuestion
-				require.NoError(t, json.Unmarshal(resp.Questions[2].RawQuestion, &coding))
-				assert.Equal(t, "Sum Numbers", coding.Title)
-				assert.Equal(t, "Add two numbers", coding.Statement)
-				assert.Len(t, coding.InputDefinitions, 2)
+			ExpectedCode: codes.OK,
+			Validate: func(t *testing.T, resp *proto.QuestionList, setupData *SetupReturn) {
+				require.Equal(t, len(setupData.Questions), len(resp.Questions))
+				for i, q := range resp.Questions {
+					assert.NotEmpty(t, q.QuestionHash)
+					assert.Equal(t, int64(setupData.Questions[i].CategoryID), q.CategoryId)
+					assert.Equal(t, setupData.Paper.Hash, q.PaperHash)
+					assert.Equal(t, int32(setupData.Questions[i].Order), q.Order)
+					assert.NotEmpty(t, q.RawQuestion)
+				}
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
-				name:         "Paper not found",
-				userID:       userID,
-				expectedCode: codes.NotFound,
+			Name:     "Paper with no questions",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+
+				categories := createTestCategories(t, []models.PaperCategory{
+					{
+						PaperID:    papers[0].ID,
+						CategoryID: 1,
+					},
+				})
+
+				return &SetupReturn{
+					Paper:      papers[0],
+					Categories: categories,
+					Questions:  []models.PaperQuestion{},
+				}
 			},
-			setup: func(t *testing.T) (*models.Paper, []models.Question) {
-				return &models.Paper{
-					ID:   999,
-					Hash: generate.HMACHash(999),
-				}, nil
+			GetRequest: func(setupData *SetupReturn) *proto.PaperRequest {
+				return &proto.PaperRequest{
+					PaperHash: setupData.Paper.Hash,
+				}
+			},
+			ExpectedCode: codes.OK,
+			Validate: func(t *testing.T, resp *proto.QuestionList, setupData *SetupReturn) {
+				assert.Empty(t, resp.Questions)
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
-				name:         "No access to paper",
-				userID:       userID,
-				expectedCode: codes.PermissionDenied,
+			Name:     "Non-existent paper hash",
+			Metadata: defaultMetadata,
+			GetRequest: func(setupData *SetupReturn) *proto.PaperRequest {
+				return &proto.PaperRequest{
+					PaperHash: "nonexistent",
+				}
 			},
-			setup: func(t *testing.T) (*models.Paper, []models.Question) {
-				paper := createTestPaper(t, 2) // Create paper owned by different user
-				return &paper, nil
-			},
+			ExpectedCode: codes.PermissionDenied,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
 			clearTables(t)
-			paper, _ := tt.setup(t)
-
-			ctx := createContextWithUserID(tt.userID)
-			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.PaperRequest{PaperHash: paper.Hash},
-				client.GetPaperQuestions,
-				tt.validate,
-			)
-		})
-	}
-}
-
-func TestDeleteQuestion(t *testing.T) {
-	tests := []DeleteQuestionCase{
-		{
-			BaseTestCase: BaseTestCase{
-				name:         "Success - Delete MCQ question",
-				userID:       userID,
-				expectedCode: codes.OK,
-			},
-			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				paper := createTestPaper(t, userID)
-				// Set initial question counts
-				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 1, "subjective": 1}`).Error
-				require.NoError(t, err)
-
-				category := createDefaultTestCategory(t, paper.ID)
-
-				questions := createTestQuestions(t, []models.Question{
-					{
-						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-						CategoryID: category.ID,
-						Type:       proto.QuestionType_MCQ,
-						Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
-					},
-				})
-				return &paper, &questions[0]
-			},
-			validate: func(t *testing.T, paper *models.Paper, questionID types.QuestionID) {
-				// Verify question was deleted
-				var question models.Question
-				err := db.DB.First(&question, questionID).Error
-				assert.Error(t, err) // Question should not exist
-
-				// Verify question counts were updated
-				var updatedPaper models.Paper
-				require.NoError(t, db.DB.First(&updatedPaper, paper.ID).Error)
-				counts, err := updatedPaper.GetQuestionCounts()
-				require.NoError(t, err)
-				assert.EqualValues(t, 0, counts.MCQ, "MCQ count should decrease")
-				assert.EqualValues(t, 1, counts.Subjective)
-			},
-		},
-		{
-			BaseTestCase: BaseTestCase{
-				name:         "Success - Delete locked question unlinks it",
-				userID:       userID,
-				expectedCode: codes.OK,
-			},
-			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				paper := createTestPaper(t, userID)
-				// Set initial question counts
-				err := db.DB.Model(&paper).Update("question_counts", `{"mcq": 2, "subjective": 1}`).Error
-				require.NoError(t, err)
-
-				category := createDefaultTestCategory(t, paper.ID)
-
-				questions := createTestQuestions(t, []models.Question{
-					{
-						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-						CategoryID: category.ID,
-						Order:      1,
-						Type:       proto.QuestionType_MCQ,
-						Question:   json.RawMessage(`{"statement":"Test MCQ","options":["A","B"]}`),
-						Locked:     true,
-					},
-				})
-				return &paper, &questions[0]
-			},
-			validate: func(t *testing.T, paper *models.Paper, questionID types.QuestionID) {
-				// Verify question is unlinked but exists
-				var question models.Question
-				require.NoError(t, db.DB.First(&question, questionID).Error)
-				assert.True(t, question.Locked)
-				assert.Zero(t, question.PaperID)
-
-				// Verify question counts were updated
-				var updatedPaper models.Paper
-				require.NoError(t, db.DB.First(&updatedPaper, paper.ID).Error)
-				counts, err := updatedPaper.GetQuestionCounts()
-				require.NoError(t, err)
-				assert.EqualValues(t, 1, counts.MCQ, "MCQ count should decrease")
-				assert.EqualValues(t, 1, counts.Subjective)
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			clearTables(t)
-			paper, question := tt.setup(t)
-
-			ctx := createContextWithUserID(tt.userID)
-			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.QuestionRequest{QuestionHash: question.Hash},
-				client.DeleteQuestion,
-				func(t *testing.T, resp *emptypb.Empty) {
-					if tt.validate != nil {
-						tt.validate(t, paper, question.ID)
-					}
-				})
-		})
-	}
-}
-
-func TestReorderQuestions(t *testing.T) {
-	tests := []ReorderQuestionsCase{
-		{
-			BaseTestCase: BaseTestCase{
-				name:         "Success - Reorder questions",
-				userID:       userID,
-				expectedCode: codes.OK,
-			},
-			setup: func(t *testing.T) (*models.Paper, *models.QuestionCategory, []models.Question) {
-				paper := createTestPaper(t, userID)
-				category := createDefaultTestCategory(t, paper.ID)
-
-				questions := createTestQuestions(t, []models.Question{
-					{
-						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-						CategoryID: category.ID,
-						Type:       proto.QuestionType_MCQ,
-						Question:   json.RawMessage(`{"statement":"Q1"}`),
-					},
-					{
-						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-						CategoryID: category.ID,
-						Type:       proto.QuestionType_MCQ,
-						Question:   json.RawMessage(`{"statement":"Q2"}`),
-					},
-				})
-				return &paper, &category, questions
-			},
-			request: &proto.ReorderQuestionsRequest{},
-			validate: func(t *testing.T, questions []models.Question) {
-				var updated []models.Question
-				require.NoError(t, db.DB.Order("\"order\"").Find(&updated).Error)
-				assert.Equal(t, questions[1].ID, updated[0].ID) // Q2 should be first
-				assert.Equal(t, questions[0].ID, updated[1].ID) // Q1 should be second
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			clearTables(t)
-			_, category, questions := tt.setup(t)
-
-			tt.request.CategoryId = int64(category.ID)
-			tt.request.QuestionHashes = []string{questions[1].Hash, questions[0].Hash} // Reverse order
-
-			ctx := createContextWithUserID(tt.userID)
-			testrunner.Runner(t, ctx, tt.expectedCode,
-				tt.request,
-				client.ReorderQuestions,
-				func(t *testing.T, resp *emptypb.Empty) {
-					if tt.validate != nil {
-						tt.validate(t, questions)
-					}
-				})
+			test.Runner(t, tc, client.GetPaperQuestions)
 		})
 	}
 }
 
 func TestGetPaperQuestion(t *testing.T) {
-	tests := []GetPaperQuestionCase{
-		{
-			BaseTestCase: BaseTestCase{
-				name:         "Success - Get MCQ question",
-				userID:       userID,
-				expectedCode: codes.OK,
-			},
-			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				paper := createTestPaper(t, userID)
-				category := createDefaultTestCategory(t, paper.ID)
+	type SetupReturn struct {
+		Paper    models.Paper
+		Question models.PaperQuestion
+		Category models.PaperCategory
+	}
 
-				questions := createTestQuestions(t, []models.Question{
+	testCases := []test.TestCase[*proto.PaperQuestionRequest, *proto.PaperQuestionResponse, *SetupReturn]{
+		{
+			Name:     "Get existing paper question",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+
+				categories := createTestCategories(t, []models.PaperCategory{
 					{
-						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-						CategoryID: category.ID,
-						Type:       proto.QuestionType_MCQ,
-						Question:   json.RawMessage(`{"statement":"MCQ Question","options":["A","B","C"]}`),
-						MaxScore:   5,
+						PaperID:    papers[0].ID,
+						CategoryID: 1,
 					},
 				})
-				return &paper, &questions[0]
+
+				questions := createTestQuestions(t, []models.PaperQuestion{
+					{
+						PaperID:    papers[0].ID,
+						QuestionID: 1,
+						CategoryID: categories[0].CategoryID,
+						MaxScore:   10,
+					},
+				})
+
+				return &SetupReturn{
+					Paper:    papers[0],
+					Question: questions[0],
+					Category: categories[0],
+				}
 			},
-			validate: func(t *testing.T, resp *proto.QuestionResponse) {
-				var mcq structs.MCQQuestion
-				require.NoError(t, json.Unmarshal(resp.RawQuestion, &mcq))
-				assert.Equal(t, "MCQ Question", mcq.Statement)
-				assert.Equal(t, []string{"A", "B", "C"}, mcq.Options)
-				assert.Equal(t, int32(5), resp.MaxScore)
-				assert.Empty(t, resp.TestCases)
+			GetRequest: func(setupData *SetupReturn) *proto.PaperQuestionRequest {
+				return &proto.PaperQuestionRequest{
+					PaperHash:    setupData.Paper.Hash,
+					QuestionHash: "q_hash_1", // Static question hash in mock
+				}
+			},
+			ExpectedCode: codes.OK,
+			Validate: func(t *testing.T, resp *proto.PaperQuestionResponse, setupData *SetupReturn) {
+				assert.NotEmpty(t, resp.QuestionHash)
+				assert.NotEmpty(t, resp.RawQuestion)
+				assert.Equal(t, int64(setupData.Question.CategoryID), resp.CategoryId)
+				assert.Equal(t, setupData.Paper.Hash, resp.PaperHash)
+				assert.Equal(t, int32(setupData.Question.MaxScore), resp.MaxScore)
+				assert.Nil(t, resp.TestCases)
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
-				name:         "Success - Get coding question with test cases",
-				userID:       userID,
-				expectedCode: codes.OK,
-			},
-			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				paper := createTestPaper(t, userID)
-				category := createDefaultTestCategory(t, paper.ID)
+			Name:     "Get existing coding question with test cases",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
 
-				questions := createTestQuestions(t, []models.Question{
+				categories := createTestCategories(t, []models.PaperCategory{
 					{
-						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-						CategoryID: category.ID,
-						Type:       proto.QuestionType_CODING,
-						Question: json.RawMessage(`{
-							"title": "Sum Numbers",
-							"statement": "Add two numbers",
-							"input_definitions": [
-								{ "variable_name": "a", "type": 1 },
-								{ "variable_name": "b", "type": 1 }
-							],
-							"output_definition": {"type": 1}
-						}`),
-						MaxScore: 10,
+						PaperID:    papers[0].ID,
+						CategoryID: 1,
 					},
 				})
 
-				createTestCases(t, []models.TestCase{
+				questions := createTestQuestions(t, []models.PaperQuestion{
 					{
-						QuestionID: questions[0].ID,
-						Content:    json.RawMessage(`{"inputs": ["1", "2"], "output": "3"}`),
-						Hidden:     false,
-					},
-					{
-						QuestionID: questions[0].ID,
-						Content:    json.RawMessage(`{"inputs": ["4", "5"], "output": "9", "explanation": "hidden case"}`),
-						Hidden:     true,
+						PaperID:    papers[0].ID,
+						QuestionID: 3,
+						CategoryID: categories[0].CategoryID,
+						MaxScore:   10,
 					},
 				})
 
-				return &paper, &questions[0]
+				return &SetupReturn{
+					Paper:    papers[0],
+					Question: questions[0],
+					Category: categories[0],
+				}
 			},
-			validate: func(t *testing.T, resp *proto.QuestionResponse) {
-				// Verify coding question content
-				var coding structs.CodingQuestion
-				require.NoError(t, json.Unmarshal(resp.RawQuestion, &coding))
-				assert.Equal(t, "Sum Numbers", coding.Title)
-				assert.Equal(t, "Add two numbers", coding.Statement)
-				assert.Len(t, coding.InputDefinitions, 2)
-				assert.Equal(t, int32(10), resp.MaxScore)
-
-				// Verify test cases
-				require.Len(t, resp.TestCases, 2)
-				// First test case (non-hidden)
-				assert.Equal(t, []string{"1", "2"}, resp.TestCases[0].Inputs)
-				assert.Equal(t, "3", resp.TestCases[0].Output)
-				assert.False(t, resp.TestCases[0].Hidden)
-				assert.Nil(t, resp.TestCases[0].Explanation)
-
-				// Second test case (hidden)
-				assert.Equal(t, []string{"4", "5"}, resp.TestCases[1].Inputs)
-				assert.Equal(t, "9", resp.TestCases[1].Output)
-				assert.True(t, resp.TestCases[1].Hidden)
-				assert.NotNil(t, resp.TestCases[1].Explanation)
-				assert.Equal(t, "hidden case", *resp.TestCases[1].Explanation)
+			GetRequest: func(setupData *SetupReturn) *proto.PaperQuestionRequest {
+				return &proto.PaperQuestionRequest{
+					PaperHash:    setupData.Paper.Hash,
+					QuestionHash: "q_hash_3", // Static question hash in mock
+				}
+			},
+			ExpectedCode: codes.OK,
+			Validate: func(t *testing.T, resp *proto.PaperQuestionResponse, setupData *SetupReturn) {
+				assert.NotEmpty(t, resp.QuestionHash)
+				assert.NotEmpty(t, resp.RawQuestion)
+				assert.Equal(t, int64(setupData.Question.CategoryID), resp.CategoryId)
+				assert.Equal(t, setupData.Paper.Hash, resp.PaperHash)
+				assert.Equal(t, int32(setupData.Question.MaxScore), resp.MaxScore)
+				assert.Equal(t, resp.Type, proto.QuestionType_CODING)
+				assert.NotNil(t, resp.TestCases)
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
-				name:         "Question not found",
-				userID:       userID,
-				expectedCode: codes.NotFound,
+			Name:     "Non-existent paper hash",
+			Metadata: defaultMetadata,
+			GetRequest: func(setupData *SetupReturn) *proto.PaperQuestionRequest {
+				return &proto.PaperQuestionRequest{
+					PaperHash:    "nonexistent",
+					QuestionHash: "question-hash-1",
+				}
 			},
-			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				return nil, &models.Question{
-					ID:   999,
-					Hash: generate.HMACHash(999),
+			ExpectedCode: codes.PermissionDenied,
+		},
+		{
+			Name:     "Non-existent question hash",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+				return &SetupReturn{Paper: papers[0]}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.PaperQuestionRequest {
+				return &proto.PaperQuestionRequest{
+					PaperHash:    setupData.Paper.Hash,
+					QuestionHash: "nonexistent",
+				}
+			},
+			ExpectedCode: codes.NotFound,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			clearTables(t)
+			test.Runner(t, tc, client.GetPaperQuestion)
+		})
+	}
+}
+
+func TestCreatePaperQuestion(t *testing.T) {
+	type SetupReturn struct {
+		Paper    models.Paper
+		Category models.PaperCategory
+	}
+
+	testCases := []test.TestCase[*proto.CreatePaperQuestionRequest, *proto.CreatePaperQuestionResponse, *SetupReturn]{
+		{
+			Name:     "Create MCQ question in paper",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+
+				categories := createTestCategories(t, []models.PaperCategory{
+					{
+						PaperID:    papers[0].ID,
+						CategoryID: 1,
+					},
+				})
+
+				return &SetupReturn{
+					Paper:    papers[0],
+					Category: categories[0],
+				}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.CreatePaperQuestionRequest {
+				return &proto.CreatePaperQuestionRequest{
+					PaperHash:   setupData.Paper.Hash,
+					CategoryId:  int64(setupData.Category.CategoryID),
+					MaxScore:    10,
+					Type:        proto.QuestionType_MCQ,
+					RawQuestion: []byte(`{"statement": "What is 2+2?", "options": ["3", "4", "5", "6"]}`),
+				}
+			},
+			ExpectedCode: codes.OK,
+			Validate: func(t *testing.T, resp *proto.CreatePaperQuestionResponse, setupData *SetupReturn) {
+				assert.NotEmpty(t, resp.QuestionHash)
+
+				// Verify paper question was created
+				var paperQuestion models.PaperQuestion
+				err := dbInst.Where("paper_id = ? AND category_id = ?", setupData.Paper.ID, setupData.Category.CategoryID).
+					Take(&paperQuestion).Error
+				require.NoError(t, err)
+				assert.Equal(t, int16(10), paperQuestion.MaxScore)
+				assert.Equal(t, int16(1), paperQuestion.Order)
+			},
+		},
+		{
+			Name:     "Invalid max score",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+
+				categories := createTestCategories(t, []models.PaperCategory{
+					{
+						PaperID:    papers[0].ID,
+						CategoryID: 1,
+					},
+				})
+
+				return &SetupReturn{
+					Paper:    papers[0],
+					Category: categories[0],
+				}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.CreatePaperQuestionRequest {
+				return &proto.CreatePaperQuestionRequest{
+					PaperHash:   setupData.Paper.Hash,
+					CategoryId:  int64(setupData.Category.CategoryID),
+					MaxScore:    1001, // Max allowed is 1000
+					Type:        proto.QuestionType_MCQ,
+					RawQuestion: []byte(`{"statement": "What is 2+2?", "options": ["3", "4", "5", "6"]}`),
+				}
+			},
+			ExpectedCode: codes.InvalidArgument,
+		},
+		{
+			Name:     "Non-existent paper hash",
+			Metadata: defaultMetadata,
+			GetRequest: func(setupData *SetupReturn) *proto.CreatePaperQuestionRequest {
+				return &proto.CreatePaperQuestionRequest{
+					PaperHash:   "nonexistent",
+					CategoryId:  1,
+					MaxScore:    10,
+					Type:        proto.QuestionType_MCQ,
+					RawQuestion: []byte(`{"statement": "What is 2+2?", "options": ["3", "4", "5", "6"]}`),
+				}
+			},
+			ExpectedCode: codes.PermissionDenied,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			clearTables(t)
+			test.Runner(t, tc, client.CreatePaperQuestion)
+		})
+	}
+}
+
+func TestUpdatePaperQuestion(t *testing.T) {
+	type SetupReturn struct {
+		Paper    models.Paper
+		Question models.PaperQuestion
+		Category models.PaperCategory
+	}
+
+	testCases := []test.TestCase[*proto.UpdatePaperQuestionRequest, *proto.UpdatePaperQuestionResponse, *SetupReturn]{
+		{
+			Name:     "Update MCQ question",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+
+				categories := createTestCategories(t, []models.PaperCategory{
+					{
+						PaperID:    papers[0].ID,
+						CategoryID: 1,
+					},
+				})
+
+				questions := createTestQuestions(t, []models.PaperQuestion{
+					{
+						PaperID:    papers[0].ID,
+						QuestionID: 1,
+						CategoryID: categories[0].CategoryID,
+						MaxScore:   10,
+					},
+				})
+
+				return &SetupReturn{
+					Paper:    papers[0],
+					Question: questions[0],
+					Category: categories[0],
+				}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.UpdatePaperQuestionRequest {
+				maxScore := int32(15)
+				return &proto.UpdatePaperQuestionRequest{
+					PaperHash:    setupData.Paper.Hash,
+					QuestionHash: "q_hash_1", // Static hash from mock
+					MaxScore:     &maxScore,
+					Type:         proto.QuestionType_MCQ.Enum(),
+					RawQuestion:  []byte(`{"statement": "Updated question", "options": ["1", "2", "3", "4"]}`),
+				}
+			},
+			ExpectedCode: codes.OK,
+			Validate: func(t *testing.T, resp *proto.UpdatePaperQuestionResponse, setupData *SetupReturn) {
+				assert.NotEmpty(t, resp.QuestionHash)
+
+				// Verify paper question was updated
+				var paperQuestion models.PaperQuestion
+				err := dbInst.Where("paper_id = ? AND question_id = ?", setupData.Paper.ID, setupData.Question.QuestionID).
+					Take(&paperQuestion).Error
+				require.NoError(t, err)
+				assert.Equal(t, int16(15), paperQuestion.MaxScore)
+			},
+		},
+		{
+			Name:     "Invalid max score",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+				categories := createTestCategories(t, []models.PaperCategory{
+					{
+						PaperID:    papers[0].ID,
+						CategoryID: 1,
+					},
+				})
+				questions := createTestQuestions(t, []models.PaperQuestion{
+					{
+						PaperID:    papers[0].ID,
+						QuestionID: 1,
+						CategoryID: categories[0].CategoryID,
+						MaxScore:   10,
+					},
+				})
+				return &SetupReturn{
+					Paper:    papers[0],
+					Question: questions[0],
+					Category: categories[0],
+				}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.UpdatePaperQuestionRequest {
+				maxScore := int32(1001) // Max allowed is 1000
+				return &proto.UpdatePaperQuestionRequest{
+					PaperHash:    setupData.Paper.Hash,
+					QuestionHash: "q_hash_1",
+					MaxScore:     &maxScore,
+				}
+			},
+			ExpectedCode: codes.InvalidArgument,
+		},
+		{
+			Name:     "Non-existent paper hash",
+			Metadata: defaultMetadata,
+			GetRequest: func(setupData *SetupReturn) *proto.UpdatePaperQuestionRequest {
+				maxScore := int32(15)
+				return &proto.UpdatePaperQuestionRequest{
+					PaperHash:    "nonexistent",
+					QuestionHash: "q_hash_1",
+					MaxScore:     &maxScore,
+				}
+			},
+			ExpectedCode: codes.PermissionDenied,
+		},
+		{
+			Name:     "Non-existent question hash",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+				return &SetupReturn{Paper: papers[0]}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.UpdatePaperQuestionRequest {
+				maxScore := int32(15)
+				return &proto.UpdatePaperQuestionRequest{
+					PaperHash:    setupData.Paper.Hash,
+					QuestionHash: "nonexistent",
+					MaxScore:     &maxScore,
+				}
+			},
+			ExpectedCode: codes.Internal,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			clearTables(t)
+			test.Runner(t, tc, client.UpdatePaperQuestion)
+		})
+	}
+}
+
+func TestDeletePaperQuestion(t *testing.T) {
+	type SetupReturn struct {
+		Paper    models.Paper
+		Question models.PaperQuestion
+		Category models.PaperCategory
+	}
+
+	testCases := []test.TestCase[*proto.PaperQuestionRequest, *emptypb.Empty, *SetupReturn]{
+		{
+			Name:     "Delete existing question",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+
+				categories := createTestCategories(t, []models.PaperCategory{
+					{
+						PaperID:    papers[0].ID,
+						CategoryID: 1,
+					},
+				})
+
+				questions := createTestQuestions(t, []models.PaperQuestion{
+					{
+						PaperID:    papers[0].ID,
+						QuestionID: 1,
+						CategoryID: categories[0].CategoryID,
+						MaxScore:   10,
+					},
+				})
+
+				return &SetupReturn{
+					Paper:    papers[0],
+					Category: categories[0],
+					Question: questions[0],
+				}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.PaperQuestionRequest {
+				return &proto.PaperQuestionRequest{
+					PaperHash:    setupData.Paper.Hash,
+					QuestionHash: "q_hash_1", // Mock client will handle this
+				}
+			},
+			ExpectedCode: codes.OK,
+			Validate: func(t *testing.T, resp *emptypb.Empty, setupData *SetupReturn) {
+				// Verify question was deleted
+				var count int64
+				err := dbInst.Model(&models.PaperQuestion{}).
+					Where("paper_id = ? AND question_id = ?", setupData.Paper.ID, setupData.Question.QuestionID).
+					Count(&count).Error
+				require.NoError(t, err)
+				assert.Equal(t, int64(0), count)
+			},
+		},
+		{
+			Name:     "Non-existent paper hash",
+			Metadata: defaultMetadata,
+			GetRequest: func(setupData *SetupReturn) *proto.PaperQuestionRequest {
+				return &proto.PaperQuestionRequest{
+					PaperHash:    "nonexistent",
+					QuestionHash: "q_hash_1",
+				}
+			},
+			ExpectedCode: codes.PermissionDenied,
+		},
+		{
+			Name:     "Non-existent question hash",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+				return &SetupReturn{Paper: papers[0]}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.PaperQuestionRequest {
+				return &proto.PaperQuestionRequest{
+					PaperHash:    setupData.Paper.Hash,
+					QuestionHash: "nonexistent",
+				}
+			},
+			ExpectedCode: codes.OK, // Ignore
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			clearTables(t)
+			test.Runner(t, tc, client.DeletePaperQuestion)
+		})
+	}
+}
+
+func TestReorderQuestions(t *testing.T) {
+	type SetupReturn struct {
+		Paper     models.Paper
+		Category  models.PaperCategory
+		Questions []models.PaperQuestion
+	}
+
+	testCases := []test.TestCase[*proto.ReorderPaperQuestionsRequest, *emptypb.Empty, *SetupReturn]{
+		{
+			Name:     "Reorder multiple questions",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+
+				categories := createTestCategories(t, []models.PaperCategory{
+					{
+						PaperID:    papers[0].ID,
+						CategoryID: 1,
+					},
+				})
+
+				questions := createTestQuestions(t, []models.PaperQuestion{
+					{
+						PaperID:    papers[0].ID,
+						QuestionID: 1,
+						CategoryID: categories[0].CategoryID,
+						MaxScore:   10,
+					},
+					{
+						PaperID:    papers[0].ID,
+						QuestionID: 2,
+						CategoryID: categories[0].CategoryID,
+						MaxScore:   15,
+					},
+					{
+						PaperID:    papers[0].ID,
+						QuestionID: 3,
+						CategoryID: categories[0].CategoryID,
+						MaxScore:   20,
+					},
+				})
+
+				return &SetupReturn{
+					Paper:     papers[0],
+					Category:  categories[0],
+					Questions: questions,
+				}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.ReorderPaperQuestionsRequest {
+				// Reverse the order of questions
+				questionHashes := []string{"q_hash_3", "q_hash_2", "q_hash_1"}
+				return &proto.ReorderPaperQuestionsRequest{
+					CategoryId:     int64(setupData.Category.CategoryID),
+					QuestionHashes: questionHashes,
+				}
+			},
+			ExpectedCode: codes.OK,
+			Validate: func(t *testing.T, resp *emptypb.Empty, setupData *SetupReturn) {
+				var questions []models.PaperQuestion
+				err := dbInst.Where("category_id = ?", setupData.Category.CategoryID).
+					Order("\"order\" asc").
+					Find(&questions).Error
+				require.NoError(t, err)
+				require.Len(t, questions, 3)
+
+				// Verify reversed order
+				assert.Equal(t, types.QuestionID(3), questions[0].QuestionID)
+				assert.Equal(t, types.QuestionID(2), questions[1].QuestionID)
+				assert.Equal(t, types.QuestionID(1), questions[2].QuestionID)
+
+				// Verify order numbers are sequential
+				assert.Equal(t, int16(1), questions[0].Order)
+				assert.Equal(t, int16(2), questions[1].Order)
+				assert.Equal(t, int16(3), questions[2].Order)
+			},
+		},
+		{
+			Name:     "Invalid question hashes",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+				categories := createTestCategories(t, []models.PaperCategory{
+					{
+						PaperID:    papers[0].ID,
+						CategoryID: 1,
+					},
+				})
+				return &SetupReturn{
+					Paper:    papers[0],
+					Category: categories[0],
+				}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.ReorderPaperQuestionsRequest {
+				return &proto.ReorderPaperQuestionsRequest{
+					PaperHash:      setupData.Paper.Hash,
+					CategoryId:     int64(setupData.Category.CategoryID),
+					QuestionHashes: []string{"nonexistent1", "nonexistent2"},
+				}
+			},
+			ExpectedCode: codes.InvalidArgument,
+		},
+		{
+			Name:     "Questions from different category",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+
+				categories := createTestCategories(t, []models.PaperCategory{
+					{
+						PaperID:    papers[0].ID,
+						CategoryID: 1,
+					},
+					{
+						PaperID:    papers[0].ID,
+						CategoryID: 2,
+					},
+				})
+
+				questions := createTestQuestions(t, []models.PaperQuestion{
+					{
+						PaperID:    papers[0].ID,
+						QuestionID: 1,
+						CategoryID: categories[0].CategoryID,
+					},
+					{
+						PaperID:    papers[0].ID,
+						QuestionID: 2,
+						CategoryID: categories[1].CategoryID, // Different category
+					},
+				})
+
+				return &SetupReturn{
+					Paper:     papers[0],
+					Category:  categories[0],
+					Questions: questions,
+				}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.ReorderPaperQuestionsRequest {
+				return &proto.ReorderPaperQuestionsRequest{
+					CategoryId:     int64(setupData.Category.CategoryID),
+					QuestionHashes: []string{"q_hash_1", "q_hash_2"},
+				}
+			},
+			ExpectedCode: codes.InvalidArgument,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			clearTables(t)
+			test.Runner(t, tc, client.ReorderPaperQuestions)
+		})
+	}
+}
+
+func TestGetPaperQuestionsMeta(t *testing.T) {
+	md := metadata.MD{
+		constants.X_EXAM_API_TOKEN: []string{env.EXAM_API_TOKEN},
+	}
+
+	type SetupReturn struct {
+		Paper      models.Paper
+		Questions  []models.PaperQuestion
+		Categories []models.PaperCategory
+	}
+
+	testCases := []test.TestCase[*proto.PaperRequest, *proto.PaperQuestionsMeta, *SetupReturn]{
+		{
+			Name:     "Get questions metadata from paper",
+			Metadata: md,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+
+				categories := createTestCategories(t, []models.PaperCategory{
+					{
+						PaperID:    papers[0].ID,
+						CategoryID: 1,
+					},
+					{
+						PaperID:    papers[0].ID,
+						CategoryID: 2,
+					},
+				})
+
+				questions := createTestQuestions(t, []models.PaperQuestion{
+					{
+						PaperID:    papers[0].ID,
+						QuestionID: 1,
+						CategoryID: categories[0].CategoryID,
+						MaxScore:   10,
+					},
+					{
+						PaperID:    papers[0].ID,
+						QuestionID: 2,
+						CategoryID: categories[1].CategoryID,
+						MaxScore:   15,
+					},
+				})
+
+				return &SetupReturn{
+					Paper:      papers[0],
+					Questions:  questions,
+					Categories: categories,
+				}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.PaperRequest {
+				return &proto.PaperRequest{
+					PaperHash: setupData.Paper.Hash,
+				}
+			},
+			ExpectedCode: codes.OK,
+			Validate: func(t *testing.T, resp *proto.PaperQuestionsMeta, setupData *SetupReturn) {
+				require.Equal(t, len(setupData.Questions), len(resp.Questions))
+				for i, q := range resp.Questions {
+					assert.Equal(t, int64(setupData.Questions[i].QuestionID), q.Id)
+					assert.Equal(t, int64(setupData.Questions[i].CategoryID), q.CategoryId)
+					assert.Equal(t, int32(setupData.Questions[i].Order), q.Order)
+					assert.Equal(t, int32(setupData.Questions[i].MaxScore), q.MaxScore)
 				}
 			},
 		},
 		{
-			BaseTestCase: BaseTestCase{
-				name:         "No access to paper",
-				userID:       userID,
-				expectedCode: codes.PermissionDenied,
+			Name:     "Paper with no questions",
+			Metadata: md,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+				return &SetupReturn{
+					Paper:     papers[0],
+					Questions: []models.PaperQuestion{},
+				}
 			},
-			setup: func(t *testing.T) (*models.Paper, *models.Question) {
-				paper := createTestPaper(t, 2) // different user
-				category := createDefaultTestCategory(t, paper.ID)
-
-				questions := createTestQuestions(t, []models.Question{
-					{
-						PaperID:    sql.NullInt64{Int64: int64(paper.ID), Valid: true},
-						CategoryID: category.ID,
-						Type:       proto.QuestionType_SUBJECTIVE,
-						Question:   json.RawMessage(`{"statement":"Q1"}`),
-					},
-				})
-				return &paper, &questions[0]
+			GetRequest: func(setupData *SetupReturn) *proto.PaperRequest {
+				return &proto.PaperRequest{
+					PaperHash: setupData.Paper.Hash,
+				}
+			},
+			ExpectedCode: codes.OK,
+			Validate: func(t *testing.T, resp *proto.PaperQuestionsMeta, setupData *SetupReturn) {
+				assert.Empty(t, resp.Questions)
+			},
+		},
+		{
+			Name:     "Non-existent paper hash",
+			Metadata: md,
+			GetRequest: func(setupData *SetupReturn) *proto.PaperRequest {
+				return &proto.PaperRequest{
+					PaperHash: "nonexistent",
+				}
+			},
+			ExpectedCode: codes.OK,
+			Validate: func(t *testing.T, resp *proto.PaperQuestionsMeta, setupData *SetupReturn) {
+				assert.Empty(t, resp.Questions)
 			},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
 			clearTables(t)
-			_, question := tt.setup(t)
+			test.Runner(t, tc, client.GetPaperQuestionsMeta)
+		})
+	}
+}
 
-			ctx := createContextWithUserID(tt.userID)
-			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.QuestionRequest{QuestionHash: question.Hash},
-				client.GetPaperQuestion,
-				tt.validate,
-			)
+func TestGetBoilerplate(t *testing.T) {
+	type SetupReturn struct {
+		Paper    models.Paper
+		Question models.PaperQuestion
+	}
+
+	testCases := []test.TestCase[*proto.GetPaperBoilerplateRequest, *proto.BoilerplateResponse, *SetupReturn]{
+		{
+			Name:     "Get boilerplate for existing question",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+
+				questions := createTestQuestions(t, []models.PaperQuestion{
+					{
+						PaperID:    papers[0].ID,
+						QuestionID: 3, // Using questionID 3 which is a coding question in mock
+						CategoryID: 1,
+						MaxScore:   10,
+					},
+				})
+
+				return &SetupReturn{
+					Paper:    papers[0],
+					Question: questions[0],
+				}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.GetPaperBoilerplateRequest {
+				return &proto.GetPaperBoilerplateRequest{
+					QuestionHash: "q_hash_3", // Static hash from mock
+					LanguageId:   1,
+				}
+			},
+			ExpectedCode: codes.OK,
+			Validate: func(t *testing.T, resp *proto.BoilerplateResponse, setupData *SetupReturn) {
+				assert.NotEmpty(t, resp.Code)
+			},
+		},
+		{
+			Name:     "Non-existent question hash",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+				return &SetupReturn{Paper: papers[0]}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.GetPaperBoilerplateRequest {
+				return &proto.GetPaperBoilerplateRequest{
+					QuestionHash: "nonexistent",
+					LanguageId:   1,
+				}
+			},
+			ExpectedCode: codes.NotFound,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			clearTables(t)
+			test.Runner(t, tc, client.GetPaperBoilerplate)
+		})
+	}
+}
+
+func TestUpsertTestCases(t *testing.T) {
+	type SetupReturn struct {
+		Paper    models.Paper
+		Question models.PaperQuestion
+	}
+
+	testCases := []test.TestCase[*proto.UpsertPaperTestCasesRequest, *emptypb.Empty, *SetupReturn]{
+		{
+			Name:     "Upsert test cases for coding question",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+
+				questions := createTestQuestions(t, []models.PaperQuestion{
+					{
+						PaperID:    papers[0].ID,
+						QuestionID: 3, // QuestionID 3 is a coding question in mock
+						CategoryID: 1,
+						MaxScore:   10,
+					},
+				})
+
+				return &SetupReturn{
+					Paper:    papers[0],
+					Question: questions[0],
+				}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.UpsertPaperTestCasesRequest {
+				return &proto.UpsertPaperTestCasesRequest{
+					PaperHash:    setupData.Paper.Hash,
+					QuestionHash: "q_hash_3", // Static hash from mock
+					TestCases: []*proto.UpsertTestCase{
+						{
+							Inputs: []string{"1", "2"},
+							Output: "3",
+							Hidden: false,
+						},
+						{
+							Inputs: []string{"4", "5"},
+							Output: "9",
+							Hidden: true,
+						},
+					},
+				}
+			},
+			ExpectedCode: codes.OK,
+		},
+		{
+			Name:     "Non-existent question hash",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+				return &SetupReturn{Paper: papers[0]}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.UpsertPaperTestCasesRequest {
+				return &proto.UpsertPaperTestCasesRequest{
+					PaperHash:    setupData.Paper.Hash,
+					QuestionHash: "nonexistent",
+					TestCases: []*proto.UpsertTestCase{
+						{
+							Inputs: []string{"1", "2"},
+							Output: "3",
+						},
+					},
+				}
+			},
+			ExpectedCode: codes.NotFound,
+		},
+		{
+			Name:     "Empty test cases",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
+				papers := createDefaultTestPapers(t, 1)
+
+				questions := createTestQuestions(t, []models.PaperQuestion{
+					{
+						PaperID:    papers[0].ID,
+						QuestionID: 3,
+						CategoryID: 1,
+						MaxScore:   10,
+					},
+				})
+
+				return &SetupReturn{
+					Paper:    papers[0],
+					Question: questions[0],
+				}
+			},
+			GetRequest: func(setupData *SetupReturn) *proto.UpsertPaperTestCasesRequest {
+				return &proto.UpsertPaperTestCasesRequest{
+					PaperHash:    setupData.Paper.Hash,
+					QuestionHash: "q_hash_3",
+					TestCases:    []*proto.UpsertTestCase{},
+				}
+			},
+			ExpectedCode: codes.OK,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			clearTables(t)
+			test.Runner(t, tc, client.UpsertPaperTestCases)
 		})
 	}
 }

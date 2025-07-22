@@ -71,6 +71,9 @@ func (s *Question) GetPaperQuestions(ctx context.Context, paperHash string) (*pr
 func (s *Question) GetPaperQuestion(req *proto.PaperQuestionRequest) (*proto.PaperQuestionResponse, error) {
 	question, err := s.questionIntSvc.GetQuestionByHash(req.QuestionHash)
 	if err != nil {
+		if _, ok := status.FromError(err); ok {
+			return nil, err
+		}
 		return nil, grpcerror.Internal(err, "failed to fetch question")
 	}
 
@@ -182,6 +185,10 @@ func (s *Question) DeletePaperQuestion(paperHash string, questionHash string) er
 	return s.paperRepo.Transaction(func(tx *gorm.DB) error {
 		question, err := s.questionIntSvc.GetQuestionMetaByHash(questionHash)
 		if err != nil {
+			st, ok := status.FromError(err)
+			if ok && st.Code() == codes.NotFound {
+				return nil
+			}
 			return grpcerror.Internal(err, "faled to fetch question id")
 		}
 
@@ -195,6 +202,10 @@ func (s *Question) ReorderQuestions(categoryID int64, questionHashes []string) e
 		questionIDs, err := s.questionIntSvc.GetQuestionIDsByHashes(questionHashes)
 		if err != nil {
 			return grpcerror.Internal(err, "failed to fetch question ids")
+		}
+
+		if len(questionIDs) != len(questionHashes) {
+			return status.Error(codes.InvalidArgument, "invalid question hashes")
 		}
 
 		// Verify all questions belong to the category

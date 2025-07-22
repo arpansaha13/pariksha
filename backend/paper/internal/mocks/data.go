@@ -96,3 +96,18 @@ var categoryMap = map[int64]*proto.CategoryResponse{
 	9:  {Id: 9, Name: "Economics"},
 	10: {Id: 10, Name: "Environmental Science"},
 }
+
+var boilerplateMap = map[string]map[int32]*proto.BoilerplateResponse{
+	"q_hash_3": {
+		1: {Code: "def reverse_string(s):\n    return s[::-1]"},
+		2: {Code: "public class Solution {\n    public String reverseString(String s) {\n        return new StringBuilder(s).reverse().toString();\n    }\n}"},
+	},
+	"q_hash_6": {
+		1: {Code: "def factorial(n):\n    return 1 if n == 0 else n * factorial(n-1)"},
+		2: {Code: "public class Factorial {\n    public int compute(int n) {\n        return n == 0 ? 1 : n * compute(n - 1);\n    }\n}"},
+	},
+	"q_hash_9": {
+		1: {Code: "def is_prime(n):\n    if n <= 1:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True"},
+		2: {Code: "public class PrimeChecker {\n    public boolean isPrime(int n) {\n        if (n <= 1) return false;\n        for (int i = 2; i <= Math.sqrt(n); i++) {\n            if (n % i == 0) return false;\n        }\n        return true;\n    }\n}"},
+	},
+}

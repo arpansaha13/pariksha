@@ -6,7 +6,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/utils/grpcerror"
 	"pariksha/paper/internal/services"
 )
 
@@ -45,7 +44,7 @@ func (c *Question) HandleDeleteQuestion(ctx context.Context, req *proto.PaperQue
 
 func (c *Question) HandleReorderQuestions(ctx context.Context, req *proto.ReorderPaperQuestionsRequest) (*emptypb.Empty, error) {
 	if err := c.questionSvc.ReorderQuestions(req.CategoryId, req.QuestionHashes); err != nil {
-		return nil, grpcerror.Internal(err, "failed to reorder questions")
+		return nil, err
 	}
 	return &emptypb.Empty{}, nil
 }
