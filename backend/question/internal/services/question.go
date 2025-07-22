@@ -432,7 +432,10 @@ func (s *Question) DecExamIndegreeByIds(ids []int64) (*emptypb.Empty, error) {
 func (s *Question) UpsertTestCases(req *proto.UpsertTestCasesRequest) (*emptypb.Empty, error) {
 	question, err := s.questionRepo.GetQuestionTypeByHash(nil, req.QuestionHash)
 	if err != nil {
-		return nil, err
+		if err == gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.NotFound, "could not find question")
+		}
+		return nil, grpcerror.Internal(err, "failed to get question type by hash")
 	}
 
 	if question.Type != proto.QuestionType_CODING {
