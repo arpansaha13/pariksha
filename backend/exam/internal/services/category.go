@@ -11,11 +11,18 @@ import (
 )
 
 type Category struct {
-	categoryRepo *repositories.Category
+	categoryRepo   *repositories.Category
+	questionIntSvc *interservice.Question
 }
 
-func NewCategory(categoryRepo *repositories.Category) *Category {
-	return &Category{categoryRepo: categoryRepo}
+func NewCategory(
+	categoryRepo *repositories.Category,
+	questionIntSvc *interservice.Question,
+) *Category {
+	return &Category{
+		categoryRepo:   categoryRepo,
+		questionIntSvc: questionIntSvc,
+	}
 }
 
 // GetExamCategories retrieves all category IDs associated with an exam
@@ -30,21 +37,22 @@ func (s *Category) GetExamCategories(req *proto.ExamRequest) (*proto.ExamCategor
 		categoryIDs[i] = ec.CategoryID
 	}
 
-	paperCategories, err := interservice.GetCategoriesByIDs(categoryIDs)
+	categories, err := s.questionIntSvc.GetCategoriesByIDs(categoryIDs)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch categories from paper service")
 	}
 
-	categories := make([]*proto.ExamCategory, len(examCategories))
+	response := proto.ExamCategoriesResponse{
+		Categories: make([]*proto.ExamCategory, len(examCategories)),
+	}
+
 	for i, ec := range examCategories {
-		categories[i] = &proto.ExamCategory{
+		response.Categories[i] = &proto.ExamCategory{
 			CategoryId: int64(ec.CategoryID),
-			Name:       paperCategories[i].Name,
+			Name:       categories[i].Name,
 			Order:      int32(ec.Order),
 		}
 	}
 
-	return &proto.ExamCategoriesResponse{
-		Categories: categories,
-	}, nil
+	return &response, nil
 }

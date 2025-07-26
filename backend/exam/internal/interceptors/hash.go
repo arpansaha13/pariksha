@@ -33,7 +33,7 @@ func getQuestionHashFromRequest(req any) (string, bool) {
 }
 
 // SingleQuestionHashInterceptor converts question hash to ID
-func SingleQuestionHashInterceptor() grpc.UnaryServerInterceptor {
+func SingleQuestionHashInterceptor(questionIntSvc *interservice.Question) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		hash, ok := getQuestionHashFromRequest(req)
 		if !ok {
@@ -41,7 +41,7 @@ func SingleQuestionHashInterceptor() grpc.UnaryServerInterceptor {
 		}
 
 		// Get question ID using utility function
-		questionIDs, err := interservice.GetQuestionIDsByHashes([]string{hash})
+		questionIDs, err := questionIntSvc.GetQuestionIDsByHashes([]string{hash})
 		if err != nil {
 			return nil, status.Error(codes.Internal, "failed to fetch question ID")
 		}

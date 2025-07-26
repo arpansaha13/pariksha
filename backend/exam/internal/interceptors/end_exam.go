@@ -12,7 +12,7 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/utils"
-	"pariksha/exam/internal/config/db"
+	"pariksha/exam/internal/repositories"
 )
 
 const participantContextKey contextKey = "participant"
@@ -38,7 +38,7 @@ func updateParticipantCounts(tx *gorm.DB, exam *models.Exam) error {
 
 // EndExamInterceptor is a fallback for the delayed-job for ending exam if the examWorker or examQueue fails.
 // EndExamInterceptor should come after GeneralExamAuthInterceptor. It uses participant data from context
-func EndExamInterceptor() grpc.UnaryServerInterceptor {
+func EndExamInterceptor(participantRepo *repositories.Participant) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		methodName := info.FullMethod
 		if !endExamShouldIntercept[methodName] {
@@ -55,8 +55,8 @@ func EndExamInterceptor() grpc.UnaryServerInterceptor {
 			return nil, err
 		}
 
-		participant := &models.ExamParticipant{}
-		if err := db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).Take(participant).Error; err != nil {
+		participant, err := participantRepo.GetByExamAndUser(nil, exam.ID, userID)
+		if err != nil {
 			return nil, utils.HandleDBError(err, "participant not found")
 		}
 
@@ -68,7 +68,7 @@ func EndExamInterceptor() grpc.UnaryServerInterceptor {
 			participant.ScheduledEndTime.Time.Before(now)
 
 		if shouldEndExam {
-			err := db.DB.Transaction(func(tx *gorm.DB) error {
+			err := participantRepo.Transaction(func(tx *gorm.DB) error {
 				participant.Status = constants.PARTICIPANT_STATUS_ENDED
 				participant.EndedAt.Time = now
 				participant.EndedAt.Valid = true

@@ -21,12 +21,18 @@ import (
 type Evaluation struct {
 	answerRepo      *repositories.Answer
 	participantRepo *repositories.Participant
+	questionIntSvc  *interservice.Question
 }
 
-func NewEvaluation(answerRepo *repositories.Answer, participantRepo *repositories.Participant) *Evaluation {
+func NewEvaluation(
+	answerRepo *repositories.Answer,
+	participantRepo *repositories.Participant,
+	questionIntSvc *interservice.Question,
+) *Evaluation {
 	return &Evaluation{
 		answerRepo:      answerRepo,
 		participantRepo: participantRepo,
+		questionIntSvc:  questionIntSvc,
 	}
 }
 
@@ -139,7 +145,7 @@ func (s *Evaluation) UpdateAnswerForEvaluation(ctx context.Context, req *proto.U
 		return nil, err
 	}
 
-	questionHashes, err := interservice.GetQuestionHashesByIds([]types.QuestionID{answer.QuestionID})
+	questionHashes, err := s.questionIntSvc.GetQuestionHashesByIds([]types.QuestionID{answer.QuestionID})
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question hash")
 	}

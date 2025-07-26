@@ -2,66 +2,40 @@ package interservice
 
 import (
 	"context"
-	"fmt"
-	"log"
-	"sync"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
-	"pariksha/exam/internal/config/env"
 )
 
-var (
-	qSvc     *questionService
-	qSvcOnce sync.Once
-)
-
-type questionService struct {
-	client proto.QuestionClient
-	conn   *grpc.ClientConn
+type Question struct {
 	ctx    context.Context
+	conn   *grpc.ClientConn
+	client proto.QuestionClient
 }
 
-func CloseQuestionConn() {
-	if qSvc != nil && qSvc.conn != nil {
-		qSvc.conn.Close()
+func NewQuestion(conn *grpc.ClientConn, client proto.QuestionClient) *Question {
+	return &Question{
+		conn:   conn,
+		client: client,
+		ctx:    context.Background(),
 	}
 }
 
-func ensureQuestionService() {
-	qSvcOnce.Do(func() {
-		qSvc = &questionService{}
-		addr := fmt.Sprintf("%s:%s", env.QUESTION_SERVER_HOST, env.QUESTION_SERVER_PORT)
-		conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if err != nil {
-			log.Fatalf("Failed to connect to question service: %v", err)
-		}
-
-		qSvc.conn = conn
-		qSvc.client = proto.NewQuestionClient(conn)
-		qSvc.ctx = context.Background()
-	})
+func (ic *Question) Close() {
+	if ic.conn != nil {
+		ic.conn.Close()
+	}
 }
 
-func init() {
-	ensureQuestionService()
-}
-
-var GetQuestionsByIDs = getQuestionsByIDs
-
-// GetQuestionsByIDs fetches question metadata for given IDs.
-func getQuestionsByIDs(typedQuestionIDs []types.QuestionID) ([]*proto.QuestionResponse, error) {
-	ensureQuestionService()
-
+func (ic *Question) GetQuestionsByIDs(typedQuestionIDs []types.QuestionID) ([]*proto.QuestionResponse, error) {
 	questionIDs := make([]int64, len(typedQuestionIDs))
 	for i, qid := range typedQuestionIDs {
 		questionIDs[i] = int64(qid)
 	}
 
-	resp, err := qSvc.client.GetQuestionsByIds(qSvc.ctx, &proto.QuestionIdsRequest{
+	resp, err := ic.client.GetQuestionsByIds(ic.ctx, &proto.QuestionIdsRequest{
 		Ids: questionIDs,
 	})
 	if err != nil {
@@ -71,12 +45,8 @@ func getQuestionsByIDs(typedQuestionIDs []types.QuestionID) ([]*proto.QuestionRe
 	return resp.Questions, nil
 }
 
-var GetQuestionIDsByHashes = getQuestionIDsByHashes
-
-func getQuestionIDsByHashes(questionHashes []string) ([]types.QuestionID, error) {
-	ensureQuestionService()
-
-	resp, err := qSvc.client.GetQuestionIdsByHashes(qSvc.ctx, &proto.QuestionHashesRequest{
+func (ic *Question) GetQuestionIDsByHashes(questionHashes []string) ([]types.QuestionID, error) {
+	resp, err := ic.client.GetQuestionIdsByHashes(ic.ctx, &proto.QuestionHashesRequest{
 		Hashes: questionHashes,
 	})
 	if err != nil {
@@ -91,17 +61,13 @@ func getQuestionIDsByHashes(questionHashes []string) ([]types.QuestionID, error)
 	return typedQuestionIDs, nil
 }
 
-var GetQuestionHashesByIds = getQuestionHashesByIds
-
-func getQuestionHashesByIds(typedQuestionIDs []types.QuestionID) ([]string, error) {
-	ensureQuestionService()
-
+func (ic *Question) GetQuestionHashesByIds(typedQuestionIDs []types.QuestionID) ([]string, error) {
 	questionIDs := make([]int64, len(typedQuestionIDs))
 	for i, qid := range typedQuestionIDs {
 		questionIDs[i] = int64(qid)
 	}
 
-	resp, err := qSvc.client.GetQuestionHashesByIds(qSvc.ctx, &proto.QuestionIdsRequest{
+	resp, err := ic.client.GetQuestionHashesByIds(ic.ctx, &proto.QuestionIdsRequest{
 		Ids: questionIDs,
 	})
 	if err != nil {
@@ -111,12 +77,8 @@ func getQuestionHashesByIds(typedQuestionIDs []types.QuestionID) ([]string, erro
 	return resp.Hashes, nil
 }
 
-var GetQuestionByHash = getQuestionByHash
-
-func getQuestionByHash(questionHash string) (*proto.QuestionResponse, error) {
-	ensureQuestionService()
-
-	resp, err := qSvc.client.GetQuestionsByHashes(qSvc.ctx, &proto.QuestionHashesRequest{
+func (ic *Question) GetQuestionByHash(questionHash string) (*proto.QuestionResponse, error) {
+	resp, err := ic.client.GetQuestionsByHashes(ic.ctx, &proto.QuestionHashesRequest{
 		Hashes: []string{questionHash},
 	})
 	if err != nil {
@@ -126,17 +88,13 @@ func getQuestionByHash(questionHash string) (*proto.QuestionResponse, error) {
 	return resp.Questions[0], nil
 }
 
-var GetQuestionTypesByIds = getQuestionTypesByIds
-
-func getQuestionTypesByIds(typedQuestionIDs []types.QuestionID) ([]proto.QuestionType, error) {
-	ensureQuestionService()
-
+func (ic *Question) GetQuestionTypesByIds(typedQuestionIDs []types.QuestionID) ([]proto.QuestionType, error) {
 	questionIDs := make([]int64, len(typedQuestionIDs))
 	for i, qid := range typedQuestionIDs {
 		questionIDs[i] = int64(qid)
 	}
 
-	resp, err := qSvc.client.GetQuestionsMetaByIds(qSvc.ctx, &proto.QuestionIdsRequest{
+	resp, err := ic.client.GetQuestionsMetaByIds(ic.ctx, &proto.QuestionIdsRequest{
 		Ids: questionIDs,
 	})
 	if err != nil {
@@ -151,25 +109,17 @@ func getQuestionTypesByIds(typedQuestionIDs []types.QuestionID) ([]proto.Questio
 	return questionTypes, nil
 }
 
-var GetBoilerplate = getBoilerplate
-
-func getBoilerplate(req *proto.GetBoilerplateRequest) (*proto.BoilerplateResponse, error) {
-	ensureQuestionService()
-	return qSvc.client.GetBoilerplate(qSvc.ctx, req)
+func (ic *Question) GetBoilerplate(req *proto.GetBoilerplateRequest) (*proto.BoilerplateResponse, error) {
+	return ic.client.GetBoilerplate(ic.ctx, req)
 }
 
-// GetCategoriesByIDs fetches categories by their IDs.
-var GetCategoriesByIDs = getCategoriesByIDs
-
-func getCategoriesByIDs(typedCategoryIDs []types.CategoryID) ([]*proto.CategoryResponse, error) {
-	ensureQuestionService()
-
+func (ic *Question) GetCategoriesByIDs(typedCategoryIDs []types.CategoryID) ([]*proto.CategoryResponse, error) {
 	catIds := make([]int64, len(typedCategoryIDs))
 	for i, id := range typedCategoryIDs {
 		catIds[i] = int64(id)
 	}
 
-	resp, err := qSvc.client.GetCategoriesByIds(qSvc.ctx, &proto.CategoryIdsRequest{
+	resp, err := ic.client.GetCategoriesByIds(ic.ctx, &proto.CategoryIdsRequest{
 		Ids: catIds,
 	})
 	if err != nil {

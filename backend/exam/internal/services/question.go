@@ -11,11 +11,18 @@ import (
 )
 
 type Question struct {
-	questionRepo *repositories.Question
+	questionRepo   *repositories.Question
+	questionIntSvc *interservice.Question
 }
 
-func NewQuestion(questionRepo *repositories.Question) *Question {
-	return &Question{questionRepo: questionRepo}
+func NewQuestion(
+	questionRepo *repositories.Question,
+	questionIntSvc *interservice.Question,
+) *Question {
+	return &Question{
+		questionRepo:   questionRepo,
+		questionIntSvc: questionIntSvc,
+	}
 }
 
 // GetExamQuestions retrieves all questions associated with an exam
@@ -32,12 +39,12 @@ func (s *Question) GetExamQuestions(req *proto.ExamRequest) (*proto.ExamQuestion
 	}
 
 	// Fetch question hashes from paper service
-	questionHashes, err := interservice.GetQuestionHashesByIds(questionIDs)
+	questionHashes, err := s.questionIntSvc.GetQuestionHashesByIds(questionIDs)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question hashes")
 	}
 
-	questionTypes, err := interservice.GetQuestionTypesByIds(questionIDs)
+	questionTypes, err := s.questionIntSvc.GetQuestionTypesByIds(questionIDs)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question")
 	}
@@ -61,7 +68,7 @@ func (s *Question) GetExamQuestions(req *proto.ExamRequest) (*proto.ExamQuestion
 // GetExamQuestion retrieves the question specified by the hash
 func (s *Question) GetExamQuestion(req *proto.ExamQuestionRequest) (*proto.ExamQuestionResponse, error) {
 	// Fetch question hashes from paper service
-	question, err := interservice.GetQuestionByHash(req.QuestionHash)
+	question, err := s.questionIntSvc.GetQuestionByHash(req.QuestionHash)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question hashes")
 	}

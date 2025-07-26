@@ -12,9 +12,8 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
-	"pariksha/exam/internal/config/db"
+	"pariksha/exam/internal/repositories"
 )
 
 type contextKey string
@@ -103,7 +102,11 @@ func checkPermissions(permission *models.ExamPermission, methodName string) erro
 	return nil
 }
 
-func GeneralExamAuthInterceptor() grpc.UnaryServerInterceptor {
+func GeneralExamAuthInterceptor(
+	examRepo *repositories.Exam,
+	permissionRepo *repositories.Permission,
+	dbInst *gorm.DB, // TODO: Temporary fix
+) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		methodName := info.FullMethod
 		if !shouldIntercept(methodName) {
@@ -115,18 +118,22 @@ func GeneralExamAuthInterceptor() grpc.UnaryServerInterceptor {
 			return nil, err
 		}
 
-		examID, err := getExamIdFromRequest(ctx, req)
+		examHash, err := getExamHashFromRequest(ctx, req, dbInst)
 		if err != nil {
 			return nil, err
 		}
 
-		exam, err := fetchExam(*examID)
+		exam, err := examRepo.GetByHash(nil, *examHash)
 		if err != nil {
-			return nil, err
+			if err == gorm.ErrRecordNotFound {
+				return nil, status.Error(codes.NotFound, "exam not found")
+			}
+			return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
 		}
+
 		ctx = context.WithValue(ctx, examContextKey, exam)
 
-		permission, err := fetchExamPermission(*examID, userID)
+		permission, err := permissionRepo.GetByExamHashAndUserId(nil, *examHash, userID)
 		if err == gorm.ErrRecordNotFound {
 			if _, ok := allowInLinkExam[methodName]; ok && exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
 				return handler(ctx, req)
@@ -136,6 +143,7 @@ func GeneralExamAuthInterceptor() grpc.UnaryServerInterceptor {
 		if err != nil {
 			return nil, status.Error(codes.Internal, "failed to fetch permissions")
 		}
+
 		ctx = context.WithValue(ctx, permissionContextKey, permission)
 
 		// Check if there's a handler-specific permission check for this method
@@ -152,28 +160,8 @@ func GeneralExamAuthInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-func fetchExam(examID types.ExamID) (*models.Exam, error) {
-	var exam models.Exam
-	if err := db.DB.Where("id IN (?)", []int64{int64(examID)}).Take(&exam).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, status.Error(codes.NotFound, "exam not found")
-		}
-		return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
-	}
-	return &exam, nil
-}
-
-func fetchExamPermission(examID types.ExamID, userID types.UserID) (*models.ExamPermission, error) {
-	var permission models.ExamPermission
-	err := db.DB.Where("exam_id = ? AND user_id = ?", examID, userID).Take(&permission).Error
-	if err != nil {
-		return nil, err
-	}
-	return &permission, nil
-}
-
-func getExamIdFromRequest(ctx context.Context, req any) (*types.ExamID, error) {
-	var examID int64
+func getExamHashFromRequest(ctx context.Context, req any, dbInst *gorm.DB) (*string, error) {
+	var examHash string
 
 	switch r := req.(type) {
 	case *proto.ExamRequest,
@@ -186,24 +174,16 @@ func getExamIdFromRequest(ctx context.Context, req any) (*types.ExamID, error) {
 		*proto.CheckParticipantRequest,
 		*proto.GetExamParticipantRequest,
 		*proto.GetAnswerRequest:
-		examHash := r.(interface{ GetExamHash() string }).GetExamHash()
-		if err := db.DB.Model(&models.Exam{}).
-			Select("id").
-			Where("hash = ?", examHash).
-			Take(&examID).Error; err != nil {
-			if err == gorm.ErrRecordNotFound {
-				return nil, status.Error(codes.NotFound, "exam not found")
-			}
-			return nil, status.Error(codes.Internal, DATABASE_ERROR_MESSAGE)
-		}
+		examHash = r.(interface{ GetExamHash() string }).GetExamHash()
 
 	case *proto.UpdateAnswerRequest:
 		// Find exam ID using joins, selecting only exam_id
-		err := db.DB.Model(&models.ExamParticipant{}).
-			Select("exam_participants.exam_id").
+		err := dbInst.Model(&models.ExamParticipant{}).
+			Select("exams.hash").
+			Joins("INNER JOIN exams ON exams.id = exam_participants.exam_id").
 			Joins("INNER JOIN answers ON answers.exam_participant_id = exam_participants.id").
 			Where("answers.id = ?", r.AnswerId).
-			Take(&examID).Error
+			Take(&examHash).Error
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return nil, status.Error(codes.NotFound, "answer not found")
@@ -220,10 +200,11 @@ func getExamIdFromRequest(ctx context.Context, req any) (*types.ExamID, error) {
 			participantID = v.ParticipantId
 		}
 
-		if err := db.DB.Model(&models.ExamParticipant{}).
-			Select("exam_id").
-			Where("id = ?", participantID).
-			Take(&examID).Error; err != nil {
+		if err := dbInst.Model(&models.ExamParticipant{}).
+			Select("exams.hash").
+			Joins("INNER JOIN exams ON exams.id = exam_participants.exam_id").
+			Where("exam_participants.id = ?", participantID).
+			Take(&examHash).Error; err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return nil, status.Error(codes.NotFound, "participant not found")
 			}
@@ -235,8 +216,7 @@ func getExamIdFromRequest(ctx context.Context, req any) (*types.ExamID, error) {
 		return nil, status.Error(codes.Internal, "unhandled request type in exam access interceptor")
 	}
 
-	typedExamID := types.ExamID(examID)
-	return &typedExamID, nil
+	return &examHash, nil
 }
 
 // Getter function to safely access exam from context

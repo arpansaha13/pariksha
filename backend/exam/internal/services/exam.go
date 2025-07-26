@@ -18,7 +18,6 @@ import (
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/generate"
 	"pariksha/common/pkg/utils/ptr"
-	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/interceptors"
 	"pariksha/exam/internal/interservice"
 	"pariksha/exam/internal/repositories"
@@ -351,8 +350,7 @@ func (s *Exam) GetExamPermission(ctx context.Context, req *proto.ExamRequest) (*
 
 	// Check if user is a participant and add status if found
 	if permission.CanParticipate() {
-		var participant models.ExamParticipant
-		err = db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).Take(&participant).Error
+		participant, err := s.participantRepo.GetByExamHashAndUserID(nil, exam.Hash, userID)
 		if err == nil {
 			response.ParticipantStatus = ptr.Int32(int32(participant.Status))
 		}

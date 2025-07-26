@@ -8,10 +8,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
-	"pariksha/exam/internal/config/db"
+	"pariksha/exam/internal/repositories"
 )
 
 var deleteExamShouldIntercept = map[string]bool{
@@ -19,7 +18,7 @@ var deleteExamShouldIntercept = map[string]bool{
 }
 
 // DeleteExamsAuthInterceptor checks if user has WRITE permissions for all exams being deleted
-func DeleteExamsAuthInterceptor() grpc.UnaryServerInterceptor {
+func DeleteExamsAuthInterceptor(permissionRepo *repositories.Permission) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		methodName := info.FullMethod
 		if !deleteExamShouldIntercept[methodName] {
@@ -41,11 +40,9 @@ func DeleteExamsAuthInterceptor() grpc.UnaryServerInterceptor {
 		}
 
 		// Get all permissions for these exams for this user
-		var permissions []models.ExamPermission
-		if err := db.DB.Joins("INNER JOIN exams ON exams.id = permissions.exam_id").
-			Where("exams.hash IN ? AND permissions.user_id = ?", deleteReq.ExamHashes, userID).
-			Find(&permissions).Error; err != nil {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to fetch permissions: %s", err.Error()))
+		permissions, err := permissionRepo.GetByExamHashesAndUserId(nil, deleteReq.ExamHashes, userID)
+		if err != nil {
+			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to fetch permissions: %v", err))
 		}
 
 		// Non-existent exams should return success

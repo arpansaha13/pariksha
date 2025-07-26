@@ -42,6 +42,17 @@ func (r *Exam) GetByUserID(tx *gorm.DB, userID types.UserID) ([]models.Exam, err
 	return exams, err
 }
 
+func (r *Exam) GetByHash(tx *gorm.DB, examHash string) (*models.Exam, error) {
+	tx = r.getTx(tx)
+
+	var exam models.Exam
+	if err := tx.Where("hash = ?", examHash).Take(&exam).Error; err != nil {
+		return nil, err
+	}
+
+	return &exam, nil
+}
+
 // Create creates a new exam.
 func (r *Exam) Create(tx *gorm.DB, exam *models.Exam) error {
 	tx = r.getTx(tx)
