@@ -87,6 +87,7 @@
           <Shiki
             v-else-if="currentQuestionAnswer.type === QuestionType.CODING"
             :code="(currentQuestionAnswer.answer.content as CodingAnswer).code"
+            class="text-sm"
           />
         </template>
       </UCard>

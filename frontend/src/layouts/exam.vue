@@ -60,6 +60,7 @@
         :ui="{
           root: 'col-start-3 row-span-3 row-start-1 overflow-hidden hidden sm:flex sm:flex-col',
           body: 'overflow-auto grow',
+          footer: 'flex',
         }"
       >
         <template #header>
@@ -81,7 +82,7 @@
         <slot name="body" />
       </div>
 
-      <UCard v-if="$slots.footer" :ui="{ body: 'flex' }">
+      <UCard v-if="$slots.footer" :ui="{ root: 'sm:hidden', body: 'flex' }">
         <slot name="footer" />
       </UCard>
     </UContainer>

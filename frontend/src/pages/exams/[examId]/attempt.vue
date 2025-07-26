@@ -1,7 +1,7 @@
 <template>
   <UContainer
     v-if="isExamEnded"
-    class="col-span-full row-span-full flex flex-col items-center justify-center"
+    class="col-span-full row-span-full flex h-screen flex-col items-center justify-center"
   >
     <p class="flex items-center gap-2">
       Your exam has been submitted.
