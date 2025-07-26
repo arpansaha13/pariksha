@@ -22,6 +22,16 @@ export default defineNuxtConfig({
         path: 'hmr/',
       },
     },
+    optimizeDeps: {
+      include: [
+        '@shikijs/monaco',
+        '@internationalized/date',
+        '@arpansaha13/utils',
+        'vuedraggable',
+        'reka-ui',
+        'shiki',
+      ],
+    },
   },
 
   runtimeConfig: {
