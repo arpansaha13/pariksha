@@ -46,8 +46,11 @@ func SingleQuestionHashInterceptor(questionIntSvc *interservice.Question) grpc.U
 			return nil, status.Error(codes.Internal, "failed to fetch question ID")
 		}
 
-		// Store question ID in context
-		ctx = context.WithValue(ctx, questionIDContextKey, types.QuestionID(questionIDs[0]))
+		if len(questionIDs) > 0 {
+			// Store question ID in context
+			ctx = context.WithValue(ctx, questionIDContextKey, types.QuestionID(questionIDs[0]))
+		}
+
 		return handler(ctx, req)
 	}
 }

@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,91 +10,100 @@ import (
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/utils/testrunner"
-	"pariksha/exam/internal/config/db"
+	"pariksha/common/pkg/test"
 )
 
 func TestGetExamResults(t *testing.T) {
-	tests := []getExamResultsTestCase{
+	type SetupReturn struct {
+		Exam        models.Exam
+		Participant models.ExamParticipant
+		Answers     []models.Answer
+	}
+
+	testCases := []test.TestCase[*proto.ExamRequest, *proto.ExamResultsResponse, *SetupReturn]{
 		{
-			baseTestCase: baseTestCase{
-				name:         "Success - Get results with all questions answered",
-				userID:       typedUserID,
-				expectedCode: codes.OK,
-			},
-			setup: func(t *testing.T) *models.Exam {
+			Name:     "Success - Get results with all questions answered",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, 2)
 
 				// Create participant
-				createTestExamParticipants(t, &exam, []models.ExamParticipant{
+				participants := createTestExamParticipants(t, &exam, []models.ExamParticipant{
 					{Status: constants.PARTICIPANT_STATUS_EVALUATED},
 				})
 
-				// Get participant to create answers
-				var participant models.ExamParticipant
-				require.NoError(t, db.DB.Where("exam_id = ? AND user_id = ?", exam.ID, userID).First(&participant).Error)
-
 				// Create answers
-				createTestAnswer(t, &participant, 1)
-				createTestAnswer(t, &participant, 2)
+				var answers []models.Answer
+				answers = append(answers, createTestAnswer(t, &participants[0], 1))
+				answers = append(answers, createTestAnswer(t, &participants[0], 2))
 
-				return &exam
+				return &SetupReturn{
+					Exam:        exam,
+					Participant: participants[0],
+					Answers:     answers,
+				}
 			},
-			validate: func(t *testing.T, resp *proto.ExamResultsResponse) {
-				require.Len(t, resp.Results, 2)
+			GetRequest: func(setupData *SetupReturn) *proto.ExamRequest {
+				return &proto.ExamRequest{
+					ExamHash: setupData.Exam.Hash,
+				}
+			},
+			ExpectedCode: codes.OK,
+			Validate: func(t *testing.T, resp *proto.ExamResultsResponse, setupData *SetupReturn) {
+				require.Len(t, resp.Results, len(setupData.Answers))
 
-				for _, result := range resp.Results {
+				for i, result := range resp.Results {
 					assert.NotZero(t, result.AnswerId)
-					assert.EqualValues(t, 5, result.ScoreAwarded)
+					assert.EqualValues(t, setupData.Answers[i].ScoreAwarded, result.ScoreAwarded)
 				}
 			},
 		},
 		{
-			baseTestCase: baseTestCase{
-				name:         "Success - Exam with no answers",
-				userID:       typedUserID,
-				expectedCode: codes.OK,
-			},
-			setup: func(t *testing.T) *models.Exam {
+			Name:     "Success - Exam with no answers",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, 2)
-				createTestExamParticipants(t, &exam, []models.ExamParticipant{
-					{
-						Status: constants.PARTICIPANT_STATUS_EVALUATED,
-					},
+				participants := createTestExamParticipants(t, &exam, []models.ExamParticipant{
+					{Status: constants.PARTICIPANT_STATUS_EVALUATED},
 				})
-				return &exam
+				return &SetupReturn{
+					Exam:        exam,
+					Participant: participants[0],
+					Answers:     []models.Answer{},
+				}
 			},
-			validate: func(t *testing.T, resp *proto.ExamResultsResponse) {
+			GetRequest: func(setupData *SetupReturn) *proto.ExamRequest {
+				return &proto.ExamRequest{
+					ExamHash: setupData.Exam.Hash,
+				}
+			},
+			ExpectedCode: codes.OK,
+			Validate: func(t *testing.T, resp *proto.ExamResultsResponse, setupData *SetupReturn) {
 				assert.Empty(t, resp.Results)
 			},
 		},
 		{
-			baseTestCase: baseTestCase{
-				name:         "Fail - User is not a participant",
-				userID:       typedUserID,
-				expectedCode: codes.PermissionDenied,
-			},
-			setup: func(t *testing.T) *models.Exam {
+			Name:     "Fail - User is not a participant",
+			Metadata: defaultMetadata,
+			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, 2)
-				return &exam
+				return &SetupReturn{
+					Exam: exam,
+				}
 			},
+			GetRequest: func(setupData *SetupReturn) *proto.ExamRequest {
+				return &proto.ExamRequest{
+					ExamHash: setupData.Exam.Hash,
+				}
+			},
+			ExpectedCode: codes.PermissionDenied,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
 			clearTables(t)
-			exam := tt.setup(t)
-
-			ctx := createContextWithMetadata(map[string]string{
-				"user_id": strconv.FormatInt(userID, 10),
-			})
-
-			testrunner.Runner(t, ctx, tt.expectedCode,
-				&proto.ExamRequest{ExamHash: exam.Hash},
-				client.GetExamResults,
-				tt.validate,
-			)
+			test.Runner(t, tc, client.GetExamResults)
 		})
 	}
 }

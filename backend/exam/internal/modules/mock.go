@@ -5,6 +5,8 @@ import (
 	"log"
 
 	"github.com/docker/go-connections/nat"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
 
@@ -20,9 +22,11 @@ import (
 	"pariksha/exam/internal/services"
 )
 
-func NewMock() (*examServer, *gorm.DB, []grpc.UnaryServerInterceptor, func()) {
+func NewMock() (*examServer, *gorm.DB, *interservice.Question, []grpc.UnaryServerInterceptor, func()) {
 	ctx := context.Background()
 	mockQuestionIntSvc := mockQuestionInterservice()
+
+	redisCleanup := mockExamQueueInterservice(ctx)
 
 	// Initialize database
 	pgHost, pgPort, pgCleanup := setupPgContainer(ctx)
@@ -72,9 +76,10 @@ func NewMock() (*examServer, *gorm.DB, []grpc.UnaryServerInterceptor, func()) {
 
 		sqlDB.Close()
 		pgCleanup()
+		redisCleanup()
 	}
 
-	return server, dbInst, intc, cleanup
+	return server, dbInst, mockQuestionIntSvc, intc, cleanup
 }
 
 func mockDB(pgHost string, pgPort nat.Port) *gorm.DB {
@@ -122,4 +127,32 @@ func mockQuestionInterservice() *interservice.Question {
 	mockClient := &mocks.QuestionClient{}
 	qIntSvc := interservice.NewQuestion(nil, mockClient)
 	return qIntSvc
+}
+
+func mockExamQueueInterservice(ctx context.Context) func() {
+	// Start Redis container
+	redisContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "redis:7-alpine",
+			ExposedPorts: []string{"6379/tcp"},
+			WaitingFor:   wait.ForLog("Ready to accept connections"),
+		},
+		Started: true,
+	})
+	if err != nil {
+		log.Fatalf("Failed to setup Redis container: %v", err)
+	}
+
+	redisHost, _ := redisContainer.Host(ctx)
+	redisPort, _ := redisContainer.MappedPort(ctx, "6379")
+
+	// Initialize Redis connection
+	err = interservice.InitExamQueue(redisHost, redisPort.Port())
+	if err != nil {
+		log.Fatalf("Failed to initialize Redis: %v", err)
+	}
+
+	return func() {
+		redisContainer.Terminate(ctx)
+	}
 }

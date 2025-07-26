@@ -1,39 +1,35 @@
 package tests
 
 import (
-	"context"
 	"encoding/json"
 	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
+	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/generate"
-	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/interservice"
 )
 
 const (
-	typedUserID types.UserID = 1 // Creator/admin user ID
-	userID      int64        = 1 // Creator/admin user ID
-	paperHash   string       = "some-string-for-now"
+	defaultUserID types.UserID = 1
+	paperHash     string       = "some-string-for-now"
 )
 
-func createContextWithUserID(userID types.UserID) context.Context {
-	md := metadata.New(map[string]string{
-		"user_id": strconv.FormatInt(int64(userID), 10),
-	})
-	return metadata.NewOutgoingContext(context.Background(), md)
+var defaultMetadata metadata.MD = metadata.MD{
+	"user_id": []string{"1"},
 }
 
-func createContextWithMetadata(mdMap map[string]string) context.Context {
-	md := metadata.New(mdMap)
-	return metadata.NewOutgoingContext(context.Background(), md)
-}
+// Set in TestMain
+var (
+	dbInst         *gorm.DB
+	questionIntSvc *interservice.Question
+)
 
 // createTestExams creates multiple exam entries with default values for missing fields
 func createTestExams(t *testing.T, exams []models.Exam) []models.Exam {
@@ -64,11 +60,11 @@ func createTestExams(t *testing.T, exams []models.Exam) []models.Exam {
 		}
 
 		// Create exam
-		require.NoError(t, db.DB.Create(&exam).Error)
+		require.NoError(t, dbInst.Create(&exam).Error)
 
 		// Generate and store hash
 		exam.Hash = generate.HMACHash(int64(exam.ID))
-		require.NoError(t, db.DB.Model(&exam).Update("hash", exam.Hash).Error)
+		require.NoError(t, dbInst.Model(&exam).Update("hash", exam.Hash).Error)
 
 		// Create permission
 		permission := models.ExamPermission{
@@ -77,7 +73,7 @@ func createTestExams(t *testing.T, exams []models.Exam) []models.Exam {
 		}
 		permission.SetWrite()
 		permission.SetEvaluate()
-		require.NoError(t, db.DB.Create(&permission).Error)
+		require.NoError(t, dbInst.Create(&permission).Error)
 
 		result[i] = exam
 	}
@@ -115,9 +111,9 @@ func createTestExamParticipants(t *testing.T, exam *models.Exam, participants []
 		if participants[i].ExamID == 0 {
 			participants[i].ExamID = exam.ID
 		}
-		// Set UserID to typedUserID if not specified
+		// Set UserID to defaultUserID if not specified
 		if participants[i].UserID == 0 {
-			participants[i].UserID = typedUserID
+			participants[i].UserID = defaultUserID
 		}
 
 		// Update counts based on status
@@ -134,7 +130,7 @@ func createTestExamParticipants(t *testing.T, exam *models.Exam, participants []
 	}
 
 	// Save participants
-	require.NoError(t, db.DB.Create(&participants).Error)
+	require.NoError(t, dbInst.Create(&participants).Error)
 
 	// Create permissions for all participants
 	permissions := make([]models.ExamPermission, len(participants))
@@ -146,14 +142,14 @@ func createTestExamParticipants(t *testing.T, exam *models.Exam, participants []
 		permissions[i].SetParticipate()
 	}
 
-	require.NoError(t, db.DB.Create(&permissions).Error)
+	require.NoError(t, dbInst.Create(&permissions).Error)
 
 	// Update exam counts
 	newCounts, err := json.Marshal(counts)
 	require.NoError(t, err)
 
 	exam.ParticipantCounts = newCounts
-	require.NoError(t, db.DB.Save(&exam).Error)
+	require.NoError(t, dbInst.Save(&exam).Error)
 
 	return participants
 }
@@ -167,13 +163,13 @@ func createTestAnswer(t *testing.T, examParticipant *models.ExamParticipant, que
 		ScoreAwarded:      5,
 		Evaluated:         true,
 	}
-	require.NoError(t, db.DB.Create(&answer).Error)
+	require.NoError(t, dbInst.Create(&answer).Error)
 	return answer
 }
 
 // createTestExamQuestions creates exam questions with provided data, using defaults for missing fields
 // The Order field is auto-filled based on slice index and should not be provided in input questions
-func createTestExamQuestions(t *testing.T, exam *models.Exam, questions []models.ExamQuestion) []models.ExamQuestion {
+func createTestExamQuestions(t *testing.T, examID types.ExamID, questions []models.ExamQuestion) []models.ExamQuestion {
 	result := make([]models.ExamQuestion, len(questions))
 
 	for i := range questions {
@@ -182,7 +178,7 @@ func createTestExamQuestions(t *testing.T, exam *models.Exam, questions []models
 
 		// Set required fields if not provided
 		if questions[i].ExamID == 0 {
-			questions[i].ExamID = exam.ID
+			questions[i].ExamID = examID
 		}
 		if questions[i].CategoryID == 0 {
 			questions[i].CategoryID = 10
@@ -200,22 +196,27 @@ func createTestExamQuestions(t *testing.T, exam *models.Exam, questions []models
 		// Set order based on index
 		questions[i].Order = int16(i + 1)
 
-		require.NoError(t, db.DB.Create(&questions[i]).Error)
+		require.NoError(t, dbInst.Create(&questions[i]).Error)
 		result[i] = questions[i]
 	}
 
 	return result
 }
 
-func getQuestionIdForHash(questionHash string) types.QuestionID {
+func getQuestionIdForHash(questionHash string) int64 {
 	hashesList := []string{questionHash}
-	questionIDs, _ := interservice.GetQuestionIDsByHashes(hashesList)
-	return questionIDs[0]
+	questionIDs, err := questionIntSvc.GetQuestionIDsByHashes(hashesList)
+	if err != nil || len(questionIDs) == 0 {
+		panic("getQuestionIdForHash: could not find question ID for hash: " + questionHash)
+	}
+	return int64(questionIDs[0])
 }
 
 func getQuestionHashForId(questionID types.QuestionID) string {
-	idsList := make([]types.QuestionID, 1)
-	idsList[0] = questionID
-	questionHashes, _ := interservice.GetQuestionHashesByIds(idsList)
+	idsList := []types.QuestionID{questionID}
+	questionHashes, err := questionIntSvc.GetQuestionHashesByIds(idsList)
+	if err != nil || len(questionHashes) == 0 {
+		panic("getQuestionHashForId: could not find question hash for ID: " + strconv.FormatInt(int64(questionID), 10))
+	}
 	return questionHashes[0]
 }
