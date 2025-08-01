@@ -11,21 +11,23 @@ import (
 	"pariksha/engine/internal/services"
 )
 
-func NewMock() (*engineServer, error) {
+func NewMock() (*engineServer, *interservice.Question, error) {
 	mockQuestionIntSvc := mockQuestionInterservice()
 
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to create Docker client: %v", err)
+		return nil, nil, status.Errorf(codes.Internal, "failed to create Docker client: %v", err)
 	}
 
 	// Initialize services
 	engineSvc := services.NewEngine(cli, mockQuestionIntSvc)
 
 	// Initialize controllers
-	return &engineServer{
+	server := &engineServer{
 		engineCtrl: controllers.NewEngine(engineSvc),
-	}, nil
+	}
+
+	return server, mockQuestionIntSvc, nil
 }
 
 func mockQuestionInterservice() *interservice.Question {

@@ -18,11 +18,6 @@ var (
 )
 
 var (
-	PAPER_SERVER_HOST string
-	PAPER_SERVER_PORT string
-)
-
-var (
 	QUESTION_SERVER_HOST string
 	QUESTION_SERVER_PORT string
 )

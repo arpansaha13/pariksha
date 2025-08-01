@@ -113,30 +113,67 @@ var boilerplateMap = map[string]map[int32]*proto.BoilerplateResponse{
 }
 
 var inputDefinitionsMap = map[string]*proto.GetCodingQuestionInputDefinitionsResponse{
-	"q_hash_3": {
+	"test_add_numbers": {
 		InputDefinitions: []*proto.InputDefinition{
 			{
-				VariableName: "s",
+				VariableName: "a",
+				Type:         proto.ParameterType_NUMBER,
+				Items:        []*proto.ParameterItem{},
+			},
+			{
+				VariableName: "b",
+				Type:         proto.ParameterType_NUMBER,
+				Items:        []*proto.ParameterItem{},
+			},
+		},
+	},
+	"test_string_concat": {
+		InputDefinitions: []*proto.InputDefinition{
+			{
+				VariableName: "first",
+				Type:         proto.ParameterType_STRING,
+				Items:        []*proto.ParameterItem{},
+			},
+			{
+				VariableName: "last",
 				Type:         proto.ParameterType_STRING,
 				Items:        []*proto.ParameterItem{},
 			},
 		},
 	},
-	"q_hash_6": {
+	"test_boolean_ops": {
 		InputDefinitions: []*proto.InputDefinition{
 			{
-				VariableName: "n",
-				Type:         proto.ParameterType_NUMBER,
+				VariableName: "a",
+				Type:         proto.ParameterType_BOOLEAN,
+				Items:        []*proto.ParameterItem{},
+			},
+			{
+				VariableName: "b",
+				Type:         proto.ParameterType_BOOLEAN,
 				Items:        []*proto.ParameterItem{},
 			},
 		},
 	},
-	"q_hash_9": {
+	"test_array_numbers": {
 		InputDefinitions: []*proto.InputDefinition{
 			{
-				VariableName: "n",
-				Type:         proto.ParameterType_NUMBER,
-				Items:        []*proto.ParameterItem{},
+				VariableName: "arr",
+				Type:         proto.ParameterType_ARRAY,
+				Items: []*proto.ParameterItem{
+					{Type: proto.ParameterType_NUMBER},
+				},
+			},
+		},
+	},
+	"test_array_strings": {
+		InputDefinitions: []*proto.InputDefinition{
+			{
+				VariableName: "arr",
+				Type:         proto.ParameterType_ARRAY,
+				Items: []*proto.ParameterItem{
+					{Type: proto.ParameterType_STRING},
+				},
 			},
 		},
 	},
