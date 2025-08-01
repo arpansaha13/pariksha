@@ -111,3 +111,33 @@ var boilerplateMap = map[string]map[int32]*proto.BoilerplateResponse{
 		2: {Code: "public class PrimeChecker {\n    public boolean isPrime(int n) {\n        if (n <= 1) return false;\n        for (int i = 2; i <= Math.sqrt(n); i++) {\n            if (n % i == 0) return false;\n        }\n        return true;\n    }\n}"},
 	},
 }
+
+var inputDefinitionsMap = map[string]*proto.GetCodingQuestionInputDefinitionsResponse{
+	"q_hash_3": {
+		InputDefinitions: []*proto.InputDefinition{
+			{
+				VariableName: "s",
+				Type:         proto.ParameterType_STRING,
+				Items:        []*proto.ParameterItem{},
+			},
+		},
+	},
+	"q_hash_6": {
+		InputDefinitions: []*proto.InputDefinition{
+			{
+				VariableName: "n",
+				Type:         proto.ParameterType_NUMBER,
+				Items:        []*proto.ParameterItem{},
+			},
+		},
+	},
+	"q_hash_9": {
+		InputDefinitions: []*proto.InputDefinition{
+			{
+				VariableName: "n",
+				Type:         proto.ParameterType_NUMBER,
+				Items:        []*proto.ParameterItem{},
+			},
+		},
+	},
+}

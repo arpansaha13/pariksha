@@ -136,7 +136,10 @@ func (m *QuestionClient) IncQuestionExamIndegreeByIds(ctx context.Context, req *
 }
 
 func (m *QuestionClient) GetCodingQuestionInputDefinitions(ctx context.Context, req *proto.GetCodingQuestionInputDefinitionsRequest, opts ...grpc.CallOption) (*proto.GetCodingQuestionInputDefinitionsResponse, error) {
-	return &proto.GetCodingQuestionInputDefinitionsResponse{}, nil
+	if inputDefs, ok := inputDefinitionsMap[req.QuestionHash]; ok {
+		return inputDefs, nil
+	}
+	return nil, status.Error(codes.NotFound, "could not find input definitions for question")
 }
 
 // _______________________BOILERPLATE OPERATIONS_______________________

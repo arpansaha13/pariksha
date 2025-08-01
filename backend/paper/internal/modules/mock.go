@@ -9,13 +9,13 @@ import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/config"
+	"pariksha/common/pkg/mocks"
 	"pariksha/common/pkg/test"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/config/env"
 	"pariksha/paper/internal/controllers"
 	"pariksha/paper/internal/interceptors"
 	"pariksha/paper/internal/interservice"
-	"pariksha/paper/internal/mocks"
 	"pariksha/paper/internal/repositories"
 	"pariksha/paper/internal/services"
 )
