@@ -1,4 +1,4 @@
-package handlers
+package services
 
 import (
 	"bufio"
@@ -27,10 +27,19 @@ import (
 	"pariksha/engine/internal/templates"
 )
 
-type EngineServer struct {
-	proto.UnimplementedEngineServer
+type Engine struct {
+	dockerClient   *client.Client
+	questionIntSvc *interservice.Question
+}
 
-	dockerClient *client.Client
+func NewEngine(
+	dockerClient *client.Client,
+	questionIntSvc *interservice.Question,
+) *Engine {
+	return &Engine{
+		dockerClient:   dockerClient,
+		questionIntSvc: questionIntSvc,
+	}
 }
 
 // EnvironmentConfig contains all configuration needed for an execution environment
@@ -55,17 +64,6 @@ var envConfigs = map[string]EnvironmentConfig{
 	},
 }
 
-// NewEngineServer creates a new instance of EngineServer
-func NewEngineServer() (*EngineServer, error) {
-	// Ensure DOCKER_API_VERSION = 1.46
-	// Error response from daemon: client version 1.48 is too new. Maximum supported API version is 1.46
-	cli, err := client.NewClientWithOpts(client.FromEnv)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to create Docker client: %v", err)
-	}
-	return &EngineServer{dockerClient: cli}, nil
-}
-
 type TestResult struct {
 	Inputs         []string `json:"inputs"`
 	Output         string   `json:"output"`
@@ -75,7 +73,7 @@ type TestResult struct {
 	ExecutionTime  int64    `json:"executionTime"`
 }
 
-func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (*proto.RunCodeResponse, error) {
+func (s *Engine) Run(req *proto.RunCodeRequest) (*proto.RunCodeResponse, error) {
 	// Get environment config
 	envConfig, ok := envConfigs[req.Environment]
 	if !ok {
@@ -84,7 +82,7 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 
 	// Fetch input definitions
 	// Will be used for parsing inputs
-	inputDefinitions, err := interservice.GetInputDefinitions(req.QuestionHash)
+	inputDefinitions, err := s.questionIntSvc.GetInputDefinitions(req.QuestionHash)
 	if err != nil {
 		return nil, err
 	}
@@ -188,10 +186,10 @@ func (s *EngineServer) RunCode(ctx context.Context, req *proto.RunCodeRequest) (
 	}()
 
 	// Create execution context with timeout
-	execCtx, cancel := context.WithTimeout(ctx, time.Duration(engineConstants.ExecutionTimeout)*time.Second)
+	execCtx, cancel := context.WithTimeout(context.Background(), time.Duration(engineConstants.ExecutionTimeout)*time.Second)
 	defer cancel()
 
-	_, err = s.startContainerAndWait(&execCtx, resp.ID)
+	_, err = s.startContainerAndWait(execCtx, resp.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -291,14 +289,14 @@ func parseValue(input string, paramType proto.ParameterType, items []*proto.Para
 	}
 }
 
-func (s *EngineServer) startContainerAndWait(execCtx *context.Context, containerID string) (*int64, error) {
+func (s *Engine) startContainerAndWait(execCtx context.Context, containerID string) (*int64, error) {
 	// Start container
-	if err := s.dockerClient.ContainerStart(*execCtx, containerID, container.StartOptions{}); err != nil {
+	if err := s.dockerClient.ContainerStart(execCtx, containerID, container.StartOptions{}); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to start container: %v", err)
 	}
 
 	// Wait for container to finish
-	statusCh, errCh := s.dockerClient.ContainerWait(*execCtx, containerID, container.WaitConditionNotRunning)
+	statusCh, errCh := s.dockerClient.ContainerWait(execCtx, containerID, container.WaitConditionNotRunning)
 	var statusCode int64
 	select {
 	case err := <-errCh:

@@ -9,8 +9,7 @@ import (
 
 	"pariksha/common/pkg/proto"
 	"pariksha/engine/internal/config/env"
-	"pariksha/engine/internal/handlers"
-	"pariksha/engine/internal/interservice"
+	"pariksha/engine/internal/modules"
 )
 
 func main() {
@@ -19,19 +18,21 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+	defer lis.Close()
 
-	engineServer, err := handlers.NewEngineServer()
+	server, cleanup, err := modules.New()
 	if err != nil {
 		log.Fatalf("failed to create engine server: %v", err)
 	}
+	defer cleanup()
 
 	grpcServer := grpc.NewServer()
-	proto.RegisterEngineServer(grpcServer, engineServer)
+	defer grpcServer.Stop()
+
+	proto.RegisterEngineServer(grpcServer, server)
 
 	log.Printf("Engine gRPC server is running on port %s\n", port)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
-
-	defer interservice.CloseQuestionConn()
 }
