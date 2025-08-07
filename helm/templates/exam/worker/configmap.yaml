@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: exam-worker-config
+data:
+  GO_ENV: docker-development
+
+  EXAM_DB_HOST: external-exam-db-service
+  EXAM_DB_NAME: db_pariksha_exams
+  EXAM_DB_PORT: "6030"
+  EXAM_DB_SSLMODE: disable
+
+  EXAM_QUEUE_HOST: exam-queue-service
+  EXAM_QUEUE_PORT: "6379"
+
+  PAPER_SERVER_HOST: paper-service
+  PAPER_SERVER_PORT: "4000"
+
+  QUESTION_SERVER_HOST: question-service
+  QUESTION_SERVER_PORT: "4000"

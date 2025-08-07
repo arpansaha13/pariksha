@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-exam-db-service
+  labels:
+    app: exam
+    component: api
+    tier: database
+    environment: development
+spec:
+  type: ExternalName
+  externalName: host.docker.internal

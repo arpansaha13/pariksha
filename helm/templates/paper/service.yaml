@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: paper-service
+  labels:
+    app: paper
+    component: api
+    tier: backend
+    environment: development
+spec:
+  type: ClusterIP
+  ports:
+    - port: 4000
+      targetPort: 4000
+  selector:
+    app: paper
+    component: api
+    tier: backend
+    environment: development

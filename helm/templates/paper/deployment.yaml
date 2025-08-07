@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paper-deployment
+  labels:
+    app: paper
+    component: api
+    tier: backend
+    environment: development
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paper
+      component: api
+      tier: backend
+      environment: development
+  template:
+    metadata:
+      labels:
+        app: paper
+        component: api
+        tier: backend
+        environment: development
+    spec:
+      initContainers:
+        - name: wait-for-paper-db
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z external-paper-db-service 6020; do
+                echo "Waiting for PostgreSQL...";
+                sleep 4;
+              done
+
+      containers:
+        - name: paper
+          image: pariksha_paper_service
+          envFrom:
+            - configMapRef:
+                name: paper-config
+            - secretRef:
+                name: paper-secret
+          ports:
+            - containerPort: 4000
+          imagePullPolicy: Never

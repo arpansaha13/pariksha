@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: client-config
+  labels:
+    app: client
+    component: frontend
+    tier: frontend
+    environment: development
+data:
+  NUXT_API_BASE_URL: "http://gateway-service:4000"

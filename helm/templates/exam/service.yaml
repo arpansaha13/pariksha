@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: exam-service
+  labels:
+    app: exam
+    component: api
+    tier: backend
+    environment: development
+spec:
+  type: ClusterIP
+  ports:
+    - port: 4000
+      targetPort: 4000
+  selector:
+    app: exam
+    component: api
+    tier: backend
+    environment: development

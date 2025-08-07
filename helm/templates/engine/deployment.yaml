@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: engine-deployment
+  labels:
+    app: engine
+    component: api
+    tier: backend
+    environment: development
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: engine
+      component: api
+      tier: backend
+      environment: development
+  template:
+    metadata:
+      labels:
+        app: engine
+        component: api
+        tier: backend
+        environment: development
+    spec:
+      containers:
+        - name: engine
+          image: pariksha_engine_service:latest
+          envFrom:
+            - configMapRef:
+                name: engine-config
+            - secretRef:
+                name: engine-secret
+          ports:
+            - containerPort: 4000
+          imagePullPolicy: Never

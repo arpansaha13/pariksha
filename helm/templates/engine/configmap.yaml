@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: engine-config
+  labels:
+    app: engine
+    component: config
+    tier: backend
+    environment: development
+data:
+  GO_ENV: "development"
+  ENGINE_SERVER_PORT: "4000"
+
+  QUESTION_SERVER_HOST: "question-service"
+  QUESTION_SERVER_PORT: "4000"
+
+  DOCKER_API_VERSION: "1.38"
+  HOST_TMP_MOUNT_PATH: "C:\\Users\\inspiron-5490\\Documents\\Coding Heap\\3. Web Dev Files\\5. Projects\\pariksha\\docker\\data\\engineTmp"

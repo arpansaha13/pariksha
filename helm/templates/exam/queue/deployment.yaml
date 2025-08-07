@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exam-queue-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: exam-queue
+  template:
+    metadata:
+      labels:
+        app: exam-queue
+        component: broker
+        tier: backend
+        environment: development
+    spec:
+      containers:
+      - name: exam-queue
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        readinessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3

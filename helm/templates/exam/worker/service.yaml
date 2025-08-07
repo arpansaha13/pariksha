@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: exam-worker-service
+  labels:
+    app: exam-worker
+    component: worker
+    tier: backend
+    environment: development
+spec:
+  type: ClusterIP
+  ports:
+    - port: 4000
+      targetPort: 4000
+  selector:
+    app: exam-worker
+    component: worker
+    tier: backend
+    environment: development

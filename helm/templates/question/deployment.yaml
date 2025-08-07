@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: question-deployment
+  labels:
+    app: question
+    component: api
+    tier: backend
+    environment: development
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: question
+      component: api
+      tier: backend
+      environment: development
+  template:
+    metadata:
+      labels:
+        app: question
+        component: api
+        tier: backend
+        environment: development
+    spec:
+      initContainers:
+        - name: wait-for-question-db
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z external-question-db-service 6040; do
+                echo "Waiting for PostgreSQL...";
+                sleep 4;
+              done
+
+      containers:
+        - name: question
+          image: pariksha_question_service
+          envFrom:
+            - configMapRef:
+                name: question-config
+            - secretRef:
+                name: question-secret
+          ports:
+            - containerPort: 4000
+          imagePullPolicy: Never

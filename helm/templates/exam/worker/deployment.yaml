@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exam-worker-deployment
+  labels:
+    app: exam-worker
+    component: worker
+    tier: backend
+    environment: development
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: exam-worker
+      component: worker
+      tier: backend
+      environment: development
+  template:
+    metadata:
+      labels:
+        app: exam-worker
+        component: worker
+        tier: backend
+        environment: development
+    spec:
+      initContainers:
+        - name: wait-for-exam-db
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z external-exam-db-service 6030; do
+                echo "Waiting for PostgreSQL...";
+                sleep 4;
+              done
+
+        - name: wait-for-exam-queue
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z exam-queue-service 6379; do
+                echo "Waiting for Exam Queue...";
+                sleep 4;
+              done
+
+      containers:
+        - name: exam-worker
+          image: pariksha_exam_worker
+          envFrom:
+            - configMapRef:
+                name: exam-worker-config
+            - secretRef:
+                name: exam-worker-secret
+          ports:
+            - containerPort: 4000
+          imagePullPolicy: Never
