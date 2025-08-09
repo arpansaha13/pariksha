@@ -1,3 +1,4 @@
+{{- if .Values.question.enabled -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,12 +7,9 @@ metadata:
     app: question
     component: config
     tier: backend
-    environment: development
+    environment: {{ .Values.global.environment }}
 data:
-  GO_ENV: "development"
-  QUESTION_SERVER_PORT: "4000"
-
-  QUESTION_DB_HOST: "external-question-db-service"
-  QUESTION_DB_NAME: "db_pariksha_questions"
-  QUESTION_DB_PORT: "6040"
-  QUESTION_DB_SSLMODE: "disable"
+  {{- range $key, $value := .Values.question.config }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+{{- end }}

@@ -1,3 +1,4 @@
+{{- if .Values.examQueue.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -6,14 +7,15 @@ metadata:
     app: exam-queue
     component: broker
     tier: backend
-    environment: development
+    environment: {{ .Values.global.environment }}
 spec:
-  type: ClusterIP
+  type: {{ .Values.examQueue.service.type }}
   ports:
-    - port: 6379
-      targetPort: 6379
+    - port: {{ .Values.examQueue.service.port }}
+      targetPort: {{ .Values.examQueue.service.targetPort }}
   selector:
     app: exam-queue
     component: broker
     tier: backend
-    environment: development
+    environment: {{ .Values.global.environment }}
+{{- end }}

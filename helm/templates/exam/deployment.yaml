@@ -1,3 +1,4 @@
+{{- if .Values.exam.enabled -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,54 +7,75 @@ metadata:
     app: exam
     component: api
     tier: backend
-    environment: development
+    environment: {{ .Values.global.environment }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.exam.replicaCount }}
   selector:
     matchLabels:
       app: exam
       component: api
       tier: backend
-      environment: development
+      environment: {{ .Values.global.environment }}
   template:
     metadata:
       labels:
         app: exam
         component: api
         tier: backend
-        environment: development
+        environment: {{ .Values.global.environment }}
     spec:
+      {{- if or .Values.examDb.enabled .Values.examQueue.enabled }}
       initContainers:
+        {{- if .Values.examDb.enabled }}
         - name: wait-for-exam-db
           image: busybox
           command:
             - sh
             - -c
             - |
-              until nc -z external-exam-db-service 6030; do
+              until nc -z external-exam-db-service {{ .Values.exam.config.EXAM_DB_PORT }}; do
                 echo "Waiting for PostgreSQL...";
                 sleep 4;
               done
-
+        {{- end }}
+        {{- if .Values.examQueue.enabled }}
         - name: wait-for-exam-queue
           image: busybox
           command:
             - sh
             - -c
             - |
-              until nc -z exam-queue-service 6379; do
+              until nc -z exam-queue-service {{ .Values.examQueue.service.port }}; do
                 echo "Waiting for Exam Queue...";
                 sleep 4;
               done
-
+        {{- end }}
+      {{- end }}
       containers:
         - name: exam
-          image: pariksha_exam_service
+          image: {{ .Values.exam.image.repository }}:{{ .Values.exam.image.tag }}
           envFrom:
             - configMapRef:
                 name: exam-config
             - secretRef:
                 name: exam-secret
           ports:
-            - containerPort: 4000
-          imagePullPolicy: Never
+            - containerPort: {{ .Values.exam.service.targetPort }}
+          imagePullPolicy: {{ .Values.exam.image.pullPolicy }}
+          {{- with .Values.exam.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.exam.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.exam.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.exam.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

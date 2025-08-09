@@ -1,3 +1,4 @@
+{{- if .Values.paper.enabled -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,23 +7,24 @@ metadata:
     app: paper
     component: api
     tier: backend
-    environment: development
+    environment: {{ .Values.global.environment }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.paper.replicaCount }}
   selector:
     matchLabels:
       app: paper
       component: api
       tier: backend
-      environment: development
+      environment: {{ .Values.global.environment }}
   template:
     metadata:
       labels:
         app: paper
         component: api
         tier: backend
-        environment: development
+        environment: {{ .Values.global.environment }}
     spec:
+      {{- if .Values.paperDb.enabled }}
       initContainers:
         - name: wait-for-paper-db
           image: busybox
@@ -30,19 +32,36 @@ spec:
             - sh
             - -c
             - |
-              until nc -z external-paper-db-service 6020; do
+              until nc -z external-paper-db-service {{ .Values.paper.config.PAPER_DB_PORT }}; do
                 echo "Waiting for PostgreSQL...";
                 sleep 4;
               done
-
+      {{- end }}
       containers:
         - name: paper
-          image: pariksha_paper_service
+          image: {{ .Values.paper.image.repository }}:{{ .Values.paper.image.tag }}
           envFrom:
             - configMapRef:
                 name: paper-config
             - secretRef:
                 name: paper-secret
           ports:
-            - containerPort: 4000
-          imagePullPolicy: Never
+            - containerPort: {{ .Values.paper.service.targetPort }}
+          imagePullPolicy: {{ .Values.paper.image.pullPolicy }}
+          {{- with .Values.paper.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.paper.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.paper.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.paper.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

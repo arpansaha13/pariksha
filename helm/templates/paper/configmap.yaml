@@ -1,3 +1,4 @@
+{{- if .Values.paper.enabled -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,15 +7,9 @@ metadata:
     app: paper
     component: config
     tier: backend
-    environment: development
+    environment: {{ .Values.global.environment }}
 data:
-  GO_ENV: "docker-development"
-  PAPER_SERVER_PORT: "4000"
-
-  PAPER_DB_HOST: "external-paper-db-service"
-  PAPER_DB_NAME: "db_pariksha_papers"
-  PAPER_DB_PORT: "6020"
-  PAPER_DB_SSLMODE: "disable"
-
-  QUESTION_SERVER_HOST: "question-service"
-  QUESTION_SERVER_PORT: "4000"
+  {{- range $key, $value := .Values.paper.config }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+{{- end }}

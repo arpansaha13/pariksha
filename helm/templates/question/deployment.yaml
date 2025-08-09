@@ -1,3 +1,4 @@
+{{- if .Values.question.enabled -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,23 +7,24 @@ metadata:
     app: question
     component: api
     tier: backend
-    environment: development
+    environment: {{ .Values.global.environment }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.question.replicaCount }}
   selector:
     matchLabels:
       app: question
       component: api
       tier: backend
-      environment: development
+      environment: {{ .Values.global.environment }}
   template:
     metadata:
       labels:
         app: question
         component: api
         tier: backend
-        environment: development
+        environment: {{ .Values.global.environment }}
     spec:
+      {{- if .Values.questionDb.enabled }}
       initContainers:
         - name: wait-for-question-db
           image: busybox
@@ -30,19 +32,36 @@ spec:
             - sh
             - -c
             - |
-              until nc -z external-question-db-service 6040; do
+              until nc -z external-question-db-service {{ .Values.question.config.QUESTION_DB_PORT }}; do
                 echo "Waiting for PostgreSQL...";
                 sleep 4;
               done
-
+      {{- end }}
       containers:
         - name: question
-          image: pariksha_question_service
+          image: {{ .Values.question.image.repository }}:{{ .Values.question.image.tag }}
           envFrom:
             - configMapRef:
                 name: question-config
             - secretRef:
                 name: question-secret
           ports:
-            - containerPort: 4000
-          imagePullPolicy: Never
+            - containerPort: {{ .Values.question.service.targetPort }}
+          imagePullPolicy: {{ .Values.question.image.pullPolicy }}
+          {{- with .Values.question.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.question.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.question.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.question.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

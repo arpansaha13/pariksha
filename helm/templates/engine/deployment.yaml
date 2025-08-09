@@ -1,3 +1,4 @@
+{{- if .Values.engine.enabled -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,31 +7,48 @@ metadata:
     app: engine
     component: api
     tier: backend
-    environment: development
+    environment: {{ .Values.global.environment }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.engine.replicaCount }}
   selector:
     matchLabels:
       app: engine
       component: api
       tier: backend
-      environment: development
+      environment: {{ .Values.global.environment }}
   template:
     metadata:
       labels:
         app: engine
         component: api
         tier: backend
-        environment: development
+        environment: {{ .Values.global.environment }}
     spec:
       containers:
         - name: engine
-          image: pariksha_engine_service:latest
+          image: {{ .Values.engine.image.repository }}:{{ .Values.engine.image.tag }}
           envFrom:
             - configMapRef:
                 name: engine-config
             - secretRef:
                 name: engine-secret
           ports:
-            - containerPort: 4000
-          imagePullPolicy: Never
+            - containerPort: {{ .Values.engine.service.targetPort }}
+          imagePullPolicy: {{ .Values.engine.image.pullPolicy }}
+          {{- with .Values.engine.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.engine.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.engine.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.engine.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

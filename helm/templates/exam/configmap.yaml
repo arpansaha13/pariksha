@@ -1,3 +1,4 @@
+{{- if .Values.exam.enabled -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,21 +7,9 @@ metadata:
     app: exam
     component: config
     tier: backend
-    environment: development
+    environment: {{ .Values.global.environment }}
 data:
-  GO_ENV: "docker-development"
-  EXAM_SERVER_PORT: "4000"
-
-  EXAM_DB_HOST: "external-exam-db-service"
-  EXAM_DB_NAME: "db_pariksha_exams"
-  EXAM_DB_PORT: "6030"
-  EXAM_DB_SSLMODE: "disable"
-
-  PAPER_SERVER_HOST: "paper-service"
-  PAPER_SERVER_PORT: "4000"
-
-  QUESTION_SERVER_HOST: "question-service"
-  QUESTION_SERVER_PORT: "4000"
-
-  EXAM_QUEUE_HOST: "commonQueue"
-  EXAM_QUEUE_PORT: "6379"
+  {{- range $key, $value := .Values.exam.config }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+{{- end }}

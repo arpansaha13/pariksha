@@ -1,42 +1,31 @@
+{{- if .Values.ingress.enabled -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Chart.Name }}-ingress
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
-  ingressClassName: nginx
+  ingressClassName: {{ .Values.ingress.className }}
   rules:
-    - http:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
         paths:
-          # https://github.com/nuxt/icon?tab=readme-ov-file#icon-customization
-          - path: /api/_nuxt_icon/
-            pathType: Prefix
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
             backend:
               service:
-                name: client-service
+                name: {{ if eq .path "/api/" -}}
+                    gateway-service
+                  {{- else -}}
+                    client-service
+                  {{- end }}
                 port:
                   name: entrypoint
-
-          - path: /api/
-            pathType: Prefix
-            backend:
-              service:
-                name: gateway-service
-                port:
-                  name: entrypoint
-
-          # https://github.com/nuxt/nuxt/issues/12003#issuecomment-1397230032
-          - path: /_nuxt/hmr/
-            pathType: Prefix
-            backend:
-              service:
-                name: client-service
-                port:
-                  name: entrypoint
-
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: client-service
-                port:
-                  name: entrypoint
+          {{- end }}
+    {{- end }}
+{{- end }}

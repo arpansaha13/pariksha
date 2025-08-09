@@ -1,9 +1,10 @@
+{{- if .Values.examQueue.enabled -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: exam-queue-deployment
 spec:
-  replicas: 1
+  replicas: {{ .Values.examQueue.replicaCount }}
   selector:
     matchLabels:
       app: exam-queue
@@ -13,17 +14,34 @@ spec:
         app: exam-queue
         component: broker
         tier: backend
-        environment: development
+        environment: {{ .Values.global.environment }}
     spec:
       containers:
       - name: exam-queue
-        image: redis:7-alpine
+        image: {{ .Values.examQueue.image.repository }}:{{ .Values.examQueue.image.tag }}
         ports:
-        - containerPort: 6379
+        - containerPort: {{ .Values.examQueue.service.targetPort }}
         readinessProbe:
           tcpSocket:
-            port: 6379
+            port: {{ .Values.examQueue.service.targetPort }}
           initialDelaySeconds: 5
           periodSeconds: 5
           timeoutSeconds: 2
           failureThreshold: 3
+        {{- with .Values.examQueue.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- with .Values.examQueue.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.examQueue.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.examQueue.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

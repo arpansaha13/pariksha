@@ -21,3 +21,6 @@ dist
 
 # docker
 docker/data
+
+# helm dependencies
+helm/charts/**/*.tgz

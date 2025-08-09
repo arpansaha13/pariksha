@@ -1,3 +1,4 @@
+{{- if .Values.frontend.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -6,15 +7,16 @@ metadata:
     app: client
     component: frontend
     tier: frontend
-    environment: development
+    environment: {{ .Values.global.environment }}
 spec:
-  type: ClusterIP
+  type: {{ .Values.frontend.service.type }}
   ports:
     - name: entrypoint
-      port: 3000
-      targetPort: 3000
+      port: {{ .Values.frontend.service.port }}
+      targetPort: {{ .Values.frontend.service.targetPort }}
   selector:
     app: client
     component: frontend
     tier: frontend
-    environment: development
+    environment: {{ .Values.global.environment }}
+{{- end }}

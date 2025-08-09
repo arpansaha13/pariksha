@@ -1,3 +1,4 @@
+{{- if .Values.gateway.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -6,15 +7,16 @@ metadata:
     app: gateway
     component: api
     tier: backend
-    environment: development
+    environment: {{ .Values.global.environment }}
 spec:
-  type: ClusterIP
+  type: {{ .Values.gateway.service.type }}
   ports:
     - name: entrypoint
-      port: 4000
-      targetPort: 4000
+      port: {{ .Values.gateway.service.port }}
+      targetPort: {{ .Values.gateway.service.targetPort }}
   selector:
     app: gateway
     component: api
     tier: backend
-    environment: development
+    environment: {{ .Values.global.environment }}
+{{- end }}

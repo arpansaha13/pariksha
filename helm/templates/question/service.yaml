@@ -1,3 +1,4 @@
+{{- if .Values.question.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -6,14 +7,15 @@ metadata:
     app: question
     component: api
     tier: backend
-    environment: development
+    environment: {{ .Values.global.environment }}
 spec:
-  type: ClusterIP
+  type: {{ .Values.question.service.type }}
   ports:
-    - port: 4000
-      targetPort: 4000
+    - port: {{ .Values.question.service.port }}
+      targetPort: {{ .Values.question.service.targetPort }}
   selector:
     app: question
     component: api
     tier: backend
-    environment: development
+    environment: {{ .Values.global.environment }}
+{{- end }}

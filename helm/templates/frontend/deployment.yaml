@@ -1,3 +1,4 @@
+{{- if .Values.frontend.enabled -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,29 +7,46 @@ metadata:
     app: client
     component: frontend
     tier: frontend
-    environment: development
+    environment: {{ .Values.global.environment }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.frontend.replicaCount }}
   selector:
     matchLabels:
       app: client
       component: frontend
       tier: frontend
-      environment: development
+      environment: {{ .Values.global.environment }}
   template:
     metadata:
       labels:
         app: client
         component: frontend
         tier: frontend
-        environment: development
+        environment: {{ .Values.global.environment }}
     spec:
       containers:
         - name: client
-          image: pariksha_frontend
+          image: {{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}
           envFrom:
             - configMapRef:
                 name: client-config
           ports:
-            - containerPort: 3000
-          imagePullPolicy: Never
+            - containerPort: {{ .Values.frontend.service.targetPort }}
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          {{- with .Values.frontend.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.frontend.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.frontend.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.frontend.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
