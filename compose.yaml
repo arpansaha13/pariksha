@@ -1,8 +1,78 @@
-include:
-  - frontend/compose.dev.yaml
-  - backend/compose.backend.yaml
-  - backend/compose.paper.yaml
-  - backend/compose.exam.yaml
-  - backend/compose.engine.yaml
-  - backend/compose.question.yaml
-  - backend/compose.exam-worker.yaml
+services:
+  papersDb:
+    image: postgres:15.10-alpine
+    restart: always
+    container_name: papers_db
+    env_file:
+      - ./backend/paper/env/papersDb.env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_PAPERS}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    expose:
+      - "5432"
+    ports:
+      - 6020:5432 # needed for pgAdmin
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB_PAPERS}
+    volumes:
+      - ./docker/data/papersDb:/var/lib/postgresql/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
+
+  examsDb:
+    image: postgres:15.10-alpine
+    restart: always
+    container_name: exams_db
+    env_file:
+      - ./backend/exam/env/examsDb.env
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_EXAMS}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    expose:
+      - "5432"
+    ports:
+      - 6030:5432 # needed for pgAdmin
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB_EXAMS}
+    volumes:
+      - ./docker/data/examsDb:/var/lib/postgresql/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
+
+  questionsDb:
+    image: postgres:15.10-alpine
+    restart: always
+    container_name: questions_db
+    env_file:
+      - ./backend/question/env/questionsDb.env
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_QUESTIONS}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    expose:
+      - "5432"
+    ports:
+      - 6040:5432 # needed for pgAdmin
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB_QUESTIONS}
+    volumes:
+      - ./docker/data/questionsDb:/var/lib/postgresql/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
