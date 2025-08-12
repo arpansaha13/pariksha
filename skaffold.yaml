@@ -1,0 +1,53 @@
+apiVersion: skaffold/v4beta13
+kind: Config
+metadata:
+  name: pariksha
+build:
+  artifacts:
+    - image: pariksha_backend
+      context: backend
+      docker:
+        dockerfile: server/Dockerfile
+    - image: pariksha_engine_service
+      context: backend
+      docker:
+        dockerfile: engine/Dockerfile
+    - image: pariksha_exam_service
+      context: backend
+      docker:
+        dockerfile: exam/Dockerfile
+    - image: pariksha_exam_worker
+      context: backend
+      docker:
+        dockerfile: workers/exam/Dockerfile
+    - image: pariksha_paper_service
+      context: backend
+      docker:
+        dockerfile: paper/Dockerfile
+    - image: pariksha_question_service
+      context: backend
+      docker:
+        dockerfile: question/Dockerfile
+    - image: pariksha_frontend
+      context: frontend
+      docker:
+        dockerfile: frontend/Dockerfile.dev
+      sync:
+        manual:
+          - src: 'src/**/*'
+            dest: /app
+          - src: 'nuxt.config.ts'
+            dest: /app
+          - src: 'tailwind.config.ts'
+            dest: /app
+
+deploy:
+  helm:
+    releases:
+      - name: pariksha
+        chartPath: helm
+        valuesFiles:
+          - helm/values.yaml
+        version: 0.1.0
+        namespace: pariksha
+        createNamespace: true
