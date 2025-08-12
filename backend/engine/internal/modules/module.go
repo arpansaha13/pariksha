@@ -14,6 +14,7 @@ import (
 	"pariksha/engine/internal/config/env"
 	"pariksha/engine/internal/controllers"
 	"pariksha/engine/internal/interservice"
+	"pariksha/engine/internal/runner"
 	"pariksha/engine/internal/services"
 )
 
@@ -27,8 +28,11 @@ func New() (*engineServer, func(), error) {
 		return nil, nil, status.Errorf(codes.Internal, "failed to create Docker client: %v", err)
 	}
 
+	// Initialize runners
+	nodeRunner := runner.NewNode(cli)
+
 	// Initialize services
-	engineSvc := services.NewEngine(cli, questionIntSvc)
+	engineSvc := services.NewEngine(questionIntSvc, nodeRunner)
 
 	// Initialize controllers
 	server := engineServer{
