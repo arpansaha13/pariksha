@@ -7,6 +7,15 @@ global:
   imageRegistry: ""
   imageTag: "latest"
 
+# External Secrets configuration
+externalSecrets:
+  enabled: true
+  vault:
+    name: vault-backend
+    server: "http://host.docker.internal:8200"
+    path: "pariksha"
+    version: "v2"
+
 # Ingress configuration
 ingress:
   enabled: true
@@ -104,10 +113,6 @@ exam:
     QUESTION_SERVER_PORT: "4000"
     EXAM_QUEUE_HOST: "commonQueue"
     EXAM_QUEUE_PORT: "6379"
-  secrets:
-    EXAM_DB_USER: "postgres"
-    EXAM_DB_PASS: "postgres"
-    EXAM_API_TOKEN: "very-very-top-secret-exam-api-token"
   resources: {}
   nodeSelector: {}
   tolerations: []
@@ -156,10 +161,6 @@ paper:
     PAPER_DB_SSLMODE: "disable"
     QUESTION_SERVER_HOST: "question-service"
     QUESTION_SERVER_PORT: "4000"
-  secrets:
-    PAPER_DB_USER: "postgres"
-    PAPER_DB_PASS: "postgres"
-    EXAM_API_TOKEN: "very-very-top-secret-exam-api-token"
   resources: {}
   nodeSelector: {}
   tolerations: []
@@ -189,12 +190,6 @@ question:
     QUESTION_DB_NAME: "db_pariksha_questions"
     QUESTION_DB_PORT: "6040"
     QUESTION_DB_SSLMODE: "disable"
-  secrets:
-    QUESTION_DB_USER: "postgres"
-    QUESTION_DB_PASS: "postgres"
-    EXAM_API_TOKEN: "very-very-top-secret-exam-api-token"
-    PAPER_API_TOKEN: "very-very-top-secret-paper-api-token"
-    ENGINE_API_TOKEN: "very-very-top-secret-engine-api-token"
   resources: {}
   nodeSelector: {}
   tolerations: []
@@ -224,16 +219,14 @@ engine:
     QUESTION_SERVER_PORT: "4000"
     DOCKER_API_VERSION: "1.38"
     HOST_TMP_MOUNT_PATH: ""
-  secrets:
-    ENGINE_API_TOKEN: "very-very-top-secret-engine-api-token"
   resources: {}
   nodeSelector: {}
   tolerations: []
   affinity: {}
 
 # Worker configuration
-worker:
-  enabled: false
+examWorker:
+  enabled: true
   replicaCount: 1
   image:
     repository: pariksha_worker

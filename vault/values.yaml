@@ -1,0 +1,13 @@
+namespace: pariksha
+
+serviceAccount:
+  name: pariksha-vault-auth
+
+tokenReviewSecret:
+  name: pariksha-vault-auth-token
+
+clusterRole:
+  name: pariksha-vault-auth-tokenreview
+
+clusterRoleBinding:
+  name: pariksha-vault-auth-tokenreview-binding
