@@ -4,19 +4,19 @@ kind: ConfigMap
 metadata:
   name: exam-worker-config
 data:
-  GO_ENV: docker-development
+  GO_ENV: {{ .Values.examWorker.config.GO_ENV }}
 
-  EXAM_DB_HOST: external-exam-db-service
-  EXAM_DB_NAME: db_pariksha_exams
-  EXAM_DB_PORT: "6030"
-  EXAM_DB_SSLMODE: disable
+  EXAM_DB_HOST: {{ .Values.examWorker.config.EXAM_DB_HOST }}
+  EXAM_DB_NAME: {{ .Values.examWorker.config.EXAM_DB_NAME }}
+  EXAM_DB_PORT: {{ .Values.examWorker.config.EXAM_DB_PORT | quote }}
+  EXAM_DB_SSLMODE: {{ .Values.examWorker.config.EXAM_DB_SSLMODE }}
 
-  EXAM_QUEUE_HOST: exam-queue-service
-  EXAM_QUEUE_PORT: "6379"
+  EXAM_QUEUE_HOST: {{ .Values.examWorker.config.EXAM_QUEUE_HOST }}
+  EXAM_QUEUE_PORT: {{ .Values.examWorker.config.EXAM_QUEUE_PORT | quote }}
 
-  PAPER_SERVER_HOST: paper-service
-  PAPER_SERVER_PORT: "4000"
+  PAPER_SERVER_HOST: {{ .Values.examWorker.config.PAPER_SERVER_HOST }}
+  PAPER_SERVER_PORT: {{ .Values.examWorker.config.PAPER_SERVER_PORT | quote }}
 
-  QUESTION_SERVER_HOST: question-service
-  QUESTION_SERVER_PORT: "4000"
+  QUESTION_SERVER_HOST: {{ .Values.examWorker.config.QUESTION_SERVER_HOST }}
+  QUESTION_SERVER_PORT: {{ .Values.examWorker.config.QUESTION_SERVER_PORT | quote }}
 {{- end }}

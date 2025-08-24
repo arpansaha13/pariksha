@@ -34,7 +34,7 @@ spec:
                 name: engine-secret
           ports:
             - containerPort: {{ .Values.engine.service.targetPort }}
-          imagePullPolicy: {{ .Values.engine.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           {{- with .Values.engine.resources }}
           resources:
             {{- toYaml . | nindent 12 }}

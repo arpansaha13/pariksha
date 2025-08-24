@@ -7,22 +7,22 @@ metadata:
     app: exam-worker
     component: worker
     tier: backend
-    environment: development
+    environment: {{ .Values.global.environment }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.examWorker.replicaCount }}
   selector:
     matchLabels:
       app: exam-worker
       component: worker
       tier: backend
-      environment: development
+      environment: {{ .Values.global.environment }}
   template:
     metadata:
       labels:
         app: exam-worker
         component: worker
         tier: backend
-        environment: development
+        environment: {{ .Values.global.environment }}
     spec:
       initContainers:
         - name: wait-for-exam-db
@@ -31,7 +31,7 @@ spec:
             - sh
             - -c
             - |
-              until nc -z external-exam-db-service 6030; do
+              until nc -z {{ .Values.examWorker.config.EXAM_DB_HOST }} {{ .Values.examWorker.config.EXAM_DB_PORT }}; do
                 echo "Waiting for PostgreSQL...";
                 sleep 4;
               done
@@ -42,20 +42,20 @@ spec:
             - sh
             - -c
             - |
-              until nc -z exam-queue-service 6379; do
+              until nc -z {{ .Values.examWorker.config.EXAM_QUEUE_HOST }} {{ .Values.examWorker.config.EXAM_QUEUE_PORT }}; do
                 echo "Waiting for Exam Queue...";
                 sleep 4;
               done
 
       containers:
         - name: exam-worker
-          image: pariksha_exam_worker
+          image: {{ .Values.examWorker.image.repository }}:{{ .Values.examWorker.image.tag }}
           envFrom:
             - configMapRef:
                 name: exam-worker-config
             - secretRef:
                 name: exam-worker-secret
           ports:
-            - containerPort: 4000
-          imagePullPolicy: Never
+            - containerPort: {{ .Values.examWorker.service.targetPort }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
 {{- end }}

@@ -21,6 +21,7 @@ spec:
         image: {{ .Values.examQueue.image.repository }}:{{ .Values.examQueue.image.tag }}
         ports:
         - containerPort: {{ .Values.examQueue.service.targetPort }}
+        imagePullPolicy: {{ .Values.examQueue.image.pullPolicy }}
         readinessProbe:
           tcpSocket:
             port: {{ .Values.examQueue.service.targetPort }}

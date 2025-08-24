@@ -7,15 +7,15 @@ metadata:
     app: exam-worker
     component: worker
     tier: backend
-    environment: development
+    environment: {{ .Values.global.environment }}
 spec:
   type: ClusterIP
   ports:
-    - port: 4000
-      targetPort: 4000
+    - port: {{ .Values.examWorker.service.port }}
+      targetPort: {{ .Values.examWorker.service.targetPort }}
   selector:
     app: exam-worker
     component: worker
     tier: backend
-    environment: development
+    environment: {{ .Values.global.environment }}
 {{- end }}

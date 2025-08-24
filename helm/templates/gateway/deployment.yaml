@@ -32,7 +32,7 @@ spec:
                 name: gateway-config
           ports:
             - containerPort: {{ .Values.gateway.service.targetPort }}
-          imagePullPolicy: {{ .Values.gateway.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           {{- with .Values.gateway.resources }}
           resources:
             {{- toYaml . | nindent 12 }}

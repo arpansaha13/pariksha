@@ -47,7 +47,6 @@ frontend:
   image:
     repository: pariksha_frontend
     tag: "latest"
-    pullPolicy: Never
   service:
     type: ClusterIP
     port: 3000
@@ -66,7 +65,6 @@ gateway:
   image:
     repository: pariksha_backend
     tag: "latest"
-    pullPolicy: Never
   service:
     type: ClusterIP
     port: 4000
@@ -95,13 +93,12 @@ exam:
   image:
     repository: pariksha_exam_service
     tag: "latest"
-    pullPolicy: Never
   service:
     type: ClusterIP
     port: 4000
     targetPort: 4000
   config:
-    GO_ENV: "docker-development"
+    GO_ENV: "development"
     EXAM_SERVER_PORT: "4000"
     EXAM_DB_HOST: "external-exam-db-service"
     EXAM_DB_NAME: "db_pariksha_exams"
@@ -147,13 +144,12 @@ paper:
   image:
     repository: pariksha_paper_service
     tag: "latest"
-    pullPolicy: Never
   service:
     type: ClusterIP
     port: 4000
     targetPort: 4000
   config:
-    GO_ENV: "docker-development"
+    GO_ENV: "development"
     PAPER_SERVER_PORT: "4000"
     PAPER_DB_HOST: "external-paper-db-service"
     PAPER_DB_NAME: "db_pariksha_papers"
@@ -178,7 +174,6 @@ question:
   image:
     repository: pariksha_question_service
     tag: "latest"
-    pullPolicy: Never
   service:
     type: ClusterIP
     port: 4000
@@ -207,7 +202,6 @@ engine:
   image:
     repository: pariksha_engine_service
     tag: "latest"
-    pullPolicy: Never
   service:
     type: ClusterIP
     port: 4000
@@ -229,9 +223,23 @@ examWorker:
   enabled: true
   replicaCount: 1
   image:
-    repository: pariksha_worker
+    repository: pariksha_exam_worker
     tag: "latest"
-    pullPolicy: Never
+  service:
+    port: 4000
+    targetPort: 4000
+  config:
+    GO_ENV: "development"
+    EXAM_DB_HOST: "external-exam-db-service"
+    EXAM_DB_NAME: "db_pariksha_exams"
+    EXAM_DB_PORT: "6030"
+    EXAM_DB_SSLMODE: "disable"
+    EXAM_QUEUE_HOST: "exam-queue-service"
+    EXAM_QUEUE_PORT: "6379"
+    PAPER_SERVER_HOST: "paper-service"
+    PAPER_SERVER_PORT: "4000"
+    QUESTION_SERVER_HOST: "question-service"
+    QUESTION_SERVER_PORT: "4000"
   resources: {}
   nodeSelector: {}
   tolerations: []

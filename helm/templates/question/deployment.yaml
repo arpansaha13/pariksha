@@ -47,7 +47,7 @@ spec:
                 name: question-secret
           ports:
             - containerPort: {{ .Values.question.service.targetPort }}
-          imagePullPolicy: {{ .Values.question.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           {{- with .Values.question.resources }}
           resources:
             {{- toYaml . | nindent 12 }}

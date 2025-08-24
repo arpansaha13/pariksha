@@ -61,7 +61,7 @@ spec:
                 name: exam-secret
           ports:
             - containerPort: {{ .Values.exam.service.targetPort }}
-          imagePullPolicy: {{ .Values.exam.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           {{- with .Values.exam.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
