@@ -21,7 +21,7 @@ type Engine struct {
 
 func NewEngine(
 	questionIntSvc *interservice.Question,
-	nodeRunner *runner.Node,
+	nodeRunner runner.Runner,
 ) *Engine {
 	return &Engine{
 		questionIntSvc: questionIntSvc,

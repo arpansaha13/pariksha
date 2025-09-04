@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/docker/docker/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -21,18 +20,14 @@ import (
 func New() (*engineServer, func(), error) {
 	questionIntSvc := initQuestionInterservice()
 
-	// Ensure DOCKER_API_VERSION = 1.46
-	// Error response from daemon: client version 1.48 is too new. Maximum supported API version is 1.46
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	// Initialize Kubernetes runner
+	kubernetesRunner, err := runner.NewKubernetes()
 	if err != nil {
-		return nil, nil, status.Errorf(codes.Internal, "failed to create Docker client: %v", err)
+		return nil, nil, status.Errorf(codes.Internal, "failed to create Kubernetes runner: %v", err)
 	}
 
-	// Initialize runners
-	nodeRunner := runner.NewNode(cli)
-
 	// Initialize services
-	engineSvc := services.NewEngine(questionIntSvc, nodeRunner)
+	engineSvc := services.NewEngine(questionIntSvc, kubernetesRunner)
 
 	// Initialize controllers
 	server := engineServer{

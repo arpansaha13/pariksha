@@ -211,8 +211,7 @@ engine:
     ENGINE_SERVER_PORT: "4000"
     QUESTION_SERVER_HOST: "question-service"
     QUESTION_SERVER_PORT: "4000"
-    DOCKER_API_VERSION: "1.38"
-    HOST_TMP_MOUNT_PATH: ""
+    POD_NAMESPACE: pariksha
   resources: {}
   nodeSelector: {}
   tolerations: []

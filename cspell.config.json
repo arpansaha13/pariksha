@@ -22,10 +22,12 @@
     }
   ],
   "words": [
+    "apimachinery",
     "arpan",
     "arpansaha",
     "asynq",
     "bufconn",
+    "clientset",
     "csrftoken",
     "dbname",
     "defu",
@@ -63,8 +65,10 @@
     "preinstall",
     "protoc",
     "reka",
+    "rolebinding",
     "saha",
     "secretstore",
+    "serviceaccount",
     "shiki",
     "shikijs",
     "signup",

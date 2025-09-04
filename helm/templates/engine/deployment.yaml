@@ -24,6 +24,7 @@ spec:
         tier: backend
         environment: {{ .Values.global.environment }}
     spec:
+      serviceAccountName: engine-serviceaccount
       containers:
         - name: engine
           image: {{ .Values.engine.image.repository }}:{{ .Values.engine.image.tag }}

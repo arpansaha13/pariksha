@@ -40,7 +40,9 @@ func init() {
 	GO_ENV = os.Getenv("GO_ENV")
 	ENGINE_SERVER_PORT = os.Getenv("ENGINE_SERVER_PORT")
 
-	HOST_TMP_MOUNT_PATH = utils.GetEnvWithDefault("HOST_TMP_MOUNT_PATH", "")
+	if os.Getenv("GO_ENV") == constants.GO_ENV_TEST {
+		HOST_TMP_MOUNT_PATH = utils.GetEnvWithDefault("HOST_TMP_MOUNT_PATH", "")
+	}
 
 	if GO_ENV != constants.GO_ENV_TEST {
 		ENGINE_API_TOKEN = os.Getenv("ENGINE_API_TOKEN")
@@ -54,7 +56,6 @@ func getRequiredEnvVars() []string {
 	baseEnvVars := []string{
 		"GO_ENV",
 		"ENGINE_SERVER_PORT",
-		"DOCKER_API_VERSION", // used to create docker client with `client.FromEnv`
 	}
 
 	if os.Getenv("GO_ENV") != constants.GO_ENV_TEST {
@@ -62,6 +63,14 @@ func getRequiredEnvVars() []string {
 			"ENGINE_API_TOKEN",
 			"QUESTION_SERVER_HOST",
 			"QUESTION_SERVER_PORT",
+		}
+		baseEnvVars = append(baseEnvVars, additionalEnvVars...)
+	}
+
+	if os.Getenv("GO_ENV") == constants.GO_ENV_TEST {
+		additionalEnvVars := []string{
+			"HOST_TMP_MOUNT_PATH",
+			"DOCKER_API_VERSION", // used to create docker client with `client.FromEnv`
 		}
 		baseEnvVars = append(baseEnvVars, additionalEnvVars...)
 	}

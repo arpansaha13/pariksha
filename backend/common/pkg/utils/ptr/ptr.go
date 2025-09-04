@@ -13,6 +13,11 @@ func Int64(v int64) *int64 {
 	return &v
 }
 
+// Bool returns a pointer to the given bool value
+func Bool(v bool) *bool {
+	return &v
+}
+
 // String returns a pointer to the given string value
 func String(s string) *string {
 	return &s

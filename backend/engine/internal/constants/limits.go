@@ -9,5 +9,5 @@ const (
 	ContainerCPULimit int64 = 100000000 // 0.1 CPU
 
 	// Execution timeout (in seconds)
-	ExecutionTimeout int64 = 10
+	ExecutionTimeout int64 = 20
 )

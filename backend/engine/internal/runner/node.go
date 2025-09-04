@@ -20,7 +20,6 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
-	"pariksha/engine/internal/config/env"
 	engineConstants "pariksha/engine/internal/constants"
 	"pariksha/engine/internal/templates"
 )
@@ -29,6 +28,7 @@ type Node struct {
 	dockerClient *client.Client
 }
 
+// Kept for running tests (for now)
 func NewNode(dockerClient *client.Client) *Node {
 	return &Node{
 		dockerClient: dockerClient,
@@ -104,7 +104,7 @@ func (r Node) Run(args *RunnerArg) (*proto.RunCodeResponse, error) {
 			{
 				Type: mount.TypeBind,
 				// Mount source has to be a host path, not a path inside engineService container
-				Source:   filepath.Join(env.HOST_TMP_MOUNT_PATH, scriptPath),
+				Source:   filepath.Join("", scriptPath),
 				Target:   envConfig.MountTarget,
 				ReadOnly: true,
 			},
