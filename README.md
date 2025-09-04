@@ -14,14 +14,28 @@
 
 I've created this project for learning purposes and I keep running different implementations and experiments on it 🙂.
 
-## Project Setup
-
 This project uses:
 
 - Kubernetes with Helm Charts to run all services.
 - [Skaffold](https://skaffold.dev/) for development to support hot reloading with Kubernetes.
 - [Hashicorp Vault](https://developer.hashicorp.com/vault) as the external secrets store.
 - [External Secrets Operator](https://external-secrets.io/) to dynamically create Kubernetes Secrets from external secret store (Vault).
+
+## Local dev
+
+After the [project setup](https://github.com/arpansaha13/pariksha?tab=readme-ov-file#project-setup) is ready, run the below command to start the local dev server.
+
+```bash
+skaffold dev --no-prune=false --cache-artifacts=false
+```
+
+To start the kubernetes dashboard, run:
+
+```bash
+kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard-kong-proxy 8443:443
+```
+
+## Project Setup
 
 > Note: The auth service, mail service, and the Vault live outside the cluster and are not included in this repository.
 
