@@ -31,6 +31,12 @@ type Kubernetes struct {
 	namespace string
 }
 
+const (
+	codeVolumeName            string = "engine-code-volume"
+	codeExecutorContainerName string = "engine-code-executor"
+	engineImagePullSecretName string = "engine-image-pull-secret"
+)
+
 func NewKubernetes() (*Kubernetes, error) {
 	// Load in-cluster config
 	config, err := rest.InClusterConfig()
@@ -105,11 +111,6 @@ func (r *Kubernetes) Run(args *RunnerArg) (*proto.RunCodeResponse, error) {
 		return nil, status.Errorf(codes.Internal, "failed to create job: %v", err)
 	}
 
-	// Clean up Job after execution
-	defer func() {
-		r.clientset.BatchV1().Jobs(r.namespace).Delete(context.Background(), jobName, metav1.DeleteOptions{})
-	}()
-
 	err = r.waitForJobCompletion(jobName)
 	if err != nil {
 		return nil, err
@@ -168,12 +169,12 @@ func (r *Kubernetes) createJob(jobName string, envConfig environmentConfig) *bat
 					RestartPolicy: corev1.RestartPolicyNever,
 					ImagePullSecrets: []corev1.LocalObjectReference{
 						{
-							Name: "engine-image-pull-secret",
+							Name: engineImagePullSecretName,
 						},
 					},
 					Containers: []corev1.Container{
 						{
-							Name:    "code-executor",
+							Name:    codeExecutorContainerName,
 							Image:   envConfig.Image,
 							Command: cmd,
 							Resources: corev1.ResourceRequirements{
@@ -188,7 +189,7 @@ func (r *Kubernetes) createJob(jobName string, envConfig environmentConfig) *bat
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "code-volume",
+									Name:      codeVolumeName,
 									MountPath: "/code",
 									ReadOnly:  true,
 								},
@@ -202,7 +203,7 @@ func (r *Kubernetes) createJob(jobName string, envConfig environmentConfig) *bat
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: "code-volume",
+							Name: codeVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
@@ -263,7 +264,7 @@ func (r *Kubernetes) getJobLogs(jobName string) (string, string, error) {
 
 	// Get logs from the pod
 	req := r.clientset.CoreV1().Pods(r.namespace).GetLogs(podName, &corev1.PodLogOptions{
-		Container: "code-executor",
+		Container: codeExecutorContainerName,
 	})
 
 	logs, err := req.Stream(context.Background())
