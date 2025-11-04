@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+
 // ENOENT: no such file or directory, open '/__skip_vite/node_modules/monaco-editor/esm/vs/language/typescript/ts.worker.js' at async open
 
 // https://stackoverflow.com/a/79467516

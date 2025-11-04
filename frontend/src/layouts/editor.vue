@@ -19,8 +19,8 @@
   <main v-else class="flex h-screen w-screen flex-col gap-2 px-4 py-2">
     <slot
       name="header"
-      :panelIsCollapsed="panelRef?.isCollapsed ?? false"
-      :togglePanel="toggleSplitterPanel"
+      :panel-is-collapsed="panelRef?.isCollapsed ?? false"
+      :toggle-panel="toggleSplitterPanel"
     />
 
     <SplitterGroup
@@ -102,7 +102,7 @@
               <slot
                 name="panel"
                 :toggle="toggleSplitterPanel"
-                :isCollapsed="panelRef?.isCollapsed"
+                :is-collapsed="panelRef?.isCollapsed"
               />
             </UCard>
           </SplitterPanel>

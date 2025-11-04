@@ -1,8 +1,8 @@
 <template>
   <UContainer class="bg-default py-2.5 shadow-sm sm:hidden">
     <USlideover
-      side="left"
       v-model:open="isOpen"
+      side="left"
       :ui="{ title: 'flex items-center gap-1.5', description: 'm-0!' }"
     >
       <UButton icon="heroicons:bars-3" color="neutral" variant="subtle" />

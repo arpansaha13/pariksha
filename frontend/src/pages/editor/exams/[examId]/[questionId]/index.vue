@@ -252,7 +252,7 @@ const isSaved = ref(false)
 async function saveAnswer() {
   await Promise.all(examStore.saveUpdatedAnswers())
   isSaved.value = true
-  const { isPending, start, stop } = useTimeoutFn(() => {
+  useTimeoutFn(() => {
     isSaved.value = false
   }, 3000)
 }

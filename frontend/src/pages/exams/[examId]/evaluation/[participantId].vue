@@ -21,7 +21,7 @@
       />
     </template>
 
-    <template #category-nav v-if="currentCategoryQuestions">
+    <template v-if="currentCategoryQuestions" #category-nav>
       <ExamCategoryNavigation
         v-if="!isNullOrUndefined(sortedCategories)"
         :sorted-categories="sortedCategories"
@@ -29,14 +29,14 @@
       />
     </template>
 
-    <template #question-nav v-if="currentCategoryQuestions">
+    <template v-if="currentCategoryQuestions" #question-nav>
       <EvaluationQuestionList
         v-if="!isNullOrUndefined(currentQuestionId)"
         :current-question-id="currentQuestionId"
         :current-category-questions="currentCategoryQuestions"
       />
     </template>
-    <template #body v-if="currentQuestionAnswer && currentQuestionId">
+    <template v-if="currentQuestionAnswer && currentQuestionId" #body>
       <UCard>
         <p
           v-if="currentQuestionAnswer.type === QuestionType.CODING"
@@ -122,7 +122,7 @@
       </UCard>
     </template>
 
-    <template #footer v-if="currentCategoryQuestions.length > 1">
+    <template v-if="currentCategoryQuestions.length > 1" #footer>
       <UButton
         v-if="prevQuestionId"
         label="Previous"

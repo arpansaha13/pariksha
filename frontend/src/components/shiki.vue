@@ -1,6 +1,6 @@
 <template>
   <ClientOnly>
-    <div v-html="highlightedCode" class="overflow-auto"></div>
+    <div class="overflow-auto" v-html="highlightedCode"/>
   </ClientOnly>
 </template>
 

@@ -54,7 +54,7 @@
       />
     </template>
 
-    <template #body v-if="!isNullOrUndefined(currentQuestionType) && question">
+    <template v-if="!isNullOrUndefined(currentQuestionType) && question" #body>
       <template v-if="currentQuestionType === QuestionType.MCQ">
         <UCard>
           <p class="font-medium">{{ question.question.statement }}</p>
@@ -104,7 +104,7 @@
         </UCard>
       </template>
 
-      <template v-else="currentQuestionType === QuestionType.CODING">
+      <template v-else>
         <UCard
           :ui="{
             root: 'grow flex flex-col',
@@ -130,8 +130,8 @@
     </template>
 
     <template
-      #footer
       v-if="currentCategoryQuestions && currentCategoryQuestions.length > 1"
+      #footer
     >
       <UButton
         v-if="prevQuestionId"

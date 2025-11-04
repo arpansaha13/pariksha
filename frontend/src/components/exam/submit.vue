@@ -2,14 +2,14 @@
   <UButton
     label="Submit"
     icon="heroicons:cloud-arrow-up"
-    @click="showConfirmDialog"
     class="hidden sm:flex"
+    @click="showConfirmDialog"
   />
   <UButton
     size="sm"
     icon="heroicons:cloud-arrow-up"
-    @click="showConfirmDialog"
     class="sm:hidden"
+    @click="showConfirmDialog"
   />
 </template>
 
