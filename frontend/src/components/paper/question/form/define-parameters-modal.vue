@@ -53,7 +53,7 @@
           :name="`input-definition-${inputIdx + 1}-type`"
           required
         >
-          <UButtonGroup>
+          <UFieldGroup>
             <UBadge
               color="neutral"
               variant="subtle"
@@ -72,7 +72,7 @@
                 )
               "
             />
-          </UButtonGroup>
+          </UFieldGroup>
         </UFormField>
 
         <template
