@@ -1,4 +1,5 @@
 import { isNullOrUndefined } from '@arpansaha13/utils'
+import { isString as _isString } from 'lodash-es'
 
 /**
  * Checks if a string contains only alphabetic characters (A-Z, a-z)

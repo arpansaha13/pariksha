@@ -1,3 +1,5 @@
+import { sum as _sum } from 'lodash-es'
+
 export function countTotalQuestions(question_counts: PaperQuestionCounts) {
   return _sum(Object.values(question_counts))
 }
