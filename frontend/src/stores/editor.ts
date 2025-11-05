@@ -47,7 +47,7 @@ export const useEditorStore = defineStore(editorStoreId, {
 
       if (this.isEditorPrepared) return
 
-      const monaco = useMonaco()!
+      const monaco = await useMonaco()!
       await this.createEditorHighlighter()
 
       // Register the languageIds first. Only registered languages will be highlighted.
