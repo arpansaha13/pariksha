@@ -36,6 +36,10 @@ build:
         manual:
           - src: 'src/**/*'
             dest: /app
+          - src: 'public/**/*'
+            dest: /app
+          - src: 'server/**/*'
+            dest: /app
           - src: 'nuxt.config.ts'
             dest: /app
           - src: 'tailwind.config.ts'
