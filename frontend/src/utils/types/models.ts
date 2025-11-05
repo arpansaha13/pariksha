@@ -261,7 +261,25 @@ type QuestionAnswerSubjective = {
   } | null
 }
 
-export type QuestionAnswer = QuestionAnswerMCQ | QuestionAnswerSubjective
+type QuestionAnswerCoding = {
+  readonly type: QuestionType.CODING
+  readonly question: {
+    readonly id: QuestionId
+    readonly order: number
+    readonly category_id: number
+    readonly max_score: number
+    readonly content: QuestionSubjectiveContent
+  }
+  readonly answer: {
+    readonly id: AnswerId
+    readonly content: CodingAnswer | null
+  } | null
+}
+
+export type QuestionAnswer =
+  | QuestionAnswerMCQ
+  | QuestionAnswerSubjective
+  | QuestionAnswerCoding
 
 // __________________________BOILERPLATE__________________________
 export interface Boilerplate {

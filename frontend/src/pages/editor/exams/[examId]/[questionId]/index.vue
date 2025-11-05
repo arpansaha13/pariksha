@@ -262,7 +262,7 @@ async function saveAnswer() {
 const { $api } = useNuxtApp()
 
 watchImmediate(
-  () => route.params.questionId,
+  () => route.params.questionId as QuestionId,
   async qid => {
     if (import.meta.server) return
     if (isNullOrUndefined(qid)) return

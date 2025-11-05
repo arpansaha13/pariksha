@@ -1,6 +1,6 @@
 <template>
   <main>
-    <UCard :ui="{ body: '!py-2' }">
+    <UCard :ui="{ body: 'py-2!' }">
       <template #header>
         <h1 class="heading">Papers</h1>
       </template>

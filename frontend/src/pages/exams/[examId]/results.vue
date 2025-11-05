@@ -33,7 +33,7 @@
       </div>
     </UCard>
 
-    <UCard :ui="{ body: '!pt-2' }">
+    <UCard :ui="{ body: 'pt-2!' }">
       <template #header>
         <h2 class="heading">My answers</h2>
       </template>
