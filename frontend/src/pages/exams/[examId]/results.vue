@@ -24,8 +24,9 @@
             {{ participant.score_awarded }} / {{ examData.max_score }}
           </UBadge>
         </p>
-        <EmptyState
+        <UEmpty
           v-else
+          variant="naked"
           icon="lucide:file-clock"
           description="Your exam is under evaluation — results coming soon!"
         />
@@ -67,7 +68,8 @@
       >
         <template #body="{ item }">
           <div v-if="isNullOrUndefined(item.answer?.content)">
-            <EmptyState
+            <UEmpty
+              variant="naked"
               icon="lucide:file-question"
               description="This question is unanswered"
             />

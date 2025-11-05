@@ -25,15 +25,16 @@
         variant="ghost"
         class="mt-auto flex items-center gap-x-1.5 p-2 text-left"
       >
-        <UAvatar icon="heroicons:user-20-solid" size="xl" />
-
-        <div class="text-sm">
-          <p v-if="authUser.first_name" class="font-semibold">
-            {{ authUser.first_name }} {{ authUser.last_name }}
-          </p>
-          <p v-else>{{ authUser.email }}</p>
-          <p class="font-normal">@{{ authUser.username }}</p>
-        </div>
+        <UUser
+          size="lg"
+          :name="
+            authUser.first_name
+              ? authUser.first_name + ' ' + authUser.last_name
+              : authUser.email
+          "
+          :description="`@${authUser.username}`"
+          :avatar="{ icon: 'heroicons:user-20-solid' }"
+        />
       </UButton>
     </UDropdownMenu>
   </div>

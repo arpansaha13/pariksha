@@ -3,10 +3,11 @@
     v-if="$device.isMobileOrTablet"
     class="flex h-screen w-screen flex-col items-center justify-center gap-2 px-4"
   >
-    <EmptyState
+    <UEmpty
+      variant="naked"
       icon="heroicons:exclamation-triangle"
       title="Editor not supported"
-      description="Code editor isn’t available on this device. For the full experience, please open this page on a desktop browser."
+      description="Code editor isn't available on this device. For the full experience, please open this page on a desktop browser."
     />
 
     <UButton

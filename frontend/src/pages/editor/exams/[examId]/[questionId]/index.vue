@@ -104,7 +104,8 @@
             v-if="isNullOrUndefined(engineRunResult)"
             class="grid size-full place-items-center"
           >
-            <EmptyState
+            <UEmpty
+              variant="naked"
               icon="heroicons:code-bracket-16-solid"
               title="No execution results available"
               description="Run your code to see the output here"
