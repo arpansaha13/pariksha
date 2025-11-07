@@ -5,7 +5,7 @@
   "private": true,
   "packageManager": "pnpm@10.11.1",
   "scripts": {
-    "build": "nuxt build",
+    "build": "cross-env NODE_OPTIONS=--max_old_space_size=8192 nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
@@ -55,6 +55,7 @@
     "@nuxt/test-utils": "^3.20.1",
     "@types/lodash-es": "^4.17.12",
     "@vue/test-utils": "^2.4.6",
+    "cross-env": "^10.1.0",
     "eslint": "^9.39.1",
     "happy-dom": "^20.0.10",
     "playwright-core": "^1.56.1",
