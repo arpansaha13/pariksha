@@ -17,9 +17,6 @@ importers:
       '@iconify-json/lucide':
         specifier: ^1.2.72
         version: 1.2.72
-      '@iconify-json/simple-icons':
-        specifier: ^1.2.57
-        version: 1.2.57
       '@iconify-json/twemoji':
         specifier: ^1.2.4
         version: 1.2.4
@@ -620,9 +617,6 @@ packages:
 
   '@iconify-json/lucide@1.2.72':
     resolution: {integrity: sha512-kq/ZDUtCdBfjGxIMaUI+Ctt3dC/0sHmrUyTU1i04+8ehlo3/PUGKqrJd4C9J/kQl1jfcHpaUPqGUFvgZ9orhQg==}
-
-  '@iconify-json/simple-icons@1.2.57':
-    resolution: {integrity: sha512-/yWbO502M6WfvmcV5OjEgA4uoPN/76nrn7Hri/8g9L4GiNQ6VMgXWE9vFp4tDsmGMAe4ZCov3NbH6vJCgXZ1hA==}
 
   '@iconify-json/twemoji@1.2.4':
     resolution: {integrity: sha512-REYJeXhzaLktNe32DxJJf3t65sYC5KO9K0Jh+RApXRBAo1/IB+jBqd8rny2sXci+wtQLBEfD4z4AGCLBrTMGWA==}
@@ -7173,10 +7167,6 @@ snapshots:
       '@iconify/types': 2.0.0
 
   '@iconify-json/lucide@1.2.72':
-    dependencies:
-      '@iconify/types': 2.0.0
-
-  '@iconify-json/simple-icons@1.2.57':
     dependencies:
       '@iconify/types': 2.0.0
 

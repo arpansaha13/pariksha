@@ -24,7 +24,6 @@
     "@arpansaha13/utils": "^0.8.0",
     "@iconify-json/heroicons": "^1.2.3",
     "@iconify-json/lucide": "^1.2.72",
-    "@iconify-json/simple-icons": "^1.2.57",
     "@iconify-json/twemoji": "^1.2.4",
     "@internationalized/date": "^3.10.0",
     "@nuxt/image": "^1.11.0",
