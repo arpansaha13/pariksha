@@ -4,7 +4,7 @@ kind: ConfigMap
 metadata:
   name: exam-worker-config
 data:
-  GO_ENV: {{ .Values.examWorker.config.GO_ENV }}
+  GO_ENV: {{ .Values.global.environment }}
 
   EXAM_DB_HOST: {{ .Values.examWorker.config.EXAM_DB_HOST }}
   EXAM_DB_NAME: {{ .Values.examWorker.config.EXAM_DB_NAME }}

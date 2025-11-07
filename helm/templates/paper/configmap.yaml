@@ -9,6 +9,8 @@ metadata:
     tier: backend
     environment: {{ .Values.global.environment }}
 data:
+  GO_ENV: {{ .Values.global.environment }}
+
   {{- range $key, $value := .Values.paper.config }}
   {{ $key }}: {{ $value | quote }}
   {{- end }}

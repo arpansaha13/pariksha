@@ -4,8 +4,6 @@
 global:
   environment: development
   imagePullPolicy: Never
-  imageRegistry: ""
-  imageTag: "latest"
 
 # External Secrets configuration
 externalSecrets:
@@ -70,7 +68,6 @@ gateway:
     port: 4000
     targetPort: 4000
   config:
-    GO_ENV: "development"
     API_PORT: "4000"
     AUTH_SERVER_HOST: "host.docker.internal"
     AUTH_SERVER_PORT: "4000"
@@ -98,7 +95,6 @@ exam:
     port: 4000
     targetPort: 4000
   config:
-    GO_ENV: "development"
     EXAM_SERVER_PORT: "4000"
     EXAM_DB_HOST: "external-exam-db-service"
     EXAM_DB_NAME: "db_pariksha_exams"
@@ -149,7 +145,6 @@ paper:
     port: 4000
     targetPort: 4000
   config:
-    GO_ENV: "development"
     PAPER_SERVER_PORT: "4000"
     PAPER_DB_HOST: "external-paper-db-service"
     PAPER_DB_NAME: "db_pariksha_papers"
@@ -179,7 +174,6 @@ question:
     port: 4000
     targetPort: 4000
   config:
-    GO_ENV: "development"
     QUESTION_SERVER_PORT: "4000"
     QUESTION_DB_HOST: "external-question-db-service"
     QUESTION_DB_NAME: "db_pariksha_questions"
@@ -207,7 +201,6 @@ engine:
     port: 4000
     targetPort: 4000
   config:
-    GO_ENV: "development"
     ENGINE_SERVER_PORT: "4000"
     QUESTION_SERVER_HOST: "question-service"
     QUESTION_SERVER_PORT: "4000"
@@ -228,7 +221,6 @@ examWorker:
     port: 4000
     targetPort: 4000
   config:
-    GO_ENV: "development"
     EXAM_DB_HOST: "external-exam-db-service"
     EXAM_DB_NAME: "db_pariksha_exams"
     EXAM_DB_PORT: "6030"
