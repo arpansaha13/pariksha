@@ -35,6 +35,20 @@ To start the kubernetes dashboard, run:
 kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard-kong-proxy 8443:443
 ```
 
+## Prod Preview
+
+Run the below command to build production images for the services.
+
+```bash
+docker compose -f compose.prod.yaml build
+```
+
+And then run the below command to install the helm chart with production config:
+
+```bash
+helm install pariksha ./helm -f ./helm/values.prod.yaml -n pariksha --create-namespace
+```
+
 ## Project Setup
 
 > Note: The auth service, mail service, and the Vault live outside the cluster and are not included in this repository.

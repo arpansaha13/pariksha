@@ -1,0 +1,50 @@
+services:
+  frontend:
+    build:
+      context: frontend
+      dockerfile: ./Dockerfile.prod
+    image: europe-north1-docker.pkg.dev/pariksha13/frontend/app:v0.1.0
+    expose:
+      - "3000"
+  gateway:
+    build:
+      context: backend
+      dockerfile: ./server/Dockerfile
+    image: europe-north1-docker.pkg.dev/pariksha13/gateway/api:v0.1.0
+    expose:
+      - "4000"
+  engine:
+    build:
+      context: backend
+      dockerfile: ./engine/Dockerfile
+    image: europe-north1-docker.pkg.dev/pariksha13/engine/api:v0.1.0
+    expose:
+      - "4000"
+  exam:
+    build:
+      context: backend
+      dockerfile: ./exam/Dockerfile
+    image: europe-north1-docker.pkg.dev/pariksha13/exam/api:v0.1.0
+    expose:
+      - "4000"
+  examWorker:
+    build:
+      context: backend
+      dockerfile: ./workers/exam/Dockerfile
+    image: europe-north1-docker.pkg.dev/pariksha13/exam/worker:v0.1.0
+    expose:
+      - "4000"
+  paper:
+    build:
+      context: backend
+      dockerfile: ./paper/Dockerfile
+    image: europe-north1-docker.pkg.dev/pariksha13/paper/api:v0.1.0
+    expose:
+      - "4000"
+  question:
+    build:
+      context: backend
+      dockerfile: ./question/Dockerfile
+    image: europe-north1-docker.pkg.dev/pariksha13/question/api:v0.1.0
+    expose:
+      - "4000"
