@@ -3,10 +3,9 @@ package constants
 const StatusInvalidToken = 498
 
 const (
-	GO_ENV_DEV        string = "development"
-	GO_ENV_PROD       string = "production"
-	GO_ENV_DOCKER_DEV string = "docker-development"
-	GO_ENV_TEST       string = "test"
+	GO_ENV_DEV  string = "development"
+	GO_ENV_PROD string = "production"
+	GO_ENV_TEST string = "test"
 )
 
 const (
