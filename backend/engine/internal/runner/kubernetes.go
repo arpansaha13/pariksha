@@ -179,12 +179,12 @@ func (r *Kubernetes) createJob(jobName string, envConfig environmentConfig) *bat
 							Command: cmd,
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									corev1.ResourceMemory: resource.MustParse("128Mi"),
-									corev1.ResourceCPU:    resource.MustParse("100m"),
+									corev1.ResourceMemory: resource.MustParse(engineConstants.JobMemoryLimit),
+									corev1.ResourceCPU:    resource.MustParse(engineConstants.JobCPULimit),
 								},
 								Requests: corev1.ResourceList{
-									corev1.ResourceMemory: resource.MustParse("64Mi"),
-									corev1.ResourceCPU:    resource.MustParse("50m"),
+									corev1.ResourceMemory: resource.MustParse(engineConstants.JobMemoryRequest),
+									corev1.ResourceCPU:    resource.MustParse(engineConstants.JobCPURequest),
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
