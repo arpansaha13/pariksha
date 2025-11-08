@@ -24,19 +24,6 @@ spec:
         tier: backend
         environment: {{ .Values.global.environment }}
     spec:
-      {{- if .Values.questionDb.enabled }}
-      initContainers:
-        - name: wait-for-question-db
-          image: busybox
-          command:
-            - sh
-            - -c
-            - |
-              until nc -z {{ .Values.question.config.QUESTION_DB_ADDR }}; do
-                echo "Waiting for PostgreSQL...";
-                sleep 4;
-              done
-      {{- end }}
       containers:
         - name: question
           image: {{ .Values.question.image.repository }}:{{ .Values.question.image.tag }}

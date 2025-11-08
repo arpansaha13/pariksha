@@ -26,18 +26,6 @@ spec:
     spec:
       {{- if or .Values.examDb.enabled .Values.examQueue.enabled }}
       initContainers:
-        {{- if .Values.examDb.enabled }}
-        - name: wait-for-exam-db
-          image: busybox
-          command:
-            - sh
-            - -c
-            - |
-              until nc -z {{ .Values.exam.config.EXAM_DB_ADDR }}; do
-                echo "Waiting for PostgreSQL...";
-                sleep 4;
-              done
-        {{- end }}
         {{- if .Values.examQueue.enabled }}
         - name: wait-for-exam-queue
           image: busybox

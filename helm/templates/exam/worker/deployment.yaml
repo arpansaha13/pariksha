@@ -25,17 +25,6 @@ spec:
         environment: {{ .Values.global.environment }}
     spec:
       initContainers:
-        - name: wait-for-exam-db
-          image: busybox
-          command:
-            - sh
-            - -c
-            - |
-              until nc -z {{ .Values.examWorker.config.EXAM_DB_ADDR }}; do
-                echo "Waiting for PostgreSQL...";
-                sleep 4;
-              done
-
         - name: wait-for-exam-queue
           image: busybox
           command:

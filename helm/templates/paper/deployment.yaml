@@ -24,19 +24,6 @@ spec:
         tier: backend
         environment: {{ .Values.global.environment }}
     spec:
-      {{- if .Values.paperDb.enabled }}
-      initContainers:
-        - name: wait-for-paper-db
-          image: busybox
-          command:
-            - sh
-            - -c
-            - |
-              until nc -z {{ .Values.paper.config.PAPER_DB_ADDR }}; do
-                echo "Waiting for PostgreSQL...";
-                sleep 4;
-              done
-      {{- end }}
       containers:
         - name: paper
           image: {{ .Values.paper.image.repository }}:{{ .Values.paper.image.tag }}

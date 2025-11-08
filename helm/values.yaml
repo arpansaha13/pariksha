@@ -96,7 +96,6 @@ exam:
     targetPort: 4000
   config:
     EXAM_SERVER_PORT: "4000"
-    EXAM_DB_ADDR: "external-exam-db-service:6030"
     EXAM_DB_NAME: "db_pariksha_exams"
     EXAM_DB_SSLMODE: "disable"
     PAPER_SERVER_HOST: "paper-service"
@@ -145,7 +144,6 @@ paper:
     targetPort: 4000
   config:
     PAPER_SERVER_PORT: "4000"
-    PAPER_DB_ADDR: "external-paper-db-service:6020"
     PAPER_DB_NAME: "db_pariksha_papers"
     PAPER_DB_SSLMODE: "disable"
     QUESTION_SERVER_HOST: "question-service"
@@ -173,7 +171,6 @@ question:
     targetPort: 4000
   config:
     QUESTION_SERVER_PORT: "4000"
-    QUESTION_DB_ADDR: "external-question-db-service:6040"
     QUESTION_DB_NAME: "db_pariksha_questions"
     QUESTION_DB_SSLMODE: "disable"
   resources: {}
@@ -218,7 +215,6 @@ examWorker:
     port: 4000
     targetPort: 4000
   config:
-    EXAM_DB_ADDR: "external-exam-db-service:6030"
     EXAM_DB_NAME: "db_pariksha_exams"
     EXAM_DB_SSLMODE: "disable"
     EXAM_QUEUE_HOST: "exam-queue-service"
