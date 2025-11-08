@@ -68,7 +68,7 @@ func (s *Participant) AddExamParticipant(ctx context.Context, req *proto.AddPart
 		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
 
-	if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
+	if exam.Type == proto.ExamType_LINK {
 		return nil, status.Error(codes.InvalidArgument, "participants cannot be added in exams with access-type LINK")
 	}
 

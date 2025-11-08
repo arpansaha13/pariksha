@@ -102,11 +102,11 @@ func (s *Exam) CreateExam(ctx context.Context, req *proto.CreateExamRequest) (*p
 		}
 
 		// Only set Type if it's not LINK - will use database default
-		if req.Type != nil && int16(req.GetType()) != constants.EXAM_ACCESS_TYPE_LINK {
-			if int16(req.GetType()) != constants.EXAM_ACCESS_TYPE_INVITE {
+		if req.Type != nil && req.GetType() != proto.ExamType_LINK {
+			if req.GetType() != proto.ExamType_INVITE {
 				return status.Error(codes.InvalidArgument, "Invalid exam type")
 			}
-			exam.Type = int16(req.GetType())
+			exam.Type = req.GetType()
 		}
 
 		if err := s.examRepo.Create(tx, &exam); err != nil {
@@ -200,7 +200,7 @@ func (s *Exam) StartExam(ctx context.Context, _ *proto.StartExamRequest) (*empty
 		participantExists := err == nil
 
 		if !participantExists {
-			if exam.Type != constants.EXAM_ACCESS_TYPE_LINK {
+			if exam.Type != proto.ExamType_LINK {
 				return status.Error(codes.PermissionDenied, "participant is not invited")
 			}
 			// Create participant with started status for LINK type exams
@@ -329,7 +329,7 @@ func (s *Exam) GetExamPermission(ctx context.Context, req *proto.ExamRequest) (*
 	permission, ok := interceptors.GetPermissionFromContext(ctx)
 	// For LINK type exams, grant PARTICIPATE permission if no permission exists
 	if !ok {
-		if exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
+		if exam.Type == proto.ExamType_LINK {
 			return &proto.ExamPermissionResponse{
 				CanRead:           true,
 				CanWrite:          false,

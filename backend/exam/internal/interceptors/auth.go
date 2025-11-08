@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
@@ -135,7 +134,7 @@ func GeneralExamAuthInterceptor(
 
 		permission, err := permissionRepo.GetByExamHashAndUserId(nil, *examHash, userID)
 		if err == gorm.ErrRecordNotFound {
-			if _, ok := allowInLinkExam[methodName]; ok && exam.Type == constants.EXAM_ACCESS_TYPE_LINK {
+			if _, ok := allowInLinkExam[methodName]; ok && exam.Type == proto.ExamType_LINK {
 				return handler(ctx, req)
 			}
 			return nil, status.Error(codes.PermissionDenied, "No permission to access this exam")

@@ -42,7 +42,7 @@ func TestGetUserExams(t *testing.T) {
 				for i, exam := range resp.Exams {
 					assert.EqualValues(t, defaultUserID, exam.CreatedBy)
 					assert.Equal(t, fmt.Sprintf("Test Exam %d", i+1), exam.Title)
-					assert.EqualValues(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
+					assert.EqualValues(t, proto.ExamType_LINK, exam.Type)
 				}
 			},
 		},
@@ -114,13 +114,13 @@ func TestCreateExam(t *testing.T) {
 				assert.NotEmpty(t, resp.ExamHash)
 				assert.Equal(t, "New Exam", resp.Title)
 				assert.EqualValues(t, defaultUserID, resp.CreatedBy)
-				assert.EqualValues(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
+				assert.EqualValues(t, proto.ExamType_LINK, resp.Type)
 				assert.EqualValues(t, 50, resp.MaxCandidatesCount)
 				assert.EqualValues(t, 120, resp.DurationMinutes)
 
 				var exam models.Exam
 				require.NoError(t, dbInst.Where("hash = ?", resp.ExamHash).Take(&exam).Error)
-				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
+				assert.EqualValues(t, proto.ExamType_LINK, exam.Type)
 				assert.EqualValues(t, 120, exam.DurationMinutes)
 			},
 		},
@@ -133,19 +133,19 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(validStartTime),
 					EndsAt:             timestamppb.New(validEndTime),
 					MaxCandidatesCount: 50,
-					Type:               ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_INVITE)),
+					Type:               proto.ExamType_INVITE.Enum(),
 					PaperHash:          paperHash,
 					DurationMinutes:    60,
 				}
 			},
 			ExpectedCode: codes.OK,
 			Validate: func(t *testing.T, resp *proto.ExamResponse, setupData *SetupReturn) {
-				assert.Equal(t, int32(constants.EXAM_ACCESS_TYPE_INVITE), resp.Type)
+				assert.EqualValues(t, proto.ExamType_INVITE, resp.Type)
 				assert.EqualValues(t, 60, resp.DurationMinutes)
 
 				var exam models.Exam
 				require.NoError(t, dbInst.Where("hash = ?", resp.ExamHash).Take(&exam).Error)
-				assert.Equal(t, constants.EXAM_ACCESS_TYPE_INVITE, exam.Type)
+				assert.EqualValues(t, proto.ExamType_INVITE, exam.Type)
 			},
 		},
 		{
@@ -157,7 +157,7 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(validEndTime),   // Swapped times
 					EndsAt:             timestamppb.New(validStartTime), // Swapped times
 					MaxCandidatesCount: 50,
-					Type:               ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_INVITE)),
+					Type:               proto.ExamType_INVITE.Enum(),
 					PaperHash:          paperHash,
 					DurationMinutes:    60,
 				}
@@ -173,7 +173,7 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(time.Now().Add(-24 * time.Hour)),
 					EndsAt:             timestamppb.New(validEndTime),
 					MaxCandidatesCount: 50,
-					Type:               ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_INVITE)),
+					Type:               proto.ExamType_INVITE.Enum(),
 					PaperHash:          paperHash,
 					DurationMinutes:    60,
 				}
@@ -189,7 +189,7 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 					EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 					MaxCandidatesCount: 0,
-					Type:               ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_INVITE)),
+					Type:               proto.ExamType_INVITE.Enum(),
 					PaperHash:          paperHash,
 					DurationMinutes:    60,
 				}
@@ -205,7 +205,7 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 					EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 					MaxCandidatesCount: 50,
-					Type:               ptr.Int32(99),
+					Type:               proto.ExamType_UNKNOWN_EXAM_TYPE.Enum(),
 					PaperHash:          paperHash,
 					DurationMinutes:    60,
 				}
@@ -221,7 +221,7 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 					EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 					MaxCandidatesCount: 50,
-					Type:               ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_LINK)),
+					Type:               proto.ExamType_LINK.Enum(),
 					PaperHash:          paperHash,
 					DurationMinutes:    0,
 				}
@@ -237,7 +237,7 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 					EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 					MaxCandidatesCount: 50,
-					Type:               ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_LINK)),
+					Type:               proto.ExamType_LINK.Enum(),
 					PaperHash:          paperHash,
 				}
 			},
@@ -252,7 +252,7 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 					EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 					MaxCandidatesCount: 50,
-					Type:               ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_LINK)),
+					Type:               proto.ExamType_LINK.Enum(),
 					PaperHash:          paperHash,
 					DurationMinutes:    -30,
 				}
@@ -268,7 +268,7 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 					EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 					MaxCandidatesCount: 50,
-					Type:               ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_LINK)),
+					Type:               proto.ExamType_LINK.Enum(),
 					PaperHash:          paperHash,
 					DurationMinutes:    int32(constants.MAX_EXAM_DURATION_MINUTES + 1),
 				}
@@ -308,7 +308,7 @@ func TestUpdateExam(t *testing.T) {
 					Title:    ptr.String("Updated Exam"),
 					StartsAt: timestamppb.New(time.Now().Add(48 * time.Hour)),
 					EndsAt:   timestamppb.New(time.Now().Add(72 * time.Hour)),
-					Type:     ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_LINK)),
+					Type:     proto.ExamType_LINK.Enum(),
 				}
 			},
 			ExpectedCode: codes.OK,
@@ -317,7 +317,7 @@ func TestUpdateExam(t *testing.T) {
 				require.NoError(t, dbInst.First(&exam, setupData.Exam.ID).Error)
 
 				assert.Equal(t, "Updated Exam", exam.Title)
-				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
+				assert.Equal(t, proto.ExamType_LINK, exam.Type)
 			},
 		},
 		{
@@ -581,7 +581,7 @@ func TestEndExam(t *testing.T) {
 			Metadata: defaultMetadata,
 			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, 2)
-				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
+				exam.Type = proto.ExamType_INVITE
 				require.NoError(t, dbInst.Save(&exam).Error)
 				return &SetupReturn{
 					Exam:        exam,
@@ -656,7 +656,7 @@ func TestStartExam(t *testing.T) {
 			Metadata: defaultMetadata,
 			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, 2)
-				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
+				exam.Type = proto.ExamType_INVITE
 				exam.StartsAt = time.Now().Add(-1 * time.Hour)
 				exam.EndsAt = time.Now().Add(1 * time.Hour)
 				require.NoError(t, dbInst.Save(&exam).Error)
@@ -694,7 +694,7 @@ func TestStartExam(t *testing.T) {
 			Metadata: defaultMetadata,
 			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, 2)
-				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
+				exam.Type = proto.ExamType_LINK
 				exam.StartsAt = time.Now().Add(-1 * time.Hour)
 				exam.EndsAt = time.Now().Add(1 * time.Hour)
 				require.NoError(t, dbInst.Save(&exam).Error)
@@ -788,7 +788,7 @@ func TestStartExam(t *testing.T) {
 			Metadata: defaultMetadata,
 			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, 2)
-				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
+				exam.Type = proto.ExamType_INVITE
 				exam.StartsAt = time.Now().Add(-1 * time.Hour)
 				exam.EndsAt = time.Now().Add(1 * time.Hour)
 				require.NoError(t, dbInst.Save(&exam).Error)
@@ -806,7 +806,7 @@ func TestStartExam(t *testing.T) {
 			Metadata: defaultMetadata,
 			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, 2) // Created by different user
-				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
+				exam.Type = proto.ExamType_LINK
 				exam.StartsAt = time.Now().Add(-1 * time.Hour)
 				exam.EndsAt = time.Now().Add(1 * time.Hour)
 				require.NoError(t, dbInst.Save(&exam).Error)
@@ -894,7 +894,7 @@ func TestGetExamQuestions(t *testing.T) {
 			Metadata: defaultMetadata,
 			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, 2)
-				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
+				exam.Type = proto.ExamType_LINK
 				questions := createTestExamQuestions(t, exam.ID, []models.ExamQuestion{
 					{MaxScore: 5},
 				})
@@ -1018,7 +1018,7 @@ func TestGetExamCategories(t *testing.T) {
 			Metadata: defaultMetadata,
 			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, 2)
-				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
+				exam.Type = proto.ExamType_LINK
 				categories := []models.ExamCategory{
 					{ExamID: exam.ID, CategoryID: 1},
 					{ExamID: exam.ID, CategoryID: 2},
@@ -1155,7 +1155,7 @@ func TestGetExamPermission(t *testing.T) {
 			Metadata: defaultMetadata,
 			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, 2)
-				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
+				exam.Type = proto.ExamType_LINK
 				require.NoError(t, dbInst.Save(&exam).Error)
 				return &SetupReturn{Exam: exam}
 			},
@@ -1261,7 +1261,7 @@ func TestGetExam(t *testing.T) {
 			Metadata: defaultMetadata,
 			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, 2)
-				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
+				exam.Type = proto.ExamType_LINK
 				require.NoError(t, dbInst.Save(&exam).Error)
 				return &SetupReturn{Exam: exam}
 			},
@@ -1272,7 +1272,7 @@ func TestGetExam(t *testing.T) {
 			},
 			ExpectedCode: codes.OK,
 			Validate: func(t *testing.T, resp *proto.ExamResponse, setupData *SetupReturn) {
-				assert.EqualValues(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
+				assert.EqualValues(t, proto.ExamType_LINK, resp.Type)
 			},
 		},
 		{
@@ -1280,7 +1280,7 @@ func TestGetExam(t *testing.T) {
 			Metadata: defaultMetadata,
 			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, 2)
-				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
+				exam.Type = proto.ExamType_INVITE
 				require.NoError(t, dbInst.Save(&exam).Error)
 				return &SetupReturn{Exam: exam}
 			},

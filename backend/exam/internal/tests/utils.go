@@ -11,6 +11,7 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/models"
+	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils/generate"
 	"pariksha/exam/internal/interservice"
@@ -44,7 +45,7 @@ func createTestExams(t *testing.T, exams []models.Exam) []models.Exam {
 			exam.Title = "Test Exam " + strconv.Itoa(i+1)
 		}
 		if exam.Type == 0 {
-			exam.Type = constants.EXAM_ACCESS_TYPE_LINK
+			exam.Type = proto.ExamType_LINK
 		}
 		if exam.MaxCandidatesCount == 0 {
 			exam.MaxCandidatesCount = 10

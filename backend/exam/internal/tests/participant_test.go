@@ -228,7 +228,7 @@ func TestAddExamParticipant(t *testing.T) {
 			Metadata: defaultMetadata,
 			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, defaultUserID)
-				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
+				exam.Type = proto.ExamType_INVITE
 				require.NoError(t, dbInst.Save(&exam).Error)
 				return &SetupReturn{Exam: exam}
 			},
@@ -258,7 +258,7 @@ func TestAddExamParticipant(t *testing.T) {
 			Metadata: defaultMetadata,
 			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, defaultUserID)
-				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
+				exam.Type = proto.ExamType_INVITE
 				exam.MaxCandidatesCount = 1
 				require.NoError(t, dbInst.Save(&exam).Error)
 
@@ -285,7 +285,7 @@ func TestAddExamParticipant(t *testing.T) {
 			Metadata: defaultMetadata,
 			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, defaultUserID)
-				exam.Type = constants.EXAM_ACCESS_TYPE_LINK
+				exam.Type = proto.ExamType_LINK
 				require.NoError(t, dbInst.Save(&exam).Error)
 				return &SetupReturn{Exam: exam}
 			},
@@ -438,7 +438,7 @@ func TestGetParticipantById(t *testing.T) {
 			Metadata: defaultMetadata,
 			Setup: func(t *testing.T) *SetupReturn {
 				exam := createDefaultTestExam(t, defaultUserID)
-				exam.Type = constants.EXAM_ACCESS_TYPE_INVITE
+				exam.Type = proto.ExamType_INVITE
 				require.NoError(t, dbInst.Save(&exam).Error)
 
 				participants := createTestExamParticipants(t, &exam, []models.ExamParticipant{{
