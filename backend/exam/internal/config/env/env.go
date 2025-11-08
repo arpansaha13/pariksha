@@ -16,8 +16,7 @@ var (
 )
 
 var (
-	EXAM_DB_HOST    string
-	EXAM_DB_PORT    string
+	EXAM_DB_ADDR    string
 	EXAM_DB_USER    string
 	EXAM_DB_PASS    string
 	EXAM_DB_NAME    string
@@ -63,8 +62,7 @@ func init() {
 	EXAM_DB_NAME = os.Getenv("EXAM_DB_NAME")
 
 	if GO_ENV != constants.GO_ENV_TEST {
-		EXAM_DB_HOST = os.Getenv("EXAM_DB_HOST")
-		EXAM_DB_PORT = os.Getenv("EXAM_DB_PORT")
+		EXAM_DB_ADDR = os.Getenv("EXAM_DB_ADDR")
 		EXAM_DB_SSLMODE = os.Getenv("EXAM_DB_SSLMODE")
 
 		EXAM_API_TOKEN = os.Getenv("EXAM_API_TOKEN")
@@ -91,8 +89,7 @@ func getRequiredEnvVars() []string {
 
 	if os.Getenv("GO_ENV") != constants.GO_ENV_TEST {
 		additionalEnvVars := []string{
-			"EXAM_DB_HOST",
-			"EXAM_DB_PORT",
+			"EXAM_DB_ADDR",
 			"EXAM_DB_SSLMODE",
 			"EXAM_API_TOKEN",
 			"EXAM_QUEUE_HOST",

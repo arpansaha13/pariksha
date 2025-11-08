@@ -2,9 +2,9 @@ package modules
 
 import (
 	"context"
+	"fmt"
 	"log"
 
-	"github.com/docker/go-connections/nat"
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/config"
@@ -20,8 +20,8 @@ func NewMock() (*questionServer, *gorm.DB, func()) {
 	ctx := context.Background()
 
 	// Initialize database
-	pgHost, pgPort, pgCleanup := setupPgContainer(ctx)
-	dbInst := initMockDB(pgHost, pgPort)
+	pgAddr, pgCleanup := setupPgContainer(ctx)
+	dbInst := initMockDB(pgAddr)
 
 	// Initialize repositories
 	questionRepo := repositories.NewQuestion(dbInst)
@@ -46,11 +46,10 @@ func NewMock() (*questionServer, *gorm.DB, func()) {
 	return server, dbInst, cleanup
 }
 
-func initMockDB(pgHost string, pgPort nat.Port) *gorm.DB {
+func initMockDB(pgAddr string) *gorm.DB {
 	var dbInitializer config.DBInitializer = &config.PostgresInitializer{}
 	dbInst, err := dbInitializer.Init(&config.GormDsnImpl{
-		Host:     pgHost,
-		Port:     pgPort.Port(),
+		Addr:     pgAddr,
 		User:     env.QUESTION_DB_USER,
 		Password: env.QUESTION_DB_PASS,
 		Dbname:   env.QUESTION_DB_NAME,
@@ -66,7 +65,7 @@ func initMockDB(pgHost string, pgPort nat.Port) *gorm.DB {
 	return dbInst
 }
 
-func setupPgContainer(ctx context.Context) (string, nat.Port, func()) {
+func setupPgContainer(ctx context.Context) (string, func()) {
 	pgContainer, err := test.StartPgContainer(ctx, &test.PgContainerEnv{
 		PgUser:     env.QUESTION_DB_USER,
 		PgPassword: env.QUESTION_DB_PASS,
@@ -80,9 +79,11 @@ func setupPgContainer(ctx context.Context) (string, nat.Port, func()) {
 	pgHost, _ := pgContainer.Host(ctx)
 	pgPort, _ := pgContainer.MappedPort(ctx, "5432")
 
+	pgAddr := fmt.Sprintf("%s:%d", pgHost, pgPort.Int())
+
 	cleanup := func() {
 		pgContainer.Terminate(ctx)
 	}
 
-	return pgHost, pgPort, cleanup
+	return pgAddr, cleanup
 }

@@ -70,8 +70,7 @@ func initDB() *gorm.DB {
 	var dbInitializer config.DBInitializer = &config.PostgresInitializer{}
 	dbInst, err := dbInitializer.Init(
 		&config.GormDsnImpl{
-			Host:     env.PAPER_DB_HOST,
-			Port:     env.PAPER_DB_PORT,
+			Addr:     env.PAPER_DB_ADDR,
 			User:     env.PAPER_DB_USER,
 			Password: env.PAPER_DB_PASS,
 			Dbname:   env.PAPER_DB_NAME,

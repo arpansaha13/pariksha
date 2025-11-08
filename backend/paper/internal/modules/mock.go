@@ -2,9 +2,9 @@ package modules
 
 import (
 	"context"
+	"fmt"
 	"log"
 
-	"github.com/docker/go-connections/nat"
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
 
@@ -25,8 +25,8 @@ func NewMock() (*paperServer, *gorm.DB, []grpc.UnaryServerInterceptor, func()) {
 	mockQuestionIntSvc := mockQuestionInterservice()
 
 	// Initialize database
-	pgHost, pgPort, pgCleanup := setupPgContainer(ctx)
-	dbInst := mockDB(pgHost, pgPort)
+	pgAddr, pgCleanup := setupPgContainer(ctx)
+	dbInst := mockDB(pgAddr)
 
 	// Initialize repositories
 	paperRepo := repositories.NewPaper(dbInst)
@@ -66,11 +66,10 @@ func NewMock() (*paperServer, *gorm.DB, []grpc.UnaryServerInterceptor, func()) {
 	return server, dbInst, intc, cleanup
 }
 
-func mockDB(pgHost string, pgPort nat.Port) *gorm.DB {
+func mockDB(pgAddr string) *gorm.DB {
 	var dbInitializer config.DBInitializer = &config.PostgresInitializer{}
 	dbInst, err := dbInitializer.Init(&config.GormDsnImpl{
-		Host:     pgHost,
-		Port:     pgPort.Port(),
+		Addr:     pgAddr,
 		User:     env.PAPER_DB_USER,
 		Password: env.PAPER_DB_PASS,
 		Dbname:   env.PAPER_DB_NAME,
@@ -86,7 +85,7 @@ func mockDB(pgHost string, pgPort nat.Port) *gorm.DB {
 	return dbInst
 }
 
-func setupPgContainer(ctx context.Context) (string, nat.Port, func()) {
+func setupPgContainer(ctx context.Context) (string, func()) {
 	pgContainer, err := test.StartPgContainer(ctx, &test.PgContainerEnv{
 		PgUser:     env.PAPER_DB_USER,
 		PgPassword: env.PAPER_DB_PASS,
@@ -100,11 +99,13 @@ func setupPgContainer(ctx context.Context) (string, nat.Port, func()) {
 	pgHost, _ := pgContainer.Host(ctx)
 	pgPort, _ := pgContainer.MappedPort(ctx, "5432")
 
+	pgAddr := fmt.Sprintf("%s:%d", pgHost, pgPort.Int())
+
 	pgCleanup := func() {
 		pgContainer.Terminate(ctx)
 	}
 
-	return pgHost, pgPort, pgCleanup
+	return pgAddr, pgCleanup
 }
 
 func mockQuestionInterservice() *interservice.Question {

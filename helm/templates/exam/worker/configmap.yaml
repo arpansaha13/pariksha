@@ -6,9 +6,8 @@ metadata:
 data:
   GO_ENV: {{ .Values.global.environment }}
 
-  EXAM_DB_HOST: {{ .Values.examWorker.config.EXAM_DB_HOST }}
+  EXAM_DB_ADDR: {{ .Values.examWorker.config.EXAM_DB_ADDR }}
   EXAM_DB_NAME: {{ .Values.examWorker.config.EXAM_DB_NAME }}
-  EXAM_DB_PORT: {{ .Values.examWorker.config.EXAM_DB_PORT | quote }}
   EXAM_DB_SSLMODE: {{ .Values.examWorker.config.EXAM_DB_SSLMODE }}
 
   EXAM_QUEUE_HOST: {{ .Values.examWorker.config.EXAM_QUEUE_HOST }}

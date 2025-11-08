@@ -21,8 +21,7 @@ var (
 )
 
 var (
-	QUESTION_DB_HOST    string
-	QUESTION_DB_PORT    string
+	QUESTION_DB_ADDR    string
 	QUESTION_DB_USER    string
 	QUESTION_DB_PASS    string
 	QUESTION_DB_NAME    string
@@ -53,8 +52,7 @@ func init() {
 	QUESTION_DB_NAME = os.Getenv("QUESTION_DB_NAME")
 
 	if GO_ENV != constants.GO_ENV_TEST {
-		QUESTION_DB_HOST = os.Getenv("QUESTION_DB_HOST")
-		QUESTION_DB_PORT = os.Getenv("QUESTION_DB_PORT")
+		QUESTION_DB_ADDR = os.Getenv("QUESTION_DB_ADDR")
 		QUESTION_DB_SSLMODE = os.Getenv("QUESTION_DB_SSLMODE")
 
 		EXAM_API_TOKEN = os.Getenv("EXAM_API_TOKEN")
@@ -74,8 +72,7 @@ func getRequiredEnvVars() []string {
 
 	if os.Getenv("GO_ENV") != constants.GO_ENV_TEST {
 		additionalEnvVars := []string{
-			"QUESTION_DB_HOST",
-			"QUESTION_DB_PORT",
+			"QUESTION_DB_ADDR",
 			"QUESTION_DB_SSLMODE",
 			"EXAM_API_TOKEN",
 			"PAPER_API_TOKEN",

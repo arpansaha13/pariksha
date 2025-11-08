@@ -32,7 +32,7 @@ spec:
             - sh
             - -c
             - |
-              until nc -z external-question-db-service {{ .Values.question.config.QUESTION_DB_PORT }}; do
+              until nc -z {{ .Values.question.config.QUESTION_DB_ADDR }}; do
                 echo "Waiting for PostgreSQL...";
                 sleep 4;
               done

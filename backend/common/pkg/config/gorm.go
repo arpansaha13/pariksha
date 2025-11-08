@@ -18,22 +18,20 @@ type GormDsn interface {
 }
 
 type GormDsnImpl struct {
-	Host     string
+	Addr     string
 	User     string
 	Password string
 	Dbname   string
-	Port     string
 	Sslmode  string
 }
 
 func (gd *GormDsnImpl) missingFields() []string {
 	missing := []string{}
 	fieldMap := map[string]string{
-		"Host":     gd.Host,
+		"Addr":     gd.Addr,
 		"User":     gd.User,
 		"Password": gd.Password,
 		"Dbname":   gd.Dbname,
-		"Port":     gd.Port,
 		"Sslmode":  gd.Sslmode,
 	}
 
@@ -51,9 +49,13 @@ func (gd *GormDsnImpl) Get() (string, error) {
 		return "", fmt.Errorf("missing required fields: %v", strings.Join(missing, ", "))
 	}
 
+	addr := strings.Split(gd.Addr, ":")
+	if len(addr) != 2 {
+		return "", fmt.Errorf("addr must be in format host:port")
+	}
 	return fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
-		gd.Host, gd.User, gd.Password, gd.Dbname, gd.Port, gd.Sslmode,
+		addr[0], gd.User, gd.Password, gd.Dbname, addr[1], gd.Sslmode,
 	), nil
 }
 
