@@ -83,7 +83,7 @@ func examToProto(exam *models.Exam) (*proto.ExamResponse, error) {
 		StartsAt:           timestamppb.New(exam.StartsAt),
 		EndsAt:             timestamppb.New(exam.EndsAt),
 		CreatedBy:          int64(exam.CreatedBy),
-		Type:               exam.Type,
+		Type:               int32(exam.Type),
 		MaxCandidatesCount: exam.MaxCandidatesCount,
 		MaxScore:           exam.MaxScore,
 		DurationMinutes:    int32(exam.DurationMinutes),
@@ -269,7 +269,7 @@ func updateExamTimeFields(ctx *examUpdateCtx) error {
 // updateExamSettings updates exam configuration settings
 func updateExamSettings(ctx *examUpdateCtx) error {
 	if ctx.req.Type != nil {
-		ctx.exam.Type = ctx.req.GetType()
+		ctx.exam.Type = int16(ctx.req.GetType())
 		ctx.isUpdated = true
 	}
 

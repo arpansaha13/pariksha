@@ -24,7 +24,7 @@ type Exam struct {
 	StartsAt           time.Time       `gorm:"column:starts_at;not null"`
 	EndsAt             time.Time       `gorm:"column:ends_at;not null"`
 	CreatedBy          types.UserID    `gorm:"type:bigint"`
-	Type               string          `gorm:"type:varchar(16);default:LINK"`
+	Type               int16           `gorm:"type:smallint;default:1"`
 	MaxCandidatesCount int32           `gorm:"not null"`
 	MaxScore           int32           `gorm:"type:integer;default:0"`
 	DurationMinutes    int16           `gorm:"type:smallint;not null;check:duration_minutes >= 0 AND duration_minutes <= 1440"`

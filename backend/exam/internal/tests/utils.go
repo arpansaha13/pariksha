@@ -43,7 +43,7 @@ func createTestExams(t *testing.T, exams []models.Exam) []models.Exam {
 		if exam.Title == "" {
 			exam.Title = "Test Exam " + strconv.Itoa(i+1)
 		}
-		if exam.Type == "" {
+		if exam.Type == 0 {
 			exam.Type = constants.EXAM_ACCESS_TYPE_LINK
 		}
 		if exam.MaxCandidatesCount == 0 {

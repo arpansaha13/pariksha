@@ -120,7 +120,7 @@ type CreateExamRequest struct {
 	StartsAt           *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=starts_at,json=startsAt,proto3" json:"starts_at,omitempty"`
 	EndsAt             *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=ends_at,json=endsAt,proto3" json:"ends_at,omitempty"`
 	MaxCandidatesCount int32                  `protobuf:"varint,4,opt,name=max_candidates_count,json=maxCandidatesCount,proto3" json:"max_candidates_count,omitempty"`
-	Type               *string                `protobuf:"bytes,5,opt,name=type,proto3,oneof" json:"type,omitempty"`
+	Type               *int32                 `protobuf:"varint,5,opt,name=type,proto3,oneof" json:"type,omitempty"`
 	PaperHash          string                 `protobuf:"bytes,6,opt,name=paper_hash,json=paperHash,proto3" json:"paper_hash,omitempty"`
 	DurationMinutes    int32                  `protobuf:"varint,7,opt,name=duration_minutes,json=durationMinutes,proto3" json:"duration_minutes,omitempty"`
 	unknownFields      protoimpl.UnknownFields
@@ -185,11 +185,11 @@ func (x *CreateExamRequest) GetMaxCandidatesCount() int32 {
 	return 0
 }
 
-func (x *CreateExamRequest) GetType() string {
+func (x *CreateExamRequest) GetType() int32 {
 	if x != nil && x.Type != nil {
 		return *x.Type
 	}
-	return ""
+	return 0
 }
 
 func (x *CreateExamRequest) GetPaperHash() string {
@@ -212,7 +212,7 @@ type UpdateExamRequest struct {
 	Title           *string                `protobuf:"bytes,2,opt,name=title,proto3,oneof" json:"title,omitempty"`
 	StartsAt        *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=starts_at,json=startsAt,proto3,oneof" json:"starts_at,omitempty"`
 	EndsAt          *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=ends_at,json=endsAt,proto3,oneof" json:"ends_at,omitempty"`
-	Type            *string                `protobuf:"bytes,5,opt,name=type,proto3,oneof" json:"type,omitempty"`
+	Type            *int32                 `protobuf:"varint,5,opt,name=type,proto3,oneof" json:"type,omitempty"`
 	DurationMinutes *int32                 `protobuf:"varint,6,opt,name=duration_minutes,json=durationMinutes,proto3,oneof" json:"duration_minutes,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -276,11 +276,11 @@ func (x *UpdateExamRequest) GetEndsAt() *timestamppb.Timestamp {
 	return nil
 }
 
-func (x *UpdateExamRequest) GetType() string {
+func (x *UpdateExamRequest) GetType() int32 {
 	if x != nil && x.Type != nil {
 		return *x.Type
 	}
-	return ""
+	return 0
 }
 
 func (x *UpdateExamRequest) GetDurationMinutes() int32 {
@@ -297,7 +297,7 @@ type ExamResponse struct {
 	StartsAt           *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=starts_at,json=startsAt,proto3" json:"starts_at,omitempty"`
 	EndsAt             *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=ends_at,json=endsAt,proto3" json:"ends_at,omitempty"`
 	CreatedBy          int64                  `protobuf:"varint,5,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
-	Type               string                 `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
+	Type               int32                  `protobuf:"varint,6,opt,name=type,proto3" json:"type,omitempty"`
 	MaxCandidatesCount int32                  `protobuf:"varint,7,opt,name=max_candidates_count,json=maxCandidatesCount,proto3" json:"max_candidates_count,omitempty"`
 	ParticipantCounts  *ParticipantCount      `protobuf:"bytes,9,opt,name=participant_counts,json=participantCounts,proto3" json:"participant_counts,omitempty"`
 	DurationMinutes    int32                  `protobuf:"varint,10,opt,name=duration_minutes,json=durationMinutes,proto3" json:"duration_minutes,omitempty"`
@@ -371,11 +371,11 @@ func (x *ExamResponse) GetCreatedBy() int64 {
 	return 0
 }
 
-func (x *ExamResponse) GetType() string {
+func (x *ExamResponse) GetType() int32 {
 	if x != nil {
 		return x.Type
 	}
-	return ""
+	return 0
 }
 
 func (x *ExamResponse) GetMaxCandidatesCount() int32 {
@@ -2206,7 +2206,7 @@ const file_exam_proto_rawDesc = "" +
 	"\tstarts_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\bstartsAt\x123\n" +
 	"\aends_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x06endsAt\x120\n" +
 	"\x14max_candidates_count\x18\x04 \x01(\x05R\x12maxCandidatesCount\x12\x17\n" +
-	"\x04type\x18\x05 \x01(\tH\x00R\x04type\x88\x01\x01\x12\x1d\n" +
+	"\x04type\x18\x05 \x01(\x05H\x00R\x04type\x88\x01\x01\x12\x1d\n" +
 	"\n" +
 	"paper_hash\x18\x06 \x01(\tR\tpaperHash\x12)\n" +
 	"\x10duration_minutes\x18\a \x01(\x05R\x0fdurationMinutesB\a\n" +
@@ -2216,7 +2216,7 @@ const file_exam_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12<\n" +
 	"\tstarts_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\bstartsAt\x88\x01\x01\x128\n" +
 	"\aends_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampH\x02R\x06endsAt\x88\x01\x01\x12\x17\n" +
-	"\x04type\x18\x05 \x01(\tH\x03R\x04type\x88\x01\x01\x12.\n" +
+	"\x04type\x18\x05 \x01(\x05H\x03R\x04type\x88\x01\x01\x12.\n" +
 	"\x10duration_minutes\x18\x06 \x01(\x05H\x04R\x0fdurationMinutes\x88\x01\x01B\b\n" +
 	"\x06_titleB\f\n" +
 	"\n" +
@@ -2232,7 +2232,7 @@ const file_exam_proto_rawDesc = "" +
 	"\aends_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x06endsAt\x12\x1d\n" +
 	"\n" +
 	"created_by\x18\x05 \x01(\x03R\tcreatedBy\x12\x12\n" +
-	"\x04type\x18\x06 \x01(\tR\x04type\x120\n" +
+	"\x04type\x18\x06 \x01(\x05R\x04type\x120\n" +
 	"\x14max_candidates_count\x18\a \x01(\x05R\x12maxCandidatesCount\x12F\n" +
 	"\x12participant_counts\x18\t \x01(\v2\x17.proto.ParticipantCountR\x11participantCounts\x12)\n" +
 	"\x10duration_minutes\x18\n" +

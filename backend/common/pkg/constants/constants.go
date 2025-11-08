@@ -13,8 +13,8 @@ const (
 )
 
 const (
-	EXAM_ACCESS_TYPE_LINK   string = "LINK"
-	EXAM_ACCESS_TYPE_INVITE string = "INVITE"
+	EXAM_ACCESS_TYPE_LINK   int16 = 1
+	EXAM_ACCESS_TYPE_INVITE int16 = 2
 )
 
 const (

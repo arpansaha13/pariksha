@@ -10,7 +10,7 @@ type CreateExamDto struct {
 	Title           string    `json:"title" validate:"required"`
 	StartsAt        time.Time `json:"starts_at" validate:"required"`
 	EndsAt          time.Time `json:"ends_at" validate:"required"`
-	Type            string    `json:"type"`
+	Type            int16     `json:"type"`
 	PaperID         string    `json:"paper_id" validate:"required"`
 	DurationMinutes int32     `json:"duration_minutes" validate:"required,gt=0"`
 }
@@ -19,7 +19,7 @@ type UpdateExamDto struct {
 	Title           string    `json:"title"`
 	StartsAt        time.Time `json:"starts_at"`
 	EndsAt          time.Time `json:"ends_at"`
-	Type            string    `json:"type"`
+	Type            int16     `json:"type"`
 	DurationMinutes *int32    `json:"duration_minutes" validate:"omitempty,gt=0"`
 }
 
@@ -29,7 +29,7 @@ type ExamResponseDto struct {
 	StartsAt           time.Time `json:"starts_at"`
 	EndsAt             time.Time `json:"ends_at"`
 	CreatedBy          int64     `json:"created_by"`
-	Type               string    `json:"type"`
+	Type               int16     `json:"type"`
 	MaxCandidatesCount int32     `json:"max_candidates_count"`
 	DurationMinutes    int32     `json:"duration_minutes"`
 	MaxScore           int32     `json:"max_score"`

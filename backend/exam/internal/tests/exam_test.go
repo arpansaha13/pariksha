@@ -42,7 +42,7 @@ func TestGetUserExams(t *testing.T) {
 				for i, exam := range resp.Exams {
 					assert.EqualValues(t, defaultUserID, exam.CreatedBy)
 					assert.Equal(t, fmt.Sprintf("Test Exam %d", i+1), exam.Title)
-					assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
+					assert.EqualValues(t, constants.EXAM_ACCESS_TYPE_LINK, exam.Type)
 				}
 			},
 		},
@@ -114,7 +114,7 @@ func TestCreateExam(t *testing.T) {
 				assert.NotEmpty(t, resp.ExamHash)
 				assert.Equal(t, "New Exam", resp.Title)
 				assert.EqualValues(t, defaultUserID, resp.CreatedBy)
-				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
+				assert.EqualValues(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
 				assert.EqualValues(t, 50, resp.MaxCandidatesCount)
 				assert.EqualValues(t, 120, resp.DurationMinutes)
 
@@ -133,14 +133,14 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(validStartTime),
 					EndsAt:             timestamppb.New(validEndTime),
 					MaxCandidatesCount: 50,
-					Type:               ptr.String(constants.EXAM_ACCESS_TYPE_INVITE),
+					Type:               ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_INVITE)),
 					PaperHash:          paperHash,
 					DurationMinutes:    60,
 				}
 			},
 			ExpectedCode: codes.OK,
 			Validate: func(t *testing.T, resp *proto.ExamResponse, setupData *SetupReturn) {
-				assert.Equal(t, constants.EXAM_ACCESS_TYPE_INVITE, resp.Type)
+				assert.Equal(t, int32(constants.EXAM_ACCESS_TYPE_INVITE), resp.Type)
 				assert.EqualValues(t, 60, resp.DurationMinutes)
 
 				var exam models.Exam
@@ -157,7 +157,7 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(validEndTime),   // Swapped times
 					EndsAt:             timestamppb.New(validStartTime), // Swapped times
 					MaxCandidatesCount: 50,
-					Type:               ptr.String(constants.EXAM_ACCESS_TYPE_INVITE),
+					Type:               ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_INVITE)),
 					PaperHash:          paperHash,
 					DurationMinutes:    60,
 				}
@@ -173,7 +173,7 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(time.Now().Add(-24 * time.Hour)),
 					EndsAt:             timestamppb.New(validEndTime),
 					MaxCandidatesCount: 50,
-					Type:               ptr.String(constants.EXAM_ACCESS_TYPE_INVITE),
+					Type:               ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_INVITE)),
 					PaperHash:          paperHash,
 					DurationMinutes:    60,
 				}
@@ -189,7 +189,7 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 					EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 					MaxCandidatesCount: 0,
-					Type:               ptr.String(constants.EXAM_ACCESS_TYPE_INVITE),
+					Type:               ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_INVITE)),
 					PaperHash:          paperHash,
 					DurationMinutes:    60,
 				}
@@ -205,7 +205,7 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 					EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 					MaxCandidatesCount: 50,
-					Type:               ptr.String("UNKNOWN"),
+					Type:               ptr.Int32(99),
 					PaperHash:          paperHash,
 					DurationMinutes:    60,
 				}
@@ -221,7 +221,7 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 					EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 					MaxCandidatesCount: 50,
-					Type:               ptr.String(constants.EXAM_ACCESS_TYPE_LINK),
+					Type:               ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_LINK)),
 					PaperHash:          paperHash,
 					DurationMinutes:    0,
 				}
@@ -237,7 +237,7 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 					EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 					MaxCandidatesCount: 50,
-					Type:               ptr.String(constants.EXAM_ACCESS_TYPE_LINK),
+					Type:               ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_LINK)),
 					PaperHash:          paperHash,
 				}
 			},
@@ -252,7 +252,7 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 					EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 					MaxCandidatesCount: 50,
-					Type:               ptr.String(constants.EXAM_ACCESS_TYPE_LINK),
+					Type:               ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_LINK)),
 					PaperHash:          paperHash,
 					DurationMinutes:    -30,
 				}
@@ -268,7 +268,7 @@ func TestCreateExam(t *testing.T) {
 					StartsAt:           timestamppb.New(time.Now().Add(24 * time.Hour)),
 					EndsAt:             timestamppb.New(time.Now().Add(48 * time.Hour)),
 					MaxCandidatesCount: 50,
-					Type:               ptr.String(constants.EXAM_ACCESS_TYPE_LINK),
+					Type:               ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_LINK)),
 					PaperHash:          paperHash,
 					DurationMinutes:    int32(constants.MAX_EXAM_DURATION_MINUTES + 1),
 				}
@@ -303,13 +303,12 @@ func TestUpdateExam(t *testing.T) {
 				return &SetupReturn{Exam: exams[0]}
 			},
 			GetRequest: func(setupData *SetupReturn) *proto.UpdateExamRequest {
-				examType := constants.EXAM_ACCESS_TYPE_LINK
 				return &proto.UpdateExamRequest{
 					ExamHash: setupData.Exam.Hash,
 					Title:    ptr.String("Updated Exam"),
 					StartsAt: timestamppb.New(time.Now().Add(48 * time.Hour)),
 					EndsAt:   timestamppb.New(time.Now().Add(72 * time.Hour)),
-					Type:     &examType,
+					Type:     ptr.Int32(int32(constants.EXAM_ACCESS_TYPE_LINK)),
 				}
 			},
 			ExpectedCode: codes.OK,
@@ -1273,7 +1272,7 @@ func TestGetExam(t *testing.T) {
 			},
 			ExpectedCode: codes.OK,
 			Validate: func(t *testing.T, resp *proto.ExamResponse, setupData *SetupReturn) {
-				assert.Equal(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
+				assert.EqualValues(t, constants.EXAM_ACCESS_TYPE_LINK, resp.Type)
 			},
 		},
 		{

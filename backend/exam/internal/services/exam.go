@@ -102,11 +102,11 @@ func (s *Exam) CreateExam(ctx context.Context, req *proto.CreateExamRequest) (*p
 		}
 
 		// Only set Type if it's not LINK - will use database default
-		if req.Type != nil && req.GetType() != constants.EXAM_ACCESS_TYPE_LINK {
-			if req.GetType() != constants.EXAM_ACCESS_TYPE_INVITE {
-				return status.Error(codes.InvalidArgument, "exam type must be either LINK or INVITE")
+		if req.Type != nil && int16(req.GetType()) != constants.EXAM_ACCESS_TYPE_LINK {
+			if int16(req.GetType()) != constants.EXAM_ACCESS_TYPE_INVITE {
+				return status.Error(codes.InvalidArgument, "Invalid exam type")
 			}
-			exam.Type = req.GetType()
+			exam.Type = int16(req.GetType())
 		}
 
 		if err := s.examRepo.Create(tx, &exam); err != nil {

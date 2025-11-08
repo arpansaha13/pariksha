@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"pariksha/common/pkg/proto"
+	"pariksha/common/pkg/utils/ptr"
 	"pariksha/server/internal/config/validate"
 	"pariksha/server/internal/dtos"
 	"pariksha/server/internal/middlewares"
@@ -35,7 +36,7 @@ func GetUserExams(w http.ResponseWriter, r *http.Request) {
 			StartsAt:           exam.StartsAt.AsTime(),
 			EndsAt:             exam.EndsAt.AsTime(),
 			CreatedBy:          exam.CreatedBy,
-			Type:               exam.Type,
+			Type:               int16(exam.Type),
 			MaxCandidatesCount: exam.MaxCandidatesCount,
 			DurationMinutes:    exam.DurationMinutes,
 			MaxScore:           exam.MaxScore,
@@ -86,8 +87,8 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 		DurationMinutes:    examDto.DurationMinutes,
 	}
 
-	if examDto.Type != "" {
-		createExamRequest.Type = &examDto.Type
+	if examDto.Type != 0 {
+		createExamRequest.Type = ptr.Int32(int32(examDto.Type))
 	}
 
 	exam, err := examService.Client().CreateExam(ctx, createExamRequest)
@@ -102,7 +103,7 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 		StartsAt:           exam.StartsAt.AsTime(),
 		EndsAt:             exam.EndsAt.AsTime(),
 		CreatedBy:          exam.CreatedBy,
-		Type:               exam.Type,
+		Type:               int16(exam.Type),
 		MaxCandidatesCount: exam.MaxCandidatesCount,
 		DurationMinutes:    exam.DurationMinutes,
 	}
@@ -148,8 +149,8 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 	if !examDto.EndsAt.IsZero() {
 		req.EndsAt = timestamppb.New(examDto.EndsAt)
 	}
-	if examDto.Type != "" {
-		req.Type = &examDto.Type
+	if examDto.Type != 0 {
+		req.Type = ptr.Int32(int32(examDto.Type))
 	}
 	if examDto.DurationMinutes != nil {
 		req.DurationMinutes = examDto.DurationMinutes
@@ -167,7 +168,7 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 		StartsAt:           exam.StartsAt.AsTime(),
 		EndsAt:             exam.EndsAt.AsTime(),
 		CreatedBy:          exam.CreatedBy,
-		Type:               exam.Type,
+		Type:               int16(exam.Type),
 		MaxCandidatesCount: exam.MaxCandidatesCount,
 		DurationMinutes:    exam.DurationMinutes,
 	}
@@ -247,7 +248,7 @@ func GetExam(w http.ResponseWriter, r *http.Request) {
 		StartsAt:           exam.StartsAt.AsTime(),
 		EndsAt:             exam.EndsAt.AsTime(),
 		CreatedBy:          exam.CreatedBy,
-		Type:               exam.Type,
+		Type:               int16(exam.Type),
 		MaxCandidatesCount: exam.MaxCandidatesCount,
 		DurationMinutes:    exam.DurationMinutes,
 		MaxScore:           exam.MaxScore,
