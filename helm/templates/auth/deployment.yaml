@@ -1,0 +1,54 @@
+{{- if .Values.auth.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-deployment
+  labels:
+    app: auth
+    component: api
+    tier: backend
+    environment: {{ .Values.global.environment }}
+spec:
+  replicas: {{ .Values.auth.replicaCount }}
+  selector:
+    matchLabels:
+      app: auth
+      component: api
+      tier: backend
+      environment: {{ .Values.global.environment }}
+  template:
+    metadata:
+      labels:
+        app: auth
+        component: api
+        tier: backend
+        environment: {{ .Values.global.environment }}
+    spec:
+      containers:
+        - name: auth
+          image: {{ .Values.auth.image.repository }}:{{ .Values.auth.image.tag }}
+          envFrom:
+            - configMapRef:
+                name: auth-config
+            - secretRef:
+                name: auth-secret
+          ports:
+            - containerPort: {{ .Values.auth.service.targetPort }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          {{- with .Values.auth.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.auth.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.auth.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.auth.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

@@ -1,0 +1,54 @@
+{{- if .Values.mail.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mail-deployment
+  labels:
+    app: mail
+    component: api
+    tier: backend
+    environment: {{ .Values.global.environment }}
+spec:
+  replicas: {{ .Values.mail.replicaCount }}
+  selector:
+    matchLabels:
+      app: mail
+      component: api
+      tier: backend
+      environment: {{ .Values.global.environment }}
+  template:
+    metadata:
+      labels:
+        app: mail
+        component: api
+        tier: backend
+        environment: {{ .Values.global.environment }}
+    spec:
+      containers:
+        - name: mail
+          image: {{ .Values.mail.image.repository }}:{{ .Values.mail.image.tag }}
+          envFrom:
+            - configMapRef:
+                name: mail-config
+            - secretRef:
+                name: mail-secret
+          ports:
+            - containerPort: {{ .Values.mail.service.targetPort }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          {{- with .Values.mail.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.mail.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mail.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mail.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

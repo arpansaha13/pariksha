@@ -1,0 +1,21 @@
+{{- if .Values.mail.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: mail-service
+  labels:
+    app: mail
+    component: api
+    tier: backend
+    environment: {{ .Values.global.environment }}
+spec:
+  type: {{ .Values.mail.service.type }}
+  ports:
+    - port: {{ .Values.mail.service.port }}
+      targetPort: {{ .Values.mail.service.targetPort }}
+  selector:
+    app: mail
+    component: api
+    tier: backend
+    environment: {{ .Values.global.environment }}
+{{- end }}

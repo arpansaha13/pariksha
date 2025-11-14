@@ -47,4 +47,8 @@ spec:
           ports:
             - containerPort: {{ .Values.examWorker.service.targetPort }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          {{- with .Values.examWorker.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
 {{- end }}

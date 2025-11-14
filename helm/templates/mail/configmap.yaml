@@ -1,0 +1,16 @@
+{{- if .Values.mail.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mail-config
+  labels:
+    app: mail
+    component: config
+    tier: backend
+    environment: {{ .Values.global.environment }}
+data:
+  GO_ENV: {{ .Values.global.environment }}
+  MAIL_SERVER_PORT: {{ .Values.mail.config.MAIL_SERVER_PORT | quote }}
+  SMTP_NAME: {{ .Values.mail.config.SMTP_NAME | quote }}
+  SMTP_PORT: {{ .Values.mail.config.SMTP_PORT | quote }}
+{{- end }}

@@ -1,0 +1,17 @@
+{{- if .Values.auth.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-config
+  labels:
+    app: auth
+    component: config
+    tier: backend
+    environment: {{ .Values.global.environment }}
+data:
+  GO_ENV: {{ .Values.global.environment }}
+  AUTH_SERVER_PORT: {{ .Values.auth.config.AUTH_SERVER_PORT | quote }}
+  AUTH_DB_SSLMODE: {{ .Values.auth.config.AUTH_DB_SSLMODE | quote }}
+  MAIL_SERVER_HOST: {{ .Values.auth.config.MAIL_SERVER_HOST | quote }}
+  MAIL_SERVER_PORT: {{ .Values.auth.config.MAIL_SERVER_PORT | quote }}
+{{- end }}

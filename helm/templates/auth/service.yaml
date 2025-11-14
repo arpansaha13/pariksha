@@ -1,0 +1,21 @@
+{{- if .Values.auth.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  labels:
+    app: auth
+    component: api
+    tier: backend
+    environment: {{ .Values.global.environment }}
+spec:
+  type: {{ .Values.auth.service.type }}
+  ports:
+    - port: {{ .Values.auth.service.port }}
+      targetPort: {{ .Values.auth.service.targetPort }}
+  selector:
+    app: auth
+    component: api
+    tier: backend
+    environment: {{ .Values.global.environment }}
+{{- end }}

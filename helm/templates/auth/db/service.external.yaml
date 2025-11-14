@@ -1,0 +1,14 @@
+{{- if .Values.authDb.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-auth-db-service
+  labels:
+    app: auth
+    component: api
+    tier: database
+    environment: {{ .Values.global.environment }}
+spec:
+  type: ExternalName
+  externalName: {{ .Values.authDb.externalName }}
+{{- end }}

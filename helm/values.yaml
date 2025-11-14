@@ -69,7 +69,7 @@ gateway:
     targetPort: 4000
   config:
     API_PORT: "4000"
-    AUTH_SERVER_HOST: "host.docker.internal"
+    AUTH_SERVER_HOST: "auth-service"
     AUTH_SERVER_PORT: "4000"
     PAPER_SERVER_HOST: "paper-service"
     PAPER_SERVER_PORT: "4000"
@@ -223,6 +223,51 @@ examWorker:
     PAPER_SERVER_PORT: "4000"
     QUESTION_SERVER_HOST: "question-service"
     QUESTION_SERVER_PORT: "4000"
+  resources: {}
+
+# Auth service configuration
+# Separate repository
+auth:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: auth_service # Prebuilt
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 4000
+    targetPort: 4000
+  config:
+    AUTH_SERVER_PORT: "4000"
+    AUTH_DB_SSLMODE: "disable"
+    MAIL_SERVER_HOST: "mail-service"
+    MAIL_SERVER_PORT: "4000"
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Auth database configuration
+authDb:
+  enabled: true
+  externalName: "host.docker.internal"
+
+# Mail service configuration
+# Separate repository
+mail:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: mail_service # Prebuilt
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 4000
+    targetPort: 4000
+  config:
+    MAIL_SERVER_PORT: "4000"
+    SMTP_NAME: "Pariksha"
+    SMTP_PORT: "587"
   resources: {}
   nodeSelector: {}
   tolerations: []
