@@ -9,7 +9,7 @@ global:
 externalSecrets:
   enabled: true
   vault:
-    name: vault-backend
+    name: secrets-backend
     server: "http://host.docker.internal:8200"
     path: "pariksha"
     version: "v2"
@@ -18,7 +18,9 @@ externalSecrets:
 ingress:
   enabled: true
   className: nginx
-  annotations: {}
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.3 TLSv1.2"
+  tlsSecret: ingress-tls-secret
   hosts:
     - host: localhost
       paths:
@@ -34,8 +36,8 @@ ingress:
 # NodePort service configuration
 nodeport:
   enabled: true
-  port: 80
-  targetPort: 80
+  port: 443
+  targetPort: 443
   nodePort: 30000
 
 # Frontend (Client) configuration
