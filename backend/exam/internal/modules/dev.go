@@ -20,7 +20,7 @@ import (
 	"pariksha/exam/internal/services"
 )
 
-func New() (*examServer, []grpc.UnaryServerInterceptor, func()) {
+func Dev() (*examServer, []grpc.UnaryServerInterceptor, func()) {
 	dbInst := initDB()
 	questionIntSvc := initQuestionInterservice()
 

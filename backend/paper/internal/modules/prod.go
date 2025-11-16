@@ -9,9 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/config"
-	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
-	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/config/env"
 	"pariksha/paper/internal/controllers"
 	"pariksha/paper/internal/interceptors"
@@ -20,9 +18,10 @@ import (
 	"pariksha/paper/internal/services"
 )
 
-func New() (*paperServer, []grpc.UnaryServerInterceptor, func()) {
-	dbInst := initDB()
-	questionIntSvc := initQuestionInterservice()
+// Prod initializes modules for production environment with file-based migrations
+func Prod() (*paperServer, []grpc.UnaryServerInterceptor, func()) {
+	dbInst := initProdDB()
+	questionIntSvc := initProdQuestionInterservice()
 
 	// Initialize repositories
 	paperRepo := repositories.NewPaper(dbInst)
@@ -61,11 +60,8 @@ func New() (*paperServer, []grpc.UnaryServerInterceptor, func()) {
 	return server, intc, cleanup
 }
 
-func initDB() *gorm.DB {
-	gormConfig := config.GetDevEnvGormConfig()
-	if env.GO_ENV == constants.GO_ENV_PROD {
-		gormConfig = config.GetDefaultGormConfig()
-	}
+func initProdDB() *gorm.DB {
+	gormConfig := config.GetDefaultGormConfig()
 
 	var dbInitializer config.DBInitializer = &config.PostgresInitializer{}
 	dbInst, err := dbInitializer.Init(
@@ -77,7 +73,7 @@ func initDB() *gorm.DB {
 			Sslmode:  env.PAPER_DB_SSLMODE,
 		},
 		gormConfig,
-		&db.AutoMigrator{},
+		nil,
 	)
 	if err != nil {
 		log.Panicf("failed to initialize paper database: %v", err)
@@ -86,7 +82,7 @@ func initDB() *gorm.DB {
 	return dbInst
 }
 
-func initQuestionInterservice() *interservice.Question {
+func initProdQuestionInterservice() *interservice.Question {
 	addr := fmt.Sprintf("%s:%s", env.QUESTION_SERVER_HOST, env.QUESTION_SERVER_PORT)
 	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {

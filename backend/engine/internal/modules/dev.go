@@ -17,7 +17,7 @@ import (
 	"pariksha/engine/internal/services"
 )
 
-func New() (*engineServer, func(), error) {
+func Dev() (*engineServer, func(), error) {
 	questionIntSvc := initQuestionInterservice()
 
 	// Initialize Kubernetes runner

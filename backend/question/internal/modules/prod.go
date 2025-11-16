@@ -6,16 +6,15 @@ import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/config"
-	"pariksha/common/pkg/constants"
-	"pariksha/question/internal/config/db"
 	"pariksha/question/internal/config/env"
 	"pariksha/question/internal/controllers"
 	"pariksha/question/internal/repositories"
 	"pariksha/question/internal/services"
 )
 
-func New() (*questionServer, func()) {
-	dbInst := initDB()
+// Prod initializes modules for production environment with file-based migrations
+func Prod() (*questionServer, func()) {
+	dbInst := initProdDB()
 
 	// Initialize repositories
 	questionRepo := repositories.NewQuestion(dbInst)
@@ -45,11 +44,8 @@ func New() (*questionServer, func()) {
 	return server, cleanup
 }
 
-func initDB() *gorm.DB {
-	gormConfig := config.GetDevEnvGormConfig()
-	if env.GO_ENV == constants.GO_ENV_PROD {
-		gormConfig = config.GetDefaultGormConfig()
-	}
+func initProdDB() *gorm.DB {
+	gormConfig := config.GetDefaultGormConfig()
 
 	var dbInitializer config.DBInitializer = &config.PostgresInitializer{}
 	dbInst, err := dbInitializer.Init(
@@ -61,7 +57,7 @@ func initDB() *gorm.DB {
 			Sslmode:  env.QUESTION_DB_SSLMODE,
 		},
 		gormConfig,
-		&db.AutoMigrator{},
+		nil,
 	)
 	if err != nil {
 		log.Panicf("failed to initialize question database: %v", err)

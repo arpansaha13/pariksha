@@ -7,6 +7,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/env"
 	"pariksha/paper/internal/modules"
@@ -20,7 +21,16 @@ func main() {
 	}
 	defer lis.Close()
 
-	server, intc, cleanup := modules.New()
+	var server proto.PaperServer
+	var intc []grpc.UnaryServerInterceptor
+	var cleanup func()
+
+	// Choose between dev and prod modules based on environment
+	if env.GO_ENV == constants.GO_ENV_PROD {
+		server, intc, cleanup = modules.Prod()
+	} else {
+		server, intc, cleanup = modules.Dev()
+	}
 	defer cleanup()
 
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(intc...))

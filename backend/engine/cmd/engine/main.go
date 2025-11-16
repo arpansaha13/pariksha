@@ -20,7 +20,7 @@ func main() {
 	}
 	defer lis.Close()
 
-	server, cleanup, err := modules.New()
+	server, cleanup, err := modules.Dev()
 	if err != nil {
 		log.Fatalf("failed to create engine server: %v", err)
 	}
