@@ -49,14 +49,25 @@ func (gd *GormDsnImpl) Get() (string, error) {
 		return "", fmt.Errorf("missing required fields: %v", strings.Join(missing, ", "))
 	}
 
-	addr := strings.Split(gd.Addr, ":")
-	if len(addr) != 2 {
-		return "", fmt.Errorf("addr must be in format host:port")
+	host := gd.Addr
+	port := ""
+	// If Addr contains a colon, split into host and port
+	if strings.Contains(gd.Addr, ":") {
+		parts := strings.SplitN(gd.Addr, ":", 2)
+		host = parts[0]
+		port = parts[1]
 	}
-	return fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
-		addr[0], gd.User, gd.Password, gd.Dbname, addr[1], gd.Sslmode,
-	), nil
+
+	// Build DSN parts
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=%s",
+		host, gd.User, gd.Password, gd.Dbname, gd.Sslmode)
+
+	// Add port only if non-empty
+	if port != "" {
+		dsn = fmt.Sprintf("%s port=%s", dsn, port)
+	}
+
+	return dsn, nil
 }
 
 // ___________________________GORM CONFIG____________________________
