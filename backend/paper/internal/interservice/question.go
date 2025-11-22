@@ -43,6 +43,9 @@ func (ic *Question) UpdateQuestion(req *proto.UpdateQuestionRequest) (*proto.Upd
 }
 
 func (ic *Question) GetQuestionsMetaByIDs(typedQuestionIDs []types.QuestionID) ([]*proto.QuestionMeta, error) {
+	if len(typedQuestionIDs) == 0 {
+		return []*proto.QuestionMeta{}, nil
+	}
 	questionIDs := make([]int64, len(typedQuestionIDs))
 	for i, qid := range typedQuestionIDs {
 		questionIDs[i] = int64(qid)
