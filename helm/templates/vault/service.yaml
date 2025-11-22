@@ -1,0 +1,27 @@
+{{- if .Values.vault.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.vault.service.name }}
+  labels:
+    app: vault
+    component: storage
+    tier: backend
+    environment: {{ .Values.global.environment }}
+spec:
+  type: {{ .Values.vault.service.type }}
+  ports:
+    - name: api
+      port: {{ .Values.vault.service.port }}
+      targetPort: {{ .Values.vault.service.targetPort }}
+      protocol: TCP
+    - name: cluster
+      port: {{ .Values.vault.clusterPort }}
+      targetPort: {{ .Values.vault.clusterPort }}
+      protocol: TCP
+  selector:
+    app: vault
+    component: storage
+    tier: backend
+    environment: {{ .Values.global.environment }}
+{{- end }}

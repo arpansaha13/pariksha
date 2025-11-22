@@ -1,0 +1,92 @@
+{{- if .Values.vault.enabled -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vault-init-job
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: vault
+    component: setup
+    environment: {{ .Values.global.environment }}
+  annotations:
+    description: "Initializes Vault and configures Kubernetes auth"
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: vault
+        component: setup
+        environment: {{ .Values.global.environment }}
+    spec:
+      serviceAccountName: vault
+      restartPolicy: Never
+      containers:
+        - name: vault-init
+          image: {{ .Values.vault.image.repository }}:{{ .Values.vault.image.tag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          env:
+            - name: VAULT_ADDR
+              value: "http://vault-service:8200"
+            - name: VAULT_SKIP_VERIFY
+              value: "true"
+          volumeMounts:
+            - name: setup-scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: init-output
+              mountPath: /vault/init
+          command:
+            - /bin/sh
+            - -c
+            - |
+              #!/bin/sh
+              set -e
+
+              echo "Waiting for Vault to be ready..."
+              for i in $(seq 1 30); do
+                if wget -q -O- http://vault-service:8200/v1/sys/health > /dev/null 2>&1; then
+                  echo "Vault is ready!"
+                  break
+                fi
+                echo "Attempt $i/30: Vault not ready yet, waiting..."
+                sleep 2
+              done
+
+              # Check if Vault is already initialized
+              INIT_STATUS=$(wget -q -O- http://vault-service:8200/v1/sys/init 2>/dev/null | grep -o '"initialized":[^,}]*' | cut -d: -f2)
+
+              if [ "$INIT_STATUS" = "true" ]; then
+                echo "Vault is already initialized!"
+                VAULT_STATUS=$(wget -q -O- http://vault-service:8200/v1/sys/health 2>/dev/null | grep -o '"sealed":[^,}]*' | cut -d: -f2)
+
+                if [ "$VAULT_STATUS" = "true" ]; then
+                  echo "WARNING: Vault is sealed. Please unseal it manually."
+                  echo "This is expected behavior - unseal keys should be stored securely."
+                  exit 1
+                else
+                  echo "Vault is already initialized and unsealed."
+                  exit 0
+                fi
+              fi
+
+              # Initialize Vault
+              echo "Initializing Vault..."
+              INIT_OUTPUT=$(wget -q -O- --post-data="" \
+                --header="Content-Type: application/json" \
+                http://vault-service:8200/v1/sys/init \
+                -O- 2>/dev/null | tee /vault/init/init-output.json)
+
+              echo "Vault initialization completed!"
+              echo "IMPORTANT: Save the unseal keys and root token securely!"
+              echo "Unseal keys and root token have been saved to /vault/init/init-output.json"
+              exit 0
+
+      volumes:
+        - name: setup-scripts
+          configMap:
+            name: vault-k8s-auth-setup
+            defaultMode: 0755
+        - name: init-output
+          emptyDir: {}
+{{- end }}

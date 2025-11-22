@@ -1,0 +1,105 @@
+{{- if .Values.vault.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-deployment
+  labels:
+    app: vault
+    component: storage
+    tier: backend
+    environment: {{ .Values.global.environment }}
+spec:
+  replicas: {{ .Values.vault.replicaCount }}
+  selector:
+    matchLabels:
+      app: vault
+      component: storage
+      tier: backend
+      environment: {{ .Values.global.environment }}
+  template:
+    metadata:
+      labels:
+        app: vault
+        component: storage
+        tier: backend
+        environment: {{ .Values.global.environment }}
+      # annotations:
+      #   prometheus.io/scrape: "true"
+      #   prometheus.io/port: "8200"
+      #   prometheus.io/path: "/v1/sys/metrics"
+    spec:
+      serviceAccountName: vault
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsNonRoot: true
+      containers:
+        - name: vault
+          image: {{ .Values.vault.image.repository }}:{{ .Values.vault.image.tag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          args:
+            - server
+            - -config=/vault/config/vault.hcl
+          env:
+            - name: VAULT_SKIP_VERIFY
+              value: "true"
+            {{- with .Values.vault.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: api
+              containerPort: {{ .Values.vault.service.targetPort }}
+              protocol: TCP
+            - name: cluster
+              containerPort: {{ .Values.vault.clusterPort }}
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /v1/sys/health
+              port: api
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /v1/sys/health
+              port: api
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: vault-config
+              mountPath: /vault/config
+              readOnly: true
+            - name: vault-file
+              mountPath: /vault/file
+            - name: vault-logs
+              mountPath: /vault/logs
+          {{- with .Values.vault.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: vault-config
+          configMap:
+            name: vault-config
+        - name: vault-file
+          emptyDir: {}
+        - name: vault-logs
+          emptyDir: {}
+      {{- with .Values.vault.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.vault.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.vault.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

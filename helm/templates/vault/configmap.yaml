@@ -1,0 +1,46 @@
+{{- if .Values.vault.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-config
+  labels:
+    app: vault
+    component: storage
+    tier: backend
+    environment: {{ .Values.global.environment }}
+data:
+  vault.hcl: |
+    # UI configuration
+    ui = true
+
+    # Listener configuration
+    listener "tcp" {
+      address       = "0.0.0.0:{{ .Values.vault.service.targetPort }}"
+      tls_disable   = {{ .Values.vault.tls.disabled }}
+      {{- if not .Values.vault.tls.disabled }}
+      tls_cert_file = "/vault/config/tls.crt"
+      tls_key_file  = "/vault/config/tls.key"
+      {{- end }}
+    }
+
+    # Storage backend configuration
+    {{- if eq .Values.vault.storage.type "file" }}
+    storage "file" {
+      path = "/vault/file"
+    }
+    {{- else if eq .Values.vault.storage.type "raft" }}
+    storage "raft" {
+      path = "/vault/file"
+      node_id = "{{ .Values.vault.nodeID }}"
+    }
+    {{- end }}
+
+    # Telemetry configuration
+    # telemetry {
+    #   prometheus_retention_time = "30s"
+    #   disable_hostname = false
+    # }
+
+    # Log level
+    log_level = "{{ .Values.vault.logLevel }}"
+{{- end }}

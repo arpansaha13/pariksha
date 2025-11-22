@@ -1,0 +1,175 @@
+{{- if .Values.vault.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-init-scripts
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: vault
+    component: storage
+    tier: backend
+    environment: {{ .Values.global.environment }}
+data:
+  README.md: |
+    # Vault Initialization and Setup
+
+    ## Overview
+    This ConfigMap contains scripts and instructions for initializing and configuring HashiCorp Vault
+    with Kubernetes authentication method.
+
+    ## Initial Setup Steps
+
+    ### 1. Unseal Vault
+    After the Vault pod is running, you need to unseal it:
+
+    ```bash
+    # Port-forward to Vault
+    kubectl port-forward -n {{ .Release.Namespace }} svc/vault-service 8200:8200
+
+    # In another terminal, initialize Vault
+    vault operator init -key-shares=1 -key-threshold=1
+
+    # Save the unseal key and initial root token securely!
+
+    # Unseal Vault (use one of the unseal keys)
+    vault operator unseal <UNSEAL_KEY>
+    ```
+
+    ### 2. Configure Kubernetes Auth (Automated)
+    The setup scripts in this ConfigMap can be run as a Job or manually.
+
+    For manual setup, extract and run the scripts:
+
+    ```bash
+    kubectl get cm vault-k8s-auth-setup -n {{ .Release.Namespace }} -o jsonpath='{.data.setup-k8s-auth\.sh}' > setup-k8s-auth.sh
+    chmod +x setup-k8s-auth.sh
+
+    # Set required environment variables
+    export VAULT_ADDR="http://localhost:8200"
+    export VAULT_TOKEN="<ROOT_TOKEN>"
+
+    # Run the setup script
+    ./setup-k8s-auth.sh
+    ```
+
+    ### 3. Create Application Roles
+    After Kubernetes auth is configured, create roles for your applications:
+
+    ```bash
+    # For each service that needs secrets:
+    vault write auth/kubernetes/role/<service-name> \
+      bound_service_account_names=<service-name> \
+      bound_service_account_namespaces={{ .Release.Namespace }} \
+      policies=<policy-name> \
+      ttl=24h
+    ```
+
+    ## Service Accounts Required
+    Your applications should have corresponding ServiceAccounts created:
+    - auth
+    - paper
+    - question
+    - exam
+    - engine
+    - gateway
+
+    Example ServiceAccount:
+    ```yaml
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: auth
+      namespace: {{ .Release.Namespace }}
+    ```
+
+    ## Accessing Vault from Applications
+
+    ### Using Vault Kubernetes Auth in Go
+    ```go
+    import "github.com/hashicorp/vault/api"
+
+    // Create client
+    client, _ := api.NewClient(&api.Config{
+      Address: "http://vault-service:8200",
+    })
+
+    // Authenticate using Kubernetes auth
+    secret, _ := client.Auth.Kubernetes.Login(ctx, &auth.KubernetesLoginRequest{
+      Role: "auth",  // Replace with your service role
+    })
+
+    // Use token from secret
+    token := secret.Auth.ClientToken
+    client.SetToken(token)
+    ```
+
+    ### Using External Secrets Operator
+    Create an ExternalSecret resource to automatically sync secrets to your pods:
+
+    ```yaml
+    apiVersion: external-secrets.io/v1beta1
+    kind: ExternalSecret
+    metadata:
+      name: my-service-secrets
+    spec:
+      secretStoreRef:
+        name: vault
+        kind: SecretStore
+      target:
+        name: my-service-secret
+        creationPolicy: Owner
+      data:
+        - secretKey: db-password
+          remoteRef:
+            key: secret/data/pariksha/my-service
+            property: password
+    ```
+
+    ## Policy Examples
+
+    ### Auth Service Policy
+    ```hcl
+    path "secret/data/pariksha/auth/*" {
+      capabilities = ["read", "list"]
+    }
+    path "database/static-creds/auth" {
+      capabilities = ["read"]
+    }
+    ```
+
+    ### Generic Service Policy
+    ```hcl
+    path "secret/data/pariksha/*" {
+      capabilities = ["read", "list"]
+    }
+    ```
+
+    ## Troubleshooting
+
+    ### Check Vault Health
+    ```bash
+    kubectl exec -it -n {{ .Release.Namespace }} vault-deployment-0 -- \
+      vault status
+    ```
+
+    ### View Kubernetes Auth Configuration
+    ```bash
+    kubectl exec -it -n {{ .Release.Namespace }} vault-deployment-0 -- \
+      vault read auth/kubernetes/config
+    ```
+
+    ### Test Kubernetes Auth Login
+    ```bash
+    # From within a pod with the correct service account
+    curl -X POST http://vault-service:8200/v1/auth/kubernetes/login \
+      -d '{"role":"auth","jwt":"<SERVICE_ACCOUNT_TOKEN>"}'
+    ```
+
+    ## Production Considerations
+
+    1. **Use Raft Storage**: For HA setup, change storage.type to "raft"
+    2. **Enable TLS**: Set tls.disabled: false and provide certificates
+    3. **Use External Backend**: Consider PostgreSQL, Consul, or other backends
+    4. **Enable Audit Logging**: Configure audit logs for compliance
+    5. **Backup**: Implement regular backups of the Vault database
+    6. **Unsealing**: Use Vault's auto-unseal or external KMS for production

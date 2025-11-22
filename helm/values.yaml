@@ -10,7 +10,7 @@ externalSecrets:
   enabled: true
   vault:
     name: secrets-backend
-    server: "http://host.docker.internal:8200"
+    server: "vault-service:8200"
     path: "pariksha"
     version: "v2"
 
@@ -270,6 +270,38 @@ mail:
     MAIL_SERVER_PORT: "4000"
     SMTP_NAME: "Pariksha"
     SMTP_PORT: "587"
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# HashiCorp Vault configuration
+vault:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: hashicorp/vault
+    tag: "1.20"
+  service:
+    name: vault-service
+    type: ClusterIP
+    port: 8200
+    targetPort: 8200
+  clusterPort: 8201
+  nodeID: "vault-0"
+  logLevel: "info"
+  # Storage configuration: "file" or "raft"
+  storage:
+    type: "file"
+  # Secret path for application secrets
+  secretPath: "pariksha"
+  # TLS configuration
+  tls:
+    disabled: true  # Set to false and provide certificates for production
+  # Environment variables for Vault
+  env:
+    - name: VAULT_LOG_LEVEL
+      value: "info"
   resources: {}
   nodeSelector: {}
   tolerations: []

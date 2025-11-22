@@ -1,0 +1,136 @@
+{{- if .Values.vault.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-k8s-auth-setup
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: vault
+    component: storage
+    tier: backend
+    environment: {{ .Values.global.environment }}
+data:
+  setup-k8s-auth.sh: |
+    #!/bin/bash
+    set -e
+
+    VAULT_ADDR="${VAULT_ADDR:-http://vault-service:8200}"
+    VAULT_TOKEN="${VAULT_TOKEN}"
+    KUBERNETES_HOST="${KUBERNETES_HOST:-https://kubernetes.default.svc.cluster.local}"
+    KUBERNETES_CA_CERT="${KUBERNETES_CA_CERT:-/var/run/secrets/kubernetes.io/serviceaccount/ca.crt}"
+    KUBERNETES_TOKEN_REVIEWER_JWT="${KUBERNETES_TOKEN_REVIEWER_JWT:-/var/run/secrets/kubernetes.io/serviceaccount/token}"
+
+    echo "Setting up Kubernetes auth method for Vault..."
+
+    # Check if we can reach Vault
+    echo "Checking Vault health..."
+    curl -sk "${VAULT_ADDR}/v1/sys/health" || {
+      echo "Error: Cannot reach Vault at ${VAULT_ADDR}"
+      exit 1
+    }
+
+    # Login with initial token
+    if [ -z "$VAULT_TOKEN" ]; then
+      echo "Error: VAULT_TOKEN not set"
+      exit 1
+    fi
+
+    export VAULT_ADDR
+    export VAULT_TOKEN
+
+    # Enable Kubernetes auth method if not already enabled
+    echo "Checking if Kubernetes auth is already enabled..."
+    if ! vault auth list | grep -q "^kubernetes/"; then
+      echo "Enabling Kubernetes auth method..."
+      vault auth enable kubernetes
+    else
+      echo "Kubernetes auth method already enabled"
+    fi
+
+    # Configure Kubernetes auth
+    echo "Configuring Kubernetes auth method..."
+    vault write auth/kubernetes/config \
+      kubernetes_host="${KUBERNETES_HOST}" \
+      kubernetes_ca_cert=@"${KUBERNETES_CA_CERT}" \
+      token_reviewer_jwt="$(cat ${KUBERNETES_TOKEN_REVIEWER_JWT})"
+
+    echo "Kubernetes auth setup completed successfully!"
+
+    # Create default auth policies for common services
+    echo "Creating default policies..."
+
+    # Policy for auth service
+    vault policy write auth-policy - <<EOF
+    path "secret/data/auth/*" {
+      capabilities = ["read", "list"]
+    }
+    path "database/static-creds/*" {
+      capabilities = ["read"]
+    }
+    EOF
+
+    # Policy for other services
+    vault policy write service-policy - <<EOF
+    path "secret/data/{{ .Values.vault.secretPath }}/*" {
+      capabilities = ["read", "list"]
+    }
+    path "database/static-creds/*" {
+      capabilities = ["read"]
+    }
+    EOF
+
+    # Create Kubernetes auth role for auth service
+    echo "Creating Kubernetes auth roles..."
+    vault write auth/kubernetes/role/auth \
+      bound_service_account_names=auth \
+      bound_service_account_namespaces={{ .Release.Namespace }} \
+      policies=auth-policy \
+      ttl=24h
+
+    # Create a generic service role
+    vault write auth/kubernetes/role/default-service \
+      bound_service_account_names=default \
+      bound_service_account_namespaces={{ .Release.Namespace }} \
+      policies=service-policy \
+      ttl=24h
+
+    echo "All Kubernetes auth roles created successfully!"
+
+  setup-secrets.sh: |
+    #!/bin/bash
+    set -e
+
+    VAULT_ADDR="${VAULT_ADDR:-http://vault-service:8200}"
+    VAULT_TOKEN="${VAULT_TOKEN}"
+
+    if [ -z "$VAULT_TOKEN" ]; then
+      echo "Error: VAULT_TOKEN not set"
+      exit 1
+    fi
+
+    export VAULT_ADDR
+    export VAULT_TOKEN
+
+    echo "Setting up secret engine..."
+
+    # Enable KV v2 secrets engine if not already enabled
+    if ! vault secrets list | grep -q "^secret/"; then
+      echo "Enabling KV v2 secrets engine..."
+      vault secrets enable -version=2 -path=secret kv
+    else
+      echo "KV v2 secrets engine already enabled"
+    fi
+
+    # Enable database secrets engine for future use
+    if ! vault secrets list | grep -q "^database/"; then
+      echo "Enabling database secrets engine..."
+      vault secrets enable database
+    else
+      echo "Database secrets engine already enabled"
+    fi
+
+    echo "Secret engines setup completed!"
+
+    # Disable root token after setup (optional, for security)
+    # vault token revoke -self
+{{- end }}
