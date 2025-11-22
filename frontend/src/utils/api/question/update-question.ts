@@ -1,5 +1,5 @@
+import { isEqual } from 'lodash-es'
 import { isNullOrUndefined } from '@arpansaha13/utils'
-
 import { extractQuestionContent, type MergedQuestion } from './utils'
 
 type UpdateQuestionBody = Partial<Omit<Question, 'category_id'>>
@@ -112,7 +112,7 @@ function getRequestBody(
 
   // if (
   //   !isNullOrUndefined(mergedQuestion.tags) &&
-  //   !_isEqual(mergedQuestion.tags, previousQuestion.tags)
+  //   !isEqual(mergedQuestion.tags, previousQuestion.tags)
   // ) {
   //   requestBody.tags = mergedQuestion.tags
   // }
@@ -164,7 +164,7 @@ const isMcqQuestionContentUpdated = (
   return (
     newQContent.statement.length !== oldQContent.statement.length ||
     newQContent.statement !== oldQContent.statement ||
-    !_isEqual(newQContent.options ?? [], oldQContent.options ?? [])
+    !isEqual(newQContent.options ?? [], oldQContent.options ?? [])
   )
 }
 
@@ -187,11 +187,11 @@ const isCodingQuestionContentUpdated = (
     newQContent.title !== oldQContent.title ||
     newQContent.statement.length !== oldQContent.statement.length ||
     newQContent.statement !== oldQContent.statement ||
-    !_isEqual(
+    !isEqual(
       newQContent.output_definition ?? [],
       oldQContent.output_definition ?? []
     ) ||
-    !_isEqual(
+    !isEqual(
       newQContent.input_definitions ?? [],
       oldQContent.input_definitions ?? []
     )

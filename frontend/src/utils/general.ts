@@ -1,5 +1,5 @@
 import { isNullOrUndefined } from '@arpansaha13/utils'
-import { isString as _isString } from 'lodash-es'
+import { isString } from 'lodash-es'
 
 /**
  * Checks if a string contains only alphabetic characters (A-Z, a-z)
@@ -7,7 +7,7 @@ import { isString as _isString } from 'lodash-es'
  * @returns boolean - True if string contains only alphabets, false otherwise
  */
 export const isAlpha = (str: string): boolean => {
-  return _isString(str) && /^[A-Za-z]+$/.test(str)
+  return isString(str) && /^[A-Za-z]+$/.test(str)
 }
 
 type ScoreColor = 'error' | 'warning' | 'primary'

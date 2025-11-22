@@ -1,7 +1,7 @@
-import { sum as _sum } from 'lodash-es'
+import { sum } from 'lodash-es'
 
 export function countTotalQuestions(question_counts: PaperQuestionCounts) {
-  return _sum(Object.values(question_counts))
+  return sum(Object.values(question_counts))
 }
 
 export function calcHours(durationMinutes: number) {

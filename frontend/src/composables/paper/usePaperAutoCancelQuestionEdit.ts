@@ -1,3 +1,5 @@
+import { isEqual } from 'lodash-es'
+
 interface UsePaperAutoCancelQuestionEditArgs {
   question: Ref<Question | null>
   editQuestionFormStates: Record<QuestionId, MergedQuestion | null>
@@ -19,7 +21,7 @@ export function usePaperAutoCancelQuestionEdit(
       formState.type !== oldQuestion.type ||
       formState.max_score !== oldQuestion.max_score ||
       formState.correct_answer !== (oldQuestion.correct_answer ?? undefined) ||
-      !_isEqual(formState.tags, oldQuestion.tags ?? [])
+      !isEqual(formState.tags, oldQuestion.tags ?? [])
     ) {
       return true
     }
@@ -29,7 +31,7 @@ export function usePaperAutoCancelQuestionEdit(
       const mcqQuestion = oldQuestion.question
       return (
         formState.question.statement !== mcqQuestion.statement ||
-        !_isEqual(formState.question.options, mcqQuestion.options)
+        !isEqual(formState.question.options, mcqQuestion.options)
       )
     }
 
