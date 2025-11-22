@@ -1,5 +1,5 @@
 create table if not exists papers (
-    id bigint primary key,
+    id bigint generated always as identity primary key,
     title varchar(255) not null default 'Untitled Paper',
     duration_minutes smallint not null check (duration_minutes >= 0 and duration_minutes <= 1440),
     created_by bigint not null,
@@ -7,7 +7,7 @@ create table if not exists papers (
     deleted_at timestamp
 );
 
-create table if not exists paper_permissions (
+create table if not exists permissions (
     paper_id bigint not null,
     user_id bigint not null,
     permissions smallint not null,

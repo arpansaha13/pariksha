@@ -6,7 +6,7 @@ import (
 )
 
 type ExamQuestion struct {
-	ID         types.QuestionID `gorm:"primaryKey;type:bigint"`
+	ID         types.QuestionID `gorm:"primaryKey;autoIncrement;type:bigint"`
 	ExamID     types.ExamID     `gorm:"type:bigint;not null;uniqueIndex:uq_exam_question"`
 	QuestionID types.QuestionID `gorm:"type:bigint;not null;uniqueIndex:uq_exam_question"`
 	CategoryID types.CategoryID `gorm:"type:bigint;not null"`

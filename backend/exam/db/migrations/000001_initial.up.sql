@@ -1,5 +1,5 @@
 create table if not exists exams (
-    id bigint primary key,
+    id bigint generated always as identity primary key,
     title text not null,
     starts_at timestamp not null,
     ends_at timestamp not null,
@@ -23,7 +23,7 @@ create table if not exists exam_permissions (
 );
 
 create table if not exists exam_participants (
-    id bigint primary key,
+    id bigint generated always as identity primary key,
     exam_id bigint not null,
     user_id bigint not null,
     score_awarded integer default 0,
@@ -35,7 +35,7 @@ create table if not exists exam_participants (
 );
 
 create table if not exists exam_categories (
-    id bigint primary key,
+    id bigint generated always as identity primary key,
     exam_id bigint not null,
     category_id bigint not null,
     "order" smallint default 0 not null,
@@ -43,7 +43,7 @@ create table if not exists exam_categories (
 );
 
 create table if not exists exam_questions (
-    id bigint primary key,
+    id bigint generated always as identity primary key,
     exam_id bigint not null,
     question_id bigint not null,
     category_id bigint not null,
@@ -54,7 +54,7 @@ create table if not exists exam_questions (
 );
 
 create table if not exists answers (
-    id bigint primary key,
+    id bigint generated always as identity primary key,
     exam_participant_id bigint not null,
     question_id bigint not null,
     answer jsonb,

@@ -20,7 +20,7 @@ type ParticipantCount struct {
 }
 
 type Exam struct {
-	ID                 types.ExamID `gorm:"primaryKey;type:bigint"`
+	ID                 types.ExamID `gorm:"primaryKey;autoIncrement;type:bigint"`
 	Title              string
 	StartsAt           time.Time       `gorm:"column:starts_at;not null"`
 	EndsAt             time.Time       `gorm:"column:ends_at;not null"`

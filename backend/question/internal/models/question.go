@@ -13,7 +13,7 @@ import (
 )
 
 type Question struct {
-	ID            types.QuestionID   `gorm:"primaryKey;type:bigint"`
+	ID            types.QuestionID   `gorm:"primaryKey;autoIncrement;type:bigint"`
 	Question      json.RawMessage    `gorm:"type:jsonb;not null"`
 	Type          proto.QuestionType `gorm:"type:smallint;not null;check:type > 0 AND type <= 3"`
 	Hash          string             `gorm:"type:varchar(64);uniqueIndex;not null"`

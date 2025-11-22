@@ -8,7 +8,7 @@ import (
 )
 
 type ExamParticipant struct {
-	ID               types.ParticipantID `gorm:"primaryKey;type:bigint"`
+	ID               types.ParticipantID `gorm:"primaryKey;autoIncrement;type:bigint"`
 	ExamID           types.ExamID        `gorm:"type:bigint"`
 	UserID           types.UserID        `gorm:"type:bigint"`
 	ScoreAwarded     int32

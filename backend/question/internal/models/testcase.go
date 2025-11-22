@@ -13,7 +13,7 @@ import (
 )
 
 type TestCase struct {
-	ID         types.TestCaseID `gorm:"primaryKey;type:bigint"`
+	ID         types.TestCaseID `gorm:"primaryKey;autoIncrement;type:bigint"`
 	QuestionID types.QuestionID `gorm:"type:bigint;not null;uniqueIndex:idx_test_case_order;constraint:OnDelete:CASCADE;references:id"`
 	Order      int16            `gorm:"type:smallint;not null;uniqueIndex:idx_test_case_order"`
 	Content    json.RawMessage  `gorm:"type:jsonb;not null"`

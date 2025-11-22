@@ -8,7 +8,7 @@ import (
 )
 
 type Paper struct {
-	ID              types.PaperID  `gorm:"primaryKey;type:bigint"`
+	ID              types.PaperID  `gorm:"primaryKey;autoIncrement;type:bigint"`
 	Title           string         `gorm:"type:varchar(255);not null;default:'Untitled Paper'"`
 	DurationMinutes int16          `gorm:"type:smallint;not null;check:duration_minutes >= 0 AND duration_minutes <= 1440"`
 	CreatedBy       types.UserID   `gorm:"type:bigint;not null"`

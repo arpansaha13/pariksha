@@ -33,7 +33,7 @@ func (r *Answer) Transaction(fc func(tx *gorm.DB) error, opts ...*sql.TxOptions)
 
 // QueryResult represents a joined answer and question row for participant answers.
 type QueryResult struct {
-	ID                types.AnswerID      `gorm:"primaryKey;type:bigint"`
+	ID                types.AnswerID      `gorm:"primaryKey;autoIncrement;type:bigint"`
 	ExamParticipantID types.ParticipantID `gorm:"type:bigint"`
 	Answer            *json.RawMessage    `gorm:"type:json"`
 

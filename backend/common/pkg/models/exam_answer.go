@@ -9,7 +9,7 @@ import (
 )
 
 type Answer struct {
-	ID                types.AnswerID      `gorm:"primaryKey;type:bigint"`
+	ID                types.AnswerID      `gorm:"primaryKey;autoIncrement;type:bigint"`
 	ExamParticipantID types.ParticipantID `gorm:"type:bigint"`
 	QuestionID        types.QuestionID    `gorm:"type:bigint"`
 	Answer            *json.RawMessage    `gorm:"type:jsonb"`

@@ -6,7 +6,7 @@ import (
 )
 
 type Language struct {
-	ID        types.LanguageID `gorm:"primaryKey;type:smallint"`
+	ID        types.LanguageID `gorm:"primaryKey;autoIncrement;type:smallint"`
 	Slug      string           `gorm:"type:varchar(255);not null;unique"`
 	Name      string           `gorm:"type:varchar(255);not null"`
 	Extension string           `gorm:"type:varchar(16);not null"`

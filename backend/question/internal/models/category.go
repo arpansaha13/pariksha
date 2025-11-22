@@ -8,7 +8,7 @@ import (
 )
 
 type Category struct {
-	ID            types.CategoryID `gorm:"primaryKey;type:bigint"`
+	ID            types.CategoryID `gorm:"primaryKey;autoIncrement;type:bigint"`
 	Name          string           `gorm:"type:varchar(255);not null"`
 	PaperIndegree int32            `gorm:"not null"`
 	ExamIndegree  int32            `gorm:"not null"`

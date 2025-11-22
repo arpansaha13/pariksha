@@ -1,5 +1,5 @@
 create table if not exists categories (
-    id bigint primary key,
+    id bigint generated always as identity primary key,
     name varchar(255) not null,
     paper_indegree integer not null,
     exam_indegree integer not null,
@@ -7,7 +7,7 @@ create table if not exists categories (
 );
 
 create table if not exists languages (
-    id smallint primary key,
+    id bigint generated always as identity primary key,
     slug varchar(255) not null unique,
     name varchar(255) not null,
     extension varchar(16) not null,
@@ -15,8 +15,13 @@ create table if not exists languages (
     is_enabled boolean not null default true
 );
 
+-- Seeding for languages
+insert into languages (slug, name, extension, version)
+values ('node', 'JavaScript (Node)', 'js', '22')
+on conflict (slug) do nothing;
+
 create table if not exists questions (
-    id bigint primary key,
+    id bigint generated always as identity primary key,
     question jsonb not null,
     type smallint not null check (type > 0 and type <= 3),
     hash varchar(64) not null unique,
@@ -26,7 +31,7 @@ create table if not exists questions (
 );
 
 create table if not exists boilerplates (
-    id bigint primary key,
+    id bigint generated always as identity primary key,
     question_id bigint not null,
     language_id smallint not null,
     code text not null,
@@ -36,7 +41,7 @@ create table if not exists boilerplates (
 );
 
 create table if not exists test_cases (
-    id bigint primary key,
+    id bigint generated always as identity primary key,
     question_id bigint not null,
     "order" smallint not null,
     content jsonb not null,
