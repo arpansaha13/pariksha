@@ -5,12 +5,15 @@ import (
 	"database/sql"
 	"time"
 
+	"go.uber.org/zap"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/logging"
 	"pariksha/common/pkg/models"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/structs"
@@ -44,8 +47,15 @@ func (s *Exam) GetUserExams(ctx context.Context) (*proto.ExamList, error) {
 		return nil, err
 	}
 
+	logger, ok := logging.GetLoggerFromContext(ctx)
+	if !ok {
+		logger = logging.GetLogger()
+	}
+	logger.Debug("GetUserExams called", zap.Int64("user_id", int64(userID)))
+
 	exams, err := s.examRepo.GetByUserID(nil, userID)
 	if err != nil {
+		logger.Error("failed to retrieve exams for user", zap.Int64("user_id", int64(userID)), zap.Error(err))
 		return nil, status.Error(codes.Internal, "failed to retrieve exams")
 	}
 
@@ -70,6 +80,12 @@ func (s *Exam) CreateExam(ctx context.Context, req *proto.CreateExamRequest) (*p
 		return nil, err
 	}
 
+	logger, ok := logging.GetLoggerFromContext(ctx)
+	if !ok {
+		logger = logging.GetLogger()
+	}
+	logger.Debug("CreateExam called", zap.Int64("user_id", int64(userID)), zap.String("paper_hash", req.PaperHash))
+
 	startsAt := req.StartsAt.AsTime()
 	endsAt := req.EndsAt.AsTime()
 
@@ -90,6 +106,7 @@ func (s *Exam) CreateExam(ctx context.Context, req *proto.CreateExamRequest) (*p
 	}
 
 	var exam models.Exam
+	logger.Debug("CreateExam: starting exam transaction")
 	err = s.examRepo.Transaction(func(tx *gorm.DB) error {
 		exam = models.Exam{
 			Title:              req.Title,
@@ -131,6 +148,7 @@ func (s *Exam) CreateExam(ctx context.Context, req *proto.CreateExamRequest) (*p
 	})
 
 	if err != nil {
+		logger.Error("failed to create exam", zap.Error(err))
 		return nil, err
 	}
 
@@ -138,6 +156,7 @@ func (s *Exam) CreateExam(ctx context.Context, req *proto.CreateExamRequest) (*p
 		ExamID:    exam.ID,
 		PaperHash: exam.PaperHash,
 	})
+	logger.Debug("exam created", zap.Int64("exam_id", int64(exam.ID)), zap.String("exam_hash", exam.Hash))
 
 	return examToProto(&exam)
 }
@@ -183,6 +202,12 @@ func (s *Exam) StartExam(ctx context.Context, _ *proto.StartExamRequest) (*empty
 		return nil, err
 	}
 
+	logger, ok := logging.GetLoggerFromContext(ctx)
+	if !ok {
+		logger = logging.GetLogger()
+	}
+	logger.Debug("StartExam called", zap.Int64("user_id", int64(userID)))
+
 	exam, ok := interceptors.GetExamFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Internal, "exam not found in context")
@@ -216,6 +241,9 @@ func (s *Exam) StartExam(ctx context.Context, _ *proto.StartExamRequest) (*empty
 				return status.Error(codes.Internal, "failed to create participant")
 			}
 
+			// log created participant
+			logger.Debug("StartExam: participant created inside tx", zap.Int64("exam_id", int64(exam.ID)), zap.Int64("user_id", int64(userID)), zap.Int64("participant_temp_id", int64(participant.ID)))
+
 			// Create permissions for the new participant
 			participantPerm := repositories.PermissionFlags{Participate: true}
 			if err := s.permissionRepo.Create(tx, typedExamId, userID, &participantPerm); err != nil {
@@ -232,6 +260,7 @@ func (s *Exam) StartExam(ctx context.Context, _ *proto.StartExamRequest) (*empty
 			if err := s.participantRepo.Save(tx, participant); err != nil {
 				return status.Error(codes.Internal, "failed to update participant")
 			}
+			logger.Debug("StartExam: participant saved inside tx", zap.Int64("exam_id", int64(exam.ID)), zap.Int64("user_id", int64(userID)), zap.Int64("participant_id", int64(participant.ID)))
 		}
 
 		counts, err := exam.GetParticipantCounts()
@@ -264,6 +293,7 @@ func (s *Exam) StartExam(ctx context.Context, _ *proto.StartExamRequest) (*empty
 	})
 
 	if err != nil {
+		logger.Error("StartExam failed", zap.Error(err))
 		return nil, err
 	}
 
@@ -276,6 +306,12 @@ func (s *Exam) EndExam(ctx context.Context, req *proto.EndExamRequest) (*emptypb
 	if !ok {
 		return nil, status.Error(codes.Internal, "exam not found in context")
 	}
+
+	logger, ok := logging.GetLoggerFromContext(ctx)
+	if !ok {
+		logger = logging.GetLogger()
+	}
+	logger.Debug("EndExam called", zap.String("exam_hash", exam.Hash))
 
 	// Should be added to context by EndExamInterceptor
 	participant, ok := interceptors.GetParticipantFromContext(ctx)
@@ -299,6 +335,7 @@ func (s *Exam) EndExam(ctx context.Context, req *proto.EndExamRequest) (*emptypb
 	})
 
 	if err != nil {
+		logger.Error("EndExam failed", zap.Error(err))
 		return nil, err
 	}
 
@@ -320,6 +357,12 @@ func (s *Exam) GetExamPermission(ctx context.Context, req *proto.ExamRequest) (*
 	if err != nil {
 		return nil, err
 	}
+
+	logger, ok := logging.GetLoggerFromContext(ctx)
+	if !ok {
+		logger = logging.GetLogger()
+	}
+	logger.Debug("GetExamPermission called", zap.Int64("user_id", int64(userID)), zap.String("exam_hash", req.ExamHash))
 
 	exam, ok := interceptors.GetExamFromContext(ctx)
 	if !ok {
@@ -361,17 +404,26 @@ func (s *Exam) GetExamPermission(ctx context.Context, req *proto.ExamRequest) (*
 
 // DeleteExams handles the batch deletion of exams and their associated permissions
 func (s *Exam) DeleteExams(ctx context.Context, req *proto.DeleteExamsRequest) (*emptypb.Empty, error) {
+	logger, ok := logging.GetLoggerFromContext(ctx)
+	if !ok {
+		logger = logging.GetLogger()
+	}
+	logger.Debug("DeleteExams called", zap.Int("count", len(req.ExamHashes)))
+
 	err := s.examRepo.Transaction(func(tx *gorm.DB) error {
 		examIDs, err := s.examRepo.DeleteByHashes(tx, req.ExamHashes)
 		if err != nil {
 			return status.Error(codes.Internal, "failed to fetch/delete exam IDs")
 		}
 
+		logger.Debug("DeleteExams: fetched exam ids", zap.Int("count", len(examIDs)))
+
 		if err := s.permissionRepo.DeleteByExamIDs(tx, examIDs); err != nil {
 			return status.Error(codes.Internal, "failed to delete exam permissions")
 		}
 
 		if err := interservice.EnqueuePostDeleteExamsCleanup(examIDs); err != nil {
+			logger.Error("failed to enqueue post-delete-exam cleanup task", zap.Error(err))
 			return status.Error(codes.Internal, "failed to enqueue post-delete-exam cleanup task")
 		}
 
@@ -379,6 +431,7 @@ func (s *Exam) DeleteExams(ctx context.Context, req *proto.DeleteExamsRequest) (
 	})
 
 	if err != nil {
+		logger.Error("DeleteExams transaction failed", zap.Error(err))
 		return nil, err
 	}
 

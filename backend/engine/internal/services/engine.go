@@ -8,7 +8,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.uber.org/zap"
+
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/logging"
 	"pariksha/common/pkg/proto"
 	"pariksha/engine/internal/interservice"
 	"pariksha/engine/internal/runner"
@@ -23,25 +26,36 @@ func NewEngine(
 	questionIntSvc *interservice.Question,
 	nodeRunner runner.Runner,
 ) *Engine {
-	return &Engine{
+	e := &Engine{
 		questionIntSvc: questionIntSvc,
 		runners: map[string]runner.Runner{
 			constants.LangNode: nodeRunner,
 		},
 	}
+
+	logger := logging.GetLogger()
+	logger.Debug("engine service initialized", zap.Int("runners_count", len(e.runners)))
+
+	return e
 }
 
 func (s *Engine) Run(req *proto.RunCodeRequest) (*proto.RunCodeResponse, error) {
+	logger := logging.GetLogger()
+	logger.Debug("engine.Run called", zap.String("question_hash", req.QuestionHash), zap.Int("test_cases", len(req.TestCases)), zap.String("env", req.Environment))
+
 	rnr, ok := s.runners[req.Environment]
 	if !ok {
+		logger.Warn("unsupported environment", zap.String("env", req.Environment))
 		return nil, status.Errorf(codes.InvalidArgument, "unsupported environment: %s", req.Environment)
 	}
 
 	// Fetch input definitions. Will be used for parsing inputs.
 	inputDefinitions, err := s.questionIntSvc.GetInputDefinitions(req.QuestionHash)
 	if err != nil {
+		logger.Error("failed to fetch input definitions", zap.String("question_hash", req.QuestionHash), zap.Error(err))
 		return nil, err
 	}
+	logger.Debug("fetched input definitions", zap.Int("definitions", len(inputDefinitions)))
 
 	// Parse and validate all test cases. The string inputs need to be parsed
 	// to their respective data types before sending as inputs to templates.
@@ -49,6 +63,7 @@ func (s *Engine) Run(req *proto.RunCodeRequest) (*proto.RunCodeResponse, error) 
 	for i, testCase := range req.TestCases {
 		parsedInputs, err := parseTestCase(testCase.Inputs, inputDefinitions)
 		if err != nil {
+			logger.Error("failed to parse test case", zap.Int("index", i), zap.Error(err))
 			return nil, status.Errorf(codes.InvalidArgument, "invalid test case %d: %v", i, err)
 		}
 
@@ -58,6 +73,7 @@ func (s *Engine) Run(req *proto.RunCodeRequest) (*proto.RunCodeResponse, error) 
 		}
 	}
 
+	logger.Debug("executing runner", zap.String("env", req.Environment), zap.Int("test_cases", len(req.TestCases)))
 	return rnr.Run(&runner.RunnerArg{
 		Code:            req.Code,
 		ParsedTestCases: parsedTestCases,

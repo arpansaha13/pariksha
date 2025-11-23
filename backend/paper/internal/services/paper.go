@@ -3,11 +3,14 @@ package services
 import (
 	"context"
 
+	"go.uber.org/zap"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/logging"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
@@ -45,8 +48,12 @@ func NewPaper(
 
 // GetUserPapers handles the business logic for fetching user's papers
 func (s *Paper) GetUserPapers(userID types.UserID) (*proto.PaperList, error) {
+	logger := logging.GetLogger()
+	logger.Debug("GetUserPapers called", zap.Int64("user_id", int64(userID)))
+
 	papers, err := s.paperRepo.GetAllByUserId(nil, userID)
 	if err != nil {
+		logger.Error("failed to fetch user papers", zap.Int64("user_id", int64(userID)), zap.Error(err))
 		return nil, status.Error(codes.Internal, constants.ErrInternalServer)
 	}
 
@@ -67,8 +74,12 @@ func (s *Paper) GetUserPapers(userID types.UserID) (*proto.PaperList, error) {
 
 // GetUserPapers handles the business logic for fetching user's papers
 func (s *Paper) GetPaper(paperHash string) (*proto.PaperResponse, error) {
+	logger := logging.GetLogger()
+	logger.Debug("GetPaper called", zap.String("paper_hash", paperHash))
+
 	paper, err := s.paperRepo.GetByHash(nil, paperHash)
 	if err != nil {
+		logger.Error("failed to get paper", zap.String("paper_hash", paperHash), zap.Error(err))
 		return nil, grpcerror.Internal(err, "failed to get paper")
 	}
 
@@ -116,6 +127,9 @@ func (s *Paper) GetPaper(paperHash string) (*proto.PaperResponse, error) {
 func (s *Paper) CreatePaper(userID types.UserID) (*proto.CreatePaperResponse, error) {
 	var paper models.Paper
 
+	logger := logging.GetLogger()
+	logger.Debug("CreatePaper called", zap.Int64("user_id", int64(userID)))
+
 	err := s.paperRepo.Transaction(func(tx *gorm.DB) error {
 		paper = models.Paper{CreatedBy: userID}
 		if err := s.paperRepo.Create(tx, &paper, userID); err != nil {
@@ -148,6 +162,7 @@ func (s *Paper) CreatePaper(userID types.UserID) (*proto.CreatePaperResponse, er
 	})
 
 	if err != nil {
+		logger.Error("CreatePaper transaction failed", zap.Error(err))
 		return nil, err
 	}
 
@@ -159,6 +174,11 @@ func (s *Paper) CreatePaper(userID types.UserID) (*proto.CreatePaperResponse, er
 // UpdatePaper handles the business logic for updating a paper
 func (s *Paper) UpdatePaper(ctx context.Context, req *proto.UpdatePaperRequest) error {
 	return s.paperRepo.Transaction(func(tx *gorm.DB) error {
+		logger, ok := logging.GetLoggerFromContext(ctx)
+		if !ok {
+			logger = logging.GetLogger()
+		}
+		logger.Debug("UpdatePaper called", zap.String("paper_hash", req.PaperHash))
 		paper, err := s.paperRepo.GetByHash(tx, req.PaperHash)
 		if err != nil {
 			return utils.HandleDBError(err, "paper not found")
@@ -193,6 +213,12 @@ func (s *Paper) UpdatePaper(ctx context.Context, req *proto.UpdatePaperRequest) 
 
 // DeletePapers handles the business logic for deleting multiple papers
 func (s *Paper) DeletePapers(ctx context.Context, hashes []string) error {
+	logger, ok := logging.GetLoggerFromContext(ctx)
+	if !ok {
+		logger = logging.GetLogger()
+	}
+	logger.Debug("DeletePapers called", zap.Int("count", len(hashes)))
+
 	return s.paperRepo.Transaction(func(tx *gorm.DB) error {
 		paperIDs, err := s.paperRepo.GetIDsByHashes(tx, hashes)
 		if err != nil {

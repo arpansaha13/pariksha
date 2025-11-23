@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"strings"
 
+	"go.uber.org/zap"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/logging"
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
@@ -33,11 +36,14 @@ func NewQuestion(
 	boilerplateRepo *repositories.Boilerplate,
 	testcaseRepo *repositories.TestCase,
 ) *Question {
-	return &Question{
+	q := &Question{
 		questionRepo:    questionRepo,
 		boilerplateRepo: boilerplateRepo,
 		testcaseRepo:    testcaseRepo,
 	}
+	logger := logging.GetLogger()
+	logger.Info("question service initialized")
+	return q
 }
 
 // CreateQuestion handles creation of a new question
@@ -72,6 +78,9 @@ func (s *Question) CreateQuestion(req *proto.CreateQuestionRequest) (*proto.Crea
 		return nil, status.Error(codes.InvalidArgument, "invalid question type")
 	}
 
+	logger := logging.GetLogger()
+	logger.Debug("CreateQuestion called", zap.Int32("type", int32(req.Type)))
+
 	var question *models.Question
 	s.questionRepo.Transaction(func(tx *gorm.DB) error {
 		var err error
@@ -101,6 +110,7 @@ func (s *Question) CreateQuestion(req *proto.CreateQuestionRequest) (*proto.Crea
 		return nil
 	})
 
+	logger.Debug("question created", zap.Int64("id", int64(question.ID)), zap.String("hash", question.Hash))
 	return &proto.CreateQuestionResponse{
 		Id:   int64(question.ID),
 		Hash: question.Hash,
@@ -217,7 +227,9 @@ func (s *Question) UpdateQuestion(req *proto.UpdateQuestionRequest) (*proto.Upda
 		return nil
 	})
 
+	logger := logging.GetLogger()
 	if err != nil {
+		logger.Error("UpdateQuestion transaction failed", zap.Error(err))
 		return nil, err
 	}
 
@@ -227,8 +239,12 @@ func (s *Question) UpdateQuestion(req *proto.UpdateQuestionRequest) (*proto.Upda
 func (s *Question) GetQuestionsByIds(req *proto.QuestionIdsRequest) (*proto.GetQuestionsResponse, error) {
 	typedQuestionIDs := getTypedQuestionIDs(req.Ids)
 
+	logger := logging.GetLogger()
+	logger.Debug("GetQuestionsByIds called", zap.Int("requested", len(typedQuestionIDs)))
+
 	questions, err := s.questionRepo.GetQuestionsByIDs(nil, typedQuestionIDs)
 	if err != nil {
+		logger.Error("failed to get questions by IDs", zap.Error(err))
 		return nil, status.Error(codes.Internal, "failed to get questions by IDs: "+err.Error())
 	}
 
@@ -249,8 +265,12 @@ func (s *Question) GetQuestionsByIds(req *proto.QuestionIdsRequest) (*proto.GetQ
 }
 
 func (s *Question) GetQuestionsByHashes(hashes []string) (*proto.GetQuestionsResponse, error) {
+	logger := logging.GetLogger()
+	logger.Debug("GetQuestionsByHashes called", zap.Int("requested", len(hashes)))
+
 	questions, err := s.questionRepo.GetQuestionsByHashes(nil, hashes)
 	if err != nil {
+		logger.Error("failed to get questions by hashes", zap.Error(err))
 		return nil, status.Error(codes.Internal, "failed to get questions by hashes: "+err.Error())
 	}
 
@@ -430,6 +450,9 @@ func (s *Question) DecExamIndegreeByIds(ids []int64) (*emptypb.Empty, error) {
 
 // UpsertTestCases handles bulk creation and updates of test cases
 func (s *Question) UpsertTestCases(req *proto.UpsertTestCasesRequest) (*emptypb.Empty, error) {
+	logger := logging.GetLogger()
+	logger.Debug("UpsertTestCases called", zap.String("question_hash", req.QuestionHash), zap.Int("count", len(req.TestCases)))
+
 	question, err := s.questionRepo.GetQuestionTypeByHash(nil, req.QuestionHash)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
