@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
@@ -33,7 +32,9 @@ func RunCode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	engineService := services.GetEngineService()
-	response, err := engineService.Client().RunCode(context.Background(), &proto.RunCodeRequest{
+	ctx := r.Context()
+	ctx = engineService.CreateMetadata(ctx)
+	response, err := engineService.Client().RunCode(ctx, &proto.RunCodeRequest{
 		QuestionHash: requestDto.QuestionID,
 		Code:         requestDto.Code,
 		Environment:  requestDto.Environment,

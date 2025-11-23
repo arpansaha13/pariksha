@@ -1,13 +1,16 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"sync"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 
+	"pariksha/common/pkg/logging"
 	"pariksha/common/pkg/proto"
 	"pariksha/gateway/internal/config/env"
 )
@@ -54,4 +57,18 @@ func init() {
 
 func (s *EngineService) Client() proto.EngineClient {
 	return s.client
+}
+
+// CreateMetadata creates outgoing gRPC metadata including request_id (if present in ctx).
+// It extracts request_id from the provided context (set by the HTTP gateway middleware) and appends
+// it to the outgoing metadata so downstream services receive the correlation id.
+func (s *EngineService) CreateMetadata(ctx context.Context) context.Context {
+	mdMap := make(map[string]string)
+
+	if reqID, ok := logging.GetRequestIDFromContext(ctx); ok && reqID != "" {
+		mdMap["request_id"] = reqID
+	}
+
+	md := metadata.New(mdMap)
+	return metadata.NewOutgoingContext(ctx, md)
 }
