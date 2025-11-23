@@ -15,10 +15,6 @@ func SetupRouter() *mux.Router {
 	baseLogger := logging.GetLogger()
 	r.Use(logging.NewHTTPLoggingMiddleware(baseLogger))
 
-	// Apply CORS middleware to the entire router
-	r.Use(mux.CORSMethodMiddleware(r))
-	r.Use(middlewares.CorsMiddleware)
-
 	authRouter := r.PathPrefix("/api/auth").Subrouter()
 
 	protectedRouter := r.PathPrefix("/api").Subrouter()

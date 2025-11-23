@@ -37,14 +37,9 @@ var (
 	ENGINE_SERVER_PORT string
 )
 
-var (
-	CLIENT_URL string
-)
-
 func init() {
 	requiredEnvVars := []string{
 		"GO_ENV",
-		"CLIENT_URL",
 		"AUTH_SERVER_HOST",
 		"AUTH_SERVER_PORT",
 		"PAPER_SERVER_HOST",
@@ -75,6 +70,4 @@ func init() {
 
 	ENGINE_SERVER_HOST = os.Getenv("ENGINE_SERVER_HOST")
 	ENGINE_SERVER_PORT = os.Getenv("ENGINE_SERVER_PORT")
-
-	CLIENT_URL = os.Getenv("CLIENT_URL")
 }
