@@ -3,9 +3,11 @@ package modules
 import (
 	"log"
 
+	"google.golang.org/grpc"
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/config"
+	"pariksha/common/pkg/logging"
 	"pariksha/question/internal/config/env"
 	"pariksha/question/internal/controllers"
 	"pariksha/question/internal/repositories"
@@ -13,7 +15,7 @@ import (
 )
 
 // Prod initializes modules for production environment with file-based migrations
-func Prod() (*questionServer, func()) {
+func Prod() (*questionServer, []grpc.UnaryServerInterceptor, func()) {
 	dbInst := initProdDB()
 
 	// Initialize repositories
@@ -26,10 +28,19 @@ func Prod() (*questionServer, func()) {
 	questionSvc := services.NewQuestion(questionRepo, boilerplateRepo, testcaseRepo)
 	categorySvc := services.NewCategory(categoryRepo)
 
+	// Initialize logger and logging interceptor
+	baseLogger := logging.InitLogger(env.GO_ENV)
+	loggingInterceptor := logging.NewLoggingInterceptor(baseLogger)
+
 	// Initialize controllers
 	server := &questionServer{
 		questionCtrl: controllers.NewQuestion(questionSvc),
 		categoryCtrl: controllers.NewCategory(categorySvc),
+	}
+
+	// Initialize interceptors
+	intc := []grpc.UnaryServerInterceptor{
+		loggingInterceptor,
 	}
 
 	cleanup := func() {
@@ -39,9 +50,10 @@ func Prod() (*questionServer, func()) {
 		}
 
 		sqlDB.Close()
+		baseLogger.Sync()
 	}
 
-	return server, cleanup
+	return server, intc, cleanup
 }
 
 func initProdDB() *gorm.DB {

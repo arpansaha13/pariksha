@@ -5,9 +5,11 @@ import (
 	"log"
 	"net"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/logging"
 	"pariksha/common/pkg/proto"
 	"pariksha/exam/internal/config/env"
 	"pariksha/exam/internal/modules"
@@ -33,13 +35,16 @@ func main() {
 	}
 	defer cleanup()
 
+	// logger is initialized in the modules; get the package logger
+	baseLogger := logging.GetLogger()
+
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(intc...))
 	defer grpcServer.Stop()
 
 	proto.RegisterExamServer(grpcServer, server)
 
-	log.Printf("Exam gRPC server is running on port %s\n", port)
+	baseLogger.Info("Exam gRPC server is running", zap.String("port", port))
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		baseLogger.Fatal("failed to serve", zap.Error(err))
 	}
 }

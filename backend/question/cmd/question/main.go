@@ -5,9 +5,11 @@ import (
 	"log"
 	"net"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/logging"
 	"pariksha/common/pkg/proto"
 	"pariksha/question/internal/config/env"
 	"pariksha/question/internal/modules"
@@ -19,25 +21,30 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+	defer lis.Close()
 
 	var server proto.QuestionServer
+	var intc []grpc.UnaryServerInterceptor
 	var cleanup func()
 
 	// Choose between dev and prod modules based on environment
 	if env.GO_ENV == constants.GO_ENV_PROD {
-		server, cleanup = modules.Prod()
+		server, intc, cleanup = modules.Prod()
 	} else {
-		server, cleanup = modules.Dev()
+		server, intc, cleanup = modules.Dev()
 	}
+	defer cleanup()
 
-	grpcServer := grpc.NewServer()
+	// logger is initialized in the modules; get the package logger
+	baseLogger := logging.GetLogger()
+
+	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(intc...))
+	defer grpcServer.Stop()
+
 	proto.RegisterQuestionServer(grpcServer, server)
 
-	log.Printf("Question gRPC server is running on port %s\n", port)
+	baseLogger.Info("Question gRPC server is running", zap.String("port", port))
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		baseLogger.Fatal("failed to serve", zap.Error(err))
 	}
-
-	defer cleanup()
-	defer grpcServer.Stop()
 }

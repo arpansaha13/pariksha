@@ -23,7 +23,7 @@ func GetPaperQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	paperService := services.GetPaperService()
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 
 	response, err := paperService.Client().GetPaperQuestions(ctx, &proto.PaperRequest{
 		PaperHash: paperHash,
@@ -66,7 +66,7 @@ func GetPaperQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	paperService := services.GetPaperService()
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 
 	response, err := paperService.Client().GetPaperQuestion(ctx, &proto.PaperQuestionRequest{
 		PaperHash:    paperHash,
@@ -128,7 +128,7 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	paperService := services.GetPaperService()
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 
 	// Get raw question bytes
 	questionBytes, err := questionDto.Question.MarshalJSON()
@@ -181,7 +181,7 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	paperService := services.GetPaperService()
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 
 	request := &proto.UpdatePaperQuestionRequest{
 		PaperHash:    paperHash,
@@ -238,7 +238,7 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	paperService := services.GetPaperService()
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 
 	_, err = paperService.Client().DeletePaperQuestion(ctx, &proto.PaperQuestionRequest{
 		PaperHash:    paperHash,
@@ -281,7 +281,7 @@ func ReorderQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	paperService := services.GetPaperService()
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 
 	_, err = paperService.Client().ReorderPaperQuestions(ctx, &proto.ReorderPaperQuestionsRequest{
 		PaperHash:      paperHash,
@@ -324,7 +324,7 @@ func UpsertPaperTestCases(w http.ResponseWriter, r *http.Request) {
 	}
 
 	paperService := services.GetPaperService()
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 
 	testCases := make([]*proto.UpsertTestCase, len(testCasesDto.TestCases))
 	for i, tc := range testCasesDto.TestCases {

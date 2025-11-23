@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
+	"pariksha/common/pkg/logging"
 	"pariksha/common/pkg/proto"
 	"pariksha/engine/internal/config/env"
 	"pariksha/engine/internal/controllers"
@@ -17,13 +18,13 @@ import (
 	"pariksha/engine/internal/services"
 )
 
-func Dev() (*engineServer, func(), error) {
+func Dev() (*engineServer, []grpc.UnaryServerInterceptor, func(), error) {
 	questionIntSvc := initQuestionInterservice()
 
 	// Initialize Kubernetes runner
 	kubernetesRunner, err := runner.NewKubernetes()
 	if err != nil {
-		return nil, nil, status.Errorf(codes.Internal, "failed to create Kubernetes runner: %v", err)
+		return nil, nil, nil, status.Errorf(codes.Internal, "failed to create Kubernetes runner: %v", err)
 	}
 
 	// Initialize services
@@ -34,11 +35,21 @@ func Dev() (*engineServer, func(), error) {
 		engineCtrl: controllers.NewEngine(engineSvc),
 	}
 
-	cleanup := func() {
-		questionIntSvc.Close()
+	// Initialize logger and logging interceptor
+	baseLogger := logging.InitLogger(env.GO_ENV)
+	loggingInterceptor := logging.NewLoggingInterceptor(baseLogger)
+
+	// Create interceptors slice
+	intc := []grpc.UnaryServerInterceptor{
+		loggingInterceptor,
 	}
 
-	return &server, cleanup, nil
+	cleanup := func() {
+		questionIntSvc.Close()
+		baseLogger.Sync()
+	}
+
+	return &server, intc, cleanup, nil
 }
 
 func initQuestionInterservice() *interservice.Question {

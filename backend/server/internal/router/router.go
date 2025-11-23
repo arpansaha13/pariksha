@@ -3,12 +3,17 @@ package router
 import (
 	"github.com/gorilla/mux"
 
+	"pariksha/common/pkg/logging"
 	"pariksha/server/internal/handlers"
 	"pariksha/server/internal/middlewares"
 )
 
 func SetupRouter() *mux.Router {
 	r := mux.NewRouter()
+
+	// logger is initialized in the modules; get the package logger
+	baseLogger := logging.GetLogger()
+	r.Use(logging.NewHTTPLoggingMiddleware(baseLogger))
 
 	// Apply CORS middleware to the entire router
 	r.Use(mux.CORSMethodMiddleware(r))

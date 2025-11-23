@@ -3,10 +3,12 @@ package modules
 import (
 	"log"
 
+	"google.golang.org/grpc"
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/config"
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/logging"
 	"pariksha/question/internal/config/db"
 	"pariksha/question/internal/config/env"
 	"pariksha/question/internal/controllers"
@@ -14,7 +16,7 @@ import (
 	"pariksha/question/internal/services"
 )
 
-func Dev() (*questionServer, func()) {
+func Dev() (*questionServer, []grpc.UnaryServerInterceptor, func()) {
 	dbInst := initDB()
 
 	// Initialize repositories
@@ -27,10 +29,19 @@ func Dev() (*questionServer, func()) {
 	questionSvc := services.NewQuestion(questionRepo, boilerplateRepo, testcaseRepo)
 	categorySvc := services.NewCategory(categoryRepo)
 
+	// Initialize logger and logging interceptor
+	baseLogger := logging.InitLogger(env.GO_ENV)
+	loggingInterceptor := logging.NewLoggingInterceptor(baseLogger)
+
 	// Initialize controllers
 	server := &questionServer{
 		questionCtrl: controllers.NewQuestion(questionSvc),
 		categoryCtrl: controllers.NewCategory(categorySvc),
+	}
+
+	// Initialize interceptors
+	intc := []grpc.UnaryServerInterceptor{
+		loggingInterceptor,
 	}
 
 	cleanup := func() {
@@ -40,9 +51,10 @@ func Dev() (*questionServer, func()) {
 		}
 
 		sqlDB.Close()
+		baseLogger.Sync()
 	}
 
-	return server, cleanup
+	return server, intc, cleanup
 }
 
 func initDB() *gorm.DB {

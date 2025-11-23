@@ -22,7 +22,7 @@ func GetExamResults(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	results, err := examService.Client().GetExamResults(ctx, &proto.ExamRequest{
 		ExamHash: examHash,

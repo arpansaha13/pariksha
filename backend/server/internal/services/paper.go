@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
+	"pariksha/common/pkg/logging"
 	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/config/env"
 )
@@ -59,9 +60,16 @@ func (s *PaperService) Client() proto.PaperClient {
 	return s.client
 }
 
-func (s *PaperService) CreateMetadata(userID int64) context.Context {
-	md := metadata.New(map[string]string{
+// CreateMetadata creates outgoing gRPC metadata including user_id and request_id (if present in ctx).
+func (s *PaperService) CreateMetadata(ctx context.Context, userID int64) context.Context {
+	mdMap := map[string]string{
 		"user_id": strconv.FormatInt(userID, 10),
-	})
-	return metadata.NewOutgoingContext(context.Background(), md)
+	}
+
+	if reqID, ok := logging.GetRequestIDFromContext(ctx); ok && reqID != "" {
+		mdMap["request_id"] = reqID
+	}
+
+	md := metadata.New(mdMap)
+	return metadata.NewOutgoingContext(ctx, md)
 }

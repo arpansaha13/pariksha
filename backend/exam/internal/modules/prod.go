@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/config"
+	"pariksha/common/pkg/logging"
 	"pariksha/common/pkg/proto"
 	"pariksha/exam/internal/config/env"
 	"pariksha/exam/internal/controllers"
@@ -22,6 +23,10 @@ import (
 func Prod() (*examServer, []grpc.UnaryServerInterceptor, func()) {
 	dbInst := initProdDB()
 	questionIntSvc := initProdQuestionInterservice()
+
+	// Initialize logger and logging interceptor for the service
+	baseLogger := logging.InitLogger(env.GO_ENV)
+	loggingInterceptor := logging.NewLoggingInterceptor(baseLogger)
 
 	// Initialize repositories
 	examRepo := repositories.NewExam(dbInst)
@@ -42,6 +47,7 @@ func Prod() (*examServer, []grpc.UnaryServerInterceptor, func()) {
 
 	// Initialize interceptors
 	intc := []grpc.UnaryServerInterceptor{
+		loggingInterceptor,
 		interceptors.SingleQuestionHashInterceptor(questionIntSvc),
 		interceptors.GeneralExamAuthInterceptor(examRepo, permissionRepo, dbInst),
 		interceptors.DeleteExamsAuthInterceptor(permissionRepo),
@@ -66,6 +72,7 @@ func Prod() (*examServer, []grpc.UnaryServerInterceptor, func()) {
 		}
 
 		sqlDB.Close()
+		baseLogger.Sync()
 	}
 
 	return server, intc, cleanup

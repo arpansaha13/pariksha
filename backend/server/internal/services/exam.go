@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
+	"pariksha/common/pkg/logging"
 	"pariksha/common/pkg/proto"
 	"pariksha/server/internal/config/env"
 )
@@ -59,9 +60,18 @@ func (s *ExamService) Client() proto.ExamClient {
 	return s.client
 }
 
-func (s *ExamService) CreateMetadata(userID int64) context.Context {
-	md := metadata.New(map[string]string{
+// CreateMetadata creates outgoing gRPC metadata including user_id and request_id (if present in ctx).
+// It extracts request_id from the provided context (set by the HTTP gateway middleware) and appends
+// it to the outgoing metadata so downstream services receive the correlation id.
+func (s *ExamService) CreateMetadata(ctx context.Context, userID int64) context.Context {
+	mdMap := map[string]string{
 		"user_id": strconv.FormatInt(userID, 10),
-	})
-	return metadata.NewOutgoingContext(context.Background(), md)
+	}
+
+	if reqID, ok := logging.GetRequestIDFromContext(ctx); ok && reqID != "" {
+		mdMap["request_id"] = reqID
+	}
+
+	md := metadata.New(mdMap)
+	return metadata.NewOutgoingContext(ctx, md)
 }

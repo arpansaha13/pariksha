@@ -23,7 +23,7 @@ func GetParticipantAnswers(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	resp, err := examService.Client().GetParticipantAnswers(ctx, &proto.ParticipantRequest{
 		ParticipantId: participantID,
@@ -78,7 +78,7 @@ func GetAnswerForExam(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	resp, err := examService.Client().GetAnswerForExam(ctx, &proto.GetAnswerRequest{
 		ExamHash:     examHash,
@@ -135,7 +135,7 @@ func UpsertAnswer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	resp, err := examService.Client().UpsertAnswer(ctx, upsertAnswerRequest)
 	if err != nil {

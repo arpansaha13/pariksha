@@ -23,7 +23,7 @@ func GetExamParticipants(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	participants, err := examService.Client().GetExamParticipants(ctx, &proto.ExamRequest{
 		ExamHash: examHash,
@@ -81,7 +81,7 @@ func GetExamParticipant(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	participant, err := examService.Client().GetExamParticipant(ctx, &proto.GetExamParticipantRequest{
 		ExamHash: examHash,
@@ -128,7 +128,7 @@ func AddExamParticipant(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	// First create/update user if email is provided
 	if participantDto.Email != "" {
@@ -181,7 +181,7 @@ func RemoveExamParticipant(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	_, err = examService.Client().RemoveExamParticipant(ctx, &proto.RemoveParticipantRequest{
 		ExamHash:      examHash,
@@ -204,7 +204,7 @@ func GetParticipantById(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	participant, err := examService.Client().GetParticipantById(ctx, &proto.ParticipantRequest{
 		ParticipantId: participantID,

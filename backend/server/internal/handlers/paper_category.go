@@ -23,7 +23,7 @@ func GetPaperCategories(w http.ResponseWriter, r *http.Request) {
 	}
 
 	paperService := services.GetPaperService()
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 
 	response, err := paperService.Client().GetPaperCategories(ctx, &proto.PaperRequest{
 		PaperHash: paperHash,
@@ -57,7 +57,7 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	paperService := services.GetPaperService()
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 
 	response, err := paperService.Client().CreatePaperCategory(ctx, &proto.PaperRequest{
 		PaperHash: paperHash,
@@ -96,7 +96,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	paperService := services.GetPaperService()
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 
 	_, err = paperService.Client().UpdatePaperCategory(ctx, &proto.UpdatePaperCategoryRequest{
 		CategoryId: categoryID,
@@ -120,7 +120,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	paperService := services.GetPaperService()
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 
 	_, err = paperService.Client().DeletePaperCategory(ctx, &proto.PaperCategoryRequest{
 		CategoryId: categoryID,
@@ -155,7 +155,7 @@ func ReorderCategories(w http.ResponseWriter, r *http.Request) {
 	}
 
 	paperService := services.GetPaperService()
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 
 	categoryIDs := make([]int64, len(reorderDto.Categories))
 	for i, id := range reorderDto.Categories {

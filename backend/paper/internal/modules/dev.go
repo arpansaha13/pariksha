@@ -10,6 +10,7 @@ import (
 
 	"pariksha/common/pkg/config"
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/logging"
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/config/env"
@@ -24,6 +25,10 @@ func Dev() (*paperServer, []grpc.UnaryServerInterceptor, func()) {
 	dbInst := initDB()
 	questionIntSvc := initQuestionInterservice()
 
+	// Initialize logger and logging interceptor for the service
+	baseLogger := logging.InitLogger(env.GO_ENV)
+	loggingInterceptor := logging.NewLoggingInterceptor(baseLogger)
+
 	// Initialize repositories
 	paperRepo := repositories.NewPaper(dbInst)
 	paperCatRepo := repositories.NewPaperCategory(dbInst)
@@ -37,6 +42,7 @@ func Dev() (*paperServer, []grpc.UnaryServerInterceptor, func()) {
 
 	// Initialize interceptors
 	intc := []grpc.UnaryServerInterceptor{
+		loggingInterceptor,
 		interceptors.PaperAuthInterceptor(paperPermRepo),
 		interceptors.DeletePaperAuthInterceptor(paperPermRepo),
 		interceptors.ExamServiceAuthInterceptor(),
@@ -56,6 +62,7 @@ func Dev() (*paperServer, []grpc.UnaryServerInterceptor, func()) {
 		}
 
 		sqlDB.Close()
+		baseLogger.Sync()
 	}
 
 	return server, intc, cleanup

@@ -19,7 +19,7 @@ func GetUserExams(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	examList, err := examService.Client().GetUserExams(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -63,7 +63,7 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 
 	// Verify paper exists first
 	paperService := services.GetPaperService()
-	paperCtx := paperService.CreateMetadata(userID)
+	paperCtx := paperService.CreateMetadata(r.Context(), userID)
 
 	_, err := paperService.Client().GetPaper(paperCtx, &proto.PaperRequest{
 		PaperHash: examDto.PaperID,
@@ -74,7 +74,7 @@ func CreateExam(w http.ResponseWriter, r *http.Request) {
 	}
 
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	createExamRequest := &proto.CreateExamRequest{
 		Title:              examDto.Title,
@@ -133,7 +133,7 @@ func UpdateExam(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	req := &proto.UpdateExamRequest{
 		ExamHash: examHash,
@@ -186,7 +186,7 @@ func StartExam(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	_, err = examService.Client().StartExam(ctx, &proto.StartExamRequest{
 		ExamHash: examHash,
@@ -209,7 +209,7 @@ func EndExam(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	_, err = examService.Client().EndExam(ctx, &proto.EndExamRequest{
 		ExamHash: examHash,
@@ -231,7 +231,7 @@ func GetExam(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	exam, err := examService.Client().GetExam(ctx, &proto.ExamRequest{
 		ExamHash: examHash,
@@ -266,7 +266,7 @@ func GetExamPermission(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	permission, err := examService.Client().GetExamPermission(ctx, &proto.ExamRequest{
 		ExamHash: examHash,
@@ -307,7 +307,7 @@ func DeleteExams(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	_, err := examService.Client().DeleteExams(ctx, &proto.DeleteExamsRequest{
 		ExamHashes: deleteExamsDto.ExamIds,

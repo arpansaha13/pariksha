@@ -6,6 +6,7 @@ require (
 	github.com/docker/docker v28.2.2+incompatible
 	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.11.1
+	go.uber.org/zap v1.27.1
 	google.golang.org/grpc v1.74.2
 	k8s.io/api v0.30.0
 	k8s.io/apimachinery v0.30.0
@@ -78,6 +79,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.38.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.38.0 // indirect
 	go.opentelemetry.io/otel/trace v1.38.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.40.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect

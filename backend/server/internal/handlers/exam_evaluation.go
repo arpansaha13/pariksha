@@ -30,7 +30,7 @@ func GetAnswerEvaluationData(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	resp, err := examService.Client().GetAnswerEvaluationData(ctx, &proto.ParticipantQuestionRequest{
 		ParticipantId: participantID,
@@ -71,7 +71,7 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	req := &proto.UpdateAnswerRequest{
 		AnswerId:  answerId,
@@ -105,7 +105,7 @@ func MarkParticipantAsEvaluated(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	resp, err := examService.Client().MarkParticipantAsEvaluated(ctx, &proto.ParticipantRequest{
 		ParticipantId: participantID,
@@ -138,7 +138,7 @@ func GetAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	answer, err := examService.Client().GetAnswerForEvaluation(ctx, &proto.ParticipantQuestionRequest{
 		ParticipantId: participantID,

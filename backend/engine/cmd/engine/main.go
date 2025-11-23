@@ -5,8 +5,10 @@ import (
 	"log"
 	"net"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
+	"pariksha/common/pkg/logging"
 	"pariksha/common/pkg/proto"
 	"pariksha/engine/internal/config/env"
 	"pariksha/engine/internal/modules"
@@ -20,19 +22,22 @@ func main() {
 	}
 	defer lis.Close()
 
-	server, cleanup, err := modules.Dev()
+	server, intc, cleanup, err := modules.Dev()
 	if err != nil {
 		log.Fatalf("failed to create engine server: %v", err)
 	}
 	defer cleanup()
 
-	grpcServer := grpc.NewServer()
+	// logger is initialized in the modules; get the package logger
+	baseLogger := logging.GetLogger()
+
+	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(intc...))
 	defer grpcServer.Stop()
 
 	proto.RegisterEngineServer(grpcServer, server)
 
-	log.Printf("Engine gRPC server is running on port %s\n", port)
+	baseLogger.Info("Engine gRPC server is running", zap.String("port", port))
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		baseLogger.Fatal("failed to serve", zap.Error(err))
 	}
 }

@@ -22,7 +22,7 @@ func GetExamQuestions(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	// Get question IDs from exam service
 	questions, err := examService.Client().GetExamQuestions(ctx, &proto.ExamRequest{
@@ -57,7 +57,7 @@ func GetExamCategories(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	examService := services.GetExamService()
-	ctx := examService.CreateMetadata(userID)
+	ctx := examService.CreateMetadata(r.Context(), userID)
 
 	// Get category IDs from exam service
 	categories, err := examService.Client().GetExamCategories(ctx, &proto.ExamRequest{

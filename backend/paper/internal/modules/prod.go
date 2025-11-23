@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/config"
+	"pariksha/common/pkg/logging"
 	"pariksha/common/pkg/proto"
 	"pariksha/paper/internal/config/env"
 	"pariksha/paper/internal/controllers"
@@ -23,6 +24,10 @@ func Prod() (*paperServer, []grpc.UnaryServerInterceptor, func()) {
 	dbInst := initProdDB()
 	questionIntSvc := initProdQuestionInterservice()
 
+	// Initialize logger and logging interceptor for the service
+	baseLogger := logging.InitLogger(env.GO_ENV)
+	loggingInterceptor := logging.NewLoggingInterceptor(baseLogger)
+
 	// Initialize repositories
 	paperRepo := repositories.NewPaper(dbInst)
 	paperCatRepo := repositories.NewPaperCategory(dbInst)
@@ -36,6 +41,7 @@ func Prod() (*paperServer, []grpc.UnaryServerInterceptor, func()) {
 
 	// Initialize interceptors
 	intc := []grpc.UnaryServerInterceptor{
+		loggingInterceptor,
 		interceptors.PaperAuthInterceptor(paperPermRepo),
 		interceptors.DeletePaperAuthInterceptor(paperPermRepo),
 		interceptors.ExamServiceAuthInterceptor(),
@@ -55,6 +61,7 @@ func Prod() (*paperServer, []grpc.UnaryServerInterceptor, func()) {
 		}
 
 		sqlDB.Close()
+		baseLogger.Sync()
 	}
 
 	return server, intc, cleanup

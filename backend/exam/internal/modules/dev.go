@@ -10,6 +10,7 @@ import (
 
 	"pariksha/common/pkg/config"
 	"pariksha/common/pkg/constants"
+	"pariksha/common/pkg/logging"
 	"pariksha/common/pkg/proto"
 	"pariksha/exam/internal/config/db"
 	"pariksha/exam/internal/config/env"
@@ -23,6 +24,11 @@ import (
 func Dev() (*examServer, []grpc.UnaryServerInterceptor, func()) {
 	dbInst := initDB()
 	questionIntSvc := initQuestionInterservice()
+
+	// Initialize logger and logging interceptor for the service
+	baseLogger := logging.InitLogger(env.GO_ENV)
+	// ensure logger is synced on cleanup below
+	loggingInterceptor := logging.NewLoggingInterceptor(baseLogger)
 
 	// Initialize repositories
 	examRepo := repositories.NewExam(dbInst)
@@ -43,6 +49,7 @@ func Dev() (*examServer, []grpc.UnaryServerInterceptor, func()) {
 
 	// Initialize interceptors
 	intc := []grpc.UnaryServerInterceptor{
+		loggingInterceptor,
 		interceptors.SingleQuestionHashInterceptor(questionIntSvc),
 		interceptors.GeneralExamAuthInterceptor(examRepo, permissionRepo, dbInst),
 		interceptors.DeleteExamsAuthInterceptor(permissionRepo),
@@ -67,6 +74,7 @@ func Dev() (*examServer, []grpc.UnaryServerInterceptor, func()) {
 		}
 
 		sqlDB.Close()
+		baseLogger.Sync()
 	}
 
 	return server, intc, cleanup

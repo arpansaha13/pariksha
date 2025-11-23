@@ -5,16 +5,21 @@ import (
 	"log"
 
 	"github.com/hibiken/asynq"
+	"go.uber.org/zap"
 
 	"pariksha/common/pkg/config"
 	"pariksha/common/pkg/constants"
-	"pariksha/common/pkg/utils"
+	"pariksha/common/pkg/logging"
 	"pariksha/workers/exam/internal/config/db"
 	"pariksha/workers/exam/internal/config/env"
 	"pariksha/workers/exam/internal/handlers"
 )
 
 func main() {
+	// Initialize logger
+	baseLogger := logging.InitLogger(env.GO_ENV)
+	defer baseLogger.Sync()
+
 	err := initDB()
 	if err != nil {
 		log.Fatal(err.Error())
@@ -35,11 +40,10 @@ func main() {
 	mux.HandleFunc(constants.EXAM_QUEUE_TASK_AUTO_END, handlers.AutoEndExam)
 	mux.HandleFunc(constants.EXAM_QUEUE_TASK_DELETE_EXAMS, handlers.PostDeleteExamsCleanup)
 
+	baseLogger.Info("Starting exam worker server")
 	if err := srv.Run(mux); err != nil {
-		utils.FailOnError(err, "Failed to run asynq server")
+		baseLogger.Fatal("Failed to run asynq server", zap.Error(err))
 	}
-
-	log.Printf("[*] Running exam questions worker. To exit press CTRL+C")
 
 	defer db.Close()
 }

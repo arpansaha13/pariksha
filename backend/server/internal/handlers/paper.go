@@ -19,7 +19,7 @@ func GetUserPapers(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	paperService := services.GetPaperService()
 
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 	response, err := paperService.Client().GetUserPapers(ctx, &emptypb.Empty{})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -60,7 +60,7 @@ func GetPaper(w http.ResponseWriter, r *http.Request) {
 	}
 
 	paperService := services.GetPaperService()
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 
 	response, err := paperService.Client().GetPaper(ctx, &proto.PaperRequest{
 		PaperHash: paperHash,
@@ -92,7 +92,7 @@ func CreatePaper(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	paperService := services.GetPaperService()
 
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 	response, err := paperService.Client().CreatePaper(ctx, &emptypb.Empty{})
 	if err != nil {
 		handleGRPCError(w, err)
@@ -139,7 +139,7 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 		updatePaperRequest.DurationMinutes = ptr.Int32(paperDto.DurationMinutes)
 	}
 
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 	_, err = paperService.Client().UpdatePaper(ctx, updatePaperRequest)
 	if err != nil {
 		handleGRPCError(w, err)
@@ -159,7 +159,7 @@ func GetPaperPermissions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 	response, err := paperService.Client().GetPaperPermissions(ctx, &proto.PaperRequest{
 		PaperHash: paperHash,
 	})
@@ -191,7 +191,7 @@ func DeletePapers(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(middlewares.UserIDKey).(int64)
 	paperService := services.GetPaperService()
-	ctx := paperService.CreateMetadata(userID)
+	ctx := paperService.CreateMetadata(r.Context(), userID)
 
 	_, err := paperService.Client().DeletePapers(ctx, &proto.DeletePapersRequest{
 		PaperHashes: deletePaperDto.PaperIDs,
