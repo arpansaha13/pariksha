@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 	"testing"
@@ -206,7 +207,7 @@ func createTestExamQuestions(t *testing.T, examID types.ExamID, questions []mode
 
 func getQuestionIdForHash(questionHash string) int64 {
 	hashesList := []string{questionHash}
-	questionIDs, err := questionIntSvc.GetQuestionIDsByHashes(hashesList)
+	questionIDs, err := questionIntSvc.GetQuestionIDsByHashes(context.Background(), hashesList)
 	if err != nil || len(questionIDs) == 0 {
 		panic("getQuestionIdForHash: could not find question ID for hash: " + questionHash)
 	}
@@ -215,7 +216,7 @@ func getQuestionIdForHash(questionHash string) int64 {
 
 func getQuestionHashForId(questionID types.QuestionID) string {
 	idsList := []types.QuestionID{questionID}
-	questionHashes, err := questionIntSvc.GetQuestionHashesByIds(idsList)
+	questionHashes, err := questionIntSvc.GetQuestionHashesByIds(context.Background(), idsList)
 	if err != nil || len(questionHashes) == 0 {
 		panic("getQuestionHashForId: could not find question hash for ID: " + strconv.FormatInt(int64(questionID), 10))
 	}

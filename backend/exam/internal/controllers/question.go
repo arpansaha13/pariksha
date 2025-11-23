@@ -19,10 +19,10 @@ func NewQuestion(s *services.Question) *Question {
 
 // HandleGetExamQuestions handles retrieving exam questions
 func (c *Question) HandleGetExamQuestions(ctx context.Context, req *proto.ExamRequest) (*proto.ExamQuestionsResponse, error) {
-	return c.questionSvc.GetExamQuestions(req)
+	return c.questionSvc.GetExamQuestions(ctx, req)
 }
 
 // HandleGetExamQuestion handles retrieving a single exam question
 func (c *Question) HandleGetExamQuestion(ctx context.Context, req *proto.ExamQuestionRequest) (*proto.ExamQuestionResponse, error) {
-	return c.questionSvc.GetExamQuestion(req)
+	return c.questionSvc.GetExamQuestion(ctx, req)
 }

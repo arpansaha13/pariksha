@@ -63,7 +63,7 @@ func (s *Answer) GetParticipantAnswers(ctx context.Context, req *proto.Participa
 	}
 
 	// Fetch question content from paper service
-	questions, err := s.questionIntSvc.GetQuestionsByIDs(questionIDs)
+	questions, err := s.questionIntSvc.GetQuestionsByIDs(ctx, questionIDs)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch questions")
 	}
@@ -155,7 +155,7 @@ func (s *Answer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersReque
 		return nil, status.Error(codes.FailedPrecondition, "participant must be in STARTED state")
 	}
 
-	questionTypes, err := s.questionIntSvc.GetQuestionTypesByIds([]types.QuestionID{questionID})
+	questionTypes, err := s.questionIntSvc.GetQuestionTypesByIds(ctx, []types.QuestionID{questionID})
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question")
 	}
@@ -188,7 +188,7 @@ func (s *Answer) UpsertAnswer(ctx context.Context, req *proto.UpsertAnswersReque
 	}
 
 	// Convert question ID to hash
-	questionHashes, err := s.questionIntSvc.GetQuestionHashesByIds([]types.QuestionID{answer.QuestionID})
+	questionHashes, err := s.questionIntSvc.GetQuestionHashesByIds(ctx, []types.QuestionID{answer.QuestionID})
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question hash")
 	}

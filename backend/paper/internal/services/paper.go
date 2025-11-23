@@ -47,7 +47,7 @@ func NewPaper(
 }
 
 // GetUserPapers handles the business logic for fetching user's papers
-func (s *Paper) GetUserPapers(userID types.UserID) (*proto.PaperList, error) {
+func (s *Paper) GetUserPapers(ctx context.Context, userID types.UserID) (*proto.PaperList, error) {
 	logger := logging.GetLogger()
 	logger.Debug("GetUserPapers called", zap.Int64("user_id", int64(userID)))
 
@@ -61,7 +61,7 @@ func (s *Paper) GetUserPapers(userID types.UserID) (*proto.PaperList, error) {
 		Papers: make([]*proto.PaperResponse, len(papers)),
 	}
 	for i, p := range papers {
-		paperResp, err := s.GetPaper((p.Hash))
+		paperResp, err := s.GetPaper(ctx, p.Hash)
 		if err != nil {
 			return nil, grpcerror.Internal(err, "failed to get paper response")
 		}
@@ -73,7 +73,7 @@ func (s *Paper) GetUserPapers(userID types.UserID) (*proto.PaperList, error) {
 }
 
 // GetUserPapers handles the business logic for fetching user's papers
-func (s *Paper) GetPaper(paperHash string) (*proto.PaperResponse, error) {
+func (s *Paper) GetPaper(ctx context.Context, paperHash string) (*proto.PaperResponse, error) {
 	logger := logging.GetLogger()
 	logger.Debug("GetPaper called", zap.String("paper_hash", paperHash))
 
@@ -95,7 +95,7 @@ func (s *Paper) GetPaper(paperHash string) (*proto.PaperResponse, error) {
 		questionIDs[i] = pq.QuestionID
 	}
 
-	questions, err := s.questionIntSvc.GetQuestionsMetaByIDs(questionIDs)
+	questions, err := s.questionIntSvc.GetQuestionsMetaByIDs(ctx, questionIDs)
 	questionCounts := proto.QuestionCount{
 		Mcq:        0,
 		Subjective: 0,
@@ -124,7 +124,7 @@ func (s *Paper) GetPaper(paperHash string) (*proto.PaperResponse, error) {
 }
 
 // CreatePaper handles the business logic for creating a new paper
-func (s *Paper) CreatePaper(userID types.UserID) (*proto.CreatePaperResponse, error) {
+func (s *Paper) CreatePaper(ctx context.Context, userID types.UserID) (*proto.CreatePaperResponse, error) {
 	var paper models.Paper
 
 	logger := logging.GetLogger()
@@ -141,7 +141,7 @@ func (s *Paper) CreatePaper(userID types.UserID) (*proto.CreatePaperResponse, er
 		}
 
 		// Create default category
-		category, err := s.questionIntSvc.CreateCategory("Category 1")
+		category, err := s.questionIntSvc.CreateCategory(ctx, "Category 1")
 		if err != nil {
 			return grpcerror.Internal(err, "failed to create default category")
 		}
@@ -240,7 +240,7 @@ func (s *Paper) DeletePapers(ctx context.Context, hashes []string) error {
 
 		// Decrease question paper indegree if there are questions
 		if len(questionIDs) > 0 {
-			if err := s.questionIntSvc.DecQuestionPaperIndegreeByIds(questionIDs); err != nil {
+			if err := s.questionIntSvc.DecQuestionPaperIndegreeByIds(ctx, questionIDs); err != nil {
 				return grpcerror.Internal(err, "failed to decrease question paper indegree")
 			}
 		}

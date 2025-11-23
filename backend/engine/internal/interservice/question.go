@@ -4,12 +4,13 @@ import (
 	"context"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 
+	"pariksha/common/pkg/logging"
 	"pariksha/common/pkg/proto"
 )
 
 type Question struct {
-	ctx    context.Context
 	conn   *grpc.ClientConn
 	client proto.QuestionClient
 }
@@ -18,7 +19,6 @@ func NewQuestion(conn *grpc.ClientConn, client proto.QuestionClient) *Question {
 	return &Question{
 		conn:   conn,
 		client: client,
-		ctx:    context.Background(),
 	}
 }
 
@@ -28,8 +28,15 @@ func (ic *Question) Close() {
 	}
 }
 
-func (ic *Question) GetInputDefinitions(questionHash string) ([]*proto.InputDefinition, error) {
-	resp, err := ic.client.GetCodingQuestionInputDefinitions(ic.ctx, &proto.GetCodingQuestionInputDefinitionsRequest{
+// GetInputDefinitions fetches input definitions for a coding question. The ctx passed
+// will be used to propagate request metadata (request id) to the question service.
+func (ic *Question) GetInputDefinitions(ctx context.Context, questionHash string) ([]*proto.InputDefinition, error) {
+	// extract request id from ctx and append to outgoing metadata if present
+	if reqID, ok := logging.GetRequestIDFromContext(ctx); ok && reqID != "" {
+		ctx = metadata.AppendToOutgoingContext(ctx, "request_id", reqID)
+	}
+
+	resp, err := ic.client.GetCodingQuestionInputDefinitions(ctx, &proto.GetCodingQuestionInputDefinitionsRequest{
 		QuestionHash: questionHash,
 	})
 	if err != nil {

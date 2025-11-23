@@ -41,7 +41,7 @@ func SingleQuestionHashInterceptor(questionIntSvc *interservice.Question) grpc.U
 		}
 
 		// Get question ID using utility function
-		questionIDs, err := questionIntSvc.GetQuestionIDsByHashes([]string{hash})
+		questionIDs, err := questionIntSvc.GetQuestionIDsByHashes(ctx, []string{hash})
 		if err != nil {
 			return nil, status.Error(codes.Internal, "failed to fetch question ID")
 		}

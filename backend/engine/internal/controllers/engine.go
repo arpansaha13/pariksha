@@ -18,5 +18,5 @@ func NewEngine(engineSvc *services.Engine) *Engine {
 }
 
 func (c *Engine) Run(ctx context.Context, req *proto.RunCodeRequest) (*proto.RunCodeResponse, error) {
-	return c.engineSvc.Run(req)
+	return c.engineSvc.Run(ctx, req)
 }

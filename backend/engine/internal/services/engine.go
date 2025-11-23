@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -39,7 +40,7 @@ func NewEngine(
 	return e
 }
 
-func (s *Engine) Run(req *proto.RunCodeRequest) (*proto.RunCodeResponse, error) {
+func (s *Engine) Run(ctx context.Context, req *proto.RunCodeRequest) (*proto.RunCodeResponse, error) {
 	logger := logging.GetLogger()
 	logger.Debug("engine.Run called", zap.String("question_hash", req.QuestionHash), zap.Int("test_cases", len(req.TestCases)), zap.String("env", req.Environment))
 
@@ -50,7 +51,7 @@ func (s *Engine) Run(req *proto.RunCodeRequest) (*proto.RunCodeResponse, error) 
 	}
 
 	// Fetch input definitions. Will be used for parsing inputs.
-	inputDefinitions, err := s.questionIntSvc.GetInputDefinitions(req.QuestionHash)
+	inputDefinitions, err := s.questionIntSvc.GetInputDefinitions(ctx, req.QuestionHash)
 	if err != nil {
 		logger.Error("failed to fetch input definitions", zap.String("question_hash", req.QuestionHash), zap.Error(err))
 		return nil, err

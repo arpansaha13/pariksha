@@ -26,7 +26,7 @@ func (c *Paper) HandleGetUserPapers(ctx context.Context, _ *emptypb.Empty) (*pro
 	if err != nil {
 		return nil, err
 	}
-	return c.paperSvc.GetUserPapers(userID)
+	return c.paperSvc.GetUserPapers(ctx, userID)
 }
 
 func (c *Paper) HandleCreatePaper(ctx context.Context, _ *emptypb.Empty) (*proto.CreatePaperResponse, error) {
@@ -34,11 +34,11 @@ func (c *Paper) HandleCreatePaper(ctx context.Context, _ *emptypb.Empty) (*proto
 	if err != nil {
 		return nil, err
 	}
-	return c.paperSvc.CreatePaper(userID)
+	return c.paperSvc.CreatePaper(ctx, userID)
 }
 
 func (c *Paper) HandleGetPaper(ctx context.Context, req *proto.PaperRequest) (*proto.PaperResponse, error) {
-	return c.paperSvc.GetPaper(req.PaperHash)
+	return c.paperSvc.GetPaper(ctx, req.PaperHash)
 }
 
 func (c *Paper) HandleUpdatePaper(ctx context.Context, req *proto.UpdatePaperRequest) (*emptypb.Empty, error) {

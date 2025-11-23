@@ -1,6 +1,8 @@
 package services
 
 import (
+	"context"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -26,7 +28,7 @@ func NewCategory(
 }
 
 // GetExamCategories retrieves all category IDs associated with an exam
-func (s *Category) GetExamCategories(req *proto.ExamRequest) (*proto.ExamCategoriesResponse, error) {
+func (s *Category) GetExamCategories(ctx context.Context, req *proto.ExamRequest) (*proto.ExamCategoriesResponse, error) {
 	examCategories, err := s.categoryRepo.GetExamCategories(nil, req.ExamHash)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch categories")
@@ -37,7 +39,7 @@ func (s *Category) GetExamCategories(req *proto.ExamRequest) (*proto.ExamCategor
 		categoryIDs[i] = ec.CategoryID
 	}
 
-	categories, err := s.questionIntSvc.GetCategoriesByIDs(categoryIDs)
+	categories, err := s.questionIntSvc.GetCategoriesByIDs(ctx, categoryIDs)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch categories from paper service")
 	}

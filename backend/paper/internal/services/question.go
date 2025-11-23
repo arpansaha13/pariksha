@@ -44,7 +44,7 @@ func (s *Question) GetPaperQuestions(ctx context.Context, paperHash string) (*pr
 		questionIDs[i] = pq.QuestionID
 	}
 
-	questions, err := s.questionIntSvc.GetQuestionsMetaByIDs(questionIDs)
+	questions, err := s.questionIntSvc.GetQuestionsMetaByIDs(ctx, questionIDs)
 	if err != nil {
 		return nil, grpcerror.Internal(err, "failed to fetch question meta")
 	}
@@ -68,8 +68,8 @@ func (s *Question) GetPaperQuestions(ctx context.Context, paperHash string) (*pr
 }
 
 // GetPaperQuestion handles fetching a single question with its test cases
-func (s *Question) GetPaperQuestion(req *proto.PaperQuestionRequest) (*proto.PaperQuestionResponse, error) {
-	question, err := s.questionIntSvc.GetQuestionByHash(req.QuestionHash)
+func (s *Question) GetPaperQuestion(ctx context.Context, req *proto.PaperQuestionRequest) (*proto.PaperQuestionResponse, error) {
+	question, err := s.questionIntSvc.GetQuestionByHash(ctx, req.QuestionHash)
 	if err != nil {
 		if _, ok := status.FromError(err); ok {
 			return nil, err
@@ -99,7 +99,7 @@ func (s *Question) CreatePaperQuestion(ctx context.Context, req *proto.CreatePap
 		return nil, err
 	}
 
-	resp, err := s.questionIntSvc.CreateQuestion(&proto.CreateQuestionRequest{
+	resp, err := s.questionIntSvc.CreateQuestion(ctx, &proto.CreateQuestionRequest{
 		RawQuestion: req.RawQuestion,
 		Type:        req.Type,
 	})
@@ -141,14 +141,14 @@ func (s *Question) CreatePaperQuestion(ctx context.Context, req *proto.CreatePap
 }
 
 // UpdateQuestion handles question updates with proper locking to prevent race conditions
-func (s *Question) UpdatePaperQuestion(req *proto.UpdatePaperQuestionRequest) (*proto.UpdatePaperQuestionResponse, error) {
+func (s *Question) UpdatePaperQuestion(ctx context.Context, req *proto.UpdatePaperQuestionRequest) (*proto.UpdatePaperQuestionResponse, error) {
 	if req.MaxScore != nil {
 		if err := validate.MaxScore(*req.MaxScore); err != nil {
 			return nil, err
 		}
 	}
 
-	questionMeta, err := s.questionIntSvc.GetQuestionMetaByHash(req.QuestionHash)
+	questionMeta, err := s.questionIntSvc.GetQuestionMetaByHash(ctx, req.QuestionHash)
 	if err != nil {
 		return nil, grpcerror.Internal(err, "failed to fetch question")
 	}
@@ -158,7 +158,7 @@ func (s *Question) UpdatePaperQuestion(req *proto.UpdatePaperQuestionRequest) (*
 		return nil, grpcerror.Internal(err, "failed to get paper question")
 	}
 
-	resp, err := s.questionIntSvc.UpdateQuestion(&proto.UpdateQuestionRequest{
+	resp, err := s.questionIntSvc.UpdateQuestion(ctx, &proto.UpdateQuestionRequest{
 		Hash:        req.QuestionHash,
 		Type:        req.Type,
 		RawQuestion: req.RawQuestion,
@@ -181,9 +181,9 @@ func (s *Question) UpdatePaperQuestion(req *proto.UpdatePaperQuestionRequest) (*
 }
 
 // DeleteQuestion handles the business logic for deleting a question
-func (s *Question) DeletePaperQuestion(paperHash string, questionHash string) error {
+func (s *Question) DeletePaperQuestion(ctx context.Context, paperHash string, questionHash string) error {
 	return s.paperRepo.Transaction(func(tx *gorm.DB) error {
-		question, err := s.questionIntSvc.GetQuestionMetaByHash(questionHash)
+		question, err := s.questionIntSvc.GetQuestionMetaByHash(ctx, questionHash)
 		if err != nil {
 			st, ok := status.FromError(err)
 			if ok && st.Code() == codes.NotFound {
@@ -197,9 +197,9 @@ func (s *Question) DeletePaperQuestion(paperHash string, questionHash string) er
 }
 
 // ReorderQuestions handles the business logic for reordering questions
-func (s *Question) ReorderQuestions(categoryID int64, questionHashes []string) error {
+func (s *Question) ReorderQuestions(ctx context.Context, categoryID int64, questionHashes []string) error {
 	return s.paperRepo.Transaction(func(tx *gorm.DB) error {
-		questionIDs, err := s.questionIntSvc.GetQuestionIDsByHashes(questionHashes)
+		questionIDs, err := s.questionIntSvc.GetQuestionIDsByHashes(ctx, questionHashes)
 		if err != nil {
 			return grpcerror.Internal(err, "failed to fetch question ids")
 		}
@@ -229,21 +229,21 @@ func (s *Question) ReorderQuestions(categoryID int64, questionHashes []string) e
 	})
 }
 
-func (s *Question) GetBoilerplate(req *proto.GetPaperBoilerplateRequest) (*proto.BoilerplateResponse, error) {
-	return s.questionIntSvc.GetBoilerplate(&proto.GetBoilerplateRequest{
+func (s *Question) GetBoilerplate(ctx context.Context, req *proto.GetPaperBoilerplateRequest) (*proto.BoilerplateResponse, error) {
+	return s.questionIntSvc.GetBoilerplate(ctx, &proto.GetBoilerplateRequest{
 		QuestionHash: req.QuestionHash,
 		LanguageId:   req.LanguageId,
 	})
 }
 
-func (s *Question) UpsertTestCases(req *proto.UpsertPaperTestCasesRequest) (*emptypb.Empty, error) {
-	return s.questionIntSvc.UpsertTestCases(&proto.UpsertTestCasesRequest{
+func (s *Question) UpsertTestCases(ctx context.Context, req *proto.UpsertPaperTestCasesRequest) (*emptypb.Empty, error) {
+	return s.questionIntSvc.UpsertTestCases(ctx, &proto.UpsertTestCasesRequest{
 		QuestionHash: req.QuestionHash,
 		TestCases:    req.TestCases,
 	})
 }
 
-func (s *Question) GetPaperQuestionsMeta(req *proto.PaperRequest) (*proto.PaperQuestionsMeta, error) {
+func (s *Question) GetPaperQuestionsMeta(ctx context.Context, req *proto.PaperRequest) (*proto.PaperQuestionsMeta, error) {
 	paperQuests, err := s.paperQuestRepo.GetAllByPaperHash(nil, req.PaperHash)
 	if err != nil {
 		return nil, grpcerror.Internal(err, "failed to fetch paper questions")

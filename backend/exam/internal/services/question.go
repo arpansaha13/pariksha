@@ -1,6 +1,8 @@
 package services
 
 import (
+	"context"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -26,7 +28,7 @@ func NewQuestion(
 }
 
 // GetExamQuestions retrieves all questions associated with an exam
-func (s *Question) GetExamQuestions(req *proto.ExamRequest) (*proto.ExamQuestionsResponse, error) {
+func (s *Question) GetExamQuestions(ctx context.Context, req *proto.ExamRequest) (*proto.ExamQuestionsResponse, error) {
 	examQuestions, err := s.questionRepo.GetExamQuestions(nil, req.ExamHash)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch questions")
@@ -39,12 +41,12 @@ func (s *Question) GetExamQuestions(req *proto.ExamRequest) (*proto.ExamQuestion
 	}
 
 	// Fetch question hashes from paper service
-	questionHashes, err := s.questionIntSvc.GetQuestionHashesByIds(questionIDs)
+	questionHashes, err := s.questionIntSvc.GetQuestionHashesByIds(ctx, questionIDs)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question hashes")
 	}
 
-	questionTypes, err := s.questionIntSvc.GetQuestionTypesByIds(questionIDs)
+	questionTypes, err := s.questionIntSvc.GetQuestionTypesByIds(ctx, questionIDs)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question")
 	}
@@ -66,9 +68,9 @@ func (s *Question) GetExamQuestions(req *proto.ExamRequest) (*proto.ExamQuestion
 }
 
 // GetExamQuestion retrieves the question specified by the hash
-func (s *Question) GetExamQuestion(req *proto.ExamQuestionRequest) (*proto.ExamQuestionResponse, error) {
+func (s *Question) GetExamQuestion(ctx context.Context, req *proto.ExamQuestionRequest) (*proto.ExamQuestionResponse, error) {
 	// Fetch question hashes from paper service
-	question, err := s.questionIntSvc.GetQuestionByHash(req.QuestionHash)
+	question, err := s.questionIntSvc.GetQuestionByHash(ctx, req.QuestionHash)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to fetch question hashes")
 	}
