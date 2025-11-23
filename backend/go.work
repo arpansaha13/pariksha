@@ -2,7 +2,7 @@ go 1.23.4
 
 use ./common
 
-use ./server
+use ./gateway
 
 use ./paper
 

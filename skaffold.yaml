@@ -7,7 +7,7 @@ build:
     - image: pariksha_backend
       context: backend
       docker:
-        dockerfile: server/Dockerfile
+        dockerfile: gateway/Dockerfile
     - image: pariksha_engine_service
       context: backend
       docker:

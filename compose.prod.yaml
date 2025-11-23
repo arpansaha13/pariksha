@@ -9,7 +9,7 @@ services:
   gateway:
     build:
       context: backend
-      dockerfile: ./server/Dockerfile
+      dockerfile: ./gateway/Dockerfile
     image: europe-north1-docker.pkg.dev/pariksha13/gateway/api:v0.1.0
     expose:
       - "4000"
