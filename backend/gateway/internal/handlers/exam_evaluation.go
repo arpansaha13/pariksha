@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/utils/ptr"
+	"pariksha/common/pkg/utils"
 	"pariksha/gateway/internal/config/validate"
 	"pariksha/gateway/internal/dtos"
 	"pariksha/gateway/internal/middlewares"
@@ -76,7 +76,7 @@ func UpdateAnswerForEvaluation(w http.ResponseWriter, r *http.Request) {
 	req := &proto.UpdateAnswerRequest{
 		AnswerId:  answerId,
 		Evaluated: updateDTO.Evaluated,
-		NewScore:  ptr.Int32(*updateDTO.NewScore),
+		NewScore:  utils.Ptr(int32(*updateDTO.NewScore)),
 	}
 
 	// Send update request to exam service

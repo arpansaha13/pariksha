@@ -20,7 +20,6 @@ import (
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/generate"
-	"pariksha/common/pkg/utils/ptr"
 	"pariksha/exam/internal/interceptors"
 	"pariksha/exam/internal/interservice"
 	"pariksha/exam/internal/repositories"
@@ -378,7 +377,7 @@ func (s *Exam) GetExamPermission(ctx context.Context, req *proto.ExamRequest) (*
 				CanWrite:          false,
 				CanParticipate:    true,
 				CanEvaluate:       false,
-				ParticipantStatus: ptr.Int32(int32(constants.PARTICIPANT_STATUS_INVITED)),
+				ParticipantStatus: utils.Ptr(int32(constants.PARTICIPANT_STATUS_INVITED)),
 			}, nil
 		}
 		return &proto.ExamPermissionResponse{}, nil
@@ -395,7 +394,7 @@ func (s *Exam) GetExamPermission(ctx context.Context, req *proto.ExamRequest) (*
 	if permission.CanParticipate() {
 		participant, err := s.participantRepo.GetByExamHashAndUserID(nil, exam.Hash, userID)
 		if err == nil {
-			response.ParticipantStatus = ptr.Int32(int32(participant.Status))
+			response.ParticipantStatus = utils.Ptr(int32(participant.Status))
 		}
 	}
 

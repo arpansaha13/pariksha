@@ -16,8 +16,8 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/test"
 	"pariksha/common/pkg/types"
+	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/generate"
-	"pariksha/common/pkg/utils/ptr"
 )
 
 func TestGetUserExams(t *testing.T) {
@@ -305,7 +305,7 @@ func TestUpdateExam(t *testing.T) {
 			GetRequest: func(setupData *SetupReturn) *proto.UpdateExamRequest {
 				return &proto.UpdateExamRequest{
 					ExamHash: setupData.Exam.Hash,
-					Title:    ptr.String("Updated Exam"),
+					Title:    utils.Ptr("Updated Exam"),
 					StartsAt: timestamppb.New(time.Now().Add(48 * time.Hour)),
 					EndsAt:   timestamppb.New(time.Now().Add(72 * time.Hour)),
 					Type:     proto.ExamType_LINK.Enum(),
@@ -379,7 +379,7 @@ func TestUpdateExam(t *testing.T) {
 			GetRequest: func(setupData *SetupReturn) *proto.UpdateExamRequest {
 				return &proto.UpdateExamRequest{
 					ExamHash: setupData.Exam.Hash,
-					Title:    ptr.String("Updated Exam"),
+					Title:    utils.Ptr("Updated Exam"),
 				}
 			},
 			ExpectedCode: codes.NotFound,
@@ -396,7 +396,7 @@ func TestUpdateExam(t *testing.T) {
 			GetRequest: func(setupData *SetupReturn) *proto.UpdateExamRequest {
 				return &proto.UpdateExamRequest{
 					ExamHash: setupData.Exam.Hash,
-					Title:    ptr.String("Updated Exam"),
+					Title:    utils.Ptr("Updated Exam"),
 				}
 			},
 			ExpectedCode: codes.PermissionDenied,
@@ -415,7 +415,7 @@ func TestUpdateExam(t *testing.T) {
 			GetRequest: func(setupData *SetupReturn) *proto.UpdateExamRequest {
 				return &proto.UpdateExamRequest{
 					ExamHash:        setupData.Exam.Hash,
-					DurationMinutes: ptr.Int32(180),
+					DurationMinutes: utils.Ptr(int32(180)),
 				}
 			},
 			ExpectedCode: codes.OK,
@@ -495,7 +495,7 @@ func TestUpdateExam(t *testing.T) {
 			GetRequest: func(setupData *SetupReturn) *proto.UpdateExamRequest {
 				return &proto.UpdateExamRequest{
 					ExamHash:        setupData.Exam.Hash,
-					DurationMinutes: ptr.Int32(int32(constants.MAX_EXAM_DURATION_MINUTES + 1)),
+					DurationMinutes: utils.Ptr(int32(constants.MAX_EXAM_DURATION_MINUTES + 1)),
 				}
 			},
 			ExpectedCode: codes.InvalidArgument,
@@ -515,7 +515,7 @@ func TestUpdateExam(t *testing.T) {
 			GetRequest: func(setupData *SetupReturn) *proto.UpdateExamRequest {
 				return &proto.UpdateExamRequest{
 					ExamHash:        setupData.Exam.Hash,
-					DurationMinutes: ptr.Int32(120), // Try to update to 2 hours
+					DurationMinutes: utils.Ptr(int32(120)), // Try to update to 2 hours
 				}
 			},
 			ExpectedCode: codes.FailedPrecondition,

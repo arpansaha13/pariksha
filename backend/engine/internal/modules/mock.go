@@ -15,6 +15,8 @@ import (
 func NewMock() (*engineServer, *interservice.Question, error) {
 	mockQuestionIntSvc := mockQuestionInterservice()
 
+	// Ensure DOCKER_API_VERSION = 1.46
+	// Error response from daemon: client version 1.48 is too new. Maximum supported API version is 1.46
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return nil, nil, status.Errorf(codes.Internal, "failed to create Docker client: %v", err)

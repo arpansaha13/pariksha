@@ -8,7 +8,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/utils/ptr"
+	"pariksha/common/pkg/utils"
 	"pariksha/gateway/internal/config/validate"
 	"pariksha/gateway/internal/dtos"
 	"pariksha/gateway/internal/middlewares"
@@ -136,7 +136,7 @@ func UpdatePaper(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if paperDto.DurationMinutes > 0 {
-		updatePaperRequest.DurationMinutes = ptr.Int32(paperDto.DurationMinutes)
+		updatePaperRequest.DurationMinutes = utils.Ptr(int32(paperDto.DurationMinutes))
 	}
 
 	ctx := paperService.CreateMetadata(r.Context(), userID)

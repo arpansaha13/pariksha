@@ -21,7 +21,7 @@ import (
 
 	"pariksha/common/pkg/constants"
 	"pariksha/common/pkg/proto"
-	"pariksha/common/pkg/utils/ptr"
+	"pariksha/common/pkg/utils"
 	engineConstants "pariksha/engine/internal/constants"
 	"pariksha/engine/internal/templates"
 )
@@ -162,8 +162,8 @@ func (r *Kubernetes) createJob(jobName string, envConfig environmentConfig) *bat
 			Namespace: r.namespace,
 		},
 		Spec: batchv1.JobSpec{
-			BackoffLimit:            ptr.Int32(0),
-			TTLSecondsAfterFinished: ptr.Int32(10),
+			BackoffLimit:            utils.Ptr(int32(0)),
+			TTLSecondsAfterFinished: utils.Ptr(int32(10)),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					RestartPolicy: corev1.RestartPolicyNever,
@@ -195,9 +195,9 @@ func (r *Kubernetes) createJob(jobName string, envConfig environmentConfig) *bat
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
-								RunAsNonRoot: ptr.Bool(true),
-								RunAsUser:    ptr.Int64(1000),
-								RunAsGroup:   ptr.Int64(1000),
+								RunAsNonRoot: utils.Ptr(true),
+								RunAsUser:    utils.Ptr(int64(1000)),
+								RunAsGroup:   utils.Ptr(int64(1000)),
 							},
 						},
 					},
