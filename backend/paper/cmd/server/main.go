@@ -1,9 +1,11 @@
-package modules
+package main
 
 import (
 	"fmt"
 	"log"
+	"net"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/gorm"
@@ -21,13 +23,22 @@ import (
 	"pariksha/paper/internal/service"
 )
 
-func Dev() (proto.PaperServer, []grpc.UnaryServerInterceptor, func()) {
-	dbInst := initDB()
-	questionIntSvc := initQuestionInterservice()
+func main() {
+	port := env.PAPER_SERVER_PORT
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	defer lis.Close()
 
-	// Initialize logger and logging interceptor for the service
 	baseLogger := logging.InitLogger(env.GO_ENV)
-	loggingInterceptor := logging.NewLoggingInterceptor(baseLogger)
+	defer baseLogger.Sync()
+
+	dbInst := initDB()
+	defer closeDB(dbInst)
+
+	questionIntSvc := initQuestionInterservice()
+	defer questionIntSvc.Close()
 
 	// Initialize repositories
 	paperRepo := repository.NewPaper(dbInst)
@@ -42,32 +53,29 @@ func Dev() (proto.PaperServer, []grpc.UnaryServerInterceptor, func()) {
 
 	// Initialize interceptors
 	intc := []grpc.UnaryServerInterceptor{
-		loggingInterceptor,
+		logging.NewLoggingInterceptor(baseLogger),
 		middleware.PaperAuthInterceptor(paperPermRepo),
 		middleware.DeletePaperAuthInterceptor(paperPermRepo),
 		middleware.ExamServiceAuthInterceptor(),
 	}
 
-	// Initialize controllers
-	server := controllers.NewServer(paperSvc, categorySvc, questionSvc)
+	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(intc...))
+	defer grpcServer.Stop()
 
-	cleanup := func() {
-		sqlDB, err := dbInst.DB()
-		if err != nil {
-			log.Panicf("could not get sqlDB")
-		}
+	controllers.SetupPaperServer(grpcServer, paperSvc, categorySvc, questionSvc)
 
-		sqlDB.Close()
-		baseLogger.Sync()
+	baseLogger.Info("Paper gRPC server is running", zap.String("port", port))
+	if err := grpcServer.Serve(lis); err != nil {
+		baseLogger.Fatal("failed to serve", zap.Error(err))
 	}
-
-	return server, intc, cleanup
 }
 
 func initDB() *gorm.DB {
 	gormConfig := config.GetDevEnvGormConfig()
+	var migrator config.DBMigrator = &db.AutoMigrator{}
 	if env.GO_ENV == constants.GO_ENV_PROD {
 		gormConfig = config.GetDefaultGormConfig()
+		migrator = nil
 	}
 
 	var dbInitializer config.DBInitializer = &config.PostgresInitializer{}
@@ -80,10 +88,10 @@ func initDB() *gorm.DB {
 			Sslmode:  env.PAPER_DB_SSLMODE,
 		},
 		gormConfig,
-		&db.AutoMigrator{},
+		migrator,
 	)
 	if err != nil {
-		log.Panicf("failed to initialize paper database: %v", err)
+		log.Fatalf("failed to initialize paper database: %v", err)
 	}
 
 	return dbInst
@@ -93,11 +101,17 @@ func initQuestionInterservice() *interservice.Question {
 	addr := fmt.Sprintf("%s:%s", env.QUESTION_SERVER_HOST, env.QUESTION_SERVER_PORT)
 	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Panicf("Failed to connect to question service: %v", err)
+		log.Fatalf("Failed to connect to question service: %v", err)
 	}
 
 	client := proto.NewQuestionClient(conn)
-	qIntSvc := interservice.NewQuestion(conn, client)
+	return interservice.NewQuestion(conn, client)
+}
 
-	return qIntSvc
+func closeDB(dbInst *gorm.DB) {
+	sqlDB, err := dbInst.DB()
+	if err != nil {
+		log.Panicf("could not get sqlDB")
+	}
+	sqlDB.Close()
 }

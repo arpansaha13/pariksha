@@ -10,17 +10,18 @@ import (
 
 	"pariksha/common/pkg/config"
 	"pariksha/common/pkg/mocks"
+	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/test"
 	"pariksha/paper/internal/config/db"
 	"pariksha/paper/internal/config/env"
-	"pariksha/paper/internal/controllers"
-	"pariksha/paper/internal/interceptors"
+	"pariksha/paper/internal/controller"
 	"pariksha/paper/internal/interservice"
-	"pariksha/paper/internal/repositories"
-	"pariksha/paper/internal/services"
+	"pariksha/paper/internal/middleware"
+	"pariksha/paper/internal/repository"
+	"pariksha/paper/internal/service"
 )
 
-func NewMock() (*paperServer, *gorm.DB, []grpc.UnaryServerInterceptor, func()) {
+func NewMock() (proto.PaperServer, *gorm.DB, []grpc.UnaryServerInterceptor, func()) {
 	ctx := context.Background()
 	mockQuestionIntSvc := mockQuestionInterservice()
 
@@ -29,29 +30,25 @@ func NewMock() (*paperServer, *gorm.DB, []grpc.UnaryServerInterceptor, func()) {
 	dbInst := mockDB(pgAddr)
 
 	// Initialize repositories
-	paperRepo := repositories.NewPaper(dbInst)
-	paperCatRepo := repositories.NewPaperCategory(dbInst)
-	paperPermRepo := repositories.NewPaperPermission(dbInst)
-	paperQuestRepo := repositories.NewPaperQuestion(dbInst)
+	paperRepo := repository.NewPaper(dbInst)
+	paperCatRepo := repository.NewPaperCategory(dbInst)
+	paperPermRepo := repository.NewPaperPermission(dbInst)
+	paperQuestRepo := repository.NewPaperQuestion(dbInst)
 
 	// Initialize services
-	paperSvc := services.NewPaper(paperRepo, paperCatRepo, paperPermRepo, paperQuestRepo, mockQuestionIntSvc)
-	questionSvc := services.NewQuestion(paperRepo, paperQuestRepo, mockQuestionIntSvc)
-	categorySvc := services.NewCategory(paperRepo, paperCatRepo, paperQuestRepo, mockQuestionIntSvc)
+	paperSvc := service.NewPaper(paperRepo, paperCatRepo, paperPermRepo, paperQuestRepo, mockQuestionIntSvc)
+	questionSvc := service.NewQuestion(paperRepo, paperQuestRepo, mockQuestionIntSvc)
+	categorySvc := service.NewCategory(paperRepo, paperCatRepo, paperQuestRepo, mockQuestionIntSvc)
 
 	// Initialize interceptors
 	intc := []grpc.UnaryServerInterceptor{
-		interceptors.PaperAuthInterceptor(paperPermRepo),
-		interceptors.DeletePaperAuthInterceptor(paperPermRepo),
-		interceptors.ExamServiceAuthInterceptor(),
+		middleware.PaperAuthInterceptor(paperPermRepo),
+		middleware.DeletePaperAuthInterceptor(paperPermRepo),
+		middleware.ExamServiceAuthInterceptor(),
 	}
 
 	// Initialize controllers
-	server := &paperServer{
-		paperCtrl:    controllers.NewPaper(paperSvc),
-		categoryCtrl: controllers.NewCategory(categorySvc),
-		questionCtrl: controllers.NewQuestion(questionSvc),
-	}
+	server := controllers.NewServer(paperSvc, categorySvc, questionSvc)
 
 	cleanup := func() {
 		sqlDB, err := dbInst.DB()

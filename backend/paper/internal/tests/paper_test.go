@@ -12,7 +12,7 @@ import (
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/test"
 	"pariksha/common/pkg/types"
-	"pariksha/paper/internal/models"
+	models "pariksha/paper/internal/domain"
 )
 
 func TestGetUserPapers(t *testing.T) {

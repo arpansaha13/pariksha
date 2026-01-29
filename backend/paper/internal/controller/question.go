@@ -6,14 +6,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"pariksha/common/pkg/proto"
-	"pariksha/paper/internal/services"
+	"pariksha/paper/internal/service"
 )
 
 type Question struct {
-	questionSvc *services.Question
+	questionSvc *service.Question
 }
 
-func NewQuestion(s *services.Question) *Question {
+func NewQuestion(s *service.Question) *Question {
 	return &Question{
 		questionSvc: s,
 	}

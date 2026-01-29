@@ -1,4 +1,4 @@
-package services
+package service
 
 import (
 	"context"
@@ -12,19 +12,19 @@ import (
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/grpcerror"
+	"pariksha/paper/internal/domain"
 	"pariksha/paper/internal/interservice"
-	"pariksha/paper/internal/models"
-	"pariksha/paper/internal/repositories"
+	"pariksha/paper/internal/repository"
 	"pariksha/paper/internal/utils/validate"
 )
 
 type Question struct {
-	paperRepo      *repositories.Paper
-	paperQuestRepo *repositories.PaperQuestion
+	paperRepo      *repository.Paper
+	paperQuestRepo *repository.PaperQuestion
 	questionIntSvc *interservice.Question
 }
 
-func NewQuestion(paperRepo *repositories.Paper, paperQuestRepo *repositories.PaperQuestion, questionIntSvc *interservice.Question) *Question {
+func NewQuestion(paperRepo *repository.Paper, paperQuestRepo *repository.PaperQuestion, questionIntSvc *interservice.Question) *Question {
 	return &Question{
 		paperRepo:      paperRepo,
 		paperQuestRepo: paperQuestRepo,
@@ -120,7 +120,7 @@ func (s *Question) CreatePaperQuestion(ctx context.Context, req *proto.CreatePap
 			return grpcerror.Internal(err, "failed to get max order for category")
 		}
 
-		paperQuest := models.PaperQuestion{
+		paperQuest := domain.PaperQuestion{
 			PaperID:    paper.ID,
 			QuestionID: types.QuestionID(resp.Id),
 			CategoryID: types.CategoryID(req.CategoryId),

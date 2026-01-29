@@ -14,7 +14,7 @@ import (
 	"pariksha/common/pkg/test"
 	"pariksha/common/pkg/types"
 	"pariksha/paper/internal/config/env"
-	"pariksha/paper/internal/models"
+	models "pariksha/paper/internal/domain"
 )
 
 func TestGetPaperCategories(t *testing.T) {

@@ -1,4 +1,4 @@
-package interceptors
+package middleware
 
 import (
 	"context"
@@ -10,8 +10,8 @@ import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/utils"
-	"pariksha/paper/internal/models"
-	"pariksha/paper/internal/repositories"
+	"pariksha/paper/internal/domain"
+	"pariksha/paper/internal/repository"
 )
 
 type paperContextKey string
@@ -42,7 +42,7 @@ var requiresWrite = map[string]struct{}{
 	"/proto.Paper/UpsertPaperTestCases":   {},
 }
 
-func PaperAuthInterceptor(permissionRepo *repositories.PaperPermission) grpc.UnaryServerInterceptor {
+func PaperAuthInterceptor(permissionRepo *repository.PaperPermission) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		methodName := info.FullMethod
 		_, needsRead := requiresRead[methodName]
@@ -90,8 +90,8 @@ func PaperAuthInterceptor(permissionRepo *repositories.PaperPermission) grpc.Una
 }
 
 // Getter function to safely access permission from context
-func GetPermissionFromContext(ctx context.Context) (*models.PaperPermission, error) {
-	permission, ok := ctx.Value(permissionContextKey).(models.PaperPermission)
+func GetPermissionFromContext(ctx context.Context) (*domain.PaperPermission, error) {
+	permission, ok := ctx.Value(permissionContextKey).(domain.PaperPermission)
 	if !ok {
 		return nil, status.Error(codes.Internal, "paper permission data not found in context")
 	}

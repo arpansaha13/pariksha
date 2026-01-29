@@ -1,4 +1,4 @@
-package services
+package service
 
 import (
 	"context"
@@ -12,23 +12,23 @@ import (
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/grpcerror"
+	"pariksha/paper/internal/domain"
 	"pariksha/paper/internal/interservice"
-	"pariksha/paper/internal/models"
-	"pariksha/paper/internal/repositories"
+	"pariksha/paper/internal/repository"
 )
 
 type Category struct {
-	paperRepo      *repositories.Paper
-	paperCatRepo   *repositories.PaperCategory
-	paperQuestRepo *repositories.PaperQuestion
+	paperRepo      *repository.Paper
+	paperCatRepo   *repository.PaperCategory
+	paperQuestRepo *repository.PaperQuestion
 	questionIntSvc *interservice.Question
 }
 
 // NewCategoryService creates a new category service instance
 func NewCategory(
-	paperRepo *repositories.Paper,
-	paperCatRepo *repositories.PaperCategory,
-	paperQuestRepo *repositories.PaperQuestion,
+	paperRepo *repository.Paper,
+	paperCatRepo *repository.PaperCategory,
+	paperQuestRepo *repository.PaperQuestion,
 	questionIntSvc *interservice.Question,
 ) *Category {
 	return &Category{
@@ -123,7 +123,7 @@ func (s *Category) ReorderCategories(ctx context.Context, paperHash string, cate
 
 // CreateCategory handles creating a new category
 func (s *Category) CreateCategory(ctx context.Context, paperHash string) (*proto.PaperCategoryResponse, error) {
-	var paperCategory models.PaperCategory
+	var paperCategory domain.PaperCategory
 	var category *proto.CategoryResponse
 	err := s.paperRepo.Transaction(func(tx *gorm.DB) error {
 		paper, err := s.paperRepo.GetByHash(tx, paperHash)
@@ -141,7 +141,7 @@ func (s *Category) CreateCategory(ctx context.Context, paperHash string) (*proto
 			return grpcerror.Internal(err, "failed to create category")
 		}
 
-		paperCategory = models.PaperCategory{
+		paperCategory = domain.PaperCategory{
 			PaperID:    paper.ID,
 			CategoryID: types.CategoryID(category.Id),
 			Order:      maxOrder + 1,

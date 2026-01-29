@@ -1,4 +1,4 @@
-package repositories
+package repository
 
 import (
 	"database/sql"
@@ -7,7 +7,7 @@ import (
 
 	"pariksha/common/pkg/types"
 	"pariksha/common/pkg/utils"
-	"pariksha/paper/internal/models"
+	"pariksha/paper/internal/domain"
 )
 
 type Paper struct {
@@ -31,9 +31,9 @@ func (r *Paper) Transaction(fc func(tx *gorm.DB) error, opts ...*sql.TxOptions) 
 }
 
 // GetAllByUserId fetches all papers accessible to a user
-func (r *Paper) GetAllByUserId(tx *gorm.DB, userID types.UserID) ([]models.Paper, error) {
+func (r *Paper) GetAllByUserId(tx *gorm.DB, userID types.UserID) ([]domain.Paper, error) {
 	tx = r.getTx(tx)
-	var papers []models.Paper
+	var papers []domain.Paper
 	err := tx.
 		Select("papers.id, papers.hash, papers.title, papers.duration_minutes, papers.created_by").
 		Joins("INNER JOIN permissions ON permissions.paper_id = papers.id").
@@ -43,35 +43,35 @@ func (r *Paper) GetAllByUserId(tx *gorm.DB, userID types.UserID) ([]models.Paper
 }
 
 // Create creates a new paper and its associated records
-func (r *Paper) Create(tx *gorm.DB, paper *models.Paper, userID types.UserID) error {
+func (r *Paper) Create(tx *gorm.DB, paper *domain.Paper, userID types.UserID) error {
 	tx = r.getTx(tx)
 	return tx.Create(paper).Error
 }
 
 // UpdateHash updates the hash of a paper
-func (r *Paper) UpdateHash(tx *gorm.DB, paper *models.Paper, hash string) error {
+func (r *Paper) UpdateHash(tx *gorm.DB, paper *domain.Paper, hash string) error {
 	tx = r.getTx(tx)
 	return tx.Model(paper).Update("hash", hash).Error
 }
 
 // GetByID fetches a paper by its id
-func (r *Paper) GetByID(tx *gorm.DB, paperId types.PaperID) (*models.Paper, error) {
+func (r *Paper) GetByID(tx *gorm.DB, paperId types.PaperID) (*domain.Paper, error) {
 	tx = r.getTx(tx)
-	var paper models.Paper
+	var paper domain.Paper
 	err := tx.Where("id = ?", paperId).Take(&paper).Error
 	return &paper, err
 }
 
 // GetByHash fetches a paper by its hash
-func (r *Paper) GetByHash(tx *gorm.DB, hash string) (*models.Paper, error) {
+func (r *Paper) GetByHash(tx *gorm.DB, hash string) (*domain.Paper, error) {
 	tx = r.getTx(tx)
-	var paper models.Paper
+	var paper domain.Paper
 	err := tx.Where("hash = ?", hash).Take(&paper).Error
 	return &paper, err
 }
 
 // Update updates the paper's details
-func (r *Paper) Update(tx *gorm.DB, paper *models.Paper) error {
+func (r *Paper) Update(tx *gorm.DB, paper *domain.Paper) error {
 	tx = r.getTx(tx)
 	return tx.Save(paper).Error
 }
@@ -80,7 +80,7 @@ func (r *Paper) Update(tx *gorm.DB, paper *models.Paper) error {
 func (r *Paper) GetIDsByHashes(tx *gorm.DB, hashes []string) ([]types.PaperID, error) {
 	tx = r.getTx(tx)
 	var paperIDs []types.PaperID
-	err := tx.Model(&models.Paper{}).
+	err := tx.Model(&domain.Paper{}).
 		Where("hash IN ?", hashes).
 		Pluck("id", &paperIDs).Error
 	return paperIDs, err
@@ -90,5 +90,5 @@ func (r *Paper) GetIDsByHashes(tx *gorm.DB, hashes []string) ([]types.PaperID, e
 func (r *Paper) BulkDelete(tx *gorm.DB, paperIDs []types.PaperID) error {
 	tx = r.getTx(tx)
 
-	return tx.Where("id IN ?", paperIDs).Delete(&models.Paper{}).Error
+	return tx.Where("id IN ?", paperIDs).Delete(&domain.Paper{}).Error
 }

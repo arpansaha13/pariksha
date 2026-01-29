@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"pariksha/common/pkg/types"
-	"pariksha/paper/internal/models"
+	models "pariksha/paper/internal/domain"
 )
 
 const defaultUserID types.UserID = 1

@@ -7,15 +7,15 @@ import (
 
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
-	"pariksha/paper/internal/interceptors"
-	"pariksha/paper/internal/services"
+	"pariksha/paper/internal/middleware"
+	"pariksha/paper/internal/service"
 )
 
 type Paper struct {
-	paperSvc *services.Paper
+	paperSvc *service.Paper
 }
 
-func NewPaper(s *services.Paper) *Paper {
+func NewPaper(s *service.Paper) *Paper {
 	return &Paper{
 		paperSvc: s,
 	}
@@ -49,7 +49,7 @@ func (c *Paper) HandleUpdatePaper(ctx context.Context, req *proto.UpdatePaperReq
 }
 
 func (c *Paper) HandleGetPaperPermissions(ctx context.Context, req *proto.PaperRequest) (*proto.PaperPermissionsResponse, error) {
-	perm, err := interceptors.GetPermissionFromContext(ctx)
+	perm, err := middleware.GetPermissionFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}

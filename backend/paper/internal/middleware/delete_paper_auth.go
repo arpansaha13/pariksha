@@ -1,4 +1,4 @@
-package interceptors
+package middleware
 
 import (
 	"context"
@@ -9,14 +9,14 @@ import (
 
 	"pariksha/common/pkg/proto"
 	"pariksha/common/pkg/utils"
-	"pariksha/paper/internal/repositories"
+	"pariksha/paper/internal/repository"
 )
 
 const deletePaperPath = "/proto.Paper/DeletePapers"
 
 // DeletePaperAuthInterceptor returns a new unary server interceptor that handles
 // permission checks for the DeletePapers endpoint.
-func DeletePaperAuthInterceptor(permissionRepo *repositories.PaperPermission) grpc.UnaryServerInterceptor {
+func DeletePaperAuthInterceptor(permissionRepo *repository.PaperPermission) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		// Only intercept DeletePapers requests
 		if info.FullMethod != deletePaperPath {

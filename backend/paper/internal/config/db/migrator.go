@@ -3,16 +3,16 @@ package db
 import (
 	"gorm.io/gorm"
 
-	"pariksha/paper/internal/models"
+	"pariksha/paper/internal/domain"
 )
 
 type AutoMigrator struct{}
 
 func (m *AutoMigrator) Migrate(db *gorm.DB) error {
 	return db.AutoMigrate(
-		&models.Paper{},
-		&models.PaperQuestion{},
-		&models.PaperCategory{},
-		&models.PaperPermission{},
+		&domain.Paper{},
+		&domain.PaperQuestion{},
+		&domain.PaperCategory{},
+		&domain.PaperPermission{},
 	)
 }

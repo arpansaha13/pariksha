@@ -1,4 +1,4 @@
-package services
+package service
 
 import (
 	"context"
@@ -16,25 +16,25 @@ import (
 	"pariksha/common/pkg/utils"
 	"pariksha/common/pkg/utils/generate"
 	"pariksha/common/pkg/utils/grpcerror"
+	"pariksha/paper/internal/domain"
 	"pariksha/paper/internal/interservice"
-	"pariksha/paper/internal/models"
-	"pariksha/paper/internal/repositories"
+	"pariksha/paper/internal/repository"
 	"pariksha/paper/internal/utils/validate"
 )
 
 type Paper struct {
-	paperRepo      *repositories.Paper
-	paperCatRepo   *repositories.PaperCategory
-	paperPermRepo  *repositories.PaperPermission
-	paperQuestRepo *repositories.PaperQuestion
+	paperRepo      *repository.Paper
+	paperCatRepo   *repository.PaperCategory
+	paperPermRepo  *repository.PaperPermission
+	paperQuestRepo *repository.PaperQuestion
 	questionIntSvc *interservice.Question
 }
 
 func NewPaper(
-	paperRepo *repositories.Paper,
-	paperCatRepo *repositories.PaperCategory,
-	paperPermRepo *repositories.PaperPermission,
-	paperQuestRepo *repositories.PaperQuestion,
+	paperRepo *repository.Paper,
+	paperCatRepo *repository.PaperCategory,
+	paperPermRepo *repository.PaperPermission,
+	paperQuestRepo *repository.PaperQuestion,
 	questionIntSvc *interservice.Question,
 ) *Paper {
 	return &Paper{
@@ -125,13 +125,13 @@ func (s *Paper) GetPaper(ctx context.Context, paperHash string) (*proto.PaperRes
 
 // CreatePaper handles the business logic for creating a new paper
 func (s *Paper) CreatePaper(ctx context.Context, userID types.UserID) (*proto.CreatePaperResponse, error) {
-	var paper models.Paper
+	var paper domain.Paper
 
 	logger := logging.GetLogger()
 	logger.Debug("CreatePaper called", zap.Int64("user_id", int64(userID)))
 
 	err := s.paperRepo.Transaction(func(tx *gorm.DB) error {
-		paper = models.Paper{CreatedBy: userID}
+		paper = domain.Paper{CreatedBy: userID}
 		if err := s.paperRepo.Create(tx, &paper, userID); err != nil {
 			return grpcerror.Internal(err, "failed to create paper")
 		}
@@ -145,7 +145,7 @@ func (s *Paper) CreatePaper(ctx context.Context, userID types.UserID) (*proto.Cr
 		if err != nil {
 			return grpcerror.Internal(err, "failed to create default category")
 		}
-		if err := s.paperCatRepo.Create(tx, &models.PaperCategory{
+		if err := s.paperCatRepo.Create(tx, &domain.PaperCategory{
 			PaperID:    paper.ID,
 			CategoryID: types.CategoryID(category.Id),
 			Order:      1,
@@ -232,7 +232,7 @@ func (s *Paper) DeletePapers(ctx context.Context, hashes []string) error {
 
 		// Get question IDs before deletion
 		var questionIDs []types.QuestionID
-		if err := tx.Model(&models.PaperQuestion{}).
+		if err := tx.Model(&domain.PaperQuestion{}).
 			Where("paper_id IN ?", paperIDs).
 			Pluck("question_id", &questionIDs).Error; err != nil {
 			return grpcerror.Internal(err, "failed to fetch question IDs")

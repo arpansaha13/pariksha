@@ -1,7 +1,8 @@
-package interceptors
+package middleware
 
 import (
 	"context"
+
 	"pariksha/common/pkg/constants"
 	"pariksha/paper/internal/config/env"
 

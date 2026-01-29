@@ -6,14 +6,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"pariksha/common/pkg/proto"
-	"pariksha/paper/internal/services"
+	"pariksha/paper/internal/service"
 )
 
 type Category struct {
-	categorySvc *services.Category
+	categorySvc *service.Category
 }
 
-func NewCategory(s *services.Category) *Category {
+func NewCategory(s *service.Category) *Category {
 	return &Category{
 		categorySvc: s,
 	}

@@ -1,4 +1,4 @@
-package models
+package domain
 
 import (
 	"pariksha/common/pkg/constants"

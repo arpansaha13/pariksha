@@ -1,10 +1,10 @@
-package repositories
+package repository
 
 import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/types"
-	"pariksha/paper/internal/models"
+	"pariksha/paper/internal/domain"
 )
 
 type PaperQuestion struct {
@@ -23,7 +23,7 @@ func (r *PaperQuestion) getTx(tx *gorm.DB) *gorm.DB {
 	return tx
 }
 
-func (r *PaperQuestion) Create(tx *gorm.DB, paperQuest *models.PaperQuestion) error {
+func (r *PaperQuestion) Create(tx *gorm.DB, paperQuest *domain.PaperQuestion) error {
 	tx = r.getTx(tx)
 	return tx.Create(paperQuest).Error
 }
@@ -31,25 +31,25 @@ func (r *PaperQuestion) Create(tx *gorm.DB, paperQuest *models.PaperQuestion) er
 func (r *PaperQuestion) DeleteByID(tx *gorm.DB, questionID types.QuestionID) error {
 	tx = r.getTx(tx)
 	return tx.Where("question_id = ?", questionID).
-		Delete(&models.PaperQuestion{}).Error
+		Delete(&domain.PaperQuestion{}).Error
 }
 
 func (r *PaperQuestion) BulkDeleteByPaperIDs(tx *gorm.DB, paperIDs []types.PaperID) error {
 	tx = r.getTx(tx)
 	return tx.Where("paper_id IN ?", paperIDs).
-		Delete(&models.PaperQuestion{}).Error
+		Delete(&domain.PaperQuestion{}).Error
 }
 
 func (r *PaperQuestion) BulkDeleteByPaperIDAndCategoryID(tx *gorm.DB, paperID types.PaperID, categoryID types.CategoryID) error {
 	tx = r.getTx(tx)
 	return tx.Where("paper_id = ? AND category_id = ?", paperID, categoryID).
-		Delete(&models.PaperQuestion{}).Error
+		Delete(&domain.PaperQuestion{}).Error
 }
 
-func (r *PaperQuestion) GetAllByPaperHash(tx *gorm.DB, paperHash string) ([]models.PaperQuestion, error) {
+func (r *PaperQuestion) GetAllByPaperHash(tx *gorm.DB, paperHash string) ([]domain.PaperQuestion, error) {
 	tx = r.getTx(tx)
 
-	var paperQuests []models.PaperQuestion
+	var paperQuests []domain.PaperQuestion
 	err := tx.
 		Joins("JOIN papers ON papers.id = paper_questions.paper_id").
 		Where("papers.hash = ?", paperHash).
@@ -61,10 +61,10 @@ func (r *PaperQuestion) GetAllByPaperHash(tx *gorm.DB, paperHash string) ([]mode
 	return paperQuests, nil
 }
 
-func (r *PaperQuestion) GetByPaperHashAndQuestionID(tx *gorm.DB, paperHash string, questionID types.QuestionID) (*models.PaperQuestion, error) {
+func (r *PaperQuestion) GetByPaperHashAndQuestionID(tx *gorm.DB, paperHash string, questionID types.QuestionID) (*domain.PaperQuestion, error) {
 	tx = r.getTx(tx)
 
-	var paperQuest models.PaperQuestion
+	var paperQuest domain.PaperQuestion
 	err := tx.
 		Joins("JOIN papers ON papers.id = paper_questions.paper_id").
 		Where("papers.hash = ? AND paper_questions.question_id = ?", paperHash, questionID).
@@ -80,7 +80,7 @@ func (r *PaperQuestion) GetByPaperHashAndQuestionID(tx *gorm.DB, paperHash strin
 func (r *PaperQuestion) GetMaxQuestionOrder(tx *gorm.DB, categoryID int64) (int16, error) {
 	tx = r.getTx(tx)
 	var maxOrder struct{ MaxOrder int16 }
-	err := tx.Model(&models.PaperQuestion{}).
+	err := tx.Model(&domain.PaperQuestion{}).
 		Where("category_id = ?", categoryID).
 		Select("COALESCE(MAX(\"order\"), 0) as max_order").
 		Scan(&maxOrder).Error
@@ -92,7 +92,7 @@ func (r *PaperQuestion) ValidateCategoryQuestions(tx *gorm.DB, categoryID int64,
 	tx = r.getTx(tx)
 
 	var count int64
-	err := tx.Model(&models.PaperQuestion{}).
+	err := tx.Model(&domain.PaperQuestion{}).
 		Where("category_id = ? AND question_id IN ?", categoryID, questionIDs).
 		Count(&count).Error
 	return count, err
@@ -101,20 +101,20 @@ func (r *PaperQuestion) ValidateCategoryQuestions(tx *gorm.DB, categoryID int64,
 // UpdateOrder updates question order
 func (r *PaperQuestion) UpdateOrder(tx *gorm.DB, questionID types.QuestionID, order int16) error {
 	tx = r.getTx(tx)
-	return tx.Model(&models.PaperQuestion{}).
+	return tx.Model(&domain.PaperQuestion{}).
 		Where("question_id = ?", questionID).
 		Update("order", order).Error
 }
 
-func (r *PaperQuestion) Save(tx *gorm.DB, paperQuest *models.PaperQuestion) error {
+func (r *PaperQuestion) Save(tx *gorm.DB, paperQuest *domain.PaperQuestion) error {
 	tx = r.getTx(tx)
 	return tx.Save(paperQuest).Error
 }
 
 // GetAllByCategoryID gets all questions in a category
-func (r *PaperQuestion) GetAllByCategoryID(tx *gorm.DB, categoryID types.CategoryID) ([]models.PaperQuestion, error) {
+func (r *PaperQuestion) GetAllByCategoryID(tx *gorm.DB, categoryID types.CategoryID) ([]domain.PaperQuestion, error) {
 	tx = r.getTx(tx)
-	var paperQuests []models.PaperQuestion
+	var paperQuests []domain.PaperQuestion
 	err := tx.Where("category_id = ?", categoryID).Find(&paperQuests).Error
 	return paperQuests, err
 }

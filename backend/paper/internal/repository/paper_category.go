@@ -1,10 +1,10 @@
-package repositories
+package repository
 
 import (
 	"gorm.io/gorm"
 
 	"pariksha/common/pkg/types"
-	"pariksha/paper/internal/models"
+	"pariksha/paper/internal/domain"
 )
 
 type PaperCategory struct {
@@ -23,7 +23,7 @@ func (r *PaperCategory) getTx(tx *gorm.DB) *gorm.DB {
 	return tx
 }
 
-func (r *PaperCategory) Create(tx *gorm.DB, paperCat *models.PaperCategory) error {
+func (r *PaperCategory) Create(tx *gorm.DB, paperCat *domain.PaperCategory) error {
 	tx = r.getTx(tx)
 	return tx.Create(paperCat).Error
 }
@@ -31,20 +31,20 @@ func (r *PaperCategory) Create(tx *gorm.DB, paperCat *models.PaperCategory) erro
 func (r *PaperCategory) DeleteByID(tx *gorm.DB, paperID types.PaperID, categoryID types.CategoryID) error {
 	tx = r.getTx(tx)
 	return tx.Where("paper_id = ? AND category_id = ?", paperID, categoryID).
-		Delete(&models.PaperCategory{}).Error
+		Delete(&domain.PaperCategory{}).Error
 }
 
 func (r *PaperCategory) BulkDeleteByPaperIDs(tx *gorm.DB, paperIDs []types.PaperID) error {
 	tx = r.getTx(tx)
 
 	return tx.Where("paper_id IN ?", paperIDs).
-		Delete(&models.PaperCategory{}).Error
+		Delete(&domain.PaperCategory{}).Error
 }
 
-func (r *PaperCategory) GetAllByPaperHash(tx *gorm.DB, paperHash string) ([]models.PaperCategory, error) {
+func (r *PaperCategory) GetAllByPaperHash(tx *gorm.DB, paperHash string) ([]domain.PaperCategory, error) {
 	tx = r.getTx(tx)
 
-	var paperCategories []models.PaperCategory
+	var paperCategories []domain.PaperCategory
 	err := tx.
 		Joins("JOIN papers ON papers.id = paper_categories.paper_id").
 		Where("papers.hash = ?", paperHash).
@@ -56,10 +56,10 @@ func (r *PaperCategory) GetAllByPaperHash(tx *gorm.DB, paperHash string) ([]mode
 	return paperCategories, nil
 }
 
-func (r *PaperCategory) GetByPaperHashAndCategoryID(tx *gorm.DB, paperHash string, categoryID types.CategoryID) (*models.PaperCategory, error) {
+func (r *PaperCategory) GetByPaperHashAndCategoryID(tx *gorm.DB, paperHash string, categoryID types.CategoryID) (*domain.PaperCategory, error) {
 	tx = r.getTx(tx)
 
-	var paperCategory models.PaperCategory
+	var paperCategory domain.PaperCategory
 	err := tx.
 		Joins("JOIN papers ON papers.id = paper_categories.paper_id").
 		Where("papers.hash = ? AND category_id = ?", paperHash, categoryID).
@@ -74,7 +74,7 @@ func (r *PaperCategory) GetByPaperHashAndCategoryID(tx *gorm.DB, paperHash strin
 // GetCountByPaperHash counts the categories in a paper by paper hash
 func (r *PaperCategory) GetCountByPaperHash(tx *gorm.DB, paperHash string) (int64, error) {
 	var count int64
-	err := tx.Model(&models.PaperCategory{}).
+	err := tx.Model(&domain.PaperCategory{}).
 		Joins("JOIN papers ON papers.id = paper_categories.paper_id").
 		Where("papers.hash = ?", paperHash).
 		Count(&count).Error
@@ -83,7 +83,7 @@ func (r *PaperCategory) GetCountByPaperHash(tx *gorm.DB, paperHash string) (int6
 
 // UpdateOrder updates category order
 func (r *PaperCategory) UpdateOrder(tx *gorm.DB, categoryID int64, order int16) error {
-	result := tx.Model(&models.PaperCategory{}).
+	result := tx.Model(&domain.PaperCategory{}).
 		Where("category_id = ?", categoryID).
 		Update("order", order)
 
@@ -100,7 +100,7 @@ func (r *PaperCategory) UpdateOrder(tx *gorm.DB, categoryID int64, order int16) 
 // GetMaxOrder gets max order for categories in paper
 func (r *PaperCategory) GetMaxOrder(tx *gorm.DB, paperID types.PaperID) (int16, error) {
 	var maxOrder struct{ MaxOrder int16 }
-	err := tx.Model(&models.PaperCategory{}).
+	err := tx.Model(&domain.PaperCategory{}).
 		Where("paper_id = ?", paperID).
 		Select("COALESCE(MAX(\"order\"), 0) as max_order").
 		Scan(&maxOrder).Error
@@ -110,7 +110,7 @@ func (r *PaperCategory) GetMaxOrder(tx *gorm.DB, paperID types.PaperID) (int16, 
 // GetCountByPaperId gets total categories count for paper
 func (r *PaperCategory) GetCountByPaperId(tx *gorm.DB, paperID types.PaperID) (int64, error) {
 	var count int64
-	err := tx.Model(&models.PaperCategory{}).
+	err := tx.Model(&domain.PaperCategory{}).
 		Where("paper_id = ?", paperID).
 		Count(&count).Error
 	return count, err
