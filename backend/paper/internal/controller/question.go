@@ -10,10 +10,10 @@ import (
 )
 
 type Question struct {
-	questionSvc *service.Question
+	questionSvc service.IQuestionService
 }
 
-func NewQuestion(s *service.Question) *Question {
+func NewQuestion(s service.IQuestionService) *Question {
 	return &Question{
 		questionSvc: s,
 	}

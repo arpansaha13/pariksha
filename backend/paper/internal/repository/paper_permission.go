@@ -11,6 +11,8 @@ type PaperPermission struct {
 	db *gorm.DB
 }
 
+var _ IPaperPermissionRepository = (*PaperPermission)(nil)
+
 func NewPaperPermission(db *gorm.DB) *PaperPermission {
 	return &PaperPermission{db: db}
 }

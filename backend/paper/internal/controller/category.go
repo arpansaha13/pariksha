@@ -10,10 +10,10 @@ import (
 )
 
 type Category struct {
-	categorySvc *service.Category
+	categorySvc service.ICategoryService
 }
 
-func NewCategory(s *service.Category) *Category {
+func NewCategory(s service.ICategoryService) *Category {
 	return &Category{
 		categorySvc: s,
 	}

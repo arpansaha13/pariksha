@@ -23,18 +23,18 @@ import (
 )
 
 type Paper struct {
-	paperRepo      *repository.Paper
-	paperCatRepo   *repository.PaperCategory
-	paperPermRepo  *repository.PaperPermission
-	paperQuestRepo *repository.PaperQuestion
+	paperRepo      repository.IPaperRepository
+	paperCatRepo   repository.IPaperCategoryRepository
+	paperPermRepo  repository.IPaperPermissionRepository
+	paperQuestRepo repository.IPaperQuestionRepository
 	questionIntSvc *interservice.Question
 }
 
 func NewPaper(
-	paperRepo *repository.Paper,
-	paperCatRepo *repository.PaperCategory,
-	paperPermRepo *repository.PaperPermission,
-	paperQuestRepo *repository.PaperQuestion,
+	paperRepo repository.IPaperRepository,
+	paperCatRepo repository.IPaperCategoryRepository,
+	paperPermRepo repository.IPaperPermissionRepository,
+	paperQuestRepo repository.IPaperQuestionRepository,
 	questionIntSvc *interservice.Question,
 ) *Paper {
 	return &Paper{
@@ -45,6 +45,8 @@ func NewPaper(
 		questionIntSvc: questionIntSvc,
 	}
 }
+
+var _ IPaperService = (*Paper)(nil)
 
 // GetUserPapers handles the business logic for fetching user's papers
 func (s *Paper) GetUserPapers(ctx context.Context, userID types.UserID) (*proto.PaperList, error) {

@@ -19,18 +19,20 @@ import (
 )
 
 type Question struct {
-	paperRepo      *repository.Paper
-	paperQuestRepo *repository.PaperQuestion
+	paperRepo      repository.IPaperRepository
+	paperQuestRepo repository.IPaperQuestionRepository
 	questionIntSvc *interservice.Question
 }
 
-func NewQuestion(paperRepo *repository.Paper, paperQuestRepo *repository.PaperQuestion, questionIntSvc *interservice.Question) *Question {
+func NewQuestion(paperRepo repository.IPaperRepository, paperQuestRepo repository.IPaperQuestionRepository, questionIntSvc *interservice.Question) *Question {
 	return &Question{
 		paperRepo:      paperRepo,
 		paperQuestRepo: paperQuestRepo,
 		questionIntSvc: questionIntSvc,
 	}
 }
+
+var _ IQuestionService = (*Question)(nil)
 
 // GetPaperQuestions handles fetching all questions for a paper
 func (s *Question) GetPaperQuestions(ctx context.Context, paperHash string) (*proto.QuestionList, error) {

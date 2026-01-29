@@ -12,10 +12,10 @@ import (
 )
 
 type Paper struct {
-	paperSvc *service.Paper
+	paperSvc service.IPaperService
 }
 
-func NewPaper(s *service.Paper) *Paper {
+func NewPaper(s service.IPaperService) *Paper {
 	return &Paper{
 		paperSvc: s,
 	}

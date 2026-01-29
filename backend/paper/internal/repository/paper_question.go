@@ -11,6 +11,8 @@ type PaperQuestion struct {
 	db *gorm.DB
 }
 
+var _ IPaperQuestionRepository = (*PaperQuestion)(nil)
+
 func NewPaperQuestion(db *gorm.DB) *PaperQuestion {
 	return &PaperQuestion{db: db}
 }

@@ -18,17 +18,17 @@ import (
 )
 
 type Category struct {
-	paperRepo      *repository.Paper
-	paperCatRepo   *repository.PaperCategory
-	paperQuestRepo *repository.PaperQuestion
+	paperRepo      repository.IPaperRepository
+	paperCatRepo   repository.IPaperCategoryRepository
+	paperQuestRepo repository.IPaperQuestionRepository
 	questionIntSvc *interservice.Question
 }
 
 // NewCategoryService creates a new category service instance
 func NewCategory(
-	paperRepo *repository.Paper,
-	paperCatRepo *repository.PaperCategory,
-	paperQuestRepo *repository.PaperQuestion,
+	paperRepo repository.IPaperRepository,
+	paperCatRepo repository.IPaperCategoryRepository,
+	paperQuestRepo repository.IPaperQuestionRepository,
 	questionIntSvc *interservice.Question,
 ) *Category {
 	return &Category{
@@ -38,6 +38,8 @@ func NewCategory(
 		questionIntSvc: questionIntSvc,
 	}
 }
+
+var _ ICategoryService = (*Category)(nil)
 
 // GetPaperCategories handles fetching all categories for a paper
 func (s *Category) GetPaperCategories(ctx context.Context, paperHash string) (*proto.PaperCategoryList, error) {

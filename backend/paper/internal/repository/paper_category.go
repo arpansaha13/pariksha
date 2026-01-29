@@ -11,6 +11,8 @@ type PaperCategory struct {
 	db *gorm.DB
 }
 
+var _ IPaperCategoryRepository = (*PaperCategory)(nil)
+
 func NewPaperCategory(db *gorm.DB) *PaperCategory {
 	return &PaperCategory{db: db}
 }

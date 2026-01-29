@@ -14,6 +14,8 @@ type Paper struct {
 	db *gorm.DB
 }
 
+var _ IPaperRepository = (*Paper)(nil)
+
 func NewPaper(db *gorm.DB) *Paper {
 	return &Paper{db: db}
 }

@@ -18,7 +18,7 @@ type Server struct {
 	questionCtrl *Question
 }
 
-func NewServer(paperSvc *service.Paper, categorySvc *service.Category, questionSvc *service.Question) *Server {
+func NewServer(paperSvc service.IPaperService, categorySvc service.ICategoryService, questionSvc service.IQuestionService) *Server {
 	return &Server{
 		paperCtrl:    NewPaper(paperSvc),
 		categoryCtrl: NewCategory(categorySvc),
@@ -29,9 +29,9 @@ func NewServer(paperSvc *service.Paper, categorySvc *service.Category, questionS
 // SetupPaperServer registers the paper gRPC server with controller wiring.
 func SetupPaperServer(
 	grpcServer *grpc.Server,
-	paperSvc *service.Paper,
-	categorySvc *service.Category,
-	questionSvc *service.Question,
+	paperSvc service.IPaperService,
+	categorySvc service.ICategoryService,
+	questionSvc service.IQuestionService,
 ) {
 	proto.RegisterPaperServer(grpcServer, NewServer(paperSvc, categorySvc, questionSvc))
 }
